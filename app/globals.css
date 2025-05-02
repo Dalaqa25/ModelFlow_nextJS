@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+:root {
+    --background: #fefefe;
+}
+
+li {
+    transition: all 0.3s;
+}
+
+li:hover {
+    font-weight: 600;
+    color: black;
+}
