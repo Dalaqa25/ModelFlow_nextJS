@@ -11,3 +11,8 @@ li:hover {
 body {
     background-color: #fefefe;
 }
+
+button {
+    cursor: pointer;
+    transition: all 0.3s;
+}

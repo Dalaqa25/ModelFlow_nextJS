@@ -28,7 +28,7 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div>
-                    <button style={{transition:'all 0.3s'}} className="bg-black hover:bg-purple-700 cursor-pointer text-white rounded-2xl px-12 py-3.5">
+                    <button style={{transition:'all 0.3s'}} className="bg-black hover:shadow-xl cursor-pointer text-white rounded-2xl px-12 py-3.5">
                         Sign In
                     </button>
                 </div>
