@@ -15,9 +15,9 @@ export default function Navbar() {
                 </Link>
 
                 {/* Navigation Links */}
-                <ul style={{color:'#b6b6b6'}} className="hidden md:flex gap-15 text-base font-medium mt-3">
+                <ul style={{color:'#b6b6b6'}} className="hidden md:flex gap-15 text-base mt-3">
                     <li><Link href="/"
-                              className={pathname === '/' ? 'font-bold text-black' : 'text-[#b6b6b6]'}
+                              className={pathname === '/' ? 'text-black' : 'text-[#b6b6b6]'}
                     >
                         Home
                     </Link></li>
@@ -28,7 +28,7 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div>
-                    <button style={{transition:'all 0.3s'}} className="bg-black hover:bg-purple-700 cursor-pointer text-white rounded-2xl px-12 py-3.5">
+                    <button style={{transition:'all 0.3s'}} className="bg-black hover:shadow-xl cursor-pointer text-white rounded-2xl px-12 py-3.5">
                         Sign In
                     </button>
                 </div>
