@@ -6,8 +6,8 @@ import {usePathname} from "next/navigation";
 export default function Navbar() {
     const pathname = usePathname();
     return (
-        <header className="w-full py-10">
-            <nav className="max-w-[93%] mx-auto flex justify-between items-center">
+        <header className="w-full fixed top-0 bg-transparent py-10 z-50">
+            <nav style={{backgroundColor:'rgba(255,255,255,0.27)'}} className="max-w-[93%] rounded-2xl mx-auto flex justify-between items-center">
                 {/* Logo + Brand */}
                 <Link className='flex items-center text-center gap-3' href="/">
                     <Image className='mb-2' src='logo.svg' alt='logosvg' width={45} height={45}/>

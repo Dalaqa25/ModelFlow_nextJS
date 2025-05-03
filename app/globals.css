@@ -9,10 +9,27 @@ li:hover {
 }
 
 body {
-    background-color: #fefefe;
+    background-color: #ffff;
 }
 
 button {
     cursor: pointer;
     transition: all 0.3s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+nav {
+    background-color: #fefefe;
 }
