@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-body, html, #__next {
-    min-height: 100vh;
-}
-
 li {
     transition: all 0.3s;
 }
@@ -13,7 +9,7 @@ li:hover {
 }
 
 body {
-    background-color: #fefefe;
+    background-color: #ffff;
 }
 
 button {
@@ -32,4 +28,8 @@ button {
 
 .animate-float {
     animation: float 3s ease-in-out infinite;
+}
+
+nav {
+    background-color: #fefefe;
 }
