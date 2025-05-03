@@ -11,7 +11,7 @@ export default function Navbar() {
                 {/* Logo + Brand */}
                 <Link className='flex items-center text-center gap-3' href="/">
                     <Image className='mb-2' src='logo.svg' alt='logosvg' width={45} height={45}/>
-                    <span className="hidden md:flex text-3xl font-bold tracking-tight text-gray-900">Modelflow<span className='text-3xl text-purple-500'>.</span></span>
+                    <span className="text-3xl font-bold tracking-tight text-gray-900">Modelflow<span className='text-3xl text-purple-500'>.</span></span>
                 </Link>
 
                 {/* Navigation Links */}
