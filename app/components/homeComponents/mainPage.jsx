@@ -11,6 +11,7 @@ export default function mainPage() {
                     <p className='text-gray-400 text-[18px]'>Pre-trained AI models for businesses</p>
                     <button style={{background:'#6472ef'}} className='py-4 text-white text-sm w-[170px] hover:shadow-xl rounded-2xl'>Get Started</button>
                 </div>
+
                 <img src='/main.png' alt='main' className='w-[45%] animate-float'/>
             </section>
         </main>
