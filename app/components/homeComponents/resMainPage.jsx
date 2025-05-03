@@ -1,7 +1,24 @@
 export default function resMainPage() {
     return (
-        <main style={{height:'500px'}} className='flex items-center justify-center w-full'>
-
+        <main className='flex m-auto items-center shadow rounded w-[80%] justify-center mt-15'>
+            <div className='mt-6 flex flex-col text-center items-center justify-center gap-8'>
+                <img className='w-[100px]' src='logo.svg' alt='logo' />
+                <h1 className='text-4xl font-bold'>
+                    Upload And Sell <br/>
+                    You're <span style={{color:'#946dff'}}>AI</span> Models
+                </h1>
+                <p className='text-gray-400'>
+                    Pre-trained AI models for businesses
+                    <br/>
+                    Upload. Host. Buy. Sell. <span className='font-semibold'>Downloads for businesses.</span>
+                </p>
+                <div className='flex  justify-center text-center items-center gap-3'>
+                    <button className='bg-black text-white p-3 px-8 rounded-4xl'>Sign up</button>
+                    <p className='text-gray-400'>or</p>
+                    <a className='cursor-pointer border-b'>Explore models</a>
+                </div>
+                <img className='w-[70%]' src='main.png' alt='logo' />
+            </div>
         </main>
     )
 }

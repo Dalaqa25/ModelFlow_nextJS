@@ -2,6 +2,7 @@
 
 li {
     transition: all 0.3s;
+    cursor: pointer;
 }
 
 li:hover {
@@ -38,5 +39,11 @@ nav {
     .change-width {
         width: 80%;
         background-color: #fefefe;
+    }
+}
+
+@media (max-width: 640px) {
+    .change-padding {
+        padding: 10px 20px;
     }
 }
