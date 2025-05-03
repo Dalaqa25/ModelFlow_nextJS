@@ -33,3 +33,10 @@ button {
 nav {
     background-color: #fefefe;
 }
+
+@media (max-width: 1050px) {
+    .change-width {
+        width: 80%;
+        background-color: #fefefe;
+    }
+}
