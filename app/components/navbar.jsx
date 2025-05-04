@@ -15,10 +15,10 @@ export default function Navbar() {
 
     return (
         <header className="flex py-8 justify-center w-full bg-transparent">
-            <nav style={{backgroundColor:'rgba(255,255,255,0.51)'}} className="w-[93%] max-w-[1500px] fixed z-50 rounded-2xl  flex justify-between items-center change-width">
+            <nav style={{backgroundColor:'rgba(255,255,255,0.69)'}} className="w-[93%] max-w-[1500px] fixed z-50 rounded-2xl  flex justify-between items-center change-width">
                 {/* Logo + Brand */}
                 <Link className='flex items-center text-center gap-3' href="/">
-                    <Image className='mb-2' src='logo.svg' alt='logosvg' width={45} height={45}/>
+                    <img src='logo.png' alt='test.svg' width={50} height={50}/>
                     <span className="hidden sm:flex text-3xl font-bold tracking-tight text-gray-900">Modelflow<span className='text-3xl text-purple-500'>.</span></span>
                 </Link>
 
