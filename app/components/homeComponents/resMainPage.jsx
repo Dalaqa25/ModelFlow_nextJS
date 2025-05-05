@@ -1,6 +1,6 @@
 export default function resMainPage() {
     return (
-        <main className='flex m-auto items-center shadow rounded w-[80%] justify-center mt-15'>
+        <main className='flex m-auto items-center shadow rounded w-[80%] justify-center min-h-screen mt-15 mb-15'>
             <div className='mt-6 flex flex-col text-center items-center justify-center gap-8'>
                 <img src='logo.png' alt='test.svg' width={100} height={100}/>
                 <h1 className='text-4xl font-bold'>
