@@ -1,8 +1,6 @@
 'use client';
 import MainPage from 'app/components/homeComponents/mainPage'
 import ResMainPage from "app/components/homeComponents/resMainPage"
-import Splitter from 'app/components/homeComponents/splitter'
-import Features from 'app/components/homeComponents/features'
 import {useEffect, useState} from "react";
 
 export default function Home() {
@@ -19,8 +17,6 @@ export default function Home() {
   return (
     <>
         { isVisible ?  <MainPage/> : <ResMainPage/> }
-        <Splitter/>
-        <Features/>
     </>
   );
 }
