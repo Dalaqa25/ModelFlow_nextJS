@@ -9,6 +9,13 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
 
+    const navLinks = [
+        {href: '/', title: 'Home'},
+        {href: '/modelsList', title: 'Models'},
+        {href: '/plans', title: 'Plans'},
+        {href: '/privacy', title: 'Privacy'},
+    ]
+
     return (
         <header className="flex py-8 justify-center w-full bg-transparent">
             <nav style={{ backgroundColor: 'rgba(255,255,255,0.89)' }} className="w-[93%] max-w-[1500px] fixed z-50 rounded-2xl flex justify-between items-center change-width">
@@ -22,22 +29,22 @@ export default function Navbar() {
 
                 {/* Navigation Links for desktop */}
                 <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-15 text-base mt-3">
-                    <li>
-                        <Link href="/" className={pathname === '/' ? 'text-black' : 'text-[#b6b6b6]'}>
-                            Home
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/modelsList" className={pathname === '/modelsList' ? 'text-black' : 'text-[#b6b6b6]'}>
-                            Models
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/about">Plans</Link>
-                    </li>
-                    <li>
-                        <Link href="/about">Privacy</Link>
-                    </li>
+                    {navLinks.map(({ href, title }) => {
+                        const isActive = pathname === href;
+
+                        return (
+                            <li key={href}>
+                                <Link
+                                    href={href}
+                                    className={`transition-colors duration-200 ${
+                                        isActive ? 'text-black' : 'text-[#b6b6b6]'
+                                    }`}
+                                >
+                                    {title}
+                                </Link>
+                            </li>
+                        );
+                    })}
                 </ul>
 
                 {/* Call to Action */}
