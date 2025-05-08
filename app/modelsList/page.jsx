@@ -1,11 +1,12 @@
 import { Search } from 'lucide-react';
+import ModelBox from 'app/components/modelBox';
 
 export default function ModelsList() {
     return (
-        <div className="mt-15 mx-auto w-[85%] shadow rounded max-w-[1200px] h-90">
+        <div className="mt-5 mx-auto w-[85%] max-w-[1200px] ">
             <div className="flex justify-between items-center h-full px-4">
                 {/* Text and Search Section */}
-                <div className="flex flex-col p-4 ">
+                <div className="flex flex-col p-4 w-full">
                     <h1 className="text-6xl font-semibold">
                         Available AI Models
                     </h1>
@@ -22,15 +23,18 @@ export default function ModelsList() {
                     </div>
                 </div>
                 {/* Image Section */}
-                <div className="w-1/3 flex justify-center h-full ">
+                <div className="w-1/2 flex h-full ">
                     <img
                         src="herolist.png"
                         alt="herolist"
-                        className="w-full min-w-[350px] h-ful object-cover"
+                        className="min-w-[200px]"
                     />
                 </div>
             </div>
-        </div>
 
+            <div className=''>
+                <ModelBox />
+            </div>
+        </div>
     )
 }
