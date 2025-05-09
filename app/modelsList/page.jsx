@@ -32,7 +32,7 @@ export default function ModelsList() {
                 </div>
             </div>
 
-            <div className=''>
+            <div className='flex gap-10'>
                 <ModelBox />
             </div>
         </div>
