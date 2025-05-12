@@ -3,6 +3,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
+import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
+import { BsClipboardCheck } from 'react-icons/bs';
+import { MdPrivacyTip } from 'react-icons/md';
 
 export default function Navbar() {
     const pathname = usePathname() || '/'; 
@@ -17,8 +20,8 @@ export default function Navbar() {
     ]
 
     return (
-        <header className="flex py-8 justify-center w-full bg-transparent">
-            <nav style={{ backgroundColor: 'rgba(255,255,255,0.89)' }} className="w-[93%] max-w-[1500px] fixed z-50 rounded-2xl flex justify-between items-center change-width">
+        <header className="flex justify-center w-full bg-transparent">
+            <nav style={{ backgroundColor: 'rgba(255,255,255,0.89)' }} className="w-[93%] max-w-[1600px] mt-2 fixed z-50 rounded-2xl flex justify-between items-center change-width">
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">
                     <img src="logo.png" alt="logo.svg" width={50} height={50} />
@@ -31,7 +34,6 @@ export default function Navbar() {
                 <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-15 text-base mt-3">
                     {navLinks.map(({ href, title }) => {
                         const isActive = pathname === href;
-
                         return (
                             <li key={href}>
                                 <Link
@@ -56,6 +58,20 @@ export default function Navbar() {
                     <button onClick={toggleMenu} className="lg:hidden bg-gray-100 p-3.5 rounded-xl text-2xl change-padding">
                         {menuOpen ? <FaTimes /> : <FaBars />}
                     </button>
+                </div>
+
+
+                <div
+                    className={`absolute text-lg top-16 right-0 bg-white p-5 rounded shadow-md lg:hidden transform transition-all duration-300 ease-in-out ${
+                        menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'
+                    }`}
+                >
+                    <ul className="flex flex-col gap-5">
+                        <li className='flex items-center gap-3'><AiFillHome />Home</li>
+                        <li className='flex items-center gap-3'><AiOutlineRobot />Models</li>
+                        <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
+                        <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
+                    </ul>
                 </div>
             </nav>
         </header>
