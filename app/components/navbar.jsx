@@ -35,13 +35,12 @@ export default function Navbar() {
                     {navLinks.map(({ href, title }) => {
                         const isActive = pathname === href;
                         return (
-                            <li key={href}>
+                            <li className='hover:underline xl:text-lg' key={href}>
                                 <Link
                                     href={href}
                                     className={`transition-colors duration-200 ${
                                         isActive ? 'text-black' : 'text-[#b6b6b6]'
-                                    }`}
-                                >
+                                    }`}>
                                     {title}
                                 </Link>
                             </li>

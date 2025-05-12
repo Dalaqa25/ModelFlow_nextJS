@@ -4,13 +4,13 @@ export default function mainPage() {
             <main className='flex min-h-screen items-center justify-center '>
                 <section className='flex justify-between w-[85%] max-w-[1250px]'>
                     <div className='flex flex-col justify-center gap-9'>
-                        <div style={{background:'rgba(63,77,223,0.75)', color:'#fff'}} className='py-1.5 px-8 text-sm rounded-2xl w-[120px] text-center'>HOME</div>
-                        <h1 className='text-6xl font-semibold'>
+                        <div style={{background:'rgba(63,77,223,0.75)', color:'#fff'}} className='py-1.5 px-8 text-sm rounded-2xl w-1/4 text-center xl:text-xl '>HOME</div>
+                        <h1 className='text-6xl font-semibold xl:text-7xl'>
                             Upload And  <br/> Sell Pre-Trained <br/>
                             <span style={{color:'#6472ef'}}>AI</span> Models.
                         </h1>
-                        <p className='text-gray-400 text-[18px]'>Pre-trained AI models for businesses</p>
-                        <button style={{background:'#6472ef'}} className='py-4 text-white text-sm w-[170px] hover:shadow-xl rounded-2xl'>Get Started</button>
+                        <p className='text-gray-400 text-[18px] xl:text-3xl'>Pre-trained AI models for businesses</p>
+                        <button style={{background:'#6472ef'}} className='py-4 text-white text-sm w-1/3 hover:shadow-xl rounded-2xl xl:text-2xl'>Get Started</button>
                     </div>
                     <img src='/main.png' alt='main' className='w-[50%] animate-float'/>
                 </section>
