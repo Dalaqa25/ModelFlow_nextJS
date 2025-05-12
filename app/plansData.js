@@ -27,19 +27,6 @@ const plansData = [
         ],
         price: 15,
         buttonText: 'Subscribe now'
-    },
-    {
-        id: 3,
-        img: {
-            src: "plansImg2.png",
-            alt: "Plans 2 image",
-        },
-        status: "Enterprise/Custom",
-        features: [
-
-        ],
-        price: '...',
-        buttonText: 'Contact us'
     }
 ]
 
