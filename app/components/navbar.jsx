@@ -20,8 +20,8 @@ export default function Navbar() {
     ]
 
     return (
-        <header className="flex justify-center w-full bg-transparent">
-            <nav style={{ backgroundColor: 'rgba(255,255,255,0.89)' }} className="w-[93%] max-w-[1600px] mt-2 fixed z-50 rounded-2xl flex justify-between items-center change-width">
+        <header className="flex justify-center py-3 w-full bg-transparent">
+            <nav style={{ backgroundColor: 'rgba(255,255,255,0.89)' }} className="w-[93%] max-w-[1600px] fixed z-50 rounded-2xl flex justify-between items-center change-width">
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">
                     <img src="logo.png" alt="logo.svg" width={50} height={50} />
