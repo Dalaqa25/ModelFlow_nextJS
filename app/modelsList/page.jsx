@@ -3,7 +3,7 @@ import ModelBox from 'app/components/modelBox';
 
 export default function ModelsList() {
     return (
-        <div className="mt-5 mx-auto w-[85%] max-w-[1200px] ">
+        <div className="mt-15 mx-auto w-[85%] max-w-[1200px] ">
             <div className="flex justify-between items-center h-full px-4">
                 {/* Text and Search Section */}
                 <div className="flex flex-col p-4 w-full">
@@ -23,18 +23,14 @@ export default function ModelsList() {
                     </div>
                 </div>
                 {/* Image Section */}
-                <div className="w-1/2 flex h-full ">
                     <img
                         src="herolist.png"
                         alt="herolist"
-                        className="min-w-[200px]"
+                        className="absolute w-[300px] right-15 top-10 -z-50"
                     />
-                </div>
-            </div>
 
-            <div className='flex gap-10'>
-                <ModelBox />
             </div>
+            <ModelBox />
         </div>
     )
 }

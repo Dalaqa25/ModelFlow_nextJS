@@ -2,12 +2,12 @@ import modelData from 'app/modelsList/modeldata.js'
 
 export default function modelBox() {
     return (
-        <div className='flex flex-wrap gap-4'>
+        <div className='grid grid-cols-3 gap-3'>
             {modelData.map(model => (
-                <div key={model.id} className='border-gray-300 border-2 min-w-[250px] w-1/4 p-1 rounded-2xl overflow-hidden'>
+                <div key={model.id} className='border-gray-300 w-[350px] border-2 p-1 rounded-2xl overflow-hidden mt-5'>
                     <div className='p-3.5 flex flex-col gap-5'>
                         <div className='flex gap-4'>
-                            <img src='logo.png' alt='logo' className='w-[70px] h-[70px]'/>
+
                             <div className='flex flex-col gap-2'>
                                 <h2 className='text-2xl font-semibold'>{model.name}</h2>
                                 <span className='flex gap-1 text-gray-500'>
