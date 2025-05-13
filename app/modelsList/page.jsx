@@ -3,9 +3,8 @@ import ModelBox from 'app/components/modelBox';
 
 export default function ModelsList() {
     return (
-        <div className="mt-15 mx-auto w-[85%] max-w-[1200px] ">
+        <div className="mt-15 mx-auto w-[80%] max-w-[1500px] ">
             <div className="flex justify-between items-center h-full px-4">
-                {/* Text and Search Section */}
                 <div className="flex flex-col p-4 w-full">
                     <h1 className="text-6xl font-semibold">
                         Available AI Models
@@ -13,7 +12,7 @@ export default function ModelsList() {
                     <p className="text-gray-600 text-lg mt-5 mb-7">
                         Browse and download top pre-trained models
                     </p>
-                    <div className="flex items-center bg-gray-100 rounded-xl px-4 py-3 w-full max-w-md">
+                    <div className="flex items-center bg-gray-100 rounded-xl px-3 py-3 w-[75%] max-w-md">
                         <Search className="w-6 h-6 text-gray-600 mr-2" />
                         <input
                             type="text"
@@ -22,13 +21,6 @@ export default function ModelsList() {
                         />
                     </div>
                 </div>
-                {/* Image Section */}
-                    <img
-                        src="herolist.png"
-                        alt="herolist"
-                        className="absolute w-[300px] right-15 top-10 -z-50"
-                    />
-
             </div>
             <ModelBox />
         </div>

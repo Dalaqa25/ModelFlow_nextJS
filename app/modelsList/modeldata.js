@@ -1,7 +1,7 @@
 const modelData = [
     {
         id: 1,
-        name: "ImageNet Classifier",
+        name: "ImageNet dasdasdas",
         author: "@janedoe",
         tags: ["Vision", "CNN"],
         price: 25
