@@ -56,4 +56,7 @@ nav {
     .splitter {
         width: calc(1/4 * 100%);
     }
+    .item-hidden {
+        display: none !important;
+    }
 }

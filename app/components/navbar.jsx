@@ -25,7 +25,7 @@ export default function Navbar() {
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">
                     <img src="logo.png" alt="logo.svg" width={50} height={50} />
-                    <span className="hidden sm:flex text-3xl font-bold tracking-tight text-gray-900">
+                    <span className="text-3xl font-bold tracking-tight text-gray-900">
                         Modelflow<span className="text-3xl text-purple-500">.</span>
                     </span>
                 </Link>
@@ -50,7 +50,7 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div className="flex items-center justify-center gap-6">
-                    <button style={{ transition: 'all 0.3s' }} className="bg-black hover:shadow-xl cursor-pointer text-white rounded-2xl change-padding px-12 py-3.5">
+                    <button className="hidden sm:inline-block bg-black hover:shadow-xl cursor-pointer text-white rounded-2xl change-padding px-12 py-3.5 item-hidden">
                         Sign In
                     </button>
                     {/* Mobile burger menu */}
@@ -65,11 +65,22 @@ export default function Navbar() {
                         menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'
                     }`}
                 >
-                    <ul className="flex flex-col gap-5">
-                        <li className='flex items-center gap-3'><AiFillHome />Home</li>
-                        <li className='flex items-center gap-3'><AiOutlineRobot />Models</li>
-                        <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
-                        <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
+                    <ul className="flex flex-col gap-5 cursor-pointer">
+                        <Link href='/'>
+                            <li className='flex items-center gap-3'><AiFillHome />Home</li>
+                        </Link>
+                        
+                        <Link href='/modelsList'>
+                            <li className='flex items-center gap-3'><AiOutlineRobot />Models</li>
+                        </Link>
+                        
+                        <Link href='/plans'>
+                            <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
+                        </Link>
+                        
+                        <Link href='/privacy'>
+                            <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
+                        </Link>
                     </ul>
                 </div>
             </nav>
