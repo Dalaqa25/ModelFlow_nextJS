@@ -1,11 +1,12 @@
 import plansData from 'app/plansData'
+import Image from 'next/image'
 
 export default function plansBox() {
     return (
         <div className="flex flex-col items-center sm:flex-row gap-10 justify-center">
             {plansData.map(plan => (
                 <div key={plan.id} className='w-1/3 flex justify-center flex-col items-center border-gray-300 rounded-2xl border-1 min-w-[300px]'>
-                    <img className='w-1/2' src={plan.img.src} alt={plan.img.alt} />
+                    <Image width={1024} height={1024} className='w-1/2' src={plan.img.src} alt={plan.img.alt} />
                     <h1 className='font-bold text-2xl xl:text-3xl'>{plan.title}
                         {plan.status} <br />
                         ${plan.price}

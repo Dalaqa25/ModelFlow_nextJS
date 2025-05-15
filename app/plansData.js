@@ -2,7 +2,7 @@ const plansData = [
     {
         id: 1,
         img: {
-            src: "plansImg1.png",
+            src: "/plansImg1.png",
             alt: "Plans 1 image",
         },
         status: "Free",
@@ -16,7 +16,7 @@ const plansData = [
     {
         id: 2,
         img: {
-            src: "plansImg2.png",
+            src: "/plansImg2.png",
             alt: "Plans 2 image",
         },
         status: "Pro",

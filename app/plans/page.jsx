@@ -1,4 +1,5 @@
 import PlansBox from "@/app/components/plansBox";
+import Image from "next/image";
 
 export default function PlansPage() {
     return (
@@ -10,7 +11,7 @@ export default function PlansPage() {
                 </div>
                 <PlansBox />
                 <div className='w-1/3 flex justify-center flex-col items-center border-gray-300 rounded-2xl border-1 m-auto mb-10 min-w-[200px]'>
-                    <img className='w-1/2 ' src='default-image.png' alt='plans image 1'/>
+                    <Image width={1024} height={1024} className='w-1/2 ' src='/default-image.png' alt='plans image 1'/>
                     <h1 className='text-2xl font-semibold'>Custom Plan</h1>
                     <button className='text-lg btn-primary text-white px-10 py-3 rounded-xl mt-3 mb-5 '>Contact us</button>
                 </div>
