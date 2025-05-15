@@ -12,7 +12,7 @@ export default function ModelsList() {
                     <p className="text-gray-600 hidden sm:text-lg sm:block mt-4 mb-4">
                         Browse and download top pre-trained models
                     </p>
-                    <div className="flex items-center bg-gray-100 rounded-xl px-3 p-1.5 sm:p-3 w-[100%] max-w-md">
+                    <div className="flex items-center bg-gray-100 rounded-xl px-3 p-1.5 sm:p-3 w-[100%] max-w-md mb-3">
                         <Search className="w-6 h-6 text-gray-600 mr-2" />
                         <input
                             type="text"

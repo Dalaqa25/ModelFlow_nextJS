@@ -50,7 +50,7 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div className="flex items-center justify-center gap-6">
-                    <button className="hidden sm:inline-block bg-black hover:shadow-xl cursor-pointer text-white rounded-2xl change-padding px-12 py-3.5 item-hidden">
+                    <button className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-12 py-3.5 item-hidden">
                         Sign In
                     </button>
                     {/* Mobile burger menu */}
@@ -63,22 +63,21 @@ export default function Navbar() {
                 <div
                     className={`absolute text-lg top-16 right-0 bg-white p-5 rounded shadow-md lg:hidden transform transition-all duration-300 ease-in-out ${
                         menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'
-                    }`}
-                >
+                    }`}>
                     <ul className="flex flex-col gap-5 cursor-pointer">
-                        <Link href='/'>
+                        <Link href='/' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><AiFillHome />Home</li>
                         </Link>
-                        
-                        <Link href='/modelsList'>
+
+                        <Link href='/modelsList' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><AiOutlineRobot />Models</li>
                         </Link>
                         
-                        <Link href='/plans'>
+                        <Link href='/plans' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
                         </Link>
                         
-                        <Link href='/privacy'>
+                        <Link href='/privacy' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
                         </Link>
                     </ul>

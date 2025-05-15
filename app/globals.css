@@ -39,7 +39,11 @@ nav {
 }
 
 .btn-primary {
-    background-color:#6472ef;
+    background-color:#5c6bf0;
+    :hover {
+        background-color: black;
+        color: white;
+    }
 }
 
 .cutom-shadow {
