@@ -9,10 +9,10 @@ export default function Login() {
     }
 
     return (
-        <div className="fixed top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 min-w-[350px] min-h-[400px] flex flex-col items-center">
+        <div className="fixed top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 flex flex-col items-center sm:text-lg text-sm">
             {/* Floating image */}
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2">
-                <Image src='/3dcube.png' alt="logo.png" width={1024} height={1024} className="w-40 h-40" />
+            <div className="absolute -top-13 left-1/2 -translate-x-1/2 sm:-top-20">
+                <Image src='/3dcube.png' alt="logo.png" width={1024} height={1024} className="w-30 h-30 sm:w-40 sm:h-40" />
             </div>
             <section className="px-5 flex flex-col items-center mt-17">
                 <h1 className="text-4xl font-semibold">Log In</h1>
@@ -21,7 +21,7 @@ export default function Login() {
             <form action="">
                 <div className="flex flex-col gap-5 px-5 py-10">
                     <label htmlFor="Email" className="flex flex-col gap-0.5">Username or Email address
-                        <input id="Email" type="text" placeholder="Email" className="text-lg w-90 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        <input id="Email" type="text" placeholder="Email" className="text-lg w-[100%] border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </label>
                     <label htmlFor="Password" className="flex flex-col gap-0.5">Password
                         <input type="password" placeholder="Password" className="text-lg border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
