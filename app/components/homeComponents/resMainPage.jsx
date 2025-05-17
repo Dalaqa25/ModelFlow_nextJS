@@ -27,7 +27,7 @@ export default function resMainPage() {
                         <button onClick={() => setIsLogin(true)} className='bg-black text-white p-3 px-8 rounded-4xl'>Sign up</button>
                         { isLogin && <Login/> }
                         <p className='text-gray-400'>or</p>
-                        <a className='cursor-pointer border-b'>Explore models</a>
+                        <a href='/modelsList' className='cursor-pointer border-b'>Explore models</a>
                     </div>
                     <img className='w-[70%]' src='main.png' alt='logo' />
                 </div>
