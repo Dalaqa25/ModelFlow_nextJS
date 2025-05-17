@@ -1,4 +1,5 @@
 import modelData from 'app/modelsList/modeldata.js'
+import Link from 'next/link';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 
@@ -6,9 +7,9 @@ export default function modelBox() {
     return (
         <div className='flex gap-7 w-full'>
             <div className='h-[700px] w-[400px] hidden lg:block rounded-lg cutom-shadow'></div>
-            <section className='flex flex-col gap-7 w-full'>
+            <div className='w-full flex flex-col gap-7'>
                 {modelData.map(model => (
-                    <div key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
+                    <Link href={`/modelsList/${model.id}`} key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
                         <div className='p-3.5 flex flex-col gap-5'>
                             <div className='flex gap-4'>
                                 {model.image && (
@@ -19,7 +20,8 @@ export default function modelBox() {
                                 <div className='flex flex-col gap-2'>
                                     <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>
                                     <span className='flex gap-1 text-gray-500'>
-                                     author: <p>{model.author}</p></span>
+                                        author: <p>{model.author}</p>
+                                    </span>
                                 </div>
                             </div>
                             <div className='flex gap-3 flex-wrap'>
@@ -39,9 +41,9 @@ export default function modelBox() {
                                 Price: <span className='flex'>$<p>{model.price}</p></span>
                             </span>
                         </div>
-                    </div>
+                    </Link>
                 ))}
-            </section>
+            </div>
         </div>
     )
 }
