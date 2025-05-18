@@ -13,7 +13,7 @@ export default function modelBox() {
                         <div className='p-3.5 flex flex-col gap-5'>
                             <div className='flex gap-4'>
                                 {model.image && (
-                                    <img src={model.image.src} 
+                                <img src={model.image.src} 
                                     alt={model.image.alt} 
                                     className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover' />
                                 )}
