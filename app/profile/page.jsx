@@ -2,8 +2,11 @@ export default function Profile() {
     return (
         <>
             <div className="mt-30 w-[70%] max-w-[1500px] m-auto">
-                <h1 className="text-5xl font-semibold">Profile</h1>
-                <div className="flex flex-col gap-5 mt-25">
+                {/* header section */}
+                <h1 className="text-5xl font-semibold mb-5">Profile</h1>
+                <p className="text-lg">Username: <span className="text-gray-400">@Dalakka25</span></p>
+                <hr className="border-1 border-gray-500 mt-5"/>
+                <div className="flex flex-col gap-5 mt-20">
                     {/* purchaesed models */}
                     <div className="flex flex-col">
                         <div className="flex justify-between w-full">
