@@ -1,5 +1,8 @@
 import Image from 'next/image'
-import { FiBookOpen } from 'react-icons/fi';
+import ModelDescription from './modelDescription';
+import ModelFeatures from './modelFeatures';
+import UseCases from './useCases';
+import HowToUse from './howToUse';
 
 export default async function Model({ params }) {
     return (
@@ -35,49 +38,17 @@ export default async function Model({ params }) {
             </div>
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
             {/* model description */}
-            <div className='mt-10 mb-10 w-full flex flex-col gap-5'>
-                <h2 className='text-4xl font-semibold'>Model Description</h2>
-                <p className='font-light text-lg text-gray-600'>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                </p>
-            </div>
+            <ModelDescription />
+                <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
             {/* model features */}
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
-            <div className='mt-10 mb-10 w-full flex flex-col'>
-                <h2 className='text-4xl font-semibold'>Key Features</h2>
-                <div className='flex justify-between w-full items-center'>
-                    <ul className='list-disc pl-6 flex flex-col gap-3'>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                    </ul>
-                    <FiBookOpen style={{fontSize:'180px'}} className="text-gray-700" />
-                </div>
-            </div>
+            <ModelFeatures />
             {/* use cases */}
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
-            <div className='mt-10 mb-10 w-full flex flex-col gap-5'>
-                <h2 className='text-4xl font-semibold'>Use Cases</h2>
-                <div className='flex justify-between w-full'>
-                    <ul className='list-disc pl-6 flex flex-col gap-3'>
-                        <li className='font-light text-lg text-gray-600'>case 1</li>
-                        <li className='font-light text-lg text-gray-600'>case 1</li>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                        <li className='font-light text-lg text-gray-600'>feature 1</li>
-                    </ul>
-                </div>
-            </div>
+            <UseCases />
             {/* How to use */}
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
-            <div className='mt-10 mb-10 w-full flex flex-col gap-5'>
-                <h2 className='text-4xl font-semibold'>How to use / set up</h2>
-                <p className='font-light text-lg text-gray-600'>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                </p>
-            </div>
+            <HowToUse />
         </section>
     )
 }
