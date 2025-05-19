@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { FiBookOpen } from 'react-icons/fi';
-import { FaListAlt } from 'react-icons/fa';
 
 export default async function Model({ params }) {
     return (
@@ -31,7 +30,7 @@ export default async function Model({ params }) {
                 </div>
                 <div className='flex gap-4'>
                     <button className='text-white button btn-primary px-8 text-lg py-3 rounded-xl'>Test Model</button>
-                    <button className='text-black button bg-white shadow px-8 text-lg py-3 rounded-xl'>Download</button>
+                    <button className='text-black button bg-white shadow px-8 text-lg py-3 rounded-xl'>Purchase</button>
                 </div>
             </div>
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
@@ -68,7 +67,6 @@ export default async function Model({ params }) {
                         <li className='font-light text-lg text-gray-600'>feature 1</li>
                         <li className='font-light text-lg text-gray-600'>feature 1</li>
                     </ul>
-                    <FaListAlt style={{fontSize:'180px'}} className="text-gray-700" />
                 </div>
             </div>
             {/* How to use */}
