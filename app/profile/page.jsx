@@ -1,74 +1,39 @@
+import PurchasedModels from "./purchasedModels"
+import UploadedModels from "./uploadedModels"
+import Image from "next/image"
+
 export default function Profile() {
     return (
         <>
-            <div className="mt-30 w-[70%] max-w-[1500px] m-auto">
+            <div className="mt-20 w-[70%] sm:w-[80%] md:w-[70%] max-w-[1500px] m-auto px-2">
                 {/* header section */}
-                <h1 className="text-5xl font-semibold mb-5">Profile</h1>
-                <p className="text-lg">Username: <span className="text-gray-400">@Dalakka25</span></p>
-                <hr className="border-1 border-gray-500 mt-5"/>
-                <div className="flex flex-col gap-5 mt-20">
-                    {/* purchaesed models */}
-                    <div className="flex flex-col">
-                        <div className="flex justify-between w-full">
-                            <h2 className="text-4xl mb-8">Purchased Models</h2>
-                            <h2 className="text-lg font-light text-gray-400">Purchased: <span>1</span></h2>
-                        </div>
-                        <div className="flex flex-col gap-5">
-                            <div className="border-1 border-gray-200 rounded-2xl">
-                                <div className="flex justify-between w-full items-center py-5 px-10">
-                                    <div className="flex gap-5">
-                                        <img
-                                            src="logo.png"
-                                            alt="model"
-                                            className="w-[100px] h-[100px] object-cover rounded-xl"
-                                            sizes="(max-width: 1000px) 100vw, 500px"
-                                        />
-                                        <div className="flex flex-col gap-0.5">
-                                            <h1 className="text-3xl">ImageNet Model</h1>
-                                            <p className="font-light text-gray-400 text-lg">author: janedoe</p>
-                                            <p className="font-light text-gray-400 text-lg">purchaesed: 05/12/2025</p>
-                                        </div>
-                                    </div>
-                                    <button className="text-white button btn-primary px-8 text-xl py-4 rounded-xl">
-                                        Download
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-8 md:gap-0">
+                    <div className="w-full hidden sm:block md:w-auto">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-3 sm:mb-5">Profile</h1>
+                        <p className="text-base sm:text-lg">Username: <span className="text-gray-400">@Dalakka25</span></p>
+                        <p className="text-base sm:text-lg">Status: <span className="text-gray-400">Active</span></p>
+                        <p className="text-base sm:text-lg">Plan: <span className="text-gray-400">Free</span></p>
                     </div>
+                    <div className="w-full text-center block sm:hidden md:w-auto">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-3 sm:mb-5">Profile</h1>
+                        <p className="text-lg font-semibold">Giorgi Dalakishvili</p>
+                    </div>
+                    <div className="relative flex items-center justify-center w-40 h-40 sm:w-40 sm:h-40 md:w-40 md:h-40 border border-gray-300 rounded-full">
+                        <Image
+                            src="/plansImg2.png"
+                            alt="main/profile image"
+                            fill
+                            className="object-contain rounded-full"
+                            sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, 160px"
+                        />
+                    </div>
+                </div>
+                <hr className="border border-gray-300 mt-5"/>
+                <div className="flex flex-col gap-5 mt-10 sm:mt-16 md:mt-20">
+                    {/* Purchased models */}
+                    <PurchasedModels />
                     {/* Uploaded Models */}
-                    <div className="flex flex-col mt-15">
-                        <div className="flex justify-between w-full mb-8">
-                            <h2 className="text-4xl">Uploaded Models</h2>
-                            <h2 className="text-lg font-light text-gray-400">Uploaded: <span>1</span></h2>
-                        </div>
-                        <div className="flex flex-col gap-5">
-                            <div className="border-1 border-gray-200 rounded-2xl">
-                                <div className="flex justify-between w-full items-center py-5 px-10">
-                                    <div className="flex gap-5">
-                                        <img
-                                            src="plansImg2.png"
-                                            alt="model"
-                                            className="w-[100px] h-[100px] object-cover rounded-xl"
-                                            sizes="(max-width: 1000px) 100vw, 500px"
-                                        />
-                                        <div className="flex flex-col justify-center gap-5">
-                                            <h1 className="text-3xl">ImageNet Model</h1>
-                                            <p className="font-light text-gray-400 text-lg">Uploaded: 05/12/2025</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-5">
-                                        <button className="text-white button btn-primary px-8 text-xl py-4 rounded-xl">
-                                            Edit
-                                        </button>
-                                        <button className="text-black button shadow px-8 text-xl py-4 rounded-xl">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <UploadedModels />
                 </div>
             </div>
         </>
