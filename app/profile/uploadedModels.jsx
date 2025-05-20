@@ -1,11 +1,23 @@
+'use client';
+import { FiPlus} from 'react-icons/fi';
+import { useState } from 'react';
+import ModelUpload from '../components/modelUpload';
+
 export default function UploadedModels() { 
+    const [uploadedModels, setUploadedModels] = useState(false)
     return (
-        <div className="flex flex-col mt-15 mb-15">
+        <>
+        {/* Overlay with transition */}
+            <div
+                className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${uploadedModels ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setUploadedModels(false)}
+                style={{ transitionProperty: 'opacity' }}>
+            </div>
+            <div className="flex flex-col mt-15 mb-15">
             <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                <h2 className="text-xl sm:text-2xl md:text-4xl">Uploaded Models</h2>
-                <h2 className="text-sm font-light text-gray-400 sm:text-base md:text-lg">
-                    Uploaded: <span>1</span>
-                </h2>
+                <h2 className="text-xl sm:text-2xl md:text-4xl">Uploaded Models</h2>   
+                <FiPlus onClick={() => setUploadedModels(true)} size={45} className="text-gray-600 bg-gray-100 rounded-full cursor-pointer hover:text-gray-700 hover:bg-gray-200 transition-all p-1" />
+                {uploadedModels && <ModelUpload/>}
             </div>
             <div className="flex flex-col gap-5">
                 <div className="border-1 border-gray-200 rounded-2xl">
@@ -34,5 +46,6 @@ export default function UploadedModels() {
                 </div>
             </div>
         </div>
+        </>
     )
 }

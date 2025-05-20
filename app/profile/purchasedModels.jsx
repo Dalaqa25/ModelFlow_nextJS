@@ -1,7 +1,7 @@
 export default function PurchasedModels() {
     return (
         <div className="flex flex-col">
-            <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
+            <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-0">
                 <h2 className="text-xl mb-4 sm:mb-8 sm:text-2xl md:text-4xl">Purchased Models</h2>
                 <h2 className="text-sm font-light text-gray-400 sm:text-base md:text-lg">
                     Purchased: <span>1</span>
