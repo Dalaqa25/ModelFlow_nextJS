@@ -76,9 +76,10 @@ const [features, setFeatures] = useState(['']);
                         />
                       </label>
                     </div>
-                                <div className="flex flex-col gap-2">
-                    <label className="font-medium text-gray-700">Key Features</label>
-                    {features.map((feature, index) => (
+
+                    <div className="flex flex-col gap-2">
+                      <label className="font-medium text-gray-700">Key Features</label>
+                      {features.map((feature, index) => (
                         <div key={index} className="flex items-center gap-2">
                             <input
                                 type="text"
