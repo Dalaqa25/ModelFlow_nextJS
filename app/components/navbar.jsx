@@ -19,6 +19,7 @@ export default function Navbar() {
         {href: '/modelsList', title: 'Models'},
         {href: '/plans', title: 'Plans'},
         {href: '/privacy', title: 'Privacy'},
+        {href: '/posts', title: 'Posts'},
     ]
 
     return (
