@@ -7,6 +7,7 @@ import { FaBars, FaTimes } from "react-icons/fa";
 import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
 import { BsClipboardCheck } from 'react-icons/bs';
 import { MdPrivacyTip } from 'react-icons/md';
+import { FiSend } from "react-icons/fi";
 
 export default function Navbar() {
     const pathname = usePathname() || '/'; 
@@ -19,7 +20,7 @@ export default function Navbar() {
         {href: '/modelsList', title: 'Models'},
         {href: '/plans', title: 'Plans'},
         {href: '/privacy', title: 'Privacy'},
-        {href: '/posts', title: 'Posts'},
+        {href: '/requests', title: 'Requests'},
     ]
 
     return (
@@ -37,7 +38,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* Navigation Links for desktop */}
-                <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-15 text-base mt-3">
+                <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-13 text-base mt-3">
                     {navLinks.map(({ href, title }) => {
                         const isActive = pathname === href;
                         return (
@@ -56,7 +57,7 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div className="flex items-center justify-center gap-6">
-                    <button onClick={() => setLoginOpen(true)} className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-12 py-3.5 item-hidden">
+                    <button onClick={() => setLoginOpen(true)} className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
                         Sign In
                     </button>
                     {/* Overlay and Modal */}
@@ -104,6 +105,10 @@ export default function Navbar() {
                         
                         <Link href='/privacy' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
+                        </Link>
+
+                        <Link href='/requests' onClick={toggleMenu}>
+                            <li className='flex items-center gap-3'><FiSend />Requests</li>
                         </Link>
                     </ul>
                 </div>
