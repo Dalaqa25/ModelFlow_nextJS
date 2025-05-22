@@ -13,10 +13,10 @@ export default function Requests() {
                 onClick={() => setIsClicked(false)}
                 style={{ transitionProperty: 'opacity' }}>
             </div>
-            <div className="mt-27 w-[80%] mx-auto">
+            <div className="mt-27 w-[85%] mx-auto">
                 <div className="flex flex-col items-center justify-center">
                     <h1 className="text-5xl font-semibold">Requests</h1>
-                    <p className="text-xl font-light text-gray-500 mt-3">Suggest and discuss AI models to be created</p>
+                    <p className="text-base sm:text-lg font-light text-gray-500 mt-3">Suggest and discuss AI models to be created</p>
                     <button onClick={() => setIsClicked(true)} className="btn-primary text-white py-3 text-lg px-10 rounded-xl mt-5 hover:shadow-lg hover:scale-105">New Request</button>
                     {isClicked && <RequestBox/>}
                 </div>

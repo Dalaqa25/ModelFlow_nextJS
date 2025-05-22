@@ -2,7 +2,7 @@ import { FaRegComment,FaRegUser } from 'react-icons/fa';
 
 export default function Request() { 
     return (
-        <div className="w-[60%] border-1 rounded-2xl border-gray-200 rounded-xgap-2.5 cursor-pointer hover:shadow transition-all duration-300 ease-in-out">
+        <div className="max-w-[800px] min-w-[400px] border-1 rounded-2xl border-gray-200 rounded-xgap-2.5 cursor-pointer hover:shadow transition-all duration-300 ease-in-out">
             <div className="p-5 flex flex-col gap-3">
                 <h1 className="text-2xl font-semibold">Chatpot with Personality</h1>
                 <p className="font-light text-gray-600">A AI chatbot can engange users with unique patterns and moods</p>
