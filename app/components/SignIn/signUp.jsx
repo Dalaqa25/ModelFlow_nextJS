@@ -8,7 +8,7 @@ export default function SignUp() {
     }
 
     return (
-        <div className="fixed top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 flex flex-col items-center w-1/2 max-w-[400px] min-w-[320px] sm:text-lg text-sm">
+        <div className="fixed top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 flex flex-col w-1/2 max-w-[400px] min-w-[320px] sm:text-lg text-sm">
             {/* Floating image */}
             <div className="absolute -top-13 left-1/2 -translate-x-1/2 sm:-top-20">
                 <Image src='/3dcube.png' alt="logo.png" width={1024} height={1024} className="w-35 h-35 sm:w-40 sm:h-40" />
@@ -28,7 +28,7 @@ export default function SignUp() {
                     <label htmlFor="Password" className="flex flex-col gap-0.5">Repeat Password
                         <input type="password" placeholder="Password" className="text-lg border w-[100%] border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </label>
-                    <button type="submit" className="text-lg bg-blue-500 w-[95%] text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">Sign Up</button>
+                    <button type="submit" className="text-lg bg-blue-500 w-[100%] text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">Sign Up</button>
                 </div>
             </form>
         </div>

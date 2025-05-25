@@ -1,7 +1,10 @@
-import {FaRegUser } from 'react-icons/fa';
+import { FaRegUser } from 'react-icons/fa';
+import { useState } from 'react';
 import RequestCommnetCreateion from './requestCommnetCreateion';
+import OtherComments from './otherComments';
 
 export default function RequestInfo() { 
+    const [showOtherComments, setShowOtherComments] = useState(false);
     return (
          <div className="fixed cursor-auto top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 flex flex-col gap-3 max-w-[700px] w-1/2 min-w-[400px]">
             <div className="p-5 flex flex-col gap-3 max-h-1/2 overflow-y-auto">
@@ -17,9 +20,10 @@ export default function RequestInfo() {
                 </div>
                 <hr className='border-gray-200 mt-3'/>
             </div>
-            <div className='w-[95%] mx-auto bg-gray-100 overflow-y-auto rounded-xl mb-4'>
+            <div className='w-[95%] mx-auto bg-gray-100 overflow-y-auto rounded-xl mb-4 relative'>
                 <RequestCommnetCreateion/>
-                <p className='text-right mr-5 cursor-pointer mb-1 text-sm hover:text-blue-400 transition-all'>Show others comments</p>
+                <p onClick={() => setShowOtherComments(true)} className='text-right mr-5 cursor-pointer mb-1 text-sm hover:text-blue-400 transition-all'>Show others comments</p>
+                {showOtherComments && <OtherComments onClose={() => setShowOtherComments(false)} />}
             </div>
          </div>
     )
