@@ -1,12 +1,13 @@
 import modelData from 'app/modelsList/modeldata.js'
 import Link from 'next/link';
+import Filter from 'app/components/filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 
 export default function modelBox() {
     return (
         <div className='flex gap-7 w-full'>
-            <div className='h-[700px] w-[400px] hidden lg:block rounded-lg cutom-shadow'></div>
+            <Filter />
             <div className='w-full flex flex-col gap-7'>
                 {modelData.map(model => (
                     <Link href={`/modelsList/${model.id}`} key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
