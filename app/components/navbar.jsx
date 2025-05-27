@@ -19,8 +19,8 @@ export default function Navbar() {
         {href: '/', title: 'Home'},
         {href: '/modelsList', title: 'Models'},
         {href: '/plans', title: 'Plans'},
-        {href: '/privacy', title: 'Privacy'},
         {href: '/requests', title: 'Requests'},
+        {href: '/privacy', title: 'Privacy'},
     ]
 
     return (

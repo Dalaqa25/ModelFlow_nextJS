@@ -20,10 +20,12 @@ export default function Login() {
             </section>
             <form action="" className="w-full">
                 <div className="flex flex-col gap-5 px-5 mb-10 mt-5">
-                    <label htmlFor="Email" className="flex flex-col gap-0.5">Username or Email address
+                    <label htmlFor="Email" className="flex flex-col gap-0.5 text-left">
+                        Username or Email address
                         <input id="Email" type="text" placeholder="Email" className="text-lg w-[100%] border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </label>
-                    <label htmlFor="Password" className="flex flex-col gap-0.5">Password
+                    <label htmlFor="Password" className="flex flex-col gap-0.5 text-left">
+                        Password
                         <input type="password" placeholder="Password" className="text-lg w-[100%] border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </label>
                     <button type="submit" className="text-lg w-[100%] bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">Log In</button>

@@ -23,10 +23,9 @@ export default function RequestInfo() {
                 <hr className='border-gray-200 mt-2 sm:mt-3'/>
             </div>
             <div
-                className={`w-[95%] mx-auto bg-gray-100 overflow-y-auto rounded-xl mb-3 sm:mb-4 relative transition-all duration-300 ${
+                className={`w-[95%] overflow-x-hidden mx-auto bg-gray-100 overflow-y-auto rounded-xl mb-3 sm:mb-4 relative transition-all duration-300 ${
                     showOtherComments ? 'h-[250px] sm:h-[300px]' : 'h-auto'
-                }`}
-            >
+                }`}>
                 <RequestCommnetCreateion/>
                 <p 
                     onClick={() => setShowOtherComments(true)} 

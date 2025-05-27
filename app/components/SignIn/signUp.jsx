@@ -17,18 +17,45 @@ export default function SignUp() {
                 <h1 className="text-2xl sm:text-4xl font-semibold">Sign Up</h1>
                 <p className="text-gray-600 font-light">Already have an account? <span className="underline cursor-pointer" onClick={() => setIsClicked(true)}>Log In!</span></p>
             </section>
-            <form action="">
-                <div className="flex flex-col gap-5 px-5 mb-10 mt-5">
-                    <label htmlFor="Email" className="flex flex-col gap-0.5">Username or Email address
-                        <input id="Email" type="text" placeholder="Email" className="text-lg w-[100%] border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <form action="" className="w-full">
+                <div className="flex flex-col gap-5 px-5 mb-10 mt-5 w-full">
+                    <label htmlFor="Email" className="flex flex-col gap-0.5 text-left w-full">
+                        Email address
+                        <input 
+                            id="Email" 
+                            type="text" 
+                            placeholder="Email" 
+                            className="text-lg w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </label>
-                    <label htmlFor="Password" className="flex flex-col gap-0.5">Password
-                        <input type="password" placeholder="Password" className="text-lg border w-[100%] border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    <label htmlFor="text" className="flex flex-col gap-0.5 text-left w-full">
+                        Username
+                        <input 
+                            id="text" 
+                            type="text" 
+                            placeholder="Username" 
+                            className="text-lg w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </label>
-                    <label htmlFor="Password" className="flex flex-col gap-0.5">Repeat Password
-                        <input type="password" placeholder="Password" className="text-lg border w-[100%] border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    <label htmlFor="Password" className="flex flex-col gap-0.5 text-left w-full">
+                        Password
+                        <input 
+                            type="password" 
+                            placeholder="Password" 
+                            className="text-lg border w-full border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </label>
-                    <button type="submit" className="text-lg bg-blue-500 w-[100%] text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">Sign Up</button>
+                    <label htmlFor="RepeatPassword" className="flex flex-col gap-0.5 text-left w-full">
+                        Repeat Password
+                        <input 
+                            type="password" 
+                            placeholder="Password" 
+                            className="text-lg border w-full border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </label>
+                    <button type="submit" className="text-lg bg-blue-500 w-full text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">
+                        Sign Up
+                    </button>
                 </div>
             </form>
         </div>
