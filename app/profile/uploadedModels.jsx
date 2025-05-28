@@ -1,7 +1,7 @@
 'use client';
 import { FiPlus} from 'react-icons/fi';
 import { useState } from 'react';
-import ModelUpload from '../components/modelUpload';
+import ModelUpload from '../components/model/modelUpload';
 
 export default function UploadedModels() { 
     const [uploadedModels, setUploadedModels] = useState(false)

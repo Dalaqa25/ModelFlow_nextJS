@@ -1,6 +1,6 @@
 import modelData from 'app/modelsList/modeldata.js'
 import Link from 'next/link';
-import Filter from 'app/components/filter';
+import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 

@@ -1,6 +1,6 @@
 'use client'
-import Request from "../components/request"
-import RequestBox from "../components/requestBox"
+import Request from "../components/requests/request"
+import RequestBox from "../components/requests/requestBox"
 import { useState } from "react"
 
 export default function Requests() { 

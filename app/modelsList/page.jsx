@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import ModelBox from 'app/components/modelBox';
+import ModelBox from '@/app/components/model/modelBox';
 
 export default function ModelsList() {
     return (
