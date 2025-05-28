@@ -1,4 +1,5 @@
 import Login from 'app/components/SignIn/login'
+import HomeBoxes from './homeBoxes'
 import { useState } from 'react'
 
 export default function resMainPage() {
@@ -32,6 +33,7 @@ export default function resMainPage() {
                     <img className='w-[70%]' src='main.png' alt='logo' />
                 </div>
             </main>
+            <HomeBoxes />
         </>
     )
 }

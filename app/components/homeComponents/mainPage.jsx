@@ -1,6 +1,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Login from "app/components/SignIn/login"
+import HomeBoxes from "app/components/homeComponents/homeBoxes"
 
 export default function mainPage() {
     const [isClicked, setIsClicked] = useState(false)
@@ -14,7 +15,7 @@ export default function mainPage() {
             </div>
             {/* Main Section */}
             <main className='flex min-h-screen items-center justify-center '>
-                <section className='flex justify-between w-[95%] max-w-[1450px]'>
+                <section className='flex justify-between w-[85%] max-w-[1450px]'>
                     <div className='flex flex-col justify-center gap-9'>
                         <div style={{background:'rgba(63,77,223,0.75)', color:'#fff'}} className='py-1.5 px-8 text-sm rounded-2xl w-1/4 text-center xl:text-xl '>HOME</div>
                         <h1 className='text-6xl font-semibold xl:text-7xl'>
@@ -33,6 +34,8 @@ export default function mainPage() {
                     <Image src='/main.png' alt='main' width={1024} height={1024} className='w-[50%] animate-float'/>
                 </section>
             </main>
+            {/* Home Boxes Section */}
+            <HomeBoxes />
         </>
     )
 }
