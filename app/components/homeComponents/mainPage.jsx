@@ -1,7 +1,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Login from "app/components/SignIn/login"
-import HomeBoxes from "app/components/homeComponents/homeBoxes"
+import HomeFeatures from "app/components/homeComponents/homeFeatures"
 
 export default function mainPage() {
     const [isClicked, setIsClicked] = useState(false)
@@ -34,8 +34,8 @@ export default function mainPage() {
                     <Image src='/main.png' alt='main' width={1024} height={1024} className='w-[50%] animate-float'/>
                 </section>
             </main>
-            {/* Home Boxes Section */}
-            <HomeBoxes />
+            {/* Features Section */}
+            <HomeFeatures />
         </>
     )
 }
