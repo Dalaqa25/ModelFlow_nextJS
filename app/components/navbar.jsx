@@ -27,7 +27,7 @@ export default function Navbar() {
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav
                 style={{ backgroundColor: loginOpen ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,0.89)' }}
-                className="w-[93%] max-w-[1600px] fixed z-50 rounded-2xl flex justify-between items-center change-width"
+                className="w-[95%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width"
             >
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">

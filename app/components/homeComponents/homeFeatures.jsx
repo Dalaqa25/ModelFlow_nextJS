@@ -103,7 +103,7 @@ export default function HomeSecurity() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className='text-center text-3xl lg:text-6xl font-semibold'
+                className='text-center text-3xl lg:text-6xl font-semibold mb-15'
             >
                 Don't waste time start building <br/> something great!
             </motion.h1>
