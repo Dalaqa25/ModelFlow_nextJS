@@ -2,6 +2,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Login from "app/components/SignIn/login"
 import HomeFeatures from "app/components/homeComponents/homeFeatures"
+import Footer from "app/components/homeComponents/footer"
 
 export default function mainPage() {
     const [isClicked, setIsClicked] = useState(false)
@@ -36,6 +37,8 @@ export default function mainPage() {
             </main>
             {/* Features Section */}
             <HomeFeatures />
+            {/* Footer Section */}
+            <Footer />
         </>
     )
 }
