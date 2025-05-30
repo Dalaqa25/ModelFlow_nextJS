@@ -1,4 +1,6 @@
 import Login from 'app/components/SignIn/login'
+import HomeFeatures from 'app/components/homeComponents/homeFeatures'
+import Footer from 'app/components/homeComponents/footer'
 import { useState } from 'react'
 
 export default function resMainPage() {
@@ -32,6 +34,10 @@ export default function resMainPage() {
                     <img className='w-[70%]' src='main.png' alt='logo' />
                 </div>
             </main>
+            {/* Features Section */}
+            <HomeFeatures />
+            {/* Footer Section */}
+            <Footer />
         </>
     )
 }
