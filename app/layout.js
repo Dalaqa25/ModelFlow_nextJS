@@ -1,5 +1,7 @@
+"use client";
 import "./globals.css";
 import Navbar from "@/app/components/navbar";
+import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
 
 const inter = Inter({
@@ -8,10 +10,12 @@ const inter = Inter({
 });
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  const isLoginOrSignUp = pathname === '/logIn' || pathname === '/signUp';
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar/>
+        {!isLoginOrSignUp &&  <Navbar/>}
         {children}
       </body>
     </html>
