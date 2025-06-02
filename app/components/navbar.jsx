@@ -5,7 +5,6 @@ import { useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
 import { BsClipboardCheck } from 'react-icons/bs';
-import { MdPrivacyTip } from 'react-icons/md';
 import { FiSend } from "react-icons/fi";
 
 export default function Navbar() {
@@ -17,8 +16,7 @@ export default function Navbar() {
         {href: '/', title: 'Home'},
         {href: '/modelsList', title: 'Models'},
         {href: '/plans', title: 'Plans'},
-        {href: '/requests', title: 'Requests'},
-        {href: '/privacy', title: 'Privacy'},
+        {href: '/requests', title: 'Requests'}
     ]
 
     return (
@@ -78,10 +76,6 @@ export default function Navbar() {
                         
                         <Link href='/plans' onClick={toggleMenu}>
                             <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
-                        </Link>
-                        
-                        <Link href='/privacy' onClick={toggleMenu}>
-                            <li className='flex items-center gap-3'><MdPrivacyTip />Privacy</li>
                         </Link>
 
                         <Link href='/requests' onClick={toggleMenu}>
