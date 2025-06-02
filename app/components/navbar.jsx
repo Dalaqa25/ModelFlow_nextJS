@@ -1,13 +1,17 @@
 'use client';
 import Link from "next/link";
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
 import { BsClipboardCheck } from 'react-icons/bs';
 import { FiSend } from "react-icons/fi";
 
+import ProfilePic from "./profilePic";
+
 export default function Navbar() {
+    const { isAuthenticated, isLoading, user } = useKindeAuth();
     const pathname = usePathname() || '/'; 
     const [menuOpen, setMenuOpen] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -18,6 +22,10 @@ export default function Navbar() {
         {href: '/plans', title: 'Plans'},
         {href: '/requests', title: 'Requests'}
     ]
+
+    useEffect(() => {
+        console.log("isAuthenticated:", isAuthenticated, "user:", user);
+    }, [isAuthenticated, user]);
 
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
@@ -52,9 +60,17 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div className="flex items-center justify-center gap-6">
-                    <button className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
-                        Sign In
-                    </button>
+                    {/* Only show after loading */}
+                    {!isLoading && (
+                        isAuthenticated ? (
+                            <ProfilePic user={user} />
+                        ) : (
+                            <button className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
+                                Sign In
+                            </button>
+                        )
+                    )}
+
                     {/* Mobile burger menu */}
                     <button onClick={toggleMenu} className="lg:hidden bg-gray-100 p-3.5 rounded-xl text-2xl change-padding">
                         {menuOpen ? <FaTimes /> : <FaBars />}

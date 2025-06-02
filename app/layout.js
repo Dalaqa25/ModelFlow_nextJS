@@ -1,5 +1,6 @@
 "use client";
 import "./globals.css";
+import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import Navbar from "@/app/components/navbar";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
@@ -15,8 +16,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        {!isLoginOrSignUp &&  <Navbar/>}
-        {children}
+        <KindeProvider>
+          {!isLoginOrSignUp &&  <Navbar/>}
+          {children}
+        </KindeProvider>
       </body>
     </html>
   );
