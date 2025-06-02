@@ -1,6 +1,5 @@
 'use client';
 import Link from "next/link";
-import Login from "app/components/SignIn/login";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
@@ -13,7 +12,6 @@ export default function Navbar() {
     const pathname = usePathname() || '/'; 
     const [menuOpen, setMenuOpen] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
-    const [loginOpen, setLoginOpen] = useState(false);
 
     const navLinks = [
         {href: '/', title: 'Home'},
@@ -26,7 +24,6 @@ export default function Navbar() {
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav
-                style={{ backgroundColor: loginOpen ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,0.89)' }}
                 className="w-[95%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width"
             >
                 {/* Logo + Brand */}
@@ -57,29 +54,9 @@ export default function Navbar() {
 
                 {/* Call to Action */}
                 <div className="flex items-center justify-center gap-6">
-                    <button onClick={() => setLoginOpen(true)} className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
+                    <button className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
                         Sign In
                     </button>
-                    {/* Overlay and Modal */}
-                    {loginOpen && (
-                        <div
-                            className="fixed inset-0 z-50 flex items-center justify-center"
-                            onClick={() => setLoginOpen(false)}
-                        >
-                            {/* Overlay with smooth transition */}
-                            <div
-                                className={`absolute inset-0 bg-black transition-opacity duration-300 ${loginOpen ? 'opacity-50' : 'opacity-0'}`}
-                                style={{ transitionProperty: 'opacity' }}
-                            ></div>
-                            {/* Modal */}
-                            <div
-                                className="relative"
-                                onClick={e => e.stopPropagation()}
-                            >
-                                <Login />
-                            </div>
-                        </div>
-                    )}
                     {/* Mobile burger menu */}
                     <button onClick={toggleMenu} className="lg:hidden bg-gray-100 p-3.5 rounded-xl text-2xl change-padding">
                         {menuOpen ? <FaTimes /> : <FaBars />}
