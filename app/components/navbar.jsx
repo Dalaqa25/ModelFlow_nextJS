@@ -16,12 +16,13 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
 
+    // Conditionally filter out "Home" if authenticated
     const navLinks = [
         {href: '/', title: 'Home'},
         {href: '/modelsList', title: 'Models'},
         {href: '/plans', title: 'Plans'},
         {href: '/requests', title: 'Requests'}
-    ]
+    ].filter(link => !(isAuthenticated && link.title === 'Home'));
 
     useEffect(() => {
         console.log("isAuthenticated:", isAuthenticated, "user:", user);
@@ -77,26 +78,23 @@ export default function Navbar() {
                     </button>
                 </div>
 
+                {/* Mobile menu */}
                 <div
                     className={`absolute text-lg top-16 right-0 bg-white p-5 rounded shadow-md lg:hidden transform transition-all duration-300 ease-in-out ${
                         menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'
                     }`}>
                     <ul className="flex flex-col gap-5 cursor-pointer">
-                        <Link href='/' onClick={toggleMenu}>
-                            <li className='flex items-center gap-3'><AiFillHome />Home</li>
-                        </Link>
-
-                        <Link href='/modelsList' onClick={toggleMenu}>
-                            <li className='flex items-center gap-3'><AiOutlineRobot />Models</li>
-                        </Link>
-                        
-                        <Link href='/plans' onClick={toggleMenu}>
-                            <li className='flex items-center gap-3'><BsClipboardCheck />Plans</li>
-                        </Link>
-
-                        <Link href='/requests' onClick={toggleMenu}>
-                            <li className='flex items-center gap-3'><FiSend />Requests</li>
-                        </Link>
+                        {navLinks.map(({ href, title }) => (
+                            <Link href={href} onClick={toggleMenu} key={href}>
+                                <li className='flex items-center gap-3'>
+                                    {title === 'Home' && <AiFillHome />}
+                                    {title === 'Models' && <AiOutlineRobot />}
+                                    {title === 'Plans' && <BsClipboardCheck />}
+                                    {title === 'Requests' && <FiSend />}
+                                    {title}
+                                </li>
+                            </Link>
+                        ))}
                     </ul>
                 </div>
             </nav>
