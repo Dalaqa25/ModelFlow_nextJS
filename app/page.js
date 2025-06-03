@@ -1,22 +1,15 @@
-'use client';
-import MainPage from 'app/components/homeComponents/mainPage'
-import ResMainPage from "app/components/homeComponents/resMainPage"
-import {useEffect, useState} from "react";
+// app/page.tsx (or page.js, just without 'use client')
+import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
+import { redirect } from 'next/navigation';
+import LandingPage from './components/homeComponents/LandingPage';
 
-export default function Home() {
-    const [isVisible, setVisible] = useState(true);
-    useEffect(() => {
-        const handleResize = () => {
-            setVisible(window.innerWidth > 1050);
-        };
-        window.addEventListener('resize', handleResize);
-        handleResize();
-        return () => window.removeEventListener('resize', handleResize);
-    }, [])
+export default async function Home() {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
 
-  return (
-    <>
-        { isVisible ?  <MainPage/> : <ResMainPage/> }
-    </>
-  );
+  if (user) {
+    redirect('/profile');
+  }
+
+  return <LandingPage />;
 }
