@@ -9,7 +9,3 @@
   KINDE_SITE_URL = "http://localhost:3000"
   KINDE_POST_LOGOUT_REDIRECT_URL = "http://localhost:3000"
   KINDE_POST_LOGIN_REDIRECT_URL = "http://localhost:3000/profile"
-
-  [[edge_functions]]
-  function = "___netlify-edge-handler-middleware"
-  path = "/*"
