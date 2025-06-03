@@ -82,7 +82,7 @@ export default function HomeSecurity() {
                             alt="Phone svg Image Desktop"
                             width={1024}
                             height={1024}
-                            className="w-90 h-90 object-contain mt-70"
+                            className="w-120 h-150 object-contain mt-70"
                         />
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link";
-import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
+import { useKindeAuth, LoginLink } from "@kinde-oss/kinde-auth-nextjs";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
@@ -30,9 +30,7 @@ export default function Navbar() {
 
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
-            <nav
-                className="w-[95%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width"
-            >
+            <nav className="w-[95%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width">
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">
                     <img src="logo.png" alt="logo.svg" width={50} height={50} />
@@ -66,9 +64,9 @@ export default function Navbar() {
                         isAuthenticated ? (
                             <ProfilePic user={user} />
                         ) : (
-                            <button className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
+                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
                                 Sign In
-                            </button>
+                            </LoginLink>
                         )
                     )}
 
