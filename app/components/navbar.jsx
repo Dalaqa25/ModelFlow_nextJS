@@ -16,13 +16,16 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
 
-    // Conditionally filter out "Home" if authenticated
+    // Conditionally filter out "Home" if authenticated, and add "Profile" if authenticated
     const navLinks = [
-        {href: '/', title: 'Home'},
-        {href: '/modelsList', title: 'Models'},
-        {href: '/plans', title: 'Plans'},
-        {href: '/requests', title: 'Requests'}
-    ].filter(link => !(isAuthenticated && link.title === 'Home'));
+        ...(!isAuthenticated
+            ? [{ href: '/', title: 'Home' }]
+            : [{ href: '/profile', title: 'Deashboeard' }]
+        ),
+        { href: '/modelsList', title: 'Models' },
+        { href: '/plans', title: 'Plans' },
+        { href: '/requests', title: 'Requests' }
+    ];
 
     useEffect(() => {
         console.log("isAuthenticated:", isAuthenticated, "user:", user);
@@ -30,7 +33,7 @@ export default function Navbar() {
 
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
-            <nav className="w-[95%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width">
+            <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-3" href="/">
                     <img src="logo.png" alt="logo.svg" width={50} height={50} />
@@ -40,11 +43,11 @@ export default function Navbar() {
                 </Link>
 
                 {/* Navigation Links for desktop */}
-                <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-13 text-base mt-3">
+                <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-10 text-base items-center bg-white py-2 px-7 rounded-xl">
                     {navLinks.map(({ href, title }) => {
                         const isActive = pathname === href;
                         return (
-                            <li className='hover:underline xl:text-lg' key={href}>
+                            <li className=' xl:text-lg flex items-center' key={href}>
                                 <Link
                                     href={href}
                                     className={`transition-colors duration-200 ${

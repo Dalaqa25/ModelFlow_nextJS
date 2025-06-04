@@ -6,6 +6,5 @@ export default withAuth({
 });
 
 export const config = {
-    matcher: ['/profile'],
-    runtime: 'nodejs' // 👈 Add this line
+    matcher: ['/profile', '/requests'],
 };

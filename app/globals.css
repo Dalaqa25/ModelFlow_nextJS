@@ -34,10 +34,6 @@ button {
     animation: float 3s ease-in-out infinite;
 }
 
-nav {
-    background-color: #fefefe;
-}
-
 .btn-primary {
     background-color:#5c6bf0;
     :hover {
