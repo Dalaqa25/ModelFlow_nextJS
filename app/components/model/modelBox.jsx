@@ -1,15 +1,26 @@
+"use client"
+import { useState } from 'react';
 import modelData from 'app/modelsList/modeldata.js'
 import Link from 'next/link';
 import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 
-export default function modelBox() {
+export default function ModelBox() {
+    const [currentPage, setCurrentPage] = useState(1);
+    const modelsPerPage = 10;
+
+    const indexOfLastModel = currentPage * modelsPerPage;
+    const indexOfFirstModel = indexOfLastModel - modelsPerPage;
+    const currentModels = modelData.slice(indexOfFirstModel, indexOfLastModel);
+
+    const totalPages = Math.ceil(modelData.length / modelsPerPage);
+
     return (
         <div className='flex gap-7 w-full'>
             <Filter />
             <div className='w-full flex flex-col gap-7'>
-                {modelData.map(model => (
+                {currentModels.map(model => (
                     <Link href={`/modelsList/${model.id}`} key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
                         <div className='p-3.5 flex flex-col gap-5'>
                             <div className='flex gap-4'>
@@ -44,6 +55,31 @@ export default function modelBox() {
                         </div>
                     </Link>
                 ))}
+                <div className="flex justify-center gap-2 mt-4 mb-10">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        Prev
+                    </button>
+                    {[...Array(totalPages)].map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     )
