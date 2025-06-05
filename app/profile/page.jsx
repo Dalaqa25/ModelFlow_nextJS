@@ -1,7 +1,16 @@
 "use client"
+import { useState } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import EditProfile from "./editProfile";
 
 export default function Profile() { 
+    const [showEdit, setShowEdit] = useState(false);
+
+    const handleSave = (data) => {
+        // You can handle the save logic here (e.g., update profile)
+        setShowEdit(false);
+    };
+
     return (
         <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50 py-12 px-6">
             <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-3xl p-8">
@@ -17,7 +26,10 @@ export default function Profile() {
                         <p className="text-sm text-gray-500">@janecooper</p>
                     </div>
                     <div className="flex justify-center gap-4">
-                        <button className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition">
+                        <button
+                            className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition"
+                            onClick={() => setShowEdit(true)}
+                        >
                             Edit Profile
                         </button>
                         <LogoutLink className="px-4 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
@@ -95,6 +107,14 @@ export default function Profile() {
                         </div>
                     </div>
                 </div>
+
+                {/* Edit Profile Dialog */}
+                {showEdit && (
+                    <EditProfile
+                        onClose={() => setShowEdit(false)}
+                        onSave={handleSave}
+                    />
+                )}
             </div>
         </div>
     )

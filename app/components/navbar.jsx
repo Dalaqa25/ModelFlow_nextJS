@@ -35,34 +35,35 @@ export default function Navbar() {
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
-                <Link className="flex items-center text-center gap-3" href="/">
-                    <img src="logo.png" alt="logo.svg" width={50} height={50} />
+                <Link className="flex items-center text-center gap-3 flex-shrink-0" href="/"> <img src="logo.png" alt="logo.svg" width={50} height={50} />
                     <span className="text-3xl font-bold tracking-tight text-gray-900">
                         Modelflow<span className="text-3xl text-purple-500">.</span>
                     </span>
                 </Link>
 
-                {/* Navigation Links for desktop */}
-                <ul className="hidden lg:flex gap-10 text-base items-center px-7 rounded-xl">
-                    {navLinks.map(({ href, title }) => {
-                        const isActive = pathname === href;
-                        return (
-                            <li className="xl:text-lg flex items-center" key={href}>
-                                <Link
-                                    href={href}
-                                    className={`transition-colors duration-200 ${
-                                        isActive ? 'text-black' : 'text-[#b6b6b6]'
-                                    } hover:text-purple-800`}
-                                >
-                                    {title}
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+                {/* Centered Navigation Links for desktop */}
+                <div className="flex-1 flex justify-center">
+                    <ul className="hidden lg:flex gap-10 text-base items-center px-7 rounded-xl">
+                        {navLinks.map(({ href, title }) => {
+                            const isActive = pathname === href;
+                            return (
+                                <li className="xl:text-lg flex items-center" key={href}>
+                                    <Link
+                                        href={href}
+                                        className={`transition-colors duration-200 ${
+                                            isActive ? 'text-black' : 'text-[#b6b6b6]'
+                                        } hover:text-purple-800`}
+                                    >
+                                        {title}
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
 
                 {/* Call to Action */}
-                <div className="flex items-center justify-center gap-6">
+                <div className="flex items-center justify-center gap-6 flex-shrink-0">
                     {/* Only show after loading */}
                     {!isLoading && (
                         isAuthenticated ? (

@@ -20,8 +20,11 @@ export default function ModelUpload() {
         setTags(updated);
     };
 
+    // Update addTag to check for maximum limit
     const addTag = () => {
-        setTags([...tags, '']);
+        if (tags.length < 2) {
+            setTags([...tags, '']);
+        }
     };
 
     const removeTag = (index) => {
@@ -52,17 +55,36 @@ export default function ModelUpload() {
         }
     };
 
+    // Update handleFileChange function
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setFormData(prev => ({
-            ...prev,
-            modelFile: file
-        }));
-        if (errors.modelFile) {
-            setErrors(prev => ({
-                ...prev,
-                modelFile: ''
-            }));
+        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+
+        if (file) {
+            if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed') {
+                if (file.size > maxSize) {
+                    setErrors(prev => ({
+                        ...prev,
+                        modelFile: 'File size must be less than 100MB'
+                    }));
+                    e.target.value = '';
+                    return;
+                }
+                setFormData(prev => ({
+                    ...prev,
+                    modelFile: file
+                }));
+                setErrors(prev => ({
+                    ...prev,
+                    modelFile: ''
+                }));
+            } else {
+                setErrors(prev => ({
+                    ...prev,
+                    modelFile: 'Only ZIP files are allowed'
+                }));
+                e.target.value = '';
+            }
         }
     };
 
@@ -184,14 +206,28 @@ export default function ModelUpload() {
                 }`}>
                     <label htmlFor="model-upload" className="flex flex-col items-center w-full cursor-pointer">
                         <FaCloudUploadAlt size={40} className={errors.modelFile ? 'text-red-500' : 'text-violet-500'} />
-                        <p className="text-sm text-gray-600">Click or drag file to upload model <span className="text-red-500">*</span></p>
+                        <p className="text-sm text-gray-600 mb-2">Click or drag ZIP file to upload model <span className="text-red-500">*</span></p>
+                        <div className="space-y-1.5">
+                            <p className="text-xs text-amber-600 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
+                                Make sure your ZIP does not contain executable or script files
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                Maximum file size: <span className="font-medium">100MB</span>
+                            </p>
+                        </div>
                         <input
                             id="model-upload"
                             type="file"
                             onChange={handleFileChange}
+                            accept=".zip"
                             className="hidden"
                         />
                     </label>
+                    {formData.modelFile && (
+                        <p className="text-sm text-green-600 mt-2">
+                            Selected file: {formData.modelFile.name} ({(formData.modelFile.size / (1024 * 1024)).toFixed(2)}MB)
+                        </p>
+                    )}
                     {errors.modelFile && (
                         <p className="text-red-500 text-sm mt-2">{errors.modelFile}</p>
                     )}
@@ -236,6 +272,7 @@ export default function ModelUpload() {
                 <div className="flex flex-col gap-2">
                     <label className="font-medium text-gray-700">
                         Tags <span className="text-red-500">*</span>
+                        <span className="text-sm text-gray-500 ml-2">(Maximum 2)</span>
                     </label>
                     {tags.map((tag, index) => (
                         <div key={index} className="flex items-center gap-2">
@@ -260,13 +297,15 @@ export default function ModelUpload() {
                     {errors.tags && (
                         <p className="text-red-500 text-sm">{errors.tags}</p>
                     )}
-                    <button
-                        type="button"
-                        onClick={addTag}
-                        className="mt-2 text-sm text-violet-600 flex items-center gap-1 hover:underline"
-                    >
-                        <FaPlus /> Add Tag
-                    </button>
+                    {tags.length < 2 && (
+                        <button
+                            type="button"
+                            onClick={addTag}
+                            className="mt-2 text-sm text-violet-600 flex items-center gap-1 hover:underline"
+                        >
+                            <FaPlus /> Add Tag
+                        </button>
+                    )}
                 </div>
 
                 <button
