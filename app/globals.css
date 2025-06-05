@@ -6,7 +6,7 @@ li:hover {
 
 
 body {
-    background-color: #ffff;
+    @apply bg-white dark:bg-gray-900;
 }
 
 button {

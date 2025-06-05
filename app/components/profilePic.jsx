@@ -11,7 +11,7 @@ export default function ProfilePic() {
         <div className="relative">
             <div
                 onClick={toggleMenu}
-                className="hidden lg:block cursor-pointer bg-purple-100 w-13 h-13 mr-5 rounded-full overflow-hidden border-gray-300"
+                className="hidden lg:block cursor-pointer bg-purple-100 w-12 h-12 mr-5 rounded-full overflow-hidden border-gray-300"
             >
                 <Image
                     width={1024}

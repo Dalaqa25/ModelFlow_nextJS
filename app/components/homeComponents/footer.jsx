@@ -39,7 +39,7 @@ export default function Footer() {
                 </div>
                 <div className="w-full mx-auto mt-10">
                     <h1 className="text-[clamp(4rem,10vw,13rem)] leading-none font-semibold text-center"> 
-                        ModelFlow 
+                        ModelFlow<span className="text-9xl text-purple-600">.</span> 
                     </h1>
                 </div>
             </div>

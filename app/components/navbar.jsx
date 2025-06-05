@@ -20,7 +20,7 @@ export default function Navbar() {
     const navLinks = [
         ...(!isAuthenticated
             ? [{ href: '/', title: 'Home' }]
-            : [{ href: '/profile', title: 'Deashboeard' }]
+            : [{ href: '/deashboard', title: 'Deashboeard' }]
         ),
         { href: '/modelsList', title: 'Models' },
         { href: '/plans', title: 'Plans' },
@@ -43,16 +43,17 @@ export default function Navbar() {
                 </Link>
 
                 {/* Navigation Links for desktop */}
-                <ul style={{ color: '#b6b6b6' }} className="hidden lg:flex gap-10 text-base items-center bg-white py-2 px-7 rounded-xl">
+                <ul className="hidden lg:flex gap-10 text-base items-center px-7 rounded-xl">
                     {navLinks.map(({ href, title }) => {
                         const isActive = pathname === href;
                         return (
-                            <li className=' xl:text-lg flex items-center' key={href}>
+                            <li className="xl:text-lg flex items-center" key={href}>
                                 <Link
                                     href={href}
                                     className={`transition-colors duration-200 ${
                                         isActive ? 'text-black' : 'text-[#b6b6b6]'
-                                    }`}>
+                                    } hover:text-purple-800`}
+                                >
                                     {title}
                                 </Link>
                             </li>
