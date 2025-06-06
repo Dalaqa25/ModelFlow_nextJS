@@ -4,6 +4,7 @@ import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import Navbar from "@/app/components/navbar";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
+import { SplashProvider } from "./splash-context";
 
 const inter = Inter({
     subsets: ['latin'],
@@ -16,10 +17,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <KindeProvider>
-          {!isLoginOrSignUp &&  <Navbar/>}
-          {children}
-        </KindeProvider>
+        <SplashProvider>
+          <KindeProvider>
+            {!isLoginOrSignUp &&  <Navbar/>}
+            {children}
+          </KindeProvider>
+        </SplashProvider>
       </body>
     </html>
   );

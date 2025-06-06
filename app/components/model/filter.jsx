@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { FaLanguage, FaEye, FaComments, FaImage } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 
@@ -56,9 +56,11 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                         ${price[0]} - ${price[1]}
                     </div>
                 </div>
-                <button className="mt-8 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition">
-                    Request a Model
-                </button>
+                <Link href="/requests">
+                    <button className="mt-8 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition block text-center">
+                        Request a Model
+                    </button>
+                </Link>
                 <p className="mt-1 text-xs text-gray-500 text-center">
                     If a specific model doesn't exist, make a request.
                 </p>
