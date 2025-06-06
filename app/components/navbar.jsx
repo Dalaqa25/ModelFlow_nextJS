@@ -20,7 +20,7 @@ export default function Navbar() {
     const navLinks = [
         ...(!isAuthenticated
             ? [{ href: '/', title: 'Home' }]
-            : [{ href: '/deashboard', title: 'Deashboeard' }]
+            : [{ href: '/dashboard', title: 'Dashboard' }]
         ),
         { href: '/modelsList', title: 'Models' },
         { href: '/plans', title: 'Plans' },
