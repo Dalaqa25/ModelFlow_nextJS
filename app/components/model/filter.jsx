@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { FaLanguage, FaEye, FaComments, FaImage } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 
-
-export default function Filter() { 
+export default function Filter({ selectedTag, setSelectedTag, price, setPrice }) { 
     const tags = [
         { label: "NLP", icon: <FaLanguage /> },
         { label: "Computer Vision", icon: <FaEye /> },
@@ -13,9 +11,6 @@ export default function Filter() {
         { label: "Image Generation", icon: <FaImage /> },
         { label: "Translation", icon: <MdTranslate /> },
     ];
-
-    const [selectedTag, setSelectedTag] = useState(null);
-    const [price, setPrice] = useState([0, 1000]);
 
     return (
         <div className='h-1/2 w-[400px] hidden lg:block rounded-lg cutom-shadow'>

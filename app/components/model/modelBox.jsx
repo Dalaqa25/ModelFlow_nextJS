@@ -10,11 +10,19 @@ export default function ModelBox({ search = "" }) {
     const [currentPage, setCurrentPage] = useState(1);
     const modelsPerPage = 10;
 
-    // Filter models by search query (name or tags)
-    const filteredModels = modelData.filter(model =>
-        model.name.toLowerCase().includes(search.toLowerCase()) ||
-        model.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
-    );
+    // Add filter state here
+    const [selectedTag, setSelectedTag] = useState(null);
+    const [price, setPrice] = useState([0, 1000]);
+
+    // Filter models by search, tag, and price
+    const filteredModels = modelData.filter(model => {
+        const matchesSearch =
+            model.name.toLowerCase().includes(search.toLowerCase()) ||
+            model.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
+        const matchesTag = !selectedTag || model.tags.includes(selectedTag);
+        const matchesPrice = model.price >= price[0] && model.price <= price[1];
+        return matchesSearch && matchesTag && matchesPrice;
+    });
 
     const totalPages = Math.ceil(filteredModels.length / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;
@@ -31,7 +39,12 @@ export default function ModelBox({ search = "" }) {
     return (
         <>
             <div id="model-list-top" className='flex gap-7 w-full'>
-                <Filter />
+                <Filter
+                    selectedTag={selectedTag}
+                    setSelectedTag={setSelectedTag}
+                    price={price}
+                    setPrice={setPrice}
+                />
                 <div className='w-full flex flex-col gap-7'>
                     {currentModels.map(model => (
                         <Link href={`/modelsList/${model.id}`} key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
