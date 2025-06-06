@@ -6,15 +6,20 @@ import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 
-export default function ModelBox() {
+export default function ModelBox({ search = "" }) {
     const [currentPage, setCurrentPage] = useState(1);
     const modelsPerPage = 10;
 
+    // Filter models by search query (name or tags)
+    const filteredModels = modelData.filter(model =>
+        model.name.toLowerCase().includes(search.toLowerCase()) ||
+        model.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+    );
+
+    const totalPages = Math.ceil(filteredModels.length / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;
     const indexOfFirstModel = indexOfLastModel - modelsPerPage;
-    const currentModels = modelData.slice(indexOfFirstModel, indexOfLastModel);
-
-    const totalPages = Math.ceil(modelData.length / modelsPerPage);
+    const currentModels = filteredModels.slice(indexOfFirstModel, indexOfLastModel);
 
     const scrollToModelListTop = () => {
         const element = document.getElementById('model-list-top');

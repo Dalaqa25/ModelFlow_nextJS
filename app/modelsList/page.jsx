@@ -1,8 +1,12 @@
+"use client";
+import { useState } from "react";
 import { Search } from 'lucide-react';
 import ModelBox from '@/app/components/model/modelBox';
 import Footer from '../components/homeComponents/footer';
 
 export default function ModelsList() {
+    const [search, setSearch] = useState("");
+
     return (
         <>
             <div className="mt-20 mx-auto w-[85%] max-w-[1500px]">
@@ -13,11 +17,14 @@ export default function ModelsList() {
                             <input
                                 type="text"
                                 placeholder="Search for a model..."
-                                className="bg-transparent focus:outline-none w-full text-lg text-gray-800 placeholder-gray-600"/>
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="bg-transparent focus:outline-none w-full text-lg text-gray-800 placeholder-gray-600"
+                            />
                         </div>
                     </div>
                 </div>
-                <ModelBox />
+                <ModelBox search={search} />
             </div>
             <Footer />
         </>
