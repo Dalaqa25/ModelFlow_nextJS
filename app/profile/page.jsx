@@ -2,12 +2,21 @@
 import { useState } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import EditProfile from "./editProfile";
+import modelData from "../modelsList/modeldata";
+import Link from "next/link";
 
 export default function Profile() { 
     const [showEdit, setShowEdit] = useState(false);
 
+    // Pagination state for models
+    const [currentPage, setCurrentPage] = useState(1);
+    const modelsPerPage = 3;
+    const totalPages = Math.ceil(modelData.length / modelsPerPage);
+    const indexOfLastModel = currentPage * modelsPerPage;
+    const indexOfFirstModel = indexOfLastModel - modelsPerPage;
+    const currentModels = modelData.slice(indexOfFirstModel, indexOfLastModel);
+
     const handleSave = (data) => {
-        // You can handle the save logic here (e.g., update profile)
         setShowEdit(false);
     };
 
@@ -63,21 +72,59 @@ export default function Profile() {
                     </p>
                 </div>
 
-                {/* Uploaded Models Section */}
+                {/* Uploaded Models Section with Pagination */}
                 <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Your Models</h4>
+                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Uploaded Models</h4>
                     <div className="space-y-4">
-                        {/* Single model box */}
-                        <div className="p-4 border border-gray-100 rounded-xl shadow-sm flex justify-between items-center">
-                            <div>
-                                <h5 className="font-medium text-gray-800">Text Summarizer</h5>
-                                <p className="text-sm text-gray-500">NLP / Transformer</p>
-                            </div>
-                            <button className="text-sm px-4 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
-                                Remove
+                        {currentModels.map(model => (
+                            <Link
+                                key={model.id}
+                                href={`/modelsList/${model.id}`}
+                                className="block"
+                            >
+                                <div className="p-4 border border-gray-100 rounded-xl shadow-sm flex justify-between items-center hover:bg-gray-50 transition">
+                                    <div>
+                                        <h5 className="font-medium text-gray-800">{model.name}</h5>
+                                        <p className="text-sm text-gray-500">{model.tags.join(' / ')}</p>
+                                    </div>
+                                    <button
+                                        className="text-sm px-4 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                                        onClick={e => {
+                                            e.preventDefault(); // Prevent navigation if Remove is clicked
+                                            // handle remove logic here
+                                        }}
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                    {/* Pagination Controls */}
+                    <div className="flex justify-center gap-2 mt-4">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                        >
+                            Prev
+                        </button>
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                            >
+                                {i + 1}
                             </button>
-                        </div>
-                        {/* Add more model items similarly */}
+                        ))}
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
                     </div>
                 </div>
 
