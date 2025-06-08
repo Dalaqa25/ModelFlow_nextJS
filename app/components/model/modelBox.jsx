@@ -1,6 +1,5 @@
 "use client"
-import { useState } from 'react';
-import modelData from 'app/modelsList/modeldata.js'
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
@@ -10,12 +9,26 @@ export default function ModelBox({ search = "" }) {
     const [currentPage, setCurrentPage] = useState(1);
     const modelsPerPage = 10;
 
+    // fetching model data
+    const [models, setModels] = useState([]);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        async function fetchModels() {
+            setLoading(true);
+            const res = await fetch("/api/models");
+            const data = await res.json();
+            setModels(data);
+            setLoading(false);
+        }
+        fetchModels();
+    }, []);
+
     // Add filter state here
     const [selectedTag, setSelectedTag] = useState(null);
     const [price, setPrice] = useState([0, 1000]);
 
     // Filter models by search, tag, and price
-    const filteredModels = modelData.filter(model => {
+    const filteredModels = models.filter(model => {
         const matchesSearch =
             model.name.toLowerCase().includes(search.toLowerCase()) ||
             model.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
@@ -46,41 +59,45 @@ export default function ModelBox({ search = "" }) {
                     setPrice={setPrice}
                 />
                 <div className='w-full flex flex-col gap-7'>
-                    {currentModels.map(model => (
-                        <Link href={`/modelsList/${model.id}`} key={model.id} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
-                            <div className='p-3.5 flex flex-col gap-5'>
-                                <div className='flex gap-4'>
-                                    {model.image && (
-                                    <img src={model.image.src} 
-                                        alt={model.image.alt} 
-                                        className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover' />
-                                    )}
-                                    <div className='flex flex-col gap-2'>
-                                        <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>
-                                        <span className='flex gap-1 text-gray-500'>
-                                            author: <p>{model.author}</p>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className='flex gap-3 flex-wrap'>
-                                    {model.tags.map((tag, index) => (
-                                        <div key={index} style={{ backgroundColor: '#efe7ff' }} className='font-light p-1 rounded-xl'>
-                                            {tag}
+                    {loading ? (
+                        <div className="text-center text-gray-600 mt-10">Loading models...</div>
+                    ) : (
+                        currentModels.map(model => (
+                            <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
+                                <div className='p-3.5 flex flex-col gap-5'>
+                                    <div className='flex gap-4'>
+                                        {model.imgUrl && (
+                                        <img src={model.imgUrl} 
+                                            alt={model.name} 
+                                            className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover' />
+                                        )}
+                                        <div className='flex flex-col gap-2'>
+                                            <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>
+                                            <span className='flex gap-1 text-gray-500'>
+                                                author: <p>{model.author?.name}</p>
+                                            </span>
                                         </div>
-                                    ))}
+                                    </div>
+                                    <div className='flex gap-3 flex-wrap'>
+                                        {model.tags.map((tag, index) => (
+                                            <div key={index} style={{ backgroundColor: '#efe7ff' }} className='font-light p-1 rounded-xl'>
+                                                {tag}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Revives */}
+                                    <div className='flex items-center gap-4 font-light text-sm'>
+                                        <p>Uploaded: <span>{new Date(model.createdAt).toLocaleDateString()}</span></p>
+                                        <p className='flex items-center gap-1'><FiDownload/><span>{model.downloads}</span></p>
+                                        <p className='flex items-center gap-1'><AiOutlineHeart/><span>{model.likes}</span></p>
+                                    </div>
+                                    <span className='flex gap-1'>
+                                        Price: <span className='flex'>$<p>{model.price}</p></span>
+                                    </span>
                                 </div>
-                                {/* Revives */}
-                                <div className='flex items-center gap-4 font-light text-sm'>
-                                    <p>Uploaded: <span>12.05.2</span></p>
-                                    <p className='flex items-center gap-1'><FiDownload/><span>55</span></p>
-                                    <p className='flex items-center gap-1'><AiOutlineHeart/><span>55</span></p>
-                                </div>
-                                <span className='flex gap-1'>
-                                    Price: <span className='flex'>$<p>{model.price}</p></span>
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        ))
+                    )}
                     <div className="flex justify-center gap-2 mt-4 mb-10">
                         <button
                             onClick={() => {
