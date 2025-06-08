@@ -60,7 +60,17 @@ export default function ModelBox({ search = "" }) {
                 />
                 <div className='w-full flex flex-col gap-7'>
                     {loading ? (
-                        <div className="text-center text-gray-600 mt-10">Loading models...</div>
+                        <div className="w-full flex flex-col items-center justify-center min-h-[200px]">
+                            <div className="mb-6">
+                                <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                </svg>
+                            </div>
+                            <h1 className="text-xl font-extrabold text-gray-600 drop-shadow-lg tracking-wide animate-pulse">
+                                Loading models...
+                            </h1>
+                        </div>
                     ) : (
                         currentModels.map(model => (
                             <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>

@@ -28,9 +28,6 @@ export default function Requests() {
                 </div>
                 <div className="flex flex-col items-center justify-center mt-12 sm:mt-20 gap-3 sm:gap-5">
                     <Request />
-                    <Request />
-                    <Request />
-                    <Request />
                 </div>
             </div>
         </>
