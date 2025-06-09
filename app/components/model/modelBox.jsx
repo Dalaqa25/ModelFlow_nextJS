@@ -21,8 +21,8 @@ export default function ModelBox({ search = "" }) {
             }
             return res.json();
         },
-        staleTime: 60 * 1000, // 1 minute
-        cacheTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 0, // Remove stale time to always fetch fresh data
+        cacheTime: 0, // Remove cache time to always fetch fresh data
     });
 
     // Add filter state here

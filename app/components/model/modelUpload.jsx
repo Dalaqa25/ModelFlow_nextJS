@@ -13,6 +13,7 @@ export default function ModelUpload({ onUploadSuccess }) {
         modelName: '',
         description: '',
         useCases: '',
+        setup: '', // Add setup field
         modelFile: null,
         driveLink: '',
         price: 0, // Add price to form data
@@ -118,7 +119,7 @@ export default function ModelUpload({ onUploadSuccess }) {
         }
     };
 
-    // Update validateForm to include tags and price validation
+    // Update validateForm to include tags, price, and setup validation
     const validateForm = () => {
         const newErrors = {};
         
@@ -132,6 +133,10 @@ export default function ModelUpload({ onUploadSuccess }) {
         
         if (!formData.useCases.trim()) {
             newErrors.useCases = 'Use cases are required';
+        }
+
+        if (!formData.setup.trim()) {
+            newErrors.setup = 'Setup instructions are required';
         }
         
         // Validate tags
@@ -175,6 +180,7 @@ export default function ModelUpload({ onUploadSuccess }) {
             formDataToSend.append('name', formData.modelName);
             formDataToSend.append('description', formData.description);
             formDataToSend.append('useCases', formData.useCases);
+            formDataToSend.append('setup', formData.setup);
             formDataToSend.append('features', features.join(','));
             formDataToSend.append('tags', JSON.stringify(tags)); // Send selected tags
             formDataToSend.append('price', formData.price);
@@ -277,6 +283,26 @@ export default function ModelUpload({ onUploadSuccess }) {
                     ></textarea>
                     {errors.useCases && (
                         <p className="text-red-500 text-sm">{errors.useCases}</p>
+                    )}
+                </div>
+
+                {/* Add Setup Instructions Section */}
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="setup" className="font-medium text-gray-700">
+                        How to Set Up <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        id="setup"
+                        value={formData.setup}
+                        onChange={handleInputChange}
+                        placeholder="Provide step-by-step instructions on how to set up and use the model"
+                        rows="4"
+                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                            errors.setup ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                    ></textarea>
+                    {errors.setup && (
+                        <p className="text-red-500 text-sm">{errors.setup}</p>
                     )}
                 </div>
 

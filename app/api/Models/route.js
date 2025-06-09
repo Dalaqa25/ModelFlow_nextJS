@@ -43,7 +43,7 @@ export async function POST(req) {
     const formData = await req.formData();
     
     // Validate required fields
-    const requiredFields = ['name', 'description', 'useCases', 'features', 'tags', 'uploadType'];
+    const requiredFields = ['name', 'description', 'useCases', 'features', 'tags', 'uploadType', 'setup', 'price'];
     const missingFields = requiredFields.filter(field => !formData.get(field));
     
     if (missingFields.length > 0) {
@@ -85,6 +85,8 @@ export async function POST(req) {
       useCases: formData.get('useCases'),
       features: formData.get('features'),
       tags: tags,
+      setup: formData.get('setup'),
+      price: parseFloat(formData.get('price')) || 0,
       author: userDoc._id, // Use the user's MongoDB ID
       authorEmail: user.email,
     };

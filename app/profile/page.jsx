@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import EditProfile from "./editProfile";
 import modelData from "../modelsList/modeldata";
@@ -7,6 +7,25 @@ import Link from "next/link";
 
 export default function Profile() { 
     const [showEdit, setShowEdit] = useState(false);
+    const [userName, setUserName] = useState("Loading...");
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const data = await response.json();
+                setUserName(data.name);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                setUserName("User");
+            }
+        };
+
+        fetchUserData();
+    }, []);
 
     // Pagination state for models
     const [currentPage, setCurrentPage] = useState(1);
@@ -31,8 +50,8 @@ export default function Profile() {
                         className="w-28 h-28 rounded-full border-4 border-indigo-300 shadow-md"
                     />
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Jane Cooper</h2>
-                        <p className="text-sm text-gray-500">@janecooper</p>
+                        <h2 className="text-2xl font-bold text-gray-800">{userName}</h2>
+                        <p className="text-sm text-gray-500">@{userName.toLowerCase().replace(/\s+/g, '')}</p>
                     </div>
                     <div className="flex justify-center gap-4">
                         <button
