@@ -3,28 +3,31 @@ import { FiPlus } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import ModelUpload from '../components/model/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
+import DeletionDialog from './delation';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [models, setModels] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const { user } = useKindeBrowserClient();
     const modelsPerPage = 5;
 
-    useEffect(() => {
-        const fetchModels = async () => {
-            try {
-                const response = await fetch('/api/models/user-models');
-                const data = await response.json();
-                setModels(data);
-            } catch (error) {
-                console.error('Error fetching models:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const fetchModels = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch('/api/models/user-models');
+            const data = await response.json();
+            setModels(data);
+        } catch (error) {
+            console.error('Error fetching models:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
+    useEffect(() => {
         if (user) {
             fetchModels();
         }
@@ -39,6 +42,14 @@ export default function UploadedModels({ isRowLayout }) {
     // Helper to scroll to top
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleDeleteClick = (modelId, modelName) => {
+        setDeleteDialog({
+            isOpen: true,
+            modelId,
+            modelName
+        });
     };
 
     if (isLoading) {
@@ -67,7 +78,6 @@ export default function UploadedModels({ isRowLayout }) {
                     />
                     {uploadedModels && <ModelUpload onUploadSuccess={() => {
                         setUploadedModels(false);
-                        // Refresh the models list
                         fetchModels();
                     }}/>}
                 </div>
@@ -92,7 +102,8 @@ export default function UploadedModels({ isRowLayout }) {
                                                 ? "(max-width: 640px) 64px, (max-width: 768px) 80px, 80px"
                                                 : "(max-width: 640px) 80px, (max-width: 768px) 100px, 100px"}
                                         />
-                                        <div className="flex flex-col gap-0.5 text-center sm:text-left">
+                                        
+                                        <div>
                                             <h1 className={`${isRowLayout 
                                                 ? 'text-base sm:text-lg md:text-xl' 
                                                 : 'text-lg sm:text-xl md:text-3xl'}`}>{model.name}</h1>
@@ -117,9 +128,11 @@ export default function UploadedModels({ isRowLayout }) {
                                             : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
                                             Edit
                                         </button>
-                                        <button className={`text-black button shadow ${isRowLayout 
-                                            ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                            : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
+                                        <button 
+                                            onClick={() => handleDeleteClick(model._id, model.name)}
+                                            className={`text-black button shadow ${isRowLayout 
+                                                ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
+                                                : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
                                             Delete
                                         </button>
                                     </div>
@@ -178,6 +191,13 @@ export default function UploadedModels({ isRowLayout }) {
                     </div>
                 )}
             </div>
+            <DeletionDialog
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog({ isOpen: false, modelId: null, modelName: '' })}
+                modelId={deleteDialog.modelId}
+                modelName={deleteDialog.modelName}
+                onDeleteSuccess={fetchModels}
+            />
         </>
     );
 }

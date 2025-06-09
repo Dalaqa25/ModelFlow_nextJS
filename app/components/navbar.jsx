@@ -43,9 +43,10 @@ export default function Navbar() {
                         alt="logo.svg" 
                         width={50} 
                         height={50} 
+                        className="flex-shrink-0"
                     />
-                    <span className="text-3xl -mr-7 xl:text-4xl 2xl:text-5xl font-bold tracking-tight text-gray-900">
-                        Modelflow<span className="text-3xl xl:text-3xl 2xl:text-4xl text-purple-500">.</span>
+                    <span className="text-3xl -mr-7 xl:text-3xl 2xl:text-4xl font-bold tracking-tight text-gray-900 flex items-baseline">
+                        Modelflow<span className="text-4xl xl:text-5xl 2xl:text-6xl text-purple-500 -mt-2">.</span>
                     </span>
                 </Link>
 
