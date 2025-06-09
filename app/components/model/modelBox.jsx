@@ -96,7 +96,7 @@ export default function ModelBox({ search = "" }) {
                                         <div className='flex flex-col gap-2'>
                                             <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>
                                             <span className='flex gap-1 text-gray-500'>
-                                                author: <p>{model.author?.name}</p>
+                                                author: <p>{model.authorEmail}</p>
                                             </span>
                                         </div>
                                     </div>

@@ -1,37 +1,47 @@
 'use client';
 import { useState } from 'react';
-import { FaCloudUploadAlt, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaPlus, FaTrash, FaGoogleDrive } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
-export default function ModelUpload() {
+export default function ModelUpload({ onUploadSuccess }) {
+    const router = useRouter();
+    const [uploadType, setUploadType] = useState('zip'); // 'zip' or 'drive'
     const [features, setFeatures] = useState(['']);
-    const [tags, setTags] = useState(['']); // Add tags state
+    const [tags, setTags] = useState([]); // Initialize tags as empty array for multi-selection
     const [formData, setFormData] = useState({
         modelName: '',
         description: '',
         useCases: '',
-        modelFile: null
+        modelFile: null,
+        driveLink: '',
+        price: 0, // Add price to form data
     });
     const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Add tag handlers
-    const handleTagChange = (index, value) => {
-        const updated = [...tags];
-        updated[index] = value.toUpperCase(); // Capitalize tags
-        setTags(updated);
-    };
+    const predefinedTags = [
+        "NLP",
+        "Computer Vision",
+        "Chatbot",
+        "Image Generation",
+        "Translation",
+    ];
 
-    // Update addTag to check for maximum limit
-    const addTag = () => {
-        if (tags.length < 2) {
-            setTags([...tags, '']);
-        }
-    };
-
-    const removeTag = (index) => {
-        if (tags.length > 1) {
-            const updated = tags.filter((_, i) => i !== index);
-            setTags(updated);
-        }
+    // Tag selection handler
+    const handleTagToggle = (tagLabel) => {
+        setTags(prevTags => {
+            if (prevTags.includes(tagLabel)) {
+                // Deselect tag
+                return prevTags.filter(t => t !== tagLabel);
+            } else {
+                // Select tag, but only if less than 2 are already selected
+                if (prevTags.length < 2) {
+                    return [...prevTags, tagLabel];
+                }
+                return prevTags; // Do not add if 2 tags are already selected
+            }
+        });
     };
 
     const handleChange = (index, value) => {
@@ -44,7 +54,7 @@ export default function ModelUpload() {
         const { id, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [id]: value
+            [id]: id === 'price' ? parseFloat(value) : value // Parse price as float
         }));
         // Clear error when user starts typing
         if (errors[id]) {
@@ -88,7 +98,27 @@ export default function ModelUpload() {
         }
     };
 
-    // Update validateForm to include tags validation
+    const handleDriveLinkChange = (e) => {
+        const link = e.target.value;
+        setFormData(prev => ({
+            ...prev,
+            driveLink: link
+        }));
+        // Basic Google Drive link validation
+        if (link && !link.includes('drive.google.com')) {
+            setErrors(prev => ({
+                ...prev,
+                driveLink: 'Please enter a valid Google Drive link'
+            }));
+        } else {
+            setErrors(prev => ({
+                ...prev,
+                driveLink: ''
+            }));
+        }
+    };
+
+    // Update validateForm to include tags and price validation
     const validateForm = () => {
         const newErrors = {};
         
@@ -104,12 +134,26 @@ export default function ModelUpload() {
             newErrors.useCases = 'Use cases are required';
         }
         
-        if (tags.some(tag => !tag.trim())) {
-            newErrors.tags = 'All tags must be filled out';
+        // Validate tags
+        if (tags.length === 0) {
+            newErrors.tags = 'At least one tag is required';
+        }
+        if (tags.length > 2) {
+            newErrors.tags = 'You can select a maximum of 2 tags';
+        }
+
+        // Validate price
+        if (formData.price < 0) {
+            newErrors.price = 'Price cannot be negative';
+        }
+
+        
+        if (uploadType === 'zip' && !formData.modelFile) {
+            newErrors.modelFile = 'Model file is required';
         }
         
-        if (!formData.modelFile) {
-            newErrors.modelFile = 'Model file is required';
+        if (uploadType === 'drive' && !formData.driveLink) {
+            newErrors.driveLink = 'Google Drive link is required';
         }
         
         if (features.some(feature => !feature.trim())) {
@@ -120,12 +164,47 @@ export default function ModelUpload() {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Update handleSubmit to include tags
-    const handleSubmit = (e) => {
+    // Update handleSubmit to handle both upload types
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validateForm()) {
-            // Process form submission
-            console.log('Form submitted:', { ...formData, features, tags });
+        if (!validateForm()) return;
+
+        setIsSubmitting(true);
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('name', formData.modelName);
+            formDataToSend.append('description', formData.description);
+            formDataToSend.append('useCases', formData.useCases);
+            formDataToSend.append('features', features.join(','));
+            formDataToSend.append('tags', JSON.stringify(tags)); // Send selected tags
+            formDataToSend.append('price', formData.price);
+            
+            formDataToSend.append('uploadType', uploadType);
+            
+            if (uploadType === 'zip' && formData.modelFile) {
+                formDataToSend.append('modelFile', formData.modelFile);
+            } else if (uploadType === 'drive') {
+                formDataToSend.append('driveLink', formData.driveLink);
+            }
+
+            const response = await fetch('/api/models', {
+                method: 'POST',
+                body: formDataToSend,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to upload model');
+            }
+
+            toast.success('Model uploaded successfully!');
+            onUploadSuccess(); // Call the callback to refresh models in dashboard
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error(error.message || 'Failed to upload model. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -169,14 +248,14 @@ export default function ModelUpload() {
                     </label>
                     <textarea
                         id="description"
-                        rows={4}
                         value={formData.description}
                         onChange={handleInputChange}
-                        placeholder="Write a brief description..."
+                        placeholder="Provide a detailed description of the model"
+                        rows="4"
                         className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
                             errors.description ? 'border-red-500' : 'border-gray-300'
                         }`}
-                    />
+                    ></textarea>
                     {errors.description && (
                         <p className="text-red-500 text-sm">{errors.description}</p>
                     )}
@@ -184,135 +263,179 @@ export default function ModelUpload() {
 
                 <div className="flex flex-col gap-2">
                     <label htmlFor="useCases" className="font-medium text-gray-700">
-                        Use cases <span className="text-red-500">*</span>
+                        Use Cases <span className="text-red-500">*</span>
                     </label>
                     <textarea
                         id="useCases"
-                        rows={2}
                         value={formData.useCases}
                         onChange={handleInputChange}
-                        placeholder="Write use cases..."
+                        placeholder="Describe potential applications and use cases"
+                        rows="4"
                         className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
                             errors.useCases ? 'border-red-500' : 'border-gray-300'
                         }`}
-                    />
+                    ></textarea>
                     {errors.useCases && (
                         <p className="text-red-500 text-sm">{errors.useCases}</p>
                     )}
                 </div>
 
-                <div className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 text-center cursor-pointer hover:bg-violet-50 transition ${
-                    errors.modelFile ? 'border-red-500' : 'border-violet-400'
-                }`}>
-                    <label htmlFor="model-upload" className="flex flex-col items-center w-full cursor-pointer">
-                        <FaCloudUploadAlt size={40} className={errors.modelFile ? 'text-red-500' : 'text-violet-500'} />
-                        <p className="text-sm text-gray-600 mb-2">Click or drag ZIP file to upload model <span className="text-red-500">*</span></p>
-                        <div className="space-y-1.5">
-                            <p className="text-xs text-amber-600 font-medium bg-amber-50 px-3 py-1.5 rounded-lg">
-                                Make sure your ZIP does not contain executable or script files
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Maximum file size: <span className="font-medium">100MB</span>
-                            </p>
-                        </div>
-                        <input
-                            id="model-upload"
-                            type="file"
-                            onChange={handleFileChange}
-                            accept=".zip"
-                            className="hidden"
-                        />
-                    </label>
-                    {formData.modelFile && (
-                        <p className="text-sm text-green-600 mt-2">
-                            Selected file: {formData.modelFile.name} ({(formData.modelFile.size / (1024 * 1024)).toFixed(2)}MB)
-                        </p>
-                    )}
-                    {errors.modelFile && (
-                        <p className="text-red-500 text-sm mt-2">{errors.modelFile}</p>
-                    )}
-                </div>
-
+                {/* Features Section */}
                 <div className="flex flex-col gap-2">
-                    <label className="font-medium text-gray-700">
-                        Key Features <span className="text-red-500">*</span>
-                    </label>
+                    <label className="font-medium text-gray-700">Features <span className="text-red-500">*</span></label>
                     {features.map((feature, index) => (
                         <div key={index} className="flex items-center gap-2">
                             <input
                                 type="text"
                                 value={feature}
                                 onChange={(e) => handleChange(index, e.target.value)}
-                                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                                    errors.features ? 'border-red-500' : 'border-gray-300'
+                                placeholder="e.g., Real-time processing"
+                                className={`flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                                    errors.features && !feature.trim() ? 'border-red-500' : 'border-gray-300'
                                 }`}
-                                placeholder={`Feature ${index + 1}`}
                             />
-                            <button
-                                type="button"
-                                onClick={() => removeFeature(index)}
-                                className="text-red-500 hover:text-red-700"
-                            >
-                                <FaTrash />
-                            </button>
+                            {features.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeFeature(index)}
+                                    className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors duration-200"
+                                >
+                                    <FaTrash size={20} />
+                                </button>
+                            )}
                         </div>
                     ))}
-                    {errors.features && (
-                        <p className="text-red-500 text-sm">{errors.features}</p>
-                    )}
                     <button
                         type="button"
                         onClick={addFeature}
-                        className="mt-2 text-sm text-violet-600 flex items-center gap-1 hover:underline"
+                        className="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium self-start mt-2"
                     >
-                        <FaPlus /> Add Feature
+                        <FaPlus size={16} /> Add Another Feature
                     </button>
+                    {errors.features && (
+                        <p className="text-red-500 text-sm">{errors.features}</p>
+                    )}
                 </div>
 
+                {/* Tags Selection */}
                 <div className="flex flex-col gap-2">
-                    <label className="font-medium text-gray-700">
-                        Tags <span className="text-red-500">*</span>
-                        <span className="text-sm text-gray-500 ml-2">(Maximum 2)</span>
-                    </label>
-                    {tags.map((tag, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={tag}
-                                onChange={(e) => handleTagChange(index, e.target.value)}
-                                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                                    errors.tags ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder={`Tag ${index + 1} (e.g., NLP, VISION)`}
-                            />
+                    <label className="font-medium text-gray-700">Tags <span className="text-red-500">*</span></label>
+                    <div className="flex flex-wrap gap-2">
+                        {predefinedTags.map(tag => (
                             <button
+                                key={tag}
                                 type="button"
-                                onClick={() => removeTag(index)}
-                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleTagToggle(tag)}
+                                className={`px-4 py-2 rounded-full border transition-all duration-200
+                                    ${tags.includes(tag)
+                                        ? 'bg-purple-600 text-white border-purple-600'
+                                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                                    }`}
                             >
-                                <FaTrash />
+                                {tag}
                             </button>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                     {errors.tags && (
                         <p className="text-red-500 text-sm">{errors.tags}</p>
                     )}
-                    {tags.length < 2 && (
+                </div>
+
+                {/* Price Input */}
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="price" className="font-medium text-gray-700">
+                        Price ($) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="price"
+                        type="number"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="Enter price (e.g., 29.99)"
+                        min="0"
+                        step="0.01"
+                        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                            errors.price ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                    />
+                    {errors.price && (
+                        <p className="text-red-500 text-sm">{errors.price}</p>
+                    )}
+                </div>
+
+                {/* File Upload / Drive Link Section */}
+                <div className="flex flex-col gap-4">
+                    <label className="font-medium text-gray-700">Model File <span className="text-red-500">*</span></label>
+                    <div className="flex gap-4">
                         <button
                             type="button"
-                            onClick={addTag}
-                            className="mt-2 text-sm text-violet-600 flex items-center gap-1 hover:underline"
+                            onClick={() => setUploadType('zip')}
+                            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all duration-200
+                                ${uploadType === 'zip' ? 'bg-purple-600 text-white border-purple-600' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                            `}
                         >
-                            <FaPlus /> Add Tag
+                            <FaCloudUploadAlt size={20} /> Upload ZIP
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setUploadType('drive')}
+                            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all duration-200
+                                ${uploadType === 'drive' ? 'bg-purple-600 text-white border-purple-600' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                            `}
+                        >
+                            <FaGoogleDrive size={20} /> Google Drive
+                        </button>
+                    </div>
+
+                    {uploadType === 'zip' && (
+                        <div className="flex flex-col gap-2">
+                            <input
+                                id="modelFile"
+                                type="file"
+                                onChange={handleFileChange}
+                                accept=".zip,.rar"
+                                className={`block w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-full file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-purple-50 file:text-purple-700
+                                    hover:file:bg-purple-100
+                                    ${errors.modelFile ? 'border-red-500' : ''}
+                                `}
+                            />
+                            {errors.modelFile && (
+                                <p className="text-red-500 text-sm">{errors.modelFile}</p>
+                            )}
+                            <p className="text-gray-500 text-xs mt-1">Max file size: 100MB (ZIP only)</p>
+                        </div>
+                    )}
+
+                    {uploadType === 'drive' && (
+                        <div className="flex flex-col gap-2">
+                            <input
+                                id="driveLink"
+                                type="url"
+                                value={formData.driveLink}
+                                onChange={handleInputChange}
+                                placeholder="Enter Google Drive shareable link"
+                                className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                                    errors.driveLink ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                            />
+                            {errors.driveLink && (
+                                <p className="text-red-500 text-sm">{errors.driveLink}</p>
+                            )}
+                            <p className="text-gray-500 text-xs mt-1">Ensure the link is publicly accessible or shared with required permissions.</p>
+                        </div>
                     )}
                 </div>
 
                 <button
                     type="submit"
-                    className="w-full bg-violet-600 hover:bg-violet-700 text-white font-medium py-2 rounded-lg transition"
+                    className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting}
                 >
-                    Upload Model
+                    {isSubmitting ? 'Uploading...' : 'Upload Model'}
                 </button>
             </form>
         </div>

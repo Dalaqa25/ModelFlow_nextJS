@@ -45,7 +45,7 @@ export default function Navbar() {
                         height={50} 
                     />
                     <span className="text-3xl -mr-7 xl:text-4xl 2xl:text-5xl font-bold tracking-tight text-gray-900">
-                        Modelflow<span className="text-3xl xl:text-4xl 2xl:text-5xl text-purple-500">.</span>
+                        Modelflow<span className="text-3xl xl:text-3xl 2xl:text-4xl text-purple-500">.</span>
                     </span>
                 </Link>
 
