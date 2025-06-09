@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
+import DefaultModelImage from './defaultModelImage';
 
 export default function ModelBox({ search = "" }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -76,10 +77,21 @@ export default function ModelBox({ search = "" }) {
                             <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
                                 <div className='p-3.5 flex flex-col gap-5'>
                                     <div className='flex gap-4'>
-                                        {model.imgUrl && (
-                                        <img src={model.imgUrl} 
-                                            alt={model.name} 
-                                            className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover' />
+                                        {model.imgUrl ? (
+                                            <img 
+                                                src={model.imgUrl} 
+                                                alt={model.name} 
+                                                className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover'
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 sm:w-16 sm:h-16">
+                                                <DefaultModelImage />
+                                            </div>
                                         )}
                                         <div className='flex flex-col gap-2'>
                                             <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>

@@ -44,7 +44,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                     <p className={`font-light text-gray-400 ${isRowLayout 
                                         ? 'text-xs sm:text-sm md:text-base' 
                                         : 'text-sm sm:text-base md:text-lg'}`}>Author: {model.author}</p>
-                                    <div className={`flex ${isRowLayout ? 'gap-1.5' : 'gap-2'} mt-1 flex-wrap`}>
+                                    <div className={`flex ${isRowLayout ? 'gap-1.5' : 'gap-2'} mt-1 flex-wrap justify-center sm:justify-start`}>
                                         {model.tags.map((tag, idx) => (
                                             <span key={idx} className={`bg-purple-100 text-purple-700 ${isRowLayout 
                                                 ? 'px-1.5 py-0.5 rounded-md' 

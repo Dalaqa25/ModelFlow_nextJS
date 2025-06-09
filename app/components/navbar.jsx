@@ -1,12 +1,14 @@
 'use client';
 import Link from "next/link";
-import { useKindeAuth, LoginLink } from "@kinde-oss/kinde-auth-nextjs";
+import { useKindeAuth, LoginLink, LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
+import { AiFillHome, AiOutlineRobot, AiOutlinePlus } from 'react-icons/ai';
 import { BsClipboardCheck } from 'react-icons/bs';
 import { FiSend } from "react-icons/fi";
+import { FaDollarSign } from "react-icons/fa";
+import { MdPrivacyTip, MdDashboard } from "react-icons/md";
 
 import ProfilePic from "./profilePic";
 
@@ -41,9 +43,8 @@ export default function Navbar() {
                         alt="logo.svg" 
                         width={50} 
                         height={50} 
-                        className="w-[50px] h-[50px] xl:w-[60px] xl:h-[60px] 2xl:w-[70px] 2xl:h-[70px]"
                     />
-                    <span className="text-3xl xl:text-4xl 2xl:text-5xl font-bold tracking-tight text-gray-900">
+                    <span className="text-3xl -mr-7 xl:text-4xl 2xl:text-5xl font-bold tracking-tight text-gray-900">
                         Modelflow<span className="text-3xl xl:text-4xl 2xl:text-5xl text-purple-500">.</span>
                     </span>
                 </Link>
@@ -98,6 +99,7 @@ export default function Navbar() {
                             <Link href={href} onClick={toggleMenu} key={href}>
                                 <li className='flex items-center gap-3'>
                                     {title === 'Home' && <AiFillHome />}
+                                    {title === 'Dashboard' && <MdDashboard />}
                                     {title === 'Models' && <AiOutlineRobot />}
                                     {title === 'Plans' && <BsClipboardCheck />}
                                     {title === 'Requests' && <FiSend />}
@@ -105,6 +107,47 @@ export default function Navbar() {
                                 </li>
                             </Link>
                         ))}
+
+                        {isAuthenticated && (
+                            <>
+                                <hr className="border-gray-200 my-1" />
+                                <Link href="/profile" onClick={toggleMenu}>
+                                    <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
+                                        <p className="text-gray-400">Profile</p>
+                                        <p className="text-xl">{user?.given_name || 'User'}</p>
+                                    </li>
+                                </Link>
+                                <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
+                                    <p className="text-gray-400">Notifications</p>
+                                    <p className="text-xl">Inbox (0)</p>
+                                </li>
+                                <hr className="border-gray-200 my-1" />
+                                <Link href="/upload" onClick={toggleMenu}>
+                                    <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
+                                        <AiOutlinePlus size={20} className="text-gray-400" />
+                                        <p className="text-xl">New Model</p>
+                                    </li>
+                                </Link>
+                                <Link href="/billing" onClick={toggleMenu}>
+                                    <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
+                                        <FaDollarSign size={20} className="text-gray-400" />
+                                        <p className="text-xl">Billing</p>
+                                    </li>
+                                </Link>
+                                <Link href="/privacy" onClick={toggleMenu}>
+                                    <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
+                                        <MdPrivacyTip size={20} className="text-gray-400" />
+                                        <p className="text-xl">Privacy</p>
+                                    </li>
+                                </Link>
+                                <hr className="border-gray-200 my-1" />
+                                <LogoutLink onClick={toggleMenu}>
+                                    <li className='flex items-center hover:bg-gray-100 rounded-lg transition-all p-2 text-gray-500'>
+                                        <p className="text-xl">Sign out</p>
+                                    </li>
+                                </LogoutLink>
+                            </>
+                        )}
                     </ul>
                 </div>
             </nav>

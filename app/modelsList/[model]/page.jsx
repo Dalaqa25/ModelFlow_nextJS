@@ -90,17 +90,21 @@ export default function Model(props) {
             {/* header section */}
             <div className='flex flex-col sm:flex-row gap-4 sm:gap-8'>
                 <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 rounded-xl overflow-hidden">
-                    {!imageError && model.imgUrl ? (
-                        <Image
-                            src={model.imgUrl}
-                            alt={`${model.name} image`}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 640px) 96px, (max-width: 1024px) 128px, 128px"
-                            onError={() => setImageError(true)}
+                    {model.imgUrl ? (
+                        <img 
+                            src={model.imgUrl} 
+                            alt={model.name} 
+                            className='w-full h-full object-cover rounded-xl'
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                            }}
                         />
                     ) : (
-                        <DefaultModelImage />
+                        <div className="w-full h-full">
+                            <DefaultModelImage size="large" />
+                        </div>
                     )}
                 </div>
                 <div className='flex flex-col gap-2 justify-center items-center sm:items-start w-full sm:gap-5'>

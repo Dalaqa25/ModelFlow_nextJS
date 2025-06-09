@@ -24,7 +24,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-[100%] lg:w-[81%] max-w-[1500px] mx-auto mt-25">
+        <div className="w-[81%] max-w-[1500px] mx-auto mt-25">
             <div className="flex justify-between items-center">
                 <h1 className="text-4xl lg:text-5xl font-semibold">Dashboard</h1>
                 <button 
