@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
     await connect();
     try {
-        const model = await Model.findById(params.id).populate("author", "name profileImage");
+        const { id } = await params;
+        const model = await Model.findById(id).populate("author", "name profileImage");
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }

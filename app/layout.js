@@ -5,6 +5,7 @@ import Navbar from "@/app/components/navbar";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
             {children}
           </KindeProvider>
         </SplashProvider>
+        <Toaster position="top-right" />
       </body>
     </html>
   );
