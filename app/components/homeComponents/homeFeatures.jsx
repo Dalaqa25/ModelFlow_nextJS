@@ -3,21 +3,21 @@ import { motion } from 'framer-motion';
 
 export default function HomeSecurity() {
     return (
-        <div className="w-[80%] lg:w-[70%] max-w-[1400px] mx-auto flex flex-col gap-8 lg:gap-15">
+        <div className="w-[80%] lg:w-[70%] max-w-[1100px] mx-auto flex flex-col gap-8 lg:gap-15">
             {/* Security Section */}
             <motion.div 
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="w-full min-h-[300px] lg:h-[350px] bg-[#f4f3fb] flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-25 rounded-3xl py-8"
+                className="w-full min-h-[300px] lg:h-[350px] bg-[#f4f3fb] flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-25 rounded-3xl py-50"
             >
                 <Image
                     src="/security.png"
                     alt="Security Image"
                     width={1024}
                     height={1024}
-                    className="w-30 h-30 sm:w-50 sm:h-50 lg:w-90 lg:h-90 object-contain"
+                    className="w-30 h-30 sm:w-50 sm:h-50 lg:w-80 lg:h-80 xl:w-90 xl:h-90 2xl:w-100 2xl:h-100 object-contain"
                 />  
                 <motion.div 
                     initial={{ opacity: 0, x: 20 }}
@@ -26,8 +26,8 @@ export default function HomeSecurity() {
                     viewport={{ once: true }}
                     className='text-center lg:text-left lg:mr-20'
                 >
-                    <h1 className='text-4xl lg:text-7xl font-semibold'>Built for <br/> Security</h1>
-                    <p className='text-xl lg:text-3xl text-gray-600 mt-2 font-light'>Security features designed <br/>to protect your models</p>
+                    <h1 className='text-4xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-semibold'>Built for <br/> Security</h1>
+                    <p className='text-xl lg:text-3xl xl:text-3xl 2xl:text-4xl text-gray-600 mt-2 font-light'>Security features designed <br/>to protect your models</p>
                 </motion.div>
             </motion.div>
 
@@ -46,15 +46,15 @@ export default function HomeSecurity() {
                     viewport={{ once: true }}
                     className='text-center lg:text-left lg:ml-15'
                 >
-                    <h1 className='text-4xl lg:text-7xl font-semibold'>Streamlined <br/>Workflow</h1>
-                    <p className='text-xl lg:text-3xl text-gray-600 mt-2 font-light'>Upload, manage and <br/>deploy models with ease</p>
+                    <h1 className='text-4xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-semibold'>Streamlined <br/>Workflow</h1>
+                    <p className='text-xl lg:text-3xl xl:text-3xl 2xl:text-4xl text-gray-600 mt-2 font-light'>Upload, manage and <br/>deploy models with ease</p>
                 </motion.div>
                 <Image
                     src="/flyingRobot.png"
                     alt="Flying Robot Image"
                     width={1024}
                     height={1024}
-                    className="w-30 h-30 sm:w-50 sm:h-50 lg:w-90 lg:h-90 object-contain"
+                    className="w-30 h-30 sm:w-50 sm:h-50 lg:w-80 lg:h-80 xl:w-90 xl:h-90 2xl:w-100 2xl:h-100 object-contain"
                 />
             </motion.div>
 
@@ -64,7 +64,7 @@ export default function HomeSecurity() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className='w-full min-h-[300px] lg:max-h-[400px] flex flex-col lg:flex-row bg-[#d3ccfe] items-center justify-between rounded-3xl overflow-hidden mb-10 lg:mb-20 shadow py-8'
+                className='w-full min-h-[300px] lg:max-h-[400px] flex flex-col lg:flex-row bg-[#d3ccfe] items-center justify-between rounded-3xl overflow-hidden mb-10 lg:mb-20 shadow py-50'
             >
                 <div className="relative">
                     <div className="block lg:hidden">
@@ -82,7 +82,7 @@ export default function HomeSecurity() {
                             alt="Phone svg Image Desktop"
                             width={1024}
                             height={1024}
-                            className="w-120 h-150 object-contain mt-70"
+                            className="w-110 h-140 xl:w-120 xl:h-150 2xl:w-130 2xl:h-160 object-contain mt-70"
                         />
                     </div>
                 </div>
@@ -93,8 +93,8 @@ export default function HomeSecurity() {
                     viewport={{ once: true }}
                     className='text-center lg:text-left lg:mr-15'
                 >
-                    <h1 className='text-4xl lg:text-7xl font-semibold'>Explore<br/>AI Models</h1>
-                    <p className='text-xl lg:text-3xl text-gray-600 mt-2 font-light'>Upload, manage and <br/>deploy models with ease</p>
+                    <h1 className='text-4xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-semibold'>Explore<br/>AI Models</h1>
+                    <p className='text-xl lg:text-3xl xl:text-3xl 2xl:text-4xl text-gray-600 mt-2 font-light'>Upload, manage and <br/>deploy models with ease</p>
                 </motion.div>
             </motion.div>
 
@@ -103,7 +103,7 @@ export default function HomeSecurity() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className='text-center text-3xl lg:text-6xl font-semibold mb-15'
+                className='text-center text-5xl lg:text-6xl xl:text-6xl 2xl:text-7xl font-semibold mb-15'
             >
                 Don't waste time start building <br/> something great!
             </motion.h1>

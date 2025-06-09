@@ -35,19 +35,26 @@ export default function Navbar() {
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
-                <Link className="flex items-center text-center gap-3 flex-shrink-0" href="/"> <img src="logo.png" alt="logo.svg" width={50} height={50} />
-                    <span className="text-3xl font-bold tracking-tight text-gray-900">
-                        Modelflow<span className="text-3xl text-purple-500">.</span>
+                <Link className="flex items-center text-center gap-3 flex-shrink-0" href="/"> 
+                    <img 
+                        src="logo.png" 
+                        alt="logo.svg" 
+                        width={50} 
+                        height={50} 
+                        className="w-[50px] h-[50px] xl:w-[60px] xl:h-[60px] 2xl:w-[70px] 2xl:h-[70px]"
+                    />
+                    <span className="text-3xl xl:text-4xl 2xl:text-5xl font-bold tracking-tight text-gray-900">
+                        Modelflow<span className="text-3xl xl:text-4xl 2xl:text-5xl text-purple-500">.</span>
                     </span>
                 </Link>
 
                 {/* Centered Navigation Links for desktop */}
                 <div className="flex-1 flex justify-center">
-                    <ul className="hidden lg:flex gap-10 text-base items-center px-7 rounded-xl">
+                    <ul className="hidden lg:flex gap-10 text-base items-center py-2.5 px-7 bg-white rounded-xl">
                         {navLinks.map(({ href, title }) => {
                             const isActive = pathname === href;
                             return (
-                                <li className="xl:text-lg flex items-center" key={href}>
+                                <li className="xl:text-xl 2xl:text-2xl flex items-center" key={href}>
                                     <Link
                                         href={href}
                                         className={`transition-colors duration-200 ${
@@ -69,7 +76,7 @@ export default function Navbar() {
                         isAuthenticated ? (
                             <ProfilePic user={user} />
                         ) : (
-                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-2.5 item-hidden text-lg">
+                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-3 item-hidden text-lg xl:text-xl 2xl:text-2xl">
                                 Sign In
                             </LoginLink>
                         )
