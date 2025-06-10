@@ -6,6 +6,7 @@ import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs"
 export default function ProfilePic() {
     const [showMenu, setShowMenu] = useState(false)
     const [profileImage, setProfileImage] = useState("/default-image.png")
+    const [imageError, setImageError] = useState(false)
     const { user } = useKindeAuth()
 
     useEffect(() => {
@@ -18,9 +19,11 @@ export default function ProfilePic() {
                 const data = await response.json()
                 if (data.profileImageUrl) {
                     setProfileImage(data.profileImageUrl)
+                    setImageError(false)
                 }
             } catch (error) {
                 console.error("Error fetching user data:", error)
+                setProfileImage("/default-image.png")
             }
         }
 
@@ -33,6 +36,11 @@ export default function ProfilePic() {
         setShowMenu(!showMenu)
     }
 
+    const handleImageError = () => {
+        setImageError(true)
+        setProfileImage("/default-image.png")
+    }
+
     return (
         <div className="relative">
             <div
@@ -40,11 +48,13 @@ export default function ProfilePic() {
                 className="hidden lg:block cursor-pointer bg-purple-100 w-12 h-12 mr-5 rounded-full overflow-hidden border-gray-300"
             >
                 <Image
-                    width={1024}
-                    height={1024}
-                    src={profileImage}
+                    width={48}
+                    height={48}
+                    src={imageError ? "/default-image.png" : profileImage}
                     alt="Profile Picture"
                     className="w-full h-full object-cover"
+                    onError={handleImageError}
+                    priority
                 />
             </div>
             {showMenu && (

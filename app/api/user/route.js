@@ -1,6 +1,7 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import connect from "@/lib/db/connect";
+import User from "@/lib/db/User";
 
 export async function GET() {
     try {
@@ -11,12 +12,21 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const client = await clientPromise;
-        const db = client.db();
-        const userData = await db.collection("users").findOne({ authId: user.id });
+        await connect();
+        const userData = await User.findOne({ authId: user.id });
 
         if (!userData) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            // If user doesn't exist in our database, create them
+            const newUser = await User.create({
+                authId: user.id,
+                name: user.given_name,
+                email: user.email,
+                profileImageUrl: user.picture,
+                aboutMe: "",
+                websiteLink: "",
+                contactEmail: user.email
+            });
+            return NextResponse.json(newUser);
         }
 
         return NextResponse.json(userData);
@@ -36,11 +46,7 @@ export async function PUT(request) {
         }
 
         const data = await request.json();
-        const client = await clientPromise;
-        const db = client.db();
-
-        // Log the incoming data for debugging
-        console.log('Updating user with data:', data);
+        await connect();
 
         const updateData = {
             aboutMe: data.aboutMe,
@@ -53,10 +59,10 @@ export async function PUT(request) {
             updateData.profileImageUrl = data.profileImageUrl;
         }
 
-        const updatedUser = await db.collection("users").findOneAndUpdate(
+        const updatedUser = await User.findOneAndUpdate(
             { authId: user.id },
             { $set: updateData },
-            { returnDocument: 'after' }
+            { new: true }
         );
 
         if (!updatedUser) {

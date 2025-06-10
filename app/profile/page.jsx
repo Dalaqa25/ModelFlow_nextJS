@@ -147,7 +147,7 @@ export default function Profile() {
                     ) : userModels.length === 0 ? (
                         <div className="text-center py-4">
                             <p className="text-gray-500">No models uploaded yet.</p>
-                            <Link href="/upload" className="text-indigo-600 hover:underline mt-2 inline-block">
+                            <Link href="/dashboard" className="text-indigo-600 hover:underline mt-2 inline-block">
                                 Upload your first model
                             </Link>
                         </div>
