@@ -1,12 +1,38 @@
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import DropDownMenu from "./dropDownMenu"
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs"
 
 export default function ProfilePic() {
     const [showMenu, setShowMenu] = useState(false)
+    const [profileImage, setProfileImage] = useState("/default-image.png")
+    const { user } = useKindeAuth()
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await fetch('/api/user')
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data')
+                }
+                const data = await response.json()
+                if (data.profileImageUrl) {
+                    setProfileImage(data.profileImageUrl)
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error)
+            }
+        }
+
+        if (user) {
+            fetchUserData()
+        }
+    }, [user])
+
     const toggleMenu = () => {
         setShowMenu(!showMenu)
     }
+
     return (
         <div className="relative">
             <div
@@ -16,7 +42,7 @@ export default function ProfilePic() {
                 <Image
                     width={1024}
                     height={1024}
-                    src="/default-image.png"
+                    src={profileImage}
                     alt="Profile Picture"
                     className="w-full h-full object-cover"
                 />
