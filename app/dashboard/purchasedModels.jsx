@@ -1,38 +1,29 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { useRouter } from "next/navigation";
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
+import { useQuery } from '@tanstack/react-query';
 
 export default function PurchasedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
-    const [models, setModels] = useState([]);
-    const [loading, setLoading] = useState(true);
     const { user } = useKindeAuth();
     const router = useRouter();
     const modelsPerPage = 5;
 
-    useEffect(() => {
-        const fetchPurchasedModels = async () => {
-            try {
-                const response = await fetch('/api/user/purchased-models');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch purchased models');
-                }
-                const data = await response.json();
-                setModels(data);
-            } catch (error) {
-                console.error('Error fetching purchased models:', error);
-            } finally {
-                setLoading(false);
+    const { data: models = [], isLoading, error, refetch } = useQuery({
+        queryKey: ['purchasedModels', user?.email],
+        queryFn: async () => {
+            const response = await fetch('/api/user/purchased-models');
+            if (!response.ok) {
+                throw new Error('Failed to fetch purchased models');
             }
-        };
-
-        if (user) {
-            fetchPurchasedModels();
-        }
-    }, [user]);
+            const data = await response.json();
+            return data;
+        },
+        enabled: !!user,
+    });
 
     // Pagination logic
     const totalPages = Math.ceil((models?.length || 0) / modelsPerPage);
@@ -69,7 +60,7 @@ export default function PurchasedModels({ isRowLayout }) {
         }
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex flex-col mt-15 mb-15">
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
@@ -81,6 +72,20 @@ export default function PurchasedModels({ isRowLayout }) {
                         <div className="h-4 w-48 bg-gray-200 rounded"></div>
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-10">
+                <p className="text-red-500 text-lg">Error loading models: {error.message}</p>
+                <button 
+                    onClick={() => refetch()}
+                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                    Try Again
+                </button>
             </div>
         );
     }

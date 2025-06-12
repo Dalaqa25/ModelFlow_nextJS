@@ -1,32 +1,19 @@
 'use client';
 import { IoClose } from "react-icons/io5";
-import { useState, useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
 
 export default function OtherComments({ requestId, onClose }) {
-    const [comments, setComments] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchComments = async () => {
-            try {
-                setIsLoading(true);
-                const response = await fetch(`/api/requests/${requestId}/comments`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch comments');
-                }
-                const data = await response.json();
-                setComments(data);
-            } catch (error) {
-                console.error('Error fetching comments:', error);
-                setError('Failed to load comments');
-            } finally {
-                setIsLoading(false);
+    const { data: comments = [], isLoading, error, refetch } = useQuery({
+        queryKey: ['requestComments', requestId],
+        queryFn: async () => {
+            const response = await fetch(`/api/requests/${requestId}/comments`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch comments');
             }
-        };
-
-        fetchComments();
-    }, [requestId]);
+            const data = await response.json();
+            return data;
+        }
+    });
 
     if (isLoading) {
         return (
@@ -50,7 +37,13 @@ export default function OtherComments({ requestId, onClose }) {
                     className="text-3xl bg-gray-200 cursor-pointer absolute z-30 right-2 top-1 rounded-full hover:bg-gray-300 transition-all"
                 />
                 <div className="flex items-center justify-center h-full">
-                    <p className="text-red-500">{error}</p>
+                    <p className="text-red-500">{error.message}</p>
+                    <button 
+                        onClick={() => refetch()} 
+                        className="mt-4 px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                        Try Again
+                    </button>
                 </div>
             </div>
         );

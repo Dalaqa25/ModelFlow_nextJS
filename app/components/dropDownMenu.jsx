@@ -3,31 +3,26 @@ import { FaDollarSign } from "react-icons/fa";
 import { MdPrivacyTip } from "react-icons/md";
 import { LogoutLink, useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
 
 export default function DropDownMenu() {
-    const [userName, setUserName] = useState("Loading...");
     const { user } = useKindeAuth();
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch('/api/user');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user data');
-                }
-                const data = await response.json();
-                setUserName(data.name || user?.given_name || 'User');
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-                setUserName(user?.given_name || 'User');
+    const { data: userData, isLoading } = useQuery({
+        queryKey: ['userData', user?.email],
+        queryFn: async () => {
+            const response = await fetch('/api/user');
+            if (!response.ok) {
+                throw new Error('Failed to fetch user data');
             }
-        };
+            const data = await response.json();
+            return data;
+        },
+        enabled: !!user,
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
 
-        if (user) {
-            fetchUserData();
-        }
-    }, [user]);
+    const userName = userData?.name || user?.given_name || 'User';
 
     return (
         <div className="flex flex-col bg-white shadow-lg rounded-lg w-[250px] p-3 z-50">
@@ -36,7 +31,7 @@ export default function DropDownMenu() {
                 className="cursor-pointer flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2"
             >
                 <p className="text-gray-400">Profile</p>
-                <p className="text-xl">{userName}</p>
+                <p className="text-xl">{isLoading ? 'Loading...' : userName}</p>
             </Link>
             <div className="cursor-pointer flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2 mb-1.5">
                 <p className="text-gray-400">Notifications</p>

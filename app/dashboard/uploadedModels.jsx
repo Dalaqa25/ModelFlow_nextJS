@@ -8,27 +8,23 @@ import EditModel from './editModel';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [models, setModels] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
     const { user } = useKindeBrowserClient();
     const router = useRouter();
     const modelsPerPage = 5;
 
-    const fetchModels = async () => {
-        try {
+    const { data: models = [], isLoading, error, refetch } = useQuery({
+        queryKey: ['userModels', user?.email],
+        queryFn: async () => {
             if (!user?.email) {
                 throw new Error('User email is required');
             }
-
-            setIsLoading(true);
-            setError(null);
             const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
             if (!response.ok) {
                 const errorData = await response.json();
@@ -38,21 +34,10 @@ export default function UploadedModels({ isRowLayout }) {
             if (!Array.isArray(data)) {
                 throw new Error('Invalid data format received');
             }
-            setModels(data);
-        } catch (error) {
-            console.error('Error fetching models:', error);
-            setError(error.message);
-            setModels([]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (user?.email) {
-            fetchModels();
-        }
-    }, [user?.email]);
+            return data;
+        },
+        enabled: !!user?.email,
+    });
 
     // Pagination logic
     const totalPages = Math.ceil((models?.length || 0) / modelsPerPage);
@@ -101,9 +86,9 @@ export default function UploadedModels({ isRowLayout }) {
     if (error) {
         return (
             <div className="text-center py-10">
-                <p className="text-red-500 text-lg">Error loading models: {error}</p>
+                <p className="text-red-500 text-lg">Error loading models: {error.message}</p>
                 <button 
-                    onClick={fetchModels}
+                    onClick={() => refetch()}
                     className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                     Try Again
@@ -136,7 +121,7 @@ export default function UploadedModels({ isRowLayout }) {
                     onClose={() => setUploadedModels(false)}
                     onUploadSuccess={() => {
                         setUploadedModels(false);
-                        fetchModels();
+                        refetch();
                     }}
                 />
                 {models.length === 0 ? (
@@ -289,13 +274,13 @@ export default function UploadedModels({ isRowLayout }) {
                 onClose={() => setDeleteDialog({ isOpen: false, modelId: null, modelName: '' })}
                 modelId={deleteDialog.modelId}
                 modelName={deleteDialog.modelName}
-                onDeleteSuccess={fetchModels}
+                onDeleteSuccess={refetch}
             />
             <EditModel
                 isOpen={editDialog.isOpen}
                 onClose={() => setEditDialog({ isOpen: false, model: null })}
                 model={editDialog.model}
-                onEditSuccess={fetchModels}
+                onEditSuccess={refetch}
             />
         </>
     );

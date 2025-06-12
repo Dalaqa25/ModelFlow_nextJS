@@ -1,37 +1,25 @@
 import { FaRegComment, FaRegUser } from 'react-icons/fa';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import RequestInfo from './requestInfo';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Request() {
-    const [requests, setRequests] = useState([]);
     const [selectedRequestId, setSelectedRequestId] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchRequests = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-                const res = await fetch('/api/requests');
-                const data = await res.json();
-
-                if (Array.isArray(data)) {
-                    setRequests(data);
-                } else {
-                    console.warn('Expected array but got:', data);
-                    setRequests([]); // fallback
-                }
-            } catch (error) {
-                console.error('Failed to fetch requests:', error);
-                setError('Failed to load requests. Please try again later.');
-                setRequests([]); // fallback
-            } finally {
-                setIsLoading(false);
+    const { data: requests = [], isLoading, error, refetch } = useQuery({
+        queryKey: ['requests'],
+        queryFn: async () => {
+            const res = await fetch('/api/requests');
+            if (!res.ok) {
+                throw new Error('Failed to fetch requests');
             }
-        };
-        fetchRequests();
-    }, []);
+            const data = await res.json();
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid data format received');
+            }
+            return data;
+        }
+    });
 
     if (isLoading) {
         return (
@@ -53,9 +41,9 @@ export default function Request() {
         return (
             <div className="w-full flex justify-center items-center min-h-[200px]">
                 <div className="text-red-500 text-center">
-                    <p className="text-lg font-semibold">{error}</p>
+                    <p className="text-lg font-semibold">{error.message}</p>
                     <button 
-                        onClick={() => window.location.reload()} 
+                        onClick={() => refetch()} 
                         className="mt-4 px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                         Try Again
@@ -90,7 +78,7 @@ export default function Request() {
                     onClick={() => setSelectedRequestId(req._id)}
                     className="w-[95%] sm:w-[85%] md:w-1/2 max-w-[950px] min-w-[280px] border rounded-2xl border-gray-200 cursor-pointer hover:shadow transition-all duration-300 ease-in-out"
                 >
-                    {selectedRequestId === req._id && <RequestInfo request={req} />}
+                    {selectedRequestId === req._id && <RequestInfo request={req} onClose={() => setSelectedRequestId(null)} />}
                     <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3">
                         <h1 className="text-xl sm:text-2xl font-semibold">{req.title}</h1>
                         <p className="text-sm sm:text-base font-light text-gray-600">

@@ -3,20 +3,15 @@ import { FiSend } from "react-icons/fi";
 import { useState } from "react";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function RequestCommnetCreateion({ requestId, onCommentAdded }) { 
     const [content, setContent] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const { user } = useKindeBrowserClient();
+    const queryClient = useQueryClient();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!content.trim() || !user) return;
-
-        const toastId = toast.loading('Posting comment...');
-
-        try {
-            setIsSubmitting(true);
+    const { mutate: postComment, isPending } = useMutation({
+        mutationFn: async (content) => {
             const response = await fetch(`/api/requests/${requestId}/comments`, {
                 method: 'POST',
                 headers: {
@@ -29,21 +24,27 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
                 throw new Error('Failed to post comment');
             }
 
+            return response.json();
+        },
+        onSuccess: () => {
             setContent('');
             if (onCommentAdded) {
                 onCommentAdded();
             }
-            toast.success('Comment posted successfully!', {
-                id: toastId,
-            });
-        } catch (error) {
+            // Invalidate and refetch comments
+            queryClient.invalidateQueries({ queryKey: ['requestComments', requestId] });
+            toast.success('Comment posted successfully!');
+        },
+        onError: (error) => {
             console.error('Error posting comment:', error);
-            toast.error('Failed to post comment. Please try again.', {
-                id: toastId,
-            });
-        } finally {
-            setIsSubmitting(false);
+            toast.error('Failed to post comment. Please try again.');
         }
+    });
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!content.trim() || !user) return;
+        postComment(content);
     };
 
     return (
@@ -54,11 +55,11 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="write a comment..."
                     className="bg-white p-2 w-full text-base focus:outline-none focus:ring-0 focus:border-transparent font-light resize-none overflow-y-auto"
-                    disabled={isSubmitting || !user}
+                    disabled={isPending || !user}
                 />
                 <button 
                     type="submit"
-                    disabled={isSubmitting || !user || !content.trim()}
+                    disabled={isPending || !user || !content.trim()}
                     className="cursor-pointer text-2xl ml-auto hover:text-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <FiSend />
