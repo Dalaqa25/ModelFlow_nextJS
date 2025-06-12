@@ -41,8 +41,8 @@ export default function Navbar() {
                     <img 
                         src="logo.png" 
                         alt="logo.svg" 
-                        width={50} 
-                        height={50} 
+                        width={40} 
+                        height={40} 
                         className="flex-shrink-0"
                     />
                     <span className="text-3xl -mr-7 xl:text-3xl 2xl:text-4xl font-bold tracking-tight text-gray-900 flex items-baseline">
@@ -78,7 +78,7 @@ export default function Navbar() {
                         isAuthenticated ? (
                             <ProfilePic user={user} />
                         ) : (
-                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl change-padding px-8 py-3 item-hidden text-lg xl:text-xl 2xl:text-2xl">
+                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl px-7 py-2.5 text-base xl:text-lg">
                                 Sign In
                             </LoginLink>
                         )
