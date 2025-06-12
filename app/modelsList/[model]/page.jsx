@@ -113,7 +113,12 @@ export default function Model(props) {
                     </h1>
                     <div className='flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0'>
                         <p className='font-light text-gray-400 text-xs sm:text-sm md:text-base lg:text-lg text-center sm:text-left'>
-                            author: <span className='hover:underline cursor-pointer'>{model.author?.name || model.authorEmail}</span>
+                            author: <span 
+                                onClick={() => router.push(`/profile/${model.authorEmail || model.author?.name}`)}
+                                className='hover:underline cursor-pointer'
+                            >
+                                {model.authorEmail || model.author?.name}
+                            </span>
                         </p>
                         <div className='flex items-center gap-2'>
                             <button
