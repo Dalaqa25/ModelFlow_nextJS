@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import DefaultModelImage from "@/app/components/model/defaultModelImage";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import ConfirmationDialog from "@/app/components/confirmationDialog/ConfirmationDialog";
 
 export default function Model(props) {
     const params = use(props.params);
@@ -22,6 +23,7 @@ export default function Model(props) {
     const [imageError, setImageError] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchModel = async () => {
@@ -73,7 +75,27 @@ export default function Model(props) {
 
     const handlePurchase = () => {
         if (isAuthenticated) {
-            router.push(`/purchase/${params.model}`);
+            setIsPurchaseDialogOpen(true);
+        }
+    };
+
+    const handleConfirmPurchase = async () => {
+        try {
+            const res = await fetch(`/api/models/${params.model}/purchase`, {
+                method: 'POST',
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                toast.success("Model purchased successfully!");
+                setIsPurchaseDialogOpen(false);
+            } else {
+                const error = await res.json();
+                toast.error(error.error || "Failed to purchase model");
+            }
+        } catch (error) {
+            console.error("Error purchasing model:", error);
+            toast.error("Failed to purchase model");
         }
     };
 
@@ -145,18 +167,18 @@ export default function Model(props) {
                     ))}
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
-                    <button className='w-full sm:w-auto text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl'>
+                    <button className='w-full sm:w-auto text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-colors duration-200'>
                         Test Model
                     </button>
                     {isAuthenticated ? (
                         <button 
                             onClick={handlePurchase}
-                            className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl'
+                            className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
                         >
                             Purchase
                         </button>
                     ) : (
-                        <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center'>
+                        <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-colors duration-200'>
                             Sign in to Purchase
                         </LoginLink>
                     )}
@@ -173,6 +195,14 @@ export default function Model(props) {
                 <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
                 <HowToUse setup={model.setup} />    
             </div>
+
+            <ConfirmationDialog
+                isOpen={isPurchaseDialogOpen}
+                onClose={() => setIsPurchaseDialogOpen(false)}
+                onConfirm={handleConfirmPurchase}
+                title="Confirm Purchase"
+                description={`Are you sure you want to purchase ${model.name}? This action will redirect you to the payment page.`}
+            />
         </section>
     );
 }
