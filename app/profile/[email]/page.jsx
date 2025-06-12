@@ -18,7 +18,7 @@ export default function Profile(props) {
         const fetchProfileData = async () => {
             try {
                 setError(null);
-                const profileRes = await fetch(`/api/user`);
+                const profileRes = await fetch(`/api/user/profile?email=${params.email}`);
                 if (!profileRes.ok) {
                     throw new Error(`Failed to fetch profile: ${profileRes.statusText}`);
                 }
@@ -82,7 +82,7 @@ export default function Profile(props) {
     };
 
     return (
-        <div className="mt-15">
+        <div className="mt-15 mb-15">
             <section className='px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto'>
                 {/* Profile Header Card */}
                 <div className='bg-gray-50/50 rounded-2xl shadow-sm p-6 sm:p-8 mb-8 border border-gray-100'>

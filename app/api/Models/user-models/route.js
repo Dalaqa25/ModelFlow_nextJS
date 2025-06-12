@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server';
-import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
 import clientPromise from '@/lib/mongodb';
 
-export async function GET() {
+export async function GET(request) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
-        
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const { searchParams } = new URL(request.url);
+        const email = searchParams.get('email');
+
+        if (!email) {
+            return NextResponse.json({ error: 'Email parameter is required' }, { status: 400 });
         }
 
         const client = await clientPromise;
         const db = client.db();
         
         const models = await db.collection('models')
-            .find({ authorEmail: user.email })
+            .find({ authorEmail: email })
             .sort({ createdAt: -1 })
             .toArray();
 
