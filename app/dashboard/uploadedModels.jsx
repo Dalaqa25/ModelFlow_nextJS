@@ -130,11 +130,15 @@ export default function UploadedModels({ isRowLayout }) {
                         <FiPlus size={20} />
                         <span>Upload Model</span>
                     </button>
-                    {uploadedModels && <ModelUpload onUploadSuccess={() => {
+                </div>
+                <ModelUpload 
+                    isOpen={uploadedModels}
+                    onClose={() => setUploadedModels(false)}
+                    onUploadSuccess={() => {
                         setUploadedModels(false);
                         fetchModels();
-                    }}/>}
-                </div>
+                    }}
+                />
                 {models.length === 0 ? (
                     <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
                         <div className="max-w-md mx-auto">

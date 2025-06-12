@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function ModelUpload({ onUploadSuccess }) {
+export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const router = useRouter();
     const [uploadType, setUploadType] = useState('zip'); // 'zip' or 'drive'
     const [features, setFeatures] = useState(['']);
@@ -228,8 +228,8 @@ export default function ModelUpload({ onUploadSuccess }) {
     };
 
     return (
-        <Transition.Root show={true} as={Fragment}>
-            <Dialog as="div" className="relative z-50" onClose={onUploadSuccess}>
+        <Transition.Root show={isOpen} as={Fragment}>
+            <Dialog as="div" className="relative z-50" onClose={onClose}>
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"
@@ -258,7 +258,7 @@ export default function ModelUpload({ onUploadSuccess }) {
                                     <button
                                         type="button"
                                         className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                                        onClick={onUploadSuccess}
+                                        onClick={onClose}
                                     >
                                         <span className="sr-only">Close</span>
                                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />
