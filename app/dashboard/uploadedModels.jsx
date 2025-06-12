@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ModelUpload from '../components/model/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DeletionDialog from './delation';
+import EditModel from './editModel';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
@@ -12,6 +13,7 @@ export default function UploadedModels({ isRowLayout }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
+    const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
     const { user } = useKindeBrowserClient();
     const modelsPerPage = 5;
 
@@ -67,6 +69,13 @@ export default function UploadedModels({ isRowLayout }) {
         });
     };
 
+    const handleEditClick = (model) => {
+        setEditDialog({
+            isOpen: true,
+            model
+        });
+    };
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-[200px]">
@@ -116,7 +125,7 @@ export default function UploadedModels({ isRowLayout }) {
                         <p className="text-gray-400 mt-2">Click the + button above to upload your first model!</p>
                     </div>
                 ) : (
-                    <div className={`flex flex-col ${isRowLayout ? 'gap-3' : 'gap-5'}`}>
+                    <div className={`flex flex-col ${isRowLayout ? 'gap-6' : 'gap-8'}`}>
                         {currentModels.map(model => (
                             <div key={model._id} className={`border-1 border-gray-200 ${isRowLayout ? 'rounded-xl' : 'rounded-2xl'}`}>
                                 <div className={`flex flex-col sm:flex-row justify-between w-full items-center ${isRowLayout ? 'py-3 px-3 sm:py-4 sm:px-6 gap-3' : 'py-4 px-4 sm:py-5 sm:px-10 gap-4'}`}>
@@ -131,8 +140,7 @@ export default function UploadedModels({ isRowLayout }) {
                                                 ? "(max-width: 640px) 64px, (max-width: 768px) 80px, 80px"
                                                 : "(max-width: 640px) 80px, (max-width: 768px) 100px, 100px"}
                                         />
-                                        
-                                        <div>
+                                        <div className="flex flex-col gap-0.5 text-center sm:text-left">
                                             <h1 className={`${isRowLayout 
                                                 ? 'text-base sm:text-lg md:text-xl' 
                                                 : 'text-lg sm:text-xl md:text-3xl'}`}>{model.name}</h1>
@@ -152,9 +160,11 @@ export default function UploadedModels({ isRowLayout }) {
                                         </div>
                                     </div>
                                     <div className={`flex flex-col sm:flex-row ${isRowLayout ? 'gap-2 sm:gap-3' : 'gap-3 sm:gap-5'} w-full sm:w-auto`}>
-                                        <button className={`text-white button btn-primary ${isRowLayout 
-                                            ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                            : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
+                                        <button 
+                                            onClick={() => handleEditClick(model)}
+                                            className={`text-white button btn-primary ${isRowLayout 
+                                                ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
+                                                : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
                                             Edit
                                         </button>
                                         <button 
@@ -226,6 +236,12 @@ export default function UploadedModels({ isRowLayout }) {
                 modelId={deleteDialog.modelId}
                 modelName={deleteDialog.modelName}
                 onDeleteSuccess={fetchModels}
+            />
+            <EditModel
+                isOpen={editDialog.isOpen}
+                onClose={() => setEditDialog({ isOpen: false, model: null })}
+                model={editDialog.model}
+                onEditSuccess={fetchModels}
             />
         </>
     );
