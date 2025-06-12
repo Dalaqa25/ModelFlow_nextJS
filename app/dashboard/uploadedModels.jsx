@@ -10,34 +10,49 @@ export default function UploadedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [models, setModels] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const { user } = useKindeBrowserClient();
     const modelsPerPage = 5;
 
     const fetchModels = async () => {
         try {
+            if (!user?.email) {
+                throw new Error('User email is required');
+            }
+
             setIsLoading(true);
-            const response = await fetch('/api/models/user-models');
+            setError(null);
+            const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch models');
+            }
             const data = await response.json();
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid data format received');
+            }
             setModels(data);
         } catch (error) {
             console.error('Error fetching models:', error);
+            setError(error.message);
+            setModels([]);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        if (user) {
+        if (user?.email) {
             fetchModels();
         }
-    }, [user]);
+    }, [user?.email]);
 
     // Pagination logic
-    const totalPages = Math.ceil(models.length / modelsPerPage);
+    const totalPages = Math.ceil((models?.length || 0) / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;
     const indexOfFirstModel = indexOfLastModel - modelsPerPage;
-    const currentModels = models.slice(indexOfFirstModel, indexOfLastModel);
+    const currentModels = Array.isArray(models) ? models.slice(indexOfFirstModel, indexOfLastModel) : [];
 
     // Helper to scroll to top
     const scrollToTop = () => {
@@ -56,6 +71,20 @@ export default function UploadedModels({ isRowLayout }) {
         return (
             <div className="flex justify-center items-center min-h-[200px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-10">
+                <p className="text-red-500 text-lg">Error loading models: {error}</p>
+                <button 
+                    onClick={fetchModels}
+                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                    Try Again
+                </button>
             </div>
         );
     }

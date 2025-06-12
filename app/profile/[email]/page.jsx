@@ -18,28 +18,43 @@ export default function Profile(props) {
         const fetchProfileData = async () => {
             try {
                 setError(null);
+                setLoading(true);
+
+                // Fetch profile data
                 const profileRes = await fetch(`/api/user/profile?email=${params.email}`);
                 if (!profileRes.ok) {
-                    throw new Error(`Failed to fetch profile: ${profileRes.statusText}`);
+                    const errorData = await profileRes.json();
+                    throw new Error(errorData.error || 'Failed to fetch profile data');
                 }
                 const profileData = await profileRes.json();
                 setProfileData(profileData);
 
+                // Fetch user models
                 const modelsRes = await fetch(`/api/models/user-models?email=${params.email}`);
                 if (!modelsRes.ok) {
-                    throw new Error(`Failed to fetch models: ${modelsRes.statusText}`);
+                    const errorData = await modelsRes.json();
+                    throw new Error(errorData.error || 'Failed to fetch user models');
                 }
                 const models = await modelsRes.json();
-                setUserModels(models);
-                setLoading(false);
+                setUserModels(Array.isArray(models) ? models : []);
             } catch (error) {
                 console.error("Error in fetchProfileData:", error);
                 setError(error.message);
+                // Don't clear existing data if we have it
+                if (!profileData) {
+                    setProfileData(null);
+                }
+                if (!userModels.length) {
+                    setUserModels([]);
+                }
+            } finally {
                 setLoading(false);
             }
         };
 
-        fetchProfileData();
+        if (params.email) {
+            fetchProfileData();
+        }
     }, [params.email]);
 
     if (loading) {

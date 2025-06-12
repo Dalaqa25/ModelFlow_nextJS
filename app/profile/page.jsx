@@ -25,21 +25,35 @@ export default function Profile() {
                     throw new Error('Failed to fetch user data');
                 }
                 const data = await response.json();
+                console.log('User data received:', data);
                 setUserName(data.name);
                 setUserData(data);
+                return data; // Return the data so we can use it
             } catch (error) {
                 console.error("Error fetching user data:", error);
                 setUserName("User");
+                return null;
             }
         };
 
         const fetchUserModels = async () => {
             try {
-                const response = await fetch('/api/models/user-models');
+                // First get user data
+                const userData = await fetchUserData();
+                if (!userData || !userData.email) {
+                    console.error('No user data or email available');
+                    return;
+                }
+                
+                console.log('Fetching models for email:', userData.email);
+                const response = await fetch(`/api/models/user-models?email=${userData.email}`);
                 if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('API Error:', errorData);
                     throw new Error('Failed to fetch user models');
                 }
                 const data = await response.json();
+                console.log('Models data received:', data);
                 setUserModels(data);
             } catch (error) {
                 console.error("Error fetching user models:", error);
@@ -48,7 +62,7 @@ export default function Profile() {
             }
         };
 
-        fetchUserData();
+        // Call fetchUserModels directly since it now handles fetching user data
         fetchUserModels();
     }, []);
 
