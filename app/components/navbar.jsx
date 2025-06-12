@@ -37,7 +37,7 @@ export default function Navbar() {
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
-                <Link className="flex items-center text-center gap-3 flex-shrink-0" href="/"> 
+                <Link className="flex items-center text-center gap-1 flex-shrink-0" href="/"> 
                     <img 
                         src="logo.png" 
                         alt="logo.svg" 

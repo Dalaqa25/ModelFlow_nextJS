@@ -1,3 +1,4 @@
+'use client';
 import { FaRegUser } from 'react-icons/fa';
 import { useState } from 'react';
 import RequestCommnetCreateion from './requestCommnetCreateion';
@@ -5,6 +6,12 @@ import OtherComments from './otherComments';
 
 export default function RequestInfo({ request }) { 
     const [showOtherComments, setShowOtherComments] = useState(false);
+    const [commentsUpdated, setCommentsUpdated] = useState(0);
+
+    const handleCommentAdded = () => {
+        setCommentsUpdated(prev => prev + 1);
+    };
+
     return (
          <div className="fixed cursor-auto top-1/2 left-1/2 z-50 bg-white rounded-2xl shadow -translate-x-1/2 -translate-y-1/2 flex flex-col gap-2 sm:gap-3 max-w-[700px] w-[95%] sm:w-[85%] md:w-1/2 min-w-[280px]">
             <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 max-h-[50vh] overflow-y-auto">
@@ -29,15 +36,24 @@ export default function RequestInfo({ request }) {
                 className={`w-[95%] overflow-x-hidden mx-auto bg-gray-100 overflow-y-auto rounded-xl mb-3 sm:mb-4 relative transition-all duration-300 ${
                     showOtherComments ? 'h-[250px] sm:h-[300px]' : 'h-auto'
                 }`}>
-                <RequestCommnetCreateion/>
+                <RequestCommnetCreateion 
+                    requestId={request._id} 
+                    onCommentAdded={handleCommentAdded}
+                />
                 <p 
                     onClick={() => setShowOtherComments(true)} 
                     className='text-right mr-3 sm:mr-5 cursor-pointer mb-1 text-xs sm:text-sm hover:text-blue-400 transition-all'
                 >
                     Show others comments
                 </p>
-                {showOtherComments && <OtherComments onClose={() => setShowOtherComments(false)} />}
+                {showOtherComments && (
+                    <OtherComments 
+                        requestId={request._id} 
+                        onClose={() => setShowOtherComments(false)} 
+                        key={commentsUpdated}
+                    />
+                )}
             </div>
          </div>
-    )
+    );
 }
