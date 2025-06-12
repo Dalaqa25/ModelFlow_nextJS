@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { useRouter } from "next/navigation";
+import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
+import DefaultModelImage from '@/app/components/model/defaultModelImage';
 
 export default function PurchasedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -57,7 +59,7 @@ export default function PurchasedModels({ isRowLayout }) {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `model-${modelId}.zip`; // or whatever the filename should be
+            a.download = `model-${modelId}.zip`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -71,10 +73,13 @@ export default function PurchasedModels({ isRowLayout }) {
         return (
             <div className="flex flex-col mt-15 mb-15">
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'}`}>Purchased Models</h2>   
+                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Purchased Models</h2>   
                 </div>
                 <div className="text-center py-10">
-                    <p className="text-gray-500 text-lg">Loading your purchased models...</p>
+                    <div className="animate-pulse flex flex-col items-center">
+                        <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                    </div>
                 </div>
             </div>
         );
@@ -83,62 +88,97 @@ export default function PurchasedModels({ isRowLayout }) {
     return (
         <div className="flex flex-col mt-15 mb-15">
             <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'}`}>Purchased Models</h2>   
+                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Purchased Models</h2>   
             </div>
             {models.length === 0 ? (
-                <div className="text-center py-10">
-                    <p className="text-gray-500 text-lg">You haven't purchased any models yet.</p>
-                    <p className="text-gray-400 mt-2">Explore the marketplace to find models you like!</p>
+                <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div className="max-w-md mx-auto">
+                        <div className="text-6xl mb-4">📦</div>
+                        <p className="text-gray-600 text-lg font-medium">No Purchased Models Yet</p>
+                        <p className="text-gray-400 mt-2">Explore our marketplace to find amazing models!</p>
+                        <button 
+                            onClick={() => router.push('/modelsList')}
+                            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                            Browse Models
+                        </button>
+                    </div>
                 </div>
             ) : (
-                <div className={`flex flex-col ${isRowLayout ? 'gap-3' : 'gap-5'}`}>
+                <div className={`grid ${isRowLayout ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-6'}`}>
                     {currentModels.map(model => (
-                        <div key={model._id} className={`border-1 border-gray-200 ${isRowLayout ? 'rounded-xl' : 'rounded-2xl'}`}>
-                            <div className={`flex flex-col sm:flex-row justify-between w-full items-center ${isRowLayout ? 'py-3 px-3 sm:py-4 sm:px-6 gap-3' : 'py-4 px-4 sm:py-5 sm:px-10 gap-4'}`}>
-                                <div className={`flex flex-col sm:flex-row ${isRowLayout ? 'gap-3 sm:gap-4' : 'gap-4 sm:gap-5'} items-center`}>
+                        <div 
+                            key={model._id} 
+                            className={`bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden ${
+                                isRowLayout ? 'flex flex-col sm:flex-row' : ''
+                            }`}
+                        >
+                            <div className={`relative ${isRowLayout ? 'sm:w-48' : 'w-full h-48'}`}>
+                                {model.imgUrl ? (
                                     <img
-                                        src={model.imgUrl || "/default-model-image.png"}
+                                        src={model.imgUrl}
                                         alt={model.name}
-                                        className={`object-cover ${isRowLayout 
-                                            ? 'w-16 h-16 sm:w-[70px] sm:h-[70px] md:w-[80px] md:h-[80px] rounded-lg' 
-                                            : 'w-20 h-20 sm:w-[80px] sm:h-[80px] md:w-[100px] md:h-[100px] rounded-xl'}`}
-                                        sizes={isRowLayout 
-                                            ? "(max-width: 640px) 64px, (max-width: 768px) 80px, 80px"
-                                            : "(max-width: 640px) 80px, (max-width: 768px) 100px, 100px"}
+                                        className={`w-full h-full object-cover ${isRowLayout ? 'sm:h-full' : ''}`}
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'flex';
+                                        }}
                                     />
-                                    <div className="flex flex-col gap-0.5 text-center sm:text-left">
-                                        <h1 className={`${isRowLayout 
-                                            ? 'text-base sm:text-lg md:text-xl' 
-                                            : 'text-lg sm:text-xl md:text-3xl'}`}>{model.name}</h1>
-                                        <p className={`font-light text-gray-400 ${isRowLayout 
-                                            ? 'text-xs sm:text-sm md:text-base' 
-                                            : 'text-sm sm:text-base md:text-lg'}`}>Author: {model.authorEmail}</p>
-                                        <div className={`flex ${isRowLayout ? 'gap-1.5' : 'gap-2'} mt-1 flex-wrap justify-center sm:justify-start`}>
-                                            {model.tags.map((tag, idx) => (
-                                                <span key={idx} className={`bg-purple-100 text-purple-700 ${isRowLayout 
-                                                    ? 'px-1.5 py-0.5 rounded-md' 
-                                                    : 'px-2 py-1 rounded-lg'} text-xs`}>{tag}</span>
-                                            ))}
-                                        </div>
-                                        <p className={`font-light text-gray-400 ${isRowLayout 
-                                            ? 'text-xs sm:text-sm md:text-base' 
-                                            : 'text-sm sm:text-base md:text-lg'}`}>Price: ${model.price}</p>
+                                ) : (
+                                    <div className={`w-full h-full flex items-center justify-center ${isRowLayout ? 'sm:h-full' : ''}`}>
+                                        <DefaultModelImage size={isRowLayout ? "small" : "medium"} />
+                                    </div>
+                                )}
+                                <div className="absolute top-2 right-2 bg-purple-600 text-white px-2 py-1 rounded-lg text-sm font-medium">
+                                    ${model.price}
+                                </div>
+                            </div>
+                            
+                            <div className={`p-4 ${isRowLayout ? 'flex-1' : ''}`}>
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">{model.name}</h3>
+                                
+                                <div className="space-y-2 mb-4">
+                                    <div className="flex items-center text-gray-600">
+                                        <FaUser className="mr-2" />
+                                        <span>{model.authorEmail}</span>
+                                    </div>
+                                    <div className="flex items-center text-gray-600">
+                                        <FaCalendarAlt className="mr-2" />
+                                        <span>Purchased {new Date(model.purchasedAt).toLocaleDateString()}</span>
                                     </div>
                                 </div>
-                                <div className={`flex flex-col sm:flex-row ${isRowLayout ? 'gap-2 sm:gap-3' : 'gap-3 sm:gap-5'} w-full sm:w-auto`}>
+
+                                <div className="mb-4">
+                                    <div className="flex items-center text-gray-600 mb-2">
+                                        <FaTag className="mr-2" />
+                                        <span className="font-medium">Tags:</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {model.tags.map((tag, idx) => (
+                                            <span 
+                                                key={idx} 
+                                                className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-sm"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
                                     <button 
                                         onClick={() => handleViewModel(model._id)}
-                                        className={`text-white button btn-primary ${isRowLayout 
-                                            ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                            : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
-                                        View
+                                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                                    >
+                                        <FaEye />
+                                        <span>View Details</span>
                                     </button>
                                     <button 
                                         onClick={() => handleDownload(model._id)}
-                                        className={`text-black button shadow ${isRowLayout 
-                                            ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                            : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
-                                        Download
+                                        className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        <FaDownload />
+                                        <span>Download</span>
                                     </button>
                                 </div>
                             </div>
@@ -146,9 +186,10 @@ export default function PurchasedModels({ isRowLayout }) {
                     ))}
                 </div>
             )}
+            
             {/* Pagination Controls */}
             {models.length > 0 && (
-                <div className={`flex justify-center ${isRowLayout ? 'gap-1.5 mt-4' : 'gap-2 mt-6'}`}>
+                <div className="flex justify-center gap-2 mt-8">
                     <button
                         onClick={() => {
                             setCurrentPage(prev => {
@@ -158,26 +199,28 @@ export default function PurchasedModels({ isRowLayout }) {
                             });
                         }}
                         disabled={currentPage === 1}
-                        className={`${isRowLayout 
-                            ? 'px-2 py-0.5 text-sm' 
-                            : 'px-3 py-1'} rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50`}
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                        Prev
+                        Previous
                     </button>
-                    {[...Array(totalPages)].map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => {
-                                setCurrentPage(i + 1);
-                                setTimeout(scrollToTop, 0);
-                            }}
-                            className={`${isRowLayout 
-                                ? 'px-2 py-0.5 text-sm' 
-                                : 'px-3 py-1'} rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
+                    <div className="flex gap-1">
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => {
+                                    setCurrentPage(i + 1);
+                                    setTimeout(scrollToTop, 0);
+                                }}
+                                className={`w-10 h-10 rounded-lg ${
+                                    currentPage === i + 1 
+                                        ? 'bg-purple-600 text-white' 
+                                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                } transition-colors`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
                     <button
                         onClick={() => {
                             setCurrentPage(prev => {
@@ -187,14 +230,12 @@ export default function PurchasedModels({ isRowLayout }) {
                             });
                         }}
                         disabled={currentPage === totalPages}
-                        className={`${isRowLayout 
-                            ? 'px-2 py-0.5 text-sm' 
-                            : 'px-3 py-1'} rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50`}
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Next
                     </button>
                 </div>
             )}
         </div>
-    )
+    );
 }
