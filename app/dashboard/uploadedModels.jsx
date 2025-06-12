@@ -5,6 +5,9 @@ import ModelUpload from '../components/model/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DeletionDialog from './delation';
 import EditModel from './editModel';
+import DefaultModelImage from '@/app/components/model/defaultModelImage';
+import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
@@ -15,6 +18,7 @@ export default function UploadedModels({ isRowLayout }) {
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
     const { user } = useKindeBrowserClient();
+    const router = useRouter();
     const modelsPerPage = 5;
 
     const fetchModels = async () => {
@@ -76,10 +80,20 @@ export default function UploadedModels({ isRowLayout }) {
         });
     };
 
+    const handleViewModel = (modelId) => {
+        router.push(`/modelsList/${modelId}`);
+    };
+
     if (isLoading) {
-        return (
-            <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+        return ( 
+            <div className="flex flex-col mt-15 mb-15">
+                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800 mb-8`}>Uploaded Models</h2>   
+                <div className="text-center py-10">
+                    <div className="animate-pulse flex flex-col items-center">
+                        <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -102,77 +116,113 @@ export default function UploadedModels({ isRowLayout }) {
         <>
             {/* Overlay with transition */}
             <div
-                className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${uploadedModels ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setUploadedModels(false)}
+                className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${uploadedModels || editDialog.isOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => { setUploadedModels(false); setEditDialog({ isOpen: false, model: null }); }}
                 style={{ transitionProperty: 'opacity' }}>
             </div>
             <div className="flex flex-col mt-15 mb-15">
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'}`}>Uploaded Models</h2>   
-                    <FiPlus 
-                        onClick={() => setUploadedModels(true)} 
-                        size={isRowLayout ? 35 : 45} 
-                        className="text-gray-600 bg-gray-100 rounded-full cursor-pointer hover:text-gray-700 hover:bg-gray-200 transition-all p-1" 
-                    />
+                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Uploaded Models</h2>   
+                    <button
+                        onClick={() => setUploadedModels(true)}
+                        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                    >
+                        <FiPlus size={20} />
+                        <span>Upload Model</span>
+                    </button>
                     {uploadedModels && <ModelUpload onUploadSuccess={() => {
                         setUploadedModels(false);
                         fetchModels();
                     }}/>}
                 </div>
                 {models.length === 0 ? (
-                    <div className="text-center py-10">
-                        <p className="text-gray-500 text-lg">You haven't uploaded any models yet.</p>
-                        <p className="text-gray-400 mt-2">Click the + button above to upload your first model!</p>
+                    <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div className="max-w-md mx-auto">
+                            <div className="text-6xl mb-4">🚀</div>
+                            <p className="text-gray-600 text-lg font-medium">No Models Uploaded Yet</p>
+                            <p className="text-gray-400 mt-2">Click the "Upload Model" button to share your first creation!</p>
+                        </div>
                     </div>
                 ) : (
-                    <div className={`flex flex-col ${isRowLayout ? 'gap-6' : 'gap-8'}`}>
+                    <div className={`grid ${isRowLayout ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-6'}`}>
                         {currentModels.map(model => (
-                            <div key={model._id} className={`border-1 border-gray-200 ${isRowLayout ? 'rounded-xl' : 'rounded-2xl'}`}>
-                                <div className={`flex flex-col sm:flex-row justify-between w-full items-center ${isRowLayout ? 'py-3 px-3 sm:py-4 sm:px-6 gap-3' : 'py-4 px-4 sm:py-5 sm:px-10 gap-4'}`}>
-                                    <div className={`flex flex-col sm:flex-row ${isRowLayout ? 'gap-3 sm:gap-4' : 'gap-4 sm:gap-5'} items-center`}>
+                            <div 
+                                key={model._id} 
+                                className={`bg-white rounded-xl shadow-md border border-gray-100 transition-shadow duration-200 overflow-hidden ${
+                                    isRowLayout ? 'flex p-4 items-center gap-4' : 'p-4'
+                                }`}
+                            >
+                                <div className={`relative flex-shrink-0 ${isRowLayout ? 'w-24 h-24 rounded-xl overflow-hidden' : 'w-full h-48 rounded-xl overflow-hidden'}`}>
+                                    {model.imgUrl ? (
                                         <img
-                                            src={model.imageUrl || "/default-image.png"}
+                                            src={model.imgUrl}
                                             alt={model.name}
-                                            className={`object-cover ${isRowLayout 
-                                                ? 'w-16 h-16 sm:w-[70px] sm:h-[70px] md:w-[80px] md:h-[80px] rounded-lg' 
-                                                : 'w-20 h-20 sm:w-[80px] sm:h-[80px] md:w-[100px] md:h-[100px] rounded-xl'}`}
-                                            sizes={isRowLayout 
-                                                ? "(max-width: 640px) 64px, (max-width: 768px) 80px, 80px"
-                                                : "(max-width: 640px) 80px, (max-width: 768px) 100px, 100px"}
+                                            className="w-full h-full object-cover rounded-xl"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'flex';
+                                            }}
                                         />
-                                        <div className="flex flex-col gap-0.5 text-center sm:text-left">
-                                            <h1 className={`${isRowLayout 
-                                                ? 'text-base sm:text-lg md:text-xl' 
-                                                : 'text-lg sm:text-xl md:text-3xl'}`}>{model.name}</h1>
-                                            <p className={`font-light text-gray-400 ${isRowLayout 
-                                                ? 'text-xs sm:text-sm md:text-base' 
-                                                : 'text-sm sm:text-base md:text-lg'}`}>Author: {model.authorEmail}</p>
-                                            <div className={`flex ${isRowLayout ? 'gap-1.5' : 'gap-2'} mt-1 flex-wrap justify-center sm:justify-start`}>
-                                                {model.tags.map((tag, idx) => (
-                                                    <span key={idx} className={`bg-purple-100 text-purple-700 ${isRowLayout 
-                                                        ? 'px-1.5 py-0.5 rounded-md' 
-                                                        : 'px-2 py-1 rounded-lg'} text-xs`}>{tag}</span>
-                                                ))}
-                                            </div>
-                                            <p className={`font-light text-gray-400 ${isRowLayout 
-                                                ? 'text-xs sm:text-sm md:text-base' 
-                                                : 'text-sm sm:text-base md:text-lg'}`}>Price: ${model.price}</p>
+                                    ) : (
+                                        <DefaultModelImage size="medium" />
+                                    )}
+                                    <div className="absolute top-0 left-0 bg-purple-600 text-white text-sm font-semibold px-3 py-1.5 rounded-br-lg rounded-tl-xl">
+                                        ${model.price}
+                                    </div>
+                                </div>
+                                
+                                <div className={`flex flex-col ${isRowLayout ? 'flex-1 justify-center' : 'mt-4'}`}>
+                                    <h3 className={`font-semibold text-gray-800 ${isRowLayout ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>{model.name}</h3>
+                                    
+                                    <div className="space-y-1 text-sm text-gray-600 mb-2">
+                                        <div className="flex items-center">
+                                            <FaUser className="mr-2 text-gray-500" />
+                                            <span>{model.authorEmail}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <FaCalendarAlt className="mr-2 text-gray-500" />
+                                            <span>Uploaded {new Date(model.createdAt).toLocaleDateString()}</span>
                                         </div>
                                     </div>
-                                    <div className={`flex flex-col sm:flex-row ${isRowLayout ? 'gap-2 sm:gap-3' : 'gap-3 sm:gap-5'} w-full sm:w-auto`}>
+
+                                    <div className="mb-4">
+                                        <div className="flex items-center text-gray-600 mb-1">
+                                            <FaTag className="mr-2 text-gray-500" />
+                                            <span className="font-medium">Tags:</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {model.tags.map((tag, idx) => (
+                                                <span 
+                                                    key={idx} 
+                                                    className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-medium"
+                                                >
+                                                    {tag.toUpperCase()}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className={`flex ${isRowLayout ? 'flex-col gap-2' : 'flex-col gap-3'} sm:flex-row mt-auto`}>
+                                        <button 
+                                            onClick={() => handleViewModel(model._id)}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-colors text-sm sm:text-base"
+                                        >
+                                            <FaEye />
+                                            <span>View</span>
+                                        </button>
                                         <button 
                                             onClick={() => handleEditClick(model)}
-                                            className={`text-white button btn-primary ${isRowLayout 
-                                                ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                                : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
-                                            Edit
+                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                                        >
+                                            <FaEye />
+                                            <span>Edit</span>
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteClick(model._id, model.name)}
-                                            className={`text-black button shadow ${isRowLayout 
-                                                ? 'px-3 py-1.5 text-sm rounded-lg sm:px-4 sm:py-2 sm:text-base 2xl:text-2xl' 
-                                                : 'px-4 py-2 text-base rounded-xl sm:px-6 sm:py-3 sm:text-lg md:px-8 md:py-4 md:text-xl 2xl:text-4xl'}`}>
-                                            Delete
+                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                                        >
+                                            <FaDownload />
+                                            <span>Delete</span>
                                         </button>
                                     </div>
                                 </div>
@@ -182,7 +232,7 @@ export default function UploadedModels({ isRowLayout }) {
                 )}
                 {/* Pagination Controls */}
                 {models.length > 0 && (
-                    <div className={`flex justify-center ${isRowLayout ? 'gap-1.5 mt-4' : 'gap-2 mt-6'}`}>
+                    <div className="flex justify-center gap-2 mt-8">
                         <button
                             onClick={() => {
                                 setCurrentPage(prev => {
@@ -192,26 +242,28 @@ export default function UploadedModels({ isRowLayout }) {
                                 });
                             }}
                             disabled={currentPage === 1}
-                            className={`${isRowLayout 
-                                ? 'px-2 py-0.5 text-sm' 
-                                : 'px-3 py-1'} rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50`}
+                            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            Prev
+                            Previous
                         </button>
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => {
-                                    setCurrentPage(i + 1);
-                                    setTimeout(scrollToTop, 0);
-                                }}
-                                className={`${isRowLayout 
-                                    ? 'px-2 py-0.5 text-sm' 
-                                    : 'px-3 py-1'} rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
-                            >
-                                {i + 1}
-                            </button>
-                        ))}
+                        <div className="flex gap-1">
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        setCurrentPage(i + 1);
+                                        setTimeout(scrollToTop, 0);
+                                    }}
+                                    className={`w-10 h-10 rounded-lg ${
+                                        currentPage === i + 1 
+                                            ? 'bg-purple-600 text-white' 
+                                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                    } transition-colors`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
                         <button
                             onClick={() => {
                                 setCurrentPage(prev => {
@@ -221,9 +273,7 @@ export default function UploadedModels({ isRowLayout }) {
                                 });
                             }}
                             disabled={currentPage === totalPages}
-                            className={`${isRowLayout 
-                                ? 'px-2 py-0.5 text-sm' 
-                                : 'px-3 py-1'} rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50`}
+                            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Next
                         </button>
