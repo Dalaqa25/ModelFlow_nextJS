@@ -24,6 +24,8 @@ export default function Model(props) {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+    const [isOwned, setIsOwned] = useState(false);
+    const [isAuthor, setIsAuthor] = useState(false);
 
     useEffect(() => {
         const fetchModel = async () => {
@@ -32,8 +34,18 @@ export default function Model(props) {
                 const data = await res.json();
                 setModel(data);
                 setLikeCount(data.likes || 0);
-                if (isAuthenticated && data.likedBy?.includes(user?.email)) {
-                    setIsLiked(true);
+                if (isAuthenticated) {
+                    if (data.likedBy?.includes(user?.email)) {
+                        setIsLiked(true);
+                    }
+                    // Check if user is the author
+                    setIsAuthor(data.authorEmail === user?.email);
+                    // Check if user owns the model
+                    const purchasedRes = await fetch('/api/user/purchased-models');
+                    if (purchasedRes.ok) {
+                        const purchasedModels = await purchasedRes.json();
+                        setIsOwned(purchasedModels.some(m => m._id === data._id));
+                    }
                 }
                 setLoading(false);
             } catch (error) {
@@ -85,17 +97,23 @@ export default function Model(props) {
                 method: 'POST',
             });
 
+            const data = await res.json();
+
             if (res.ok) {
-                const data = await res.json();
                 toast.success("Model purchased successfully!");
                 setIsPurchaseDialogOpen(false);
+                // Update the UI to show the model as purchased
+                setIsOwned(true);
             } else {
-                const error = await res.json();
-                toast.error(error.error || "Failed to purchase model");
+                // Show specific error message from the API
+                toast.error(data.error || "Failed to purchase model");
+                if (data.error === "You have already purchased this model") {
+                    setIsOwned(true);
+                }
             }
         } catch (error) {
             console.error("Error purchasing model:", error);
-            toast.error("Failed to purchase model");
+            toast.error("Failed to purchase model. Please try again later.");
         }
     };
 
@@ -171,12 +189,28 @@ export default function Model(props) {
                         Test Model
                     </button>
                     {isAuthenticated ? (
-                        <button 
-                            onClick={handlePurchase}
-                            className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
-                        >
-                            Purchase
-                        </button>
+                        isAuthor ? (
+                            <button 
+                                disabled
+                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                            >
+                                Your Model
+                            </button>
+                        ) : isOwned ? (
+                            <button 
+                                disabled
+                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                            >
+                                Already Purchased
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handlePurchase}
+                                className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
+                            >
+                                Purchase
+                            </button>
+                        )
                     ) : (
                         <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-colors duration-200'>
                             Sign in to Purchase

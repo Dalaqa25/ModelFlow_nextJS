@@ -22,6 +22,11 @@ export async function POST(request, { params }) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
 
+        // Check if user is the author
+        if (model.authorEmail === user.email) {
+            return NextResponse.json({ error: "You cannot purchase your own model" }, { status: 400 });
+        }
+
         // Find the user document
         const userDoc = await User.findOne({ email: user.email });
         if (!userDoc) {
@@ -51,9 +56,19 @@ export async function POST(request, { params }) {
 
         await userDoc.save();
 
-        return NextResponse.json({ message: "Model purchased successfully" });
+        return NextResponse.json({ 
+            message: "Model purchased successfully",
+            model: {
+                id: model._id,
+                name: model.name,
+                price: model.price
+            }
+        });
     } catch (error) {
         console.error("Error purchasing model:", error);
-        return NextResponse.json({ error: "Failed to purchase model" }, { status: 500 });
+        return NextResponse.json({ 
+            error: "Failed to purchase model",
+            details: error.message 
+        }, { status: 500 });
     }
 } 

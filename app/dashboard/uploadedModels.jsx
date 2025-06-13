@@ -6,7 +6,7 @@ import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DeletionDialog from './delation';
 import EditModel from './editModel';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
+import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -208,9 +208,9 @@ export default function UploadedModels({ isRowLayout }) {
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteClick(model._id, model.name)}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm sm:text-base"
                                         >
-                                            <FaDownload />
+                                            <FaTrash />
                                             <span>Delete</span>
                                         </button>
                                     </div>
