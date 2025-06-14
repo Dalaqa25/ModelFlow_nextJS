@@ -34,15 +34,27 @@ export async function GET(request) {
         }
         console.log('User found:', user._id);
 
-        // Then fetch their models
+        // Fetch both regular models and pending models
         console.log('Fetching models for user...');
-        const models = await db.collection('models')
-            .find({ authorEmail: email })
-            .sort({ createdAt: -1 })
-            .toArray();
-        console.log(`Found ${models.length} models`);
+        const [models, pendingModels] = await Promise.all([
+            db.collection('models')
+                .find({ authorEmail: email })
+                .sort({ createdAt: -1 })
+                .toArray(),
+            db.collection('pendingmodels')
+                .find({ authorEmail: email })
+                .sort({ createdAt: -1 })
+                .toArray()
+        ]);
 
-        return NextResponse.json(models || []);
+        // Combine both arrays and sort by createdAt
+        const allModels = [...models, ...pendingModels].sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        console.log(`Found ${allModels.length} total models (${models.length} regular, ${pendingModels.length} pending)`);
+
+        return NextResponse.json(allModels || []);
     } catch (error) {
         console.error('Detailed error in user-models API:', error);
         return NextResponse.json(

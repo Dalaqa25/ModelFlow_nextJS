@@ -6,7 +6,7 @@ import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DeletionDialog from './delation';
 import EditModel from './editModel';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash } from 'react-icons/fa';
+import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -158,11 +158,26 @@ export default function UploadedModels({ isRowLayout }) {
                                     <div className="absolute top-0 left-0 bg-purple-600 text-white text-sm font-semibold px-3 py-1.5 rounded-br-lg rounded-tl-xl">
                                         ${model.price}
                                     </div>
+                                    {model.status === 'pending' && (
+                                        <div className="absolute top-0 right-0 bg-yellow-500 text-white text-sm font-semibold px-3 py-1.5 rounded-bl-lg rounded-tr-xl flex items-center gap-1">
+                                            <FaExclamationTriangle size={14} />
+                                            <span>Pending</span>
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 <div className={`flex flex-col ${isRowLayout ? 'flex-1 justify-center' : 'mt-4'}`}>
                                     <h3 className={`font-semibold text-gray-800 ${isRowLayout ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>{model.name}</h3>
                                     
+                                    {model.status === 'pending' && (
+                                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-yellow-700 text-sm flex items-center gap-2">
+                                                <FaExclamationTriangle className="text-yellow-500" />
+                                                This model is currently under review. It will be visible to others once approved.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="space-y-1 text-sm text-gray-600 mb-2">
                                         <div className="flex items-center">
                                             <FaUser className="mr-2 text-gray-500" />
