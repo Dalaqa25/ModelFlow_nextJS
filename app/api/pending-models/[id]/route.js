@@ -43,9 +43,8 @@ export async function PATCH(req, { params }) {
 
             const newModel = await Model.create(modelData);
             
-            // Update pending model status
-            pendingModel.status = 'approved';
-            await pendingModel.save();
+            // Delete the pending model after successful approval
+            await PendingModel.findByIdAndDelete(id);
 
             return NextResponse.json({ 
                 message: "Model approved successfully",
