@@ -195,7 +195,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 formDataToSend.append('driveLink', formData.driveLink);
             }
 
-            const response = await fetch('/api/models', {
+            const response = await fetch('/api/pending-models', {
                 method: 'POST',
                 body: formDataToSend,
             });
