@@ -3,6 +3,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import connect from "@/lib/db/connect";
 import PendingModel from "@/lib/db/PendingModel";
 import Model from "@/lib/db/Model";
+import Notification from "@/lib/db/Notification";
 
 export async function PATCH(req, { params }) {
     try {
@@ -43,6 +44,16 @@ export async function PATCH(req, { params }) {
 
             const newModel = await Model.create(modelData);
             
+            // Create approval notification
+            await Notification.create({
+                userId: pendingModel.author,
+                userEmail: pendingModel.authorEmail,
+                type: 'model_approval',
+                title: 'Model Approved',
+                message: `Your model "${pendingModel.name}" has been approved and is now live on the platform.`,
+                relatedModelId: newModel._id
+            });
+
             // Delete the pending model after successful approval
             await PendingModel.findByIdAndDelete(id);
 
@@ -58,13 +69,21 @@ export async function PATCH(req, { params }) {
                 );
             }
 
-            pendingModel.status = 'rejected';
-            pendingModel.rejectionReason = rejectionReason;
-            await pendingModel.save();
+            // Create rejection notification
+            await Notification.create({
+                userId: pendingModel.author,
+                userEmail: pendingModel.authorEmail,
+                type: 'model_rejection',
+                title: 'Model Rejected',
+                message: `Your model "${pendingModel.name}" has been rejected. Reason: ${rejectionReason}`,
+                relatedModelId: pendingModel._id
+            });
+
+            // Delete the pending model after creating notification
+            await PendingModel.findByIdAndDelete(id);
 
             return NextResponse.json({ 
-                message: "Model rejected successfully",
-                pendingModel
+                message: "Model rejected successfully"
             });
         } else {
             return NextResponse.json(
