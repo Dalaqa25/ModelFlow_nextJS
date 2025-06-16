@@ -178,36 +178,102 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
         setIsSubmitting(true);
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('name', formData.modelName);
-            formDataToSend.append('description', formData.description);
-            formDataToSend.append('useCases', formData.useCases);
-            formDataToSend.append('setup', formData.setup);
-            formDataToSend.append('features', features.join(','));
-            formDataToSend.append('tags', JSON.stringify(tags)); // Send selected tags
-            formDataToSend.append('price', formData.price);
-            
-            formDataToSend.append('uploadType', uploadType);
-            
+            // First, validate the ZIP file with FastAPI if it's a ZIP upload
             if (uploadType === 'zip' && formData.modelFile) {
+                const fastApiFormData = new FormData();
+                fastApiFormData.append('file', formData.modelFile);
+                fastApiFormData.append('description', formData.description);
+                fastApiFormData.append('setup', formData.setup);
+
+                console.log('Sending request to FastAPI...');
+                const fastApiResponse = await fetch('http://127.0.0.1:8000/process-zip', {
+                    method: 'POST',
+                    body: fastApiFormData,
+                });
+
+                if (!fastApiResponse.ok) {
+                    const errorData = await fastApiResponse.json();
+                    console.error('FastAPI error:', errorData);
+                    throw new Error(errorData.detail || 'Failed to validate ZIP file');
+                }
+
+                const validationResult = await fastApiResponse.json();
+                console.log('FastAPI response:', validationResult);
+
+                if (!validationResult.isValid) {
+                    throw new Error(validationResult.message || 'Invalid ZIP file structure');
+                }
+
+                // Process the AI analysis to ensure consistent format
+                let processedAiAnalysis = validationResult.ai_analysis;
+                if (processedAiAnalysis) {
+                    // Ensure the analysis starts with the recommendation
+                    if (!processedAiAnalysis.includes('✅ PUBLISH') && !processedAiAnalysis.includes('❌ REJECT')) {
+                        // If no clear recommendation, add one based on isValid
+                        processedAiAnalysis = `${validationResult.isValid ? '✅ PUBLISH' : '❌ REJECT'}\n\n${processedAiAnalysis}`;
+                    }
+                }
+
+                // If validation passes, proceed with the model upload
+                const formDataToSend = new FormData();
+                formDataToSend.append('name', formData.modelName);
+                formDataToSend.append('description', formData.description);
+                formDataToSend.append('useCases', formData.useCases);
+                formDataToSend.append('setup', formData.setup);
+                formDataToSend.append('features', features.join(','));
+                formDataToSend.append('tags', JSON.stringify(tags));
+                formDataToSend.append('price', formData.price);
+                formDataToSend.append('uploadType', uploadType);
                 formDataToSend.append('modelFile', formData.modelFile);
+                formDataToSend.append('aiAnalysis', processedAiAnalysis);
+                formDataToSend.append('validationStatus', JSON.stringify({
+                    isValid: validationResult.isValid,
+                    message: validationResult.message,
+                    has_requirements: validationResult.has_requirements
+                }));
+
+                console.log('Sending request to Next.js API...');
+                const response = await fetch('/api/pending-models', {
+                    method: 'POST',
+                    body: formDataToSend,
+                });
+
+                const data = await response.json();
+                console.log('Next.js API response:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to upload model');
+                }
+
+                toast.success('Model uploaded successfully!');
+                onUploadSuccess();
             } else if (uploadType === 'drive') {
+                // Handle Google Drive upload
+                const formDataToSend = new FormData();
+                formDataToSend.append('name', formData.modelName);
+                formDataToSend.append('description', formData.description);
+                formDataToSend.append('useCases', formData.useCases);
+                formDataToSend.append('setup', formData.setup);
+                formDataToSend.append('features', features.join(','));
+                formDataToSend.append('tags', JSON.stringify(tags));
+                formDataToSend.append('price', formData.price);
+                formDataToSend.append('uploadType', uploadType);
                 formDataToSend.append('driveLink', formData.driveLink);
+
+                const response = await fetch('/api/pending-models', {
+                    method: 'POST',
+                    body: formDataToSend,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to upload model');
+                }
+
+                toast.success('Model uploaded successfully!');
+                onUploadSuccess();
             }
-
-            const response = await fetch('/api/pending-models', {
-                method: 'POST',
-                body: formDataToSend,
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to upload model');
-            }
-
-            toast.success('Model uploaded successfully!');
-            onUploadSuccess(); // Call the callback to refresh models in dashboard
         } catch (error) {
             console.error('Upload error:', error);
             toast.error(error.message || 'Failed to upload model. Please try again.');

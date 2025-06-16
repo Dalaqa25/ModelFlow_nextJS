@@ -133,6 +133,52 @@ export default function AdminPage() {
                                             </span>
                                         ))}
                                     </div>
+
+                                    {/* AI Analysis Section */}
+                                    {model.aiAnalysis && (
+                                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                            <h3 className="font-semibold text-lg mb-2">AI Analysis</h3>
+                                            <div className="prose max-w-none">
+                                                <div className="whitespace-pre-wrap text-gray-700">
+                                                    {model.aiAnalysis.split('\n').map((line, index) => {
+                                                        if (line.includes('✅ PUBLISH')) {
+                                                            return <div key={index} className="text-green-600 font-semibold">{line}</div>;
+                                                        } else if (line.includes('❌ REJECT')) {
+                                                            return <div key={index} className="text-red-600 font-semibold">{line}</div>;
+                                                        } else if (line.startsWith('**')) {
+                                                            return <div key={index} className="font-semibold">{line}</div>;
+                                                        }
+                                                        return <div key={index}>{line}</div>;
+                                                    })}
+                                                </div>
+                                            </div>
+                                            {model.aiAnalysis.includes('✅ PUBLISH') && (
+                                                <div className="mt-2 text-green-600 font-semibold">
+                                                    AI Recommendation: PUBLISH
+                                                </div>
+                                            )}
+                                            {model.aiAnalysis.includes('❌ REJECT') && (
+                                                <div className="mt-2 text-red-600 font-semibold">
+                                                    AI Recommendation: REJECT
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Validation Status */}
+                                    {model.validationStatus && (
+                                        <div className="mt-3">
+                                            <h3 className="font-semibold">Validation Status:</h3>
+                                            <div className={`mt-1 p-2 rounded ${
+                                                model.validationStatus.isValid 
+                                                    ? 'bg-green-100 text-green-800' 
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {model.validationStatus.message}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="mt-4 flex gap-4">
                                         <button
                                             onClick={() => handleApprove(model._id)}

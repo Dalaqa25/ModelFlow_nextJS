@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 export default function HomeSecurity() {
     return (
-        <div className="w-[80%] lg:w-[70%] max-w-[1100px] mx-auto flex flex-col gap-8 lg:gap-15">
+        <div className="w-[80%] lg:w-[80%] max-w-[1100px] mx-auto flex flex-col gap-8 lg:gap-15">
             {/* Security Section */}
             <motion.div 
                 initial={{ opacity: 0, y: 50 }}
@@ -91,7 +91,7 @@ export default function HomeSecurity() {
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                     viewport={{ once: true }}
-                    className='text-center lg:text-left lg:mr-15'
+                    className='text-center lg:text-left lg:mr-30'
                 >
                     <h1 className='text-4xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-semibold'>Explore<br/>AI Models</h1>
                     <p className='text-xl lg:text-3xl xl:text-3xl 2xl:text-4xl text-gray-600 mt-2 font-light'>Upload, manage and <br/>deploy models with ease</p>

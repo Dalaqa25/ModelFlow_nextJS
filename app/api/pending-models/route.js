@@ -18,7 +18,8 @@ export async function GET(req) {
         await connect();
         const pendingModels = await PendingModel.find({ status: 'pending' })
             .sort({ createdAt: -1 })
-            .populate('author', 'name email');
+            .populate('author', 'name email')
+            .select('+aiAnalysis +validationStatus');
 
         return NextResponse.json(pendingModels);
     } catch (error) {
@@ -96,6 +97,26 @@ export async function POST(req) {
         const driveLink = formData.get('driveLink');
 
         if (uploadType === 'zip' && modelFile) {
+            // First, validate with FastAPI
+            const fastApiFormData = new FormData();
+            fastApiFormData.append('file', modelFile);
+            fastApiFormData.append('description', formData.get('description'));
+            fastApiFormData.append('setup', formData.get('setup'));
+
+            const fastApiResponse = await fetch('http://127.0.0.1:8000/process-zip', {
+                method: 'POST',
+                body: fastApiFormData,
+            });
+
+            if (!fastApiResponse.ok) {
+                return NextResponse.json(
+                    { error: 'Failed to validate model with FastAPI' },
+                    { status: 400 }
+                );
+            }
+
+            const validationResult = await fastApiResponse.json();
+            
             modelData.fileStorage = {
                 type: 'zip',
                 url: modelFile.name,
@@ -105,6 +126,14 @@ export async function POST(req) {
                 folderPath: `pending-models/${user.email}/${Date.now()}`,
                 uploadedAt: new Date()
             };
+
+            // Add validation and AI analysis results
+            modelData.validationStatus = {
+                isValid: validationResult.isValid,
+                message: validationResult.message,
+                has_requirements: validationResult.has_requirements
+            };
+            modelData.aiAnalysis = validationResult.ai_analysis;
         } else if (uploadType === 'drive' && driveLink) {
             modelData.fileStorage = {
                 type: 'drive',
