@@ -12,6 +12,7 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedModel, setSelectedModel] = useState(null);
+    const [paddleCheckoutURLs, setPaddleCheckoutURLs] = useState({});
 
     useEffect(() => {
         if (!isLoading && user?.email !== 'modelflow01@gmail.com') {
@@ -25,6 +26,12 @@ export default function AdminPage() {
                 const response = await fetch('/api/pending-models');
                 const data = await response.json();
                 setPendingModels(data);
+                // Initialize paddleCheckoutURLs state with empty strings
+                const initialURLs = {};
+                data.forEach(model => {
+                    initialURLs[model._id] = '';
+                });
+                setPaddleCheckoutURLs(initialURLs);
             } catch (error) {
                 console.error('Error fetching pending models:', error);
                 toast.error('Failed to fetch pending models');
@@ -39,13 +46,22 @@ export default function AdminPage() {
     }, [user]);
 
     const handleApprove = async (modelId) => {
+        const paddleCheckoutURL = paddleCheckoutURLs[modelId];
+        if (!paddleCheckoutURL.trim()) {
+            toast.error('Please provide a Paddle checkout URL');
+            return;
+        }
+
         try {
             const response = await fetch(`/api/pending-models/${modelId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ action: 'approve' }),
+                body: JSON.stringify({ 
+                    action: 'approve',
+                    paddleCheckoutURL: paddleCheckoutURL.trim()
+                }),
             });
 
             if (!response.ok) {
@@ -55,6 +71,12 @@ export default function AdminPage() {
             toast.success('Model approved successfully');
             // Remove the approved model from the list
             setPendingModels(prev => prev.filter(model => model._id !== modelId));
+            // Remove the URL from state
+            setPaddleCheckoutURLs(prev => {
+                const newURLs = { ...prev };
+                delete newURLs[modelId];
+                return newURLs;
+            });
         } catch (error) {
             console.error('Error approving model:', error);
             toast.error('Failed to approve model');
@@ -86,12 +108,25 @@ export default function AdminPage() {
             toast.success('Model rejected successfully');
             // Remove the rejected model from the list
             setPendingModels(prev => prev.filter(model => model._id !== modelId));
+            // Remove the URL from state
+            setPaddleCheckoutURLs(prev => {
+                const newURLs = { ...prev };
+                delete newURLs[modelId];
+                return newURLs;
+            });
             setRejectionReason('');
             setSelectedModel(null);
         } catch (error) {
             console.error('Error rejecting model:', error);
             toast.error('Failed to reject model');
         }
+    };
+
+    const handleURLChange = (modelId, url) => {
+        setPaddleCheckoutURLs(prev => ({
+            ...prev,
+            [modelId]: url
+        }));
     };
 
     if (isLoading || loading) {
@@ -132,6 +167,21 @@ export default function AdminPage() {
                                                 {tag}
                                             </span>
                                         ))}
+                                    </div>
+
+                                    {/* Paddle Checkout URL Input */}
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Paddle Checkout URL *
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={paddleCheckoutURLs[model._id] || ''}
+                                            onChange={(e) => handleURLChange(model._id, e.target.value)}
+                                            placeholder="Enter Paddle checkout URL"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            required
+                                        />
                                     </div>
 
                                     {/* AI Analysis Section */}
@@ -182,7 +232,12 @@ export default function AdminPage() {
                                     <div className="mt-4 flex gap-4">
                                         <button
                                             onClick={() => handleApprove(model._id)}
-                                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+                                            disabled={!paddleCheckoutURLs[model._id]?.trim()}
+                                            className={`px-4 py-2 rounded transition-colors ${
+                                                paddleCheckoutURLs[model._id]?.trim()
+                                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
                                         >
                                             Approve
                                         </button>

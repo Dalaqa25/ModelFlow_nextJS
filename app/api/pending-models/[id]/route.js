@@ -16,7 +16,7 @@ export async function PATCH(req, { params }) {
 
         await connect();
         const { id } = params;
-        const { action, rejectionReason } = await req.json();
+        const { action, rejectionReason, paddleCheckoutURL } = await req.json();
 
         const pendingModel = await PendingModel.findById(id);
         if (!pendingModel) {
@@ -24,6 +24,13 @@ export async function PATCH(req, { params }) {
         }
 
         if (action === 'approve') {
+            if (!paddleCheckoutURL) {
+                return NextResponse.json(
+                    { error: "Paddle checkout URL is required" },
+                    { status: 400 }
+                );
+            }
+
             // Create a new model from the pending model
             const modelData = {
                 name: pendingModel.name,
@@ -37,6 +44,7 @@ export async function PATCH(req, { params }) {
                 imgUrl: pendingModel.imgUrl,
                 fileStorage: pendingModel.fileStorage,
                 price: pendingModel.price,
+                paddleCheckoutURL: paddleCheckoutURL,
                 likes: 0,
                 likedBy: [],
                 downloads: 0

@@ -93,27 +93,16 @@ export default function Model(props) {
 
     const handleConfirmPurchase = async () => {
         try {
-            const res = await fetch(`/api/models/${params.model}/purchase`, {
-                method: 'POST',
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                toast.success("Model purchased successfully!");
-                setIsPurchaseDialogOpen(false);
-                // Update the UI to show the model as purchased
-                setIsOwned(true);
-            } else {
-                // Show specific error message from the API
-                toast.error(data.error || "Failed to purchase model");
-                if (data.error === "You have already purchased this model") {
-                    setIsOwned(true);
-                }
+            if (!model.paddleCheckoutURL) {
+                toast.error("Purchase URL not available. Please contact support.");
+                return;
             }
+
+            // Redirect to Paddle checkout URL
+            window.location.href = model.paddleCheckoutURL;
         } catch (error) {
-            console.error("Error purchasing model:", error);
-            toast.error("Failed to purchase model. Please try again later.");
+            console.error("Error initiating purchase:", error);
+            toast.error("Failed to initiate purchase. Please try again later.");
         }
     };
 
@@ -201,18 +190,18 @@ export default function Model(props) {
                                 disabled
                                 className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
                             >
-                                Already Purchased
+                                Purchased
                             </button>
                         ) : (
-                            <button 
+                            <button
                                 onClick={handlePurchase}
-                                className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
+                                className='w-full sm:w-auto text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-colors duration-200'
                             >
-                                Purchase
+                                Purchase ${model.price}
                             </button>
                         )
                     ) : (
-                        <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-colors duration-200'>
+                        <LoginLink className='w-full sm:w-auto text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-colors duration-200'>
                             Sign in to Purchase
                         </LoginLink>
                     )}
@@ -235,7 +224,7 @@ export default function Model(props) {
                 onClose={() => setIsPurchaseDialogOpen(false)}
                 onConfirm={handleConfirmPurchase}
                 title="Confirm Purchase"
-                description={`Are you sure you want to purchase ${model.name}? This action will redirect you to the payment page.`}
+                description={`Are you sure you want to purchase "${model.name}" for $${model.price}? You will be redirected to our secure payment processor.`}
             />
         </section>
     );
