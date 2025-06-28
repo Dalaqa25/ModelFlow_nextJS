@@ -1,6 +1,7 @@
 "use client";
 import { use } from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import ModelDescription from "./modelDescription";
 import ModelFeatures from "./modelFeatures";
@@ -14,6 +15,8 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import ConfirmationDialog from "@/app/components/confirmationDialog/ConfirmationDialog";
 
+import { createCheckoutUrl } from "@/lib/lemon/server";
+
 export default function Model(props) {
     const params = use(props.params);
     const { isAuthenticated, user } = useKindeAuth();
@@ -26,6 +29,7 @@ export default function Model(props) {
     const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
     const [isOwned, setIsOwned] = useState(false);
     const [isAuthor, setIsAuthor] = useState(false);
+    const [checkoutURL, setCheckoutURL] = useState(null);
 
     useEffect(() => {
         const fetchModel = async () => {
@@ -54,6 +58,25 @@ export default function Model(props) {
         };
         fetchModel();
     }, [params.model, isAuthenticated, user]);
+
+    // Generate checkout URL when component mounts and user is authenticated
+    useEffect(() => {
+        const generateCheckoutURL = async () => {
+            if (isAuthenticated && !isOwned && !isAuthor) {
+                try {
+                    const url = await createCheckoutUrl({
+                        variantId: "874721",
+                        embed: false
+                    });
+                    setCheckoutURL(url);
+                } catch (error) {
+                    console.error("Failed to generate checkout URL:", error);
+                }
+            }
+        };
+        
+        generateCheckoutURL();
+    }, [isAuthenticated, isOwned, isAuthor]);
 
     const handleLike = async () => {
         if (!isAuthenticated) {
@@ -204,12 +227,23 @@ export default function Model(props) {
                                 Already Purchased
                             </button>
                         ) : (
-                            <button 
-                                onClick={handlePurchase}
-                                className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
-                            >
-                                Purchase
-                            </button>
+                            checkoutURL ? (
+                                <Link href={checkoutURL}>
+                                    <button 
+                                        onClick={handlePurchase}
+                                        className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
+                                    >
+                                        Purchase
+                                    </button>
+                                </Link>
+                            ) : (
+                                <button 
+                                    disabled
+                                    className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                                >
+                                    Loading...
+                                </button>
+                            )
                         )
                     ) : (
                         <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-colors duration-200'>
