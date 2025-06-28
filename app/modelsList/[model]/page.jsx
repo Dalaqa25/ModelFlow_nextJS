@@ -62,10 +62,15 @@ export default function Model(props) {
     // Generate checkout URL when component mounts and user is authenticated
     useEffect(() => {
         const generateCheckoutURL = async () => {
-            if (isAuthenticated && !isOwned && !isAuthor) {
+            if (isAuthenticated && !isOwned && !isAuthor && model) {
                 try {
                     const url = await createCheckoutUrl({
                         variantId: "874721",
+                        userEmail: user?.email || "",
+                        userId: user?.id || "",
+                        modelId: model._id,
+                        modelName: model.name,
+                        authorEmail: model.authorEmail,
                         embed: false
                     });
                     setCheckoutURL(url);
@@ -76,7 +81,7 @@ export default function Model(props) {
         };
         
         generateCheckoutURL();
-    }, [isAuthenticated, isOwned, isAuthor]);
+    }, [isAuthenticated, isOwned, isAuthor, model, user]);
 
     const handleLike = async () => {
         if (!isAuthenticated) {
@@ -149,7 +154,7 @@ export default function Model(props) {
     }
 
     return (
-        <section className='mt-4 sm:mt-17 w-[90%] sm:w-[70%] max-w-[1500px] mx-auto px-2 sm:px-6'>
+        <section className='mt-10 sm:mt-17 w-[90%] sm:w-[70%] max-w-[1500px] mx-auto px-2 sm:px-6'>
             {/* header section */}
             <div className='flex flex-col sm:flex-row gap-4 sm:gap-8'>
                 <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 rounded-xl overflow-hidden">
