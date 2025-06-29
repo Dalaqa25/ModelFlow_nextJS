@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import EditProfile from "./editProfile";
 import Link from "next/link";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function Profile() { 
     const [showEdit, setShowEdit] = useState(false);
@@ -96,6 +97,17 @@ export default function Profile() {
         }
     };
 
+    // Prepare chart data from earningsHistory
+    const earningsByDate = {};
+    (userData.earningsHistory || []).forEach(entry => {
+        const date = new Date(entry.earnedAt).toLocaleDateString();
+        earningsByDate[date] = (earningsByDate[date] || 0) + (entry.amount || 0);
+    });
+    const chartData = Object.entries(earningsByDate).map(([date, amount]) => ({
+        date,
+        amount: amount / 100 // convert cents to GEL/USD
+    }));
+
     return (
         <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50 py-12 px-6">
             <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-3xl p-8">
@@ -137,9 +149,38 @@ export default function Profile() {
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold text-gray-700">
-                            ${userModels.reduce((total, model) => total + (model.sold ? model.price : 0), 0)}
+                            ${((userData.totalEarnings || 0) / 100).toFixed(2)}
                         </h3>
                         <p className="text-sm text-gray-500">Revenue</p>
+                    </div>
+                </div>
+
+                {/* Earnings Chart Section */}
+                <div className="mt-12">
+                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Earnings Over Time</h4>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.9}/>
+                                        <stop offset="100%" stopColor="#a5b4fc" stopOpacity={0.3}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="date" />
+                                <YAxis />
+                                <Tooltip formatter={value => `GEL ${value.toFixed(2)}`} />
+                                <Area
+                                  type="monotone"
+                                  dataKey="amount"
+                                  stroke="#7c3aed"
+                                  fill="url(#colorEarnings)"
+                                  fillOpacity={1}
+                                  activeDot={{ r: 6, fill: "#7c3aed", stroke: "#fff", strokeWidth: 2 }}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
@@ -149,74 +190,6 @@ export default function Profile() {
                     <p className="text-gray-600 text-base">
                         {userData.aboutMe || "No description provided yet."}
                     </p>
-                </div>
-
-                {/* Uploaded Models Section with Pagination */}
-                <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Uploaded Models</h4>
-                    {isLoading ? (
-                        <div className="text-center py-4">
-                            <p className="text-gray-500">Loading models...</p>
-                        </div>
-                    ) : userModels.length === 0 ? (
-                        <div className="text-center py-4">
-                            <p className="text-gray-500">No models uploaded yet.</p>
-                            <Link href="/dashboard" className="text-indigo-600 hover:underline mt-2 inline-block">
-                                Upload your first model
-                            </Link>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="space-y-4">
-                                {currentModels.map(model => (
-                                    <Link
-                                        key={model._id}
-                                        href={`/modelsList/${model._id}`}
-                                        className="block"
-                                    >
-                                        <div className="p-4 border border-gray-100 rounded-xl shadow-sm flex justify-between items-center hover:bg-gray-50 transition">
-                                            <div>
-                                                <h5 className="font-medium text-gray-800">{model.name}</h5>
-                                                <p className="text-sm text-gray-500">{model.tags.join(' / ')}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-medium text-gray-600">${model.price}</p>
-                                                <p className="text-xs text-gray-500">{model.sold ? 'Sold' : 'Available'}</p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                            {/* Pagination Controls */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center gap-2 mt-4">
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                                    >
-                                        Prev
-                                    </button>
-                                    {[...Array(totalPages)].map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setCurrentPage(i + 1)}
-                                            className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            )}
-                        </>
-                    )}
                 </div>
 
                 {/* Contact Section */}
