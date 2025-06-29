@@ -143,7 +143,7 @@ export default function Profile() {
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold text-gray-700">
-                            {userModels.filter(model => model.sold).length}
+                            {(userData.earningsHistory || []).length}
                         </h3>
                         <p className="text-sm text-gray-500">Models Sold</p>
                     </div>
