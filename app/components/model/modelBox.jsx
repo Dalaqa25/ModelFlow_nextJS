@@ -6,6 +6,7 @@ import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
 import DefaultModelImage from './defaultModelImage';
 import { useQuery } from '@tanstack/react-query';
+import { FaTag } from 'react-icons/fa';
 
 export default function ModelBox({ search = "" }) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -105,14 +106,14 @@ export default function ModelBox({ search = "" }) {
                 />
                 <div className='w-full flex flex-col gap-7'>
                     {currentModels.map(model => (
-                        <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='cutom-shadow p-1 rounded-2xl overflow-hidden cursor-pointer hover:bg-gray-50 transition-all max-w-[900px]'>
-                            <div className='p-3.5 flex flex-col gap-5'>
+                        <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='bg-white shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.025] hover:shadow-lg transition-all max-w-[900px]'>
+                            <div className='p-4 flex flex-col gap-5'>
                                 <div className='flex gap-4'>
                                     {model.imgUrl ? (
                                         <img 
                                             src={model.imgUrl} 
                                             alt={model.name} 
-                                            className='w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover'
+                                            className='w-14 h-14 sm:w-20 sm:h-20 rounded-lg object-cover'
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.style.display = 'none';
@@ -120,31 +121,31 @@ export default function ModelBox({ search = "" }) {
                                             }}
                                         />
                                     ) : (
-                                        <div className="w-12 h-12 sm:w-16 sm:h-16">
+                                        <div className="w-14 h-14 sm:w-20 sm:h-20">
                                             <DefaultModelImage />
                                         </div>
                                     )}
-                                    <div className='flex flex-col gap-2'>
-                                        <h2 className='text-1xl sm:text-2xl font-semibold'>{model.name}</h2>
-                                        <span className='flex gap-1 text-gray-500'>
+                                    <div className='flex flex-col gap-1'>
+                                        <h2 className='text-2xl font-bold'>{model.name}</h2>
+                                        <span className='flex gap-1 text-gray-400 text-sm font-light'>
                                             author: <p>{model.authorEmail}</p>
                                         </span>
                                     </div>
                                 </div>
-                                <div className='flex gap-3 flex-wrap'>
+                                <div className='flex gap-2 flex-wrap'>
                                     {model.tags.map((tag, index) => (
-                                        <div key={index} style={{ backgroundColor: '#efe7ff' }} className='font-light p-1 rounded-xl'>
+                                        <span key={index} className='bg-purple-500 text-white px-3 py-1 rounded-full shadow text-xs font-medium tracking-wide flex items-center gap-1'>
+                                            <FaTag className="text-white text-[0.9em] mr-1" />
                                             {tag}
-                                        </div>
+                                        </span>
                                     ))}
                                 </div>
-                                {/* Revives */}
-                                <div className='flex items-center gap-4 font-light text-sm'>
+                                <div className='flex items-center gap-4 font-light text-sm text-gray-600'>
                                     <p>Uploaded: <span>{new Date(model.createdAt).toLocaleDateString()}</span></p>
                                     <p className='flex items-center gap-1'><FiDownload/><span>{model.downloads}</span></p>
                                     <p className='flex items-center gap-1'><AiOutlineHeart/><span>{model.likes}</span></p>
                                 </div>
-                                <span className='flex gap-1'>
+                                <span className='flex gap-1 text-base font-semibold text-purple-600'>
                                     Price: <span className='flex'>$<p>{model.price}</p></span>
                                 </span>
                             </div>

@@ -11,7 +11,7 @@ import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs";
 import { useRouter } from "next/navigation";
 import DefaultModelImage from "@/app/components/model/defaultModelImage";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaPlay, FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import ConfirmationDialog from "@/app/components/confirmationDialog/ConfirmationDialog";
 
@@ -127,11 +127,27 @@ export default function Model(props) {
     };
 
     if (loading) {
-        return <div className="text-center mt-10">Loading...</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+                <svg className="animate-spin h-12 w-12 text-purple-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <span className="text-lg text-purple-500 font-semibold">Loading...</span>
+            </div>
+        );
     }
 
     if (!model) {
-        return <div className="text-center mt-10 text-red-500">Model not found.</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+                </svg>
+                <span className="text-lg text-red-500 font-semibold">Sorry, this model could not be found.</span>
+                <span className="text-gray-500 mt-2">It may have been removed or the link is incorrect.</span>
+            </div>
+        );
     }
 
     return (
@@ -195,23 +211,52 @@ export default function Model(props) {
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
                     <button 
-                        onClick={handlePurchase}
-                        disabled={isAuthor || isOwned || !checkoutURL}
-                        className={`w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200 ${isAuthor || isOwned || !checkoutURL ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
+                        className='group w-full sm:w-auto flex items-center justify-center gap-2 text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 shadow-md'
                     >
-                        {isAuthor ? 'Your Model' : isOwned ? 'Already Purchased' : checkoutURL ? 'Purchase' : 'Loading...'}
+                        <FaPlay className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-200" />
+                        Test Model
                     </button>
+                    {isAuthenticated ? (
+                        isAuthor ? (
+                            <button 
+                                disabled
+                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                                title="You are the author of this model."
+                            >
+                                Your Model
+                            </button>
+                        ) : isOwned ? (
+                            <button 
+                                disabled
+                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                                title="You have already purchased this model."
+                            >
+                                Already Purchased
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handlePurchase}
+                                disabled={!checkoutURL}
+                                className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${!checkoutURL ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
+                                title={checkoutURL ? "Purchase this model" : "Loading checkout..."}
+                            >
+                                <FaShoppingCart className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-500" />
+                                {checkoutURL ? 'Purchase' : 'Loading...'}
+                            </button>
+                        )
+                    ) : (
+                        <LoginLink className='w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-all duration-200' title="Sign in to purchase this model">
+                            <FaShoppingCart className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-500" />
+                            Sign in to Purchase
+                        </LoginLink>
+                    )}
                 </div>
             </div>
 
             <div className='space-y-6 sm:space-y-8'>
-                <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
                 <ModelDescription description={model.description} />
-                <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
                 <ModelFeatures features={model.features} />
-                <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
                 <UseCases useCases={model.useCases} />
-                <hr className='w-full bg-gray-100 border-0.5 border-gray-300' />
                 <HowToUse setup={model.setup} />    
             </div>
 

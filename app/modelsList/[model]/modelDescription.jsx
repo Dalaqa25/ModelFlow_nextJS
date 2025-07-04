@@ -1,8 +1,12 @@
+import { FaInfoCircle } from "react-icons/fa";
 export default function ModelDescription({ description }) { 
     return (
-        <div className='mt-10 mb-10 w-full flex flex-col gap-2 sm:gap-5'>
-            <h2 className='text-2xl font-semibold sm:text-4xl'>Model Description</h2>    
-            <p className='font-light text-lg text-gray-600'>
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8">
+            <h2 className="flex items-center text-2xl sm:text-3xl font-bold mb-3 border-b-2 border-purple-100 pb-2">
+                <FaInfoCircle className="text-purple-400 mr-2" />
+                Model Description
+            </h2>    
+            <p className="text-lg text-gray-700">
                 {description}
             </p>
         </div>

@@ -9,19 +9,19 @@ export default function ModelsList() {
 
     return (
         <>
-            <div className="mt-20 mx-auto w-[85%] max-w-[1500px]">
-                <div className="flex w-ful mb-7 h-[55px] px-4">
-                    <div className="flex w-full items-center justify-center">
-                        <div className="flex items-center bg-gray-100 rounded-xl px-3 p-1.5 sm:p-3 w-[100%] max-w-md mb-3 h-full">
-                            <Search className="w-6 h-6 text-gray-600 mr-2" />
-                            <input
-                                type="text"
-                                placeholder="Search for a model..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                className="bg-transparent focus:outline-none w-full text-lg text-gray-800 placeholder-gray-600"
-                            />
-                        </div>
+            <div className="mt-24 mx-auto w-[90%] max-w-[1500px]">
+                <h1 className="text-3xl font-bold mb-2 text-center">Explore Models</h1>
+                <p className="text-gray-500 text-center mb-8">Browse and discover AI models for your projects.</p>
+                <div className="flex w-full mb-10 justify-center">
+                    <div className="flex items-center bg-white shadow-lg rounded-full px-4 py-2 w-full max-w-xl">
+                        <Search className="w-6 h-6 text-purple-500 mr-3" />
+                        <input
+                            type="text"
+                            placeholder="Search for a model..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="bg-transparent focus:outline-none w-full text-lg text-gray-800 placeholder-gray-400"
+                        />
                     </div>
                 </div>
                 <ModelBox search={search} />

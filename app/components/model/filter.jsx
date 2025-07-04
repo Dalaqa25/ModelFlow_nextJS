@@ -13,28 +13,31 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
     ];
 
     return (
-        <div className='h-1/2 w-[400px] hidden lg:block rounded-lg cutom-shadow'>
-            <div className="grid gap-2 p-4">
-                {tags.map((tag, i) => (
-                    <div
-                        key={i}
-                        className={`flex items-center gap-4 p-3 rounded-md cursor-pointer transition
-                            ${selectedTag === tag.label
-                                ? "bg-blue-100 ring-2 ring-purple-400"
-                                : "bg-gray-100 hover:bg-blue-100"}
-                        `}
-                        onClick={() =>
-                            setSelectedTag(selectedTag === tag.label ? null : tag.label)
-                        }
-                    >
-                        <span className="text-purple-700 text-lg">{tag.icon}</span>
-                        <span className="text-lg font-medium">{tag.label}</span>
+        <div className='h-fit w-[340px] hidden lg:block rounded-2xl bg-white shadow-lg p-6'>
+            <div className="flex flex-col gap-6">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Filter by Tag</h3>
+                    <div className="flex flex-wrap gap-3">
+                        {tags.map((tag, i) => (
+                            <button
+                                key={i}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-sm border-2
+                                    ${selectedTag === tag.label
+                                        ? "bg-purple-600 text-white border-purple-600 scale-105"
+                                        : "bg-gray-100 text-purple-700 border-transparent hover:bg-purple-50 hover:border-purple-300"}
+                                `}
+                                onClick={() => setSelectedTag(selectedTag === tag.label ? null : tag.label)}
+                            >
+                                <span className="text-lg">{tag.icon}</span>
+                                {tag.label}
+                            </button>
+                        ))}
                     </div>
-                ))}
+                </div>
                 {/* Price Range Filter */}
-                <div className="mt-6">
-                    <label className="block text-gray-700 font-semibold mb-2">Price Range ($)</label>
-                    <div className="flex items-center gap-3">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">Price Range ($)</h3>
+                    <div className="flex items-center gap-3 mb-2">
                         <input
                             type="range"
                             min={0}
@@ -52,16 +55,20 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                             className="w-1/2 accent-purple-500"
                         />
                     </div>
-                    <div className="text-sm text-gray-500 mt-2">
+                    <div className="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>$0</span>
+                        <span>$1000</span>
+                    </div>
+                    <div className="text-base font-semibold text-purple-600 bg-purple-50 rounded px-3 py-1 inline-block">
                         ${price[0]} - ${price[1]}
                     </div>
                 </div>
-                <Link href="/requests">
-                    <button className="mt-8 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition block text-center">
+                <Link href="/requests" className="block">
+                    <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl shadow-md transition-all text-base mt-4">
                         Request a Model
                     </button>
                 </Link>
-                <p className="mt-1 text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-400 text-center mt-1">
                     If a specific model doesn't exist, make a request.
                 </p>
             </div>
