@@ -12,15 +12,9 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setHasMounted(true);
-    const seenSplash = localStorage.getItem('seenSplash');
-    if (!seenSplash) {
-      setLoading(true);
-      localStorage.setItem('seenSplash', 'true');
-      const timer = setTimeout(() => setLoading(false), 2000);
-      return () => clearTimeout(timer);
-    } else {
-      setLoading(false);
-    }
+    setLoading(true);
+    const timer = setTimeout(() => setLoading(false), 4000);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!hasMounted) {
