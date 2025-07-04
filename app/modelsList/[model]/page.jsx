@@ -119,29 +119,10 @@ export default function Model(props) {
         }
     };
 
-    const handleConfirmPurchase = async () => {
-        try {
-            const res = await fetch(`/api/models/${params.model}/purchase`, {
-                method: 'POST',
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                toast.success("Model purchased successfully!");
-                setIsPurchaseDialogOpen(false);
-                // Update the UI to show the model as purchased
-                setIsOwned(true);
-            } else {
-                // Show specific error message from the API
-                toast.error(data.error || "Failed to purchase model");
-                if (data.error === "You have already purchased this model") {
-                    setIsOwned(true);
-                }
-            }
-        } catch (error) {
-            console.error("Error purchasing model:", error);
-            toast.error("Failed to purchase model. Please try again later.");
+    const handleConfirmPurchase = () => {
+        setIsPurchaseDialogOpen(false);
+        if (checkoutURL) {
+            window.location.href = checkoutURL;
         }
     };
 
@@ -213,48 +194,13 @@ export default function Model(props) {
                     ))}
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
-                    <button className='w-full sm:w-auto text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-colors duration-200'>
-                        Test Model
+                    <button 
+                        onClick={handlePurchase}
+                        disabled={isAuthor || isOwned || !checkoutURL}
+                        className={`w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200 ${isAuthor || isOwned || !checkoutURL ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
+                    >
+                        {isAuthor ? 'Your Model' : isOwned ? 'Already Purchased' : checkoutURL ? 'Purchase' : 'Loading...'}
                     </button>
-                    {isAuthenticated ? (
-                        isAuthor ? (
-                            <button 
-                                disabled
-                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
-                            >
-                                Your Model
-                            </button>
-                        ) : isOwned ? (
-                            <button 
-                                disabled
-                                className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
-                            >
-                                Already Purchased
-                            </button>
-                        ) : (
-                            checkoutURL ? (
-                                <Link href={checkoutURL}>
-                                    <button 
-                                        onClick={handlePurchase}
-                                        className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-colors duration-200'
-                                    >
-                                        Purchase
-                                    </button>
-                                </Link>
-                            ) : (
-                                <button 
-                                    disabled
-                                    className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
-                                >
-                                    Loading...
-                                </button>
-                            )
-                        )
-                    ) : (
-                        <LoginLink className='w-full sm:w-auto text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-colors duration-200'>
-                            Sign in to Purchase
-                        </LoginLink>
-                    )}
                 </div>
             </div>
 
