@@ -13,7 +13,7 @@ export default function useCases({useCases}) {
                         {uc.trim()}
                     </span>
                 ))}
+                </div>
             </div>
-        </div>
     )
 }

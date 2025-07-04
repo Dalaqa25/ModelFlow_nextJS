@@ -18,16 +18,16 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                 <div>
                     <h3 className="text-lg font-bold text-gray-800 mb-3">Filter by Tag</h3>
                     <div className="flex flex-wrap gap-3">
-                        {tags.map((tag, i) => (
+                {tags.map((tag, i) => (
                             <button
-                                key={i}
+                        key={i}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-sm border-2
-                                    ${selectedTag === tag.label
+                            ${selectedTag === tag.label
                                         ? "bg-purple-600 text-white border-purple-600 scale-105"
                                         : "bg-gray-100 text-purple-700 border-transparent hover:bg-purple-50 hover:border-purple-300"}
-                                `}
+                        `}
                                 onClick={() => setSelectedTag(selectedTag === tag.label ? null : tag.label)}
-                            >
+                    >
                                 <span className="text-lg">{tag.icon}</span>
                                 {tag.label}
                             </button>

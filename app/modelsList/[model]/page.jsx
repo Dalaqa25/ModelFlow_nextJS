@@ -120,7 +120,7 @@ export default function Model(props) {
     };
 
     const handleConfirmPurchase = () => {
-        setIsPurchaseDialogOpen(false);
+                setIsPurchaseDialogOpen(false);
         if (checkoutURL) {
             window.location.href = checkoutURL;
         }
@@ -234,15 +234,15 @@ export default function Model(props) {
                                 Already Purchased
                             </button>
                         ) : (
-                            <button 
-                                onClick={handlePurchase}
+                                    <button 
+                                        onClick={handlePurchase}
                                 disabled={!checkoutURL}
                                 className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${!checkoutURL ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
                                 title={checkoutURL ? "Purchase this model" : "Loading checkout..."}
                             >
                                 <FaShoppingCart className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-500" />
                                 {checkoutURL ? 'Purchase' : 'Loading...'}
-                            </button>
+                                </button>
                         )
                     ) : (
                         <LoginLink className='w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl text-center hover:bg-gray-100 transition-all duration-200' title="Sign in to purchase this model">

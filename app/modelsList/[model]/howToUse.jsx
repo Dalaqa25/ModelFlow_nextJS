@@ -7,8 +7,8 @@ export default function HowToUse({setup}) {
                 How to use / set up
             </h2>
             <p className="text-lg text-gray-700">
-                {setup}
-            </p>
-        </div>
+                    {setup}
+                </p>
+            </div>
     )
 }

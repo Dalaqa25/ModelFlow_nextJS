@@ -15,13 +15,13 @@ export default function ModelsList() {
                 <div className="flex w-full mb-10 justify-center">
                     <div className="flex items-center bg-white shadow-lg rounded-full px-4 py-2 w-full max-w-xl">
                         <Search className="w-6 h-6 text-purple-500 mr-3" />
-                        <input
-                            type="text"
-                            placeholder="Search for a model..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
+                            <input
+                                type="text"
+                                placeholder="Search for a model..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
                             className="bg-transparent focus:outline-none w-full text-lg text-gray-800 placeholder-gray-400"
-                        />
+                            />
                     </div>
                 </div>
                 <ModelBox search={search} />

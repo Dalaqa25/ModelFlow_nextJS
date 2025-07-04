@@ -9,13 +9,13 @@ export default function ModelFeatures({ features }) {
                 Key Features
             </h2>
             <ul className="flex flex-col gap-3">
-                {featureList && featureList.map((feature, index) => (
+                    {featureList && featureList.map((feature, index) => (
                     <li key={index} className="flex items-center text-lg text-gray-700">
                         <span className="text-purple-500 mr-2">✔️</span>
-                        {feature.trim()}
-                    </li>
-                ))}
-            </ul>
+                            {feature.trim()}
+                        </li>
+                    ))}
+                </ul>
         </div>
     );
 }
