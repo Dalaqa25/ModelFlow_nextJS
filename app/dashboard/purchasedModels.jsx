@@ -135,7 +135,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                     </div>
                                 )}
                                 <div className="absolute top-2 right-2 bg-purple-600 text-white px-2 py-1 rounded-lg text-sm font-medium">
-                                    ${model.price}
+                                                                            ${(model.price / 100).toFixed(2)}
                                 </div>
                             </div>
                             

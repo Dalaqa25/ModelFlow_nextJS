@@ -12,6 +12,14 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const [uploadType, setUploadType] = useState('zip'); // 'zip' or 'drive'
     const [features, setFeatures] = useState(['']);
     const [tags, setTags] = useState([]); // Initialize tags as empty array for multi-selection
+    // Predefined price tiers that match Lemon Squeezy variants
+    const PRICE_TIERS = [
+        { value: 500, label: '$5.00', description: 'Basic tier' },
+        { value: 1000, label: '$10.00', description: 'Standard tier' },
+        { value: 1500, label: '$15.00', description: 'Premium tier' },
+        { value: 2000, label: '$20.00', description: 'Professional tier' },
+    ];
+
     const [formData, setFormData] = useState({
         modelName: '',
         description: '',
@@ -19,7 +27,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         setup: '', // Add setup field
         modelFile: null,
         driveLink: '',
-        price: 0, // Add price to form data
+        price: 500, // Default to $5.00
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,7 +68,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         const { id, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [id]: id === 'price' ? parseFloat(value) : value // Parse price as float
+            [id]: id === 'price' ? parseInt(value) : value // Parse price as integer (cents)
         }));
         // Clear error when user starts typing
         if (errors[id]) {
@@ -153,8 +161,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
 
         // Validate price
-        if (formData.price < 0) {
-            newErrors.price = 'Price cannot be negative';
+        if (!formData.price || formData.price <= 0) {
+            newErrors.price = 'Please select a valid price tier';
         }
 
         
@@ -192,7 +200,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
                 setUploadStage('extracting');
                 console.log('Sending request to FastAPI...');
-                const fastApiResponse = await fetch('http://127.0.0.1:8000/process-zip', {
+                const apiUrl = process.env.NEXT_PUBLIC_MODEL_VALIDATOR_API_URL || 'http://127.0.0.1:8000';
+                const fastApiResponse = await fetch(`${apiUrl}/process-zip`, {
                     method: 'POST',
                     body: fastApiFormData,
                 });
@@ -207,9 +216,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 const validationResult = await fastApiResponse.json();
                 console.log('FastAPI response:', validationResult);
 
-                if (!validationResult.isValid) {
-                    throw new Error(validationResult.message || 'Invalid ZIP file structure');
-                }
 
                 let processedAiAnalysis = validationResult.ai_analysis;
                 if (processedAiAnalysis) {
@@ -486,26 +492,31 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                     )}
                                                 </div>
 
-                                                {/* Price Input */}
+                                                {/* Price Selection */}
                                                 <div className="flex flex-col gap-2">
                                                     <label htmlFor="price" className="font-medium text-gray-700">
-                                                        Price ($) <span className="text-red-500">*</span>
+                                                        Price Tier <span className="text-red-500">*</span>
                                                     </label>
-                                                    <input
+                                                    <select
                                                         id="price"
-                                                        type="number"
                                                         value={formData.price}
                                                         onChange={handleInputChange}
-                                                        placeholder="Enter price (e.g., 29.99)"
-                                                        min="0"
-                                                        step="0.01"
                                                         className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 ${
                                                             errors.price ? 'border-red-500' : 'border-gray-300'
                                                         }`}
-                                                    />
+                                                    >
+                                                        {PRICE_TIERS.map(tier => (
+                                                            <option key={tier.value} value={tier.value}>
+                                                                {tier.label} - {tier.description}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                     {errors.price && (
                                                         <p className="text-red-500 text-sm">{errors.price}</p>
                                                     )}
+                                                    <p className="text-gray-500 text-xs">
+                                                        These price tiers are configured to work with our payment system.
+                                                    </p>
                                                 </div>
 
                                                 {/* File Upload / Drive Link Section */}

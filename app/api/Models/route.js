@@ -3,13 +3,11 @@ import Model from "@/lib/db/Model";
 import User from "@/lib/db/User";
 import { NextResponse } from "next/server";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import clientPromise from '@/lib/mongodb';
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db();
-    const models = await db.collection('models').find({}).sort({ createdAt: -1 }).toArray();
+    await connect();
+    const models = await Model.find({}).sort({ createdAt: -1 }).populate('author', 'name email');
     return NextResponse.json(models);
   } catch (error) {
     console.error('Error fetching models:', error);

@@ -156,7 +156,7 @@ export default function UploadedModels({ isRowLayout }) {
                                         <DefaultModelImage size="medium" />
                                     )}
                                     <div className="absolute top-0 left-0 bg-purple-600 text-white text-sm font-semibold px-3 py-1.5 rounded-br-lg rounded-tl-xl">
-                                        ${model.price}
+                                        ${(model.price / 100).toFixed(2)}
                                     </div>
                                     {model.status === 'pending' && (
                                         <div className="absolute top-0 right-0 bg-yellow-500 text-white text-sm font-semibold px-3 py-1.5 rounded-bl-lg rounded-tr-xl flex items-center gap-1">

@@ -36,7 +36,7 @@ export async function PATCH(req, { params }) {
                 setup: pendingModel.setup,
                 imgUrl: pendingModel.imgUrl,
                 fileStorage: pendingModel.fileStorage,
-                price: pendingModel.price,
+                price: parseInt(pendingModel.price) || 500, // Ensure price is an integer (cents)
                 likes: 0,
                 likedBy: [],
                 downloads: 0

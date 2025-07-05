@@ -103,7 +103,8 @@ export async function POST(req) {
             fastApiFormData.append('description', formData.get('description'));
             fastApiFormData.append('setup', formData.get('setup'));
 
-            const fastApiResponse = await fetch('http://127.0.0.1:8000/process-zip', {
+            const apiUrl = process.env.MODEL_VALIDATOR_API_URL || 'http://127.0.0.1:8000';
+            const fastApiResponse = await fetch(`${apiUrl}/process-zip`, {
                 method: 'POST',
                 body: fastApiFormData,
             });

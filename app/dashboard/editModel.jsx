@@ -15,6 +15,14 @@ const AVAILABLE_TAGS = [
     { label: "Translation", icon: <MdTranslate /> },
 ];
 
+// Predefined price tiers that match Lemon Squeezy variants
+const PRICE_TIERS = [
+    { value: 500, label: '$5.00', description: 'Basic tier' },
+    { value: 1000, label: '$10.00', description: 'Standard tier' },
+    { value: 1500, label: '$15.00', description: 'Premium tier' },
+    { value: 2000, label: '$20.00', description: 'Professional tier' },
+];
+
 export default function EditModel({ isOpen, onClose, model, onEditSuccess }) {
     const [formData, setFormData] = useState({
         name: '',
@@ -60,7 +68,7 @@ export default function EditModel({ isOpen, onClose, model, onEditSuccess }) {
                 body: JSON.stringify({
                     name: formData.name.trim(),
                     description: formData.description.trim(),
-                    price: parseFloat(formData.price) || 0,
+                    price: parseInt(formData.price) || 500,
                     tags: formData.tags.filter(tag => tag.trim())
                 }),
             });
@@ -152,17 +160,19 @@ export default function EditModel({ isOpen, onClose, model, onEditSuccess }) {
                                             </div>
 
                                             <div>
-                                                <label htmlFor="price" className="text-sm sm:text-base font-medium text-gray-700">Price ($)</label>
-                                                <input
-                                                    type="number"
+                                                <label htmlFor="price" className="text-sm sm:text-base font-medium text-gray-700">Price Tier</label>
+                                                <select
                                                     id="price"
                                                     value={formData.price}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                                                    placeholder="Enter price"
-                                                    min="0"
-                                                    step="0.01"
-                                                    className="mt-1 placeholder:text-xs sm:placeholder:text-sm placeholder:text-gray-300 w-full p-2 border-2 rounded-lg border-gray-300 text-sm sm:text-base focus:outline-none focus:border-violet-500"
-                                                />
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) }))}
+                                                    className="mt-1 w-full p-2 border-2 rounded-lg border-gray-300 text-sm sm:text-base focus:outline-none focus:border-violet-500"
+                                                >
+                                                    {PRICE_TIERS.map(tier => (
+                                                        <option key={tier.value} value={tier.value}>
+                                                            {tier.label} - {tier.description}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
 
                                             <div className="flex flex-col gap-2">

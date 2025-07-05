@@ -41,7 +41,8 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                         <input
                             type="range"
                             min={0}
-                            max={1000}
+                            max={2000}
+                            step={500}
                             value={price[0]}
                             onChange={e => setPrice([+e.target.value, price[1]])}
                             className="w-1/2 accent-purple-500"
@@ -49,7 +50,8 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                         <input
                             type="range"
                             min={0}
-                            max={1000}
+                            max={2000}
+                            step={500}
                             value={price[1]}
                             onChange={e => setPrice([price[0], +e.target.value])}
                             className="w-1/2 accent-purple-500"
@@ -57,10 +59,10 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                     </div>
                     <div className="flex justify-between text-sm text-gray-500 mb-1">
                         <span>$0</span>
-                        <span>$1000</span>
+                        <span>$20</span>
                     </div>
                     <div className="text-base font-semibold text-purple-600 bg-purple-50 rounded px-3 py-1 inline-block">
-                        ${price[0]} - ${price[1]}
+                        ${(price[0] / 100).toFixed(2)} - ${(price[1] / 100).toFixed(2)}
                     </div>
                 </div>
                 <Link href="/requests" className="block">

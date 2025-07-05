@@ -101,7 +101,15 @@ export default function AdminPage() {
     if (user?.email === 'modelflow01@gmail.com') {
         return (
             <div className="container mx-auto p-4 mt-15">
-                <h1 className="text-2xl font-bold mb-6">Admin Dashboard - Pending Models</h1>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">Admin Dashboard - Pending Models</h1>
+                    <a 
+                        href="/admin/lemon-squeezy" 
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                    >
+                        Lemon Squeezy Settings
+                    </a>
+                </div>
                 {pendingModels.length === 0 ? (
                     <p className="text-gray-500">No pending models to review</p>
                 ) : (
@@ -113,7 +121,7 @@ export default function AdminPage() {
                                         <div>
                                             <h2 className="text-xl font-semibold">{model.name}</h2>
                                             <p className="text-gray-600 mt-1">Author: {model.authorEmail}</p>
-                                            <p className="text-gray-600">Price: ${model.price}</p>
+                                            <p className="text-gray-600">Price: ${(model.price / 100).toFixed(2)}</p>
                                             <p className="text-gray-600">Upload Type: {model.fileStorage.type}</p>
                                             <p className="font-bold text-gray-700 mt-3">Setup: <br/> {model.setup}</p>
                                             <p className="font-bold text-blue-600 mt-3">Model URL: <br/> {model.fileStorage.url}</p>

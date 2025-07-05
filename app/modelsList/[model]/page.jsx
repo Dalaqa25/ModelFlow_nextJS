@@ -65,7 +65,7 @@ export default function Model(props) {
             if (isAuthenticated && !isOwned && !isAuthor && model) {
                 try {
                     const url = await createCheckoutUrl({
-                        variantId: "874721",
+                        price: model.price,
                         userEmail: user?.email || "",
                         userId: user?.id || "",
                         modelId: model._id,

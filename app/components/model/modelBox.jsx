@@ -20,7 +20,9 @@ export default function ModelBox({ search = "" }) {
             if (!res.ok) {
                 throw new Error('Failed to fetch models');
             }
-            return res.json();
+            const data = await res.json();
+            console.log('Models fetched:', data); // Debug log
+            return data;
         },
         staleTime: 0, // Remove stale time to always fetch fresh data
         cacheTime: 0, // Remove cache time to always fetch fresh data
@@ -28,7 +30,7 @@ export default function ModelBox({ search = "" }) {
 
     // Add filter state here
     const [selectedTag, setSelectedTag] = useState(null);
-    const [price, setPrice] = useState([0, 1000]);
+    const [price, setPrice] = useState([0, 2000]); // Updated to match our price tiers (up to $20 = 2000 cents)
 
     // Filter models by search, tag, and price
     const filteredModels = models.filter(model => {
@@ -37,8 +39,19 @@ export default function ModelBox({ search = "" }) {
             model.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
         const matchesTag = !selectedTag || model.tags.includes(selectedTag);
         const matchesPrice = model.price >= price[0] && model.price <= price[1];
+        
+        // Debug logging
+        if (!matchesPrice) {
+            console.log(`Model "${model.name}" filtered out by price: ${model.price} not in range [${price[0]}, ${price[1]}]`);
+        }
+        if (!matchesTag) {
+            console.log(`Model "${model.name}" filtered out by tag: ${selectedTag} not in ${model.tags}`);
+        }
+        
         return matchesSearch && matchesTag && matchesPrice;
     });
+    
+    console.log('Filtered models:', filteredModels.length, 'out of', models.length);
 
     const totalPages = Math.ceil(filteredModels.length / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;
@@ -146,7 +159,7 @@ export default function ModelBox({ search = "" }) {
                                     <p className='flex items-center gap-1'><AiOutlineHeart/><span>{model.likes}</span></p>
                                 </div>
                                 <span className='flex gap-1 text-base font-semibold text-purple-600'>
-                                    Price: <span className='flex'>$<p>{model.price}</p></span>
+                                    Price: <span className='flex'>$<p>{(model.price / 100).toFixed(2)}</p></span>
                                 </span>
                             </div>
                         </Link>
