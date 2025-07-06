@@ -197,7 +197,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 // Upload ZIP file to Supabase Storage
                 const file = formData.modelFile;
                 const fileName = `${Date.now()}-${file.name}`;
-                const filePath = `models/${fileName}`;
+                const filePath = `${fileName}`;
                 const { data, error } = await supabase.storage
                     .from('models')
                     .upload(filePath, file, {
@@ -211,6 +211,9 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     setShowProgressDialog(false);
                     return;
                 } else {
+                    // Get public URL from Supabase
+                    const { data: urlData } = supabase.storage.from('models').getPublicUrl(filePath);
+                    const publicUrl = urlData?.publicUrl || filePath;
                     // Prepare metadata for backend
                     const modelMeta = {
                         name: formData.modelName,
@@ -226,11 +229,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                             fileName: file.name,
                             fileSize: file.size,
                             mimeType: file.type,
-                            supabasePath: filePath,
-                            url: filePath, // Add this line to satisfy schema
+                            supabasePath: filePath, // Only store the file path
                             uploadedAt: new Date().toISOString(),
                         })
                     };
+                    console.log('modelMeta sent to backend:', modelMeta);
                     // Send metadata to backend
                     const response = await fetch('/api/pending-models', {
                         method: 'POST',

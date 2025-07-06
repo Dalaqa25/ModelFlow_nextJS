@@ -178,13 +178,35 @@ export default function PurchasedModels({ isRowLayout }) {
                                         <FaEye />
                                         <span>View Details</span>
                                     </button>
-                                    <button 
-                                        onClick={() => handleDownload(model._id)}
+                                    {model.fileStorage?.supabasePath || model.fileStorage?.url ? (
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            const res = await fetch(`/api/models/${model._id}/download`);
+                                            const data = await res.json();
+                                            if (data.downloadUrl) {
+                                              window.open(data.downloadUrl, '_blank');
+                                            } else {
+                                              alert('Failed to get download link.');
+                                            }
+                                          } catch (err) {
+                                            alert('Error downloading: ' + err.message);
+                                          }
+                                        }}
                                         className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                    >
+                                      >
                                         <FaDownload />
                                         <span>Download</span>
-                                    </button>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
+                                        disabled
+                                      >
+                                        <FaDownload />
+                                        <span>Download</span>
+                                      </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
