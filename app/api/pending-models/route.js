@@ -46,11 +46,17 @@ export async function POST(req) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const formData = await req.formData();
+        // Accept JSON or form data
+        let data;
+        if (req.headers.get('content-type')?.includes('application/json')) {
+            data = await req.json();
+        } else {
+            data = Object.fromEntries(await req.formData());
+        }
 
         // Validate required fields
         const requiredFields = ['name', 'description', 'useCases', 'features', 'tags', 'uploadType', 'setup', 'price'];
-        const missingFields = requiredFields.filter(field => !formData.get(field));
+        const missingFields = requiredFields.filter(field => !data[field]);
 
         if (missingFields.length > 0) {
             return NextResponse.json(
@@ -62,8 +68,7 @@ export async function POST(req) {
         // Parse and validate tags
         let tags;
         try {
-            const tagsData = formData.get('tags');
-            tags = JSON.parse(tagsData);
+            tags = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
             if (!Array.isArray(tags) || tags.length === 0) {
                 return NextResponse.json(
                     { error: 'At least one tag is required' },
@@ -79,62 +84,30 @@ export async function POST(req) {
         }
 
         const modelData = {
-            name: formData.get('name'),
-            description: formData.get('description'),
-            useCases: formData.get('useCases'),
-            features: formData.get('features'),
+            name: data.name,
+            description: data.description,
+            useCases: data.useCases,
+            features: data.features,
             tags: tags,
-            setup: formData.get('setup'),
-            price: parseFloat(formData.get('price')) || 0,
+            setup: data.setup,
+            price: parseFloat(data.price) || 0,
             author: userDoc._id,
             authorEmail: user.email,
             status: 'pending'
         };
 
         // Handle file storage information
-        const uploadType = formData.get('uploadType');
-        const modelFile = formData.get('modelFile');
-        const driveLink = formData.get('driveLink');
+        const uploadType = data.uploadType;
+        const fileStorage = data.fileStorage ? (typeof data.fileStorage === 'string' ? JSON.parse(data.fileStorage) : data.fileStorage) : null;
+        const driveLink = data.driveLink;
 
-        if (uploadType === 'zip' && modelFile) {
-            // First, validate with FastAPI
-            const fastApiFormData = new FormData();
-            fastApiFormData.append('file', modelFile);
-            fastApiFormData.append('description', formData.get('description'));
-            fastApiFormData.append('setup', formData.get('setup'));
-
-            const apiUrl = process.env.MODEL_VALIDATOR_API_URL || 'http://127.0.0.1:8000';
-            const fastApiResponse = await fetch(`${apiUrl}/process-zip`, {
-                method: 'POST',
-                body: fastApiFormData,
-            });
-
-            if (!fastApiResponse.ok) {
-                return NextResponse.json(
-                    { error: 'Failed to validate model with FastAPI' },
-                    { status: 400 }
-                );
-            }
-
-            const validationResult = await fastApiResponse.json();
-            
+        if (uploadType === 'zip' && fileStorage) {
             modelData.fileStorage = {
+                ...fileStorage,
                 type: 'zip',
-                url: modelFile.name,
-                fileName: modelFile.name,
-                fileSize: modelFile.size,
-                mimeType: modelFile.type,
-                folderPath: `pending-models/${user.email}/${Date.now()}`,
-                uploadedAt: new Date()
+                uploadedAt: fileStorage.uploadedAt || new Date()
             };
-
-            // Add validation and AI analysis results
-            modelData.validationStatus = {
-                isValid: validationResult.isValid,
-                message: validationResult.message,
-                has_requirements: validationResult.has_requirements
-            };
-            modelData.aiAnalysis = validationResult.ai_analysis;
+            // Skipping FastAPI validation for now since we don't have the file
         } else if (uploadType === 'drive' && driveLink) {
             modelData.fileStorage = {
                 type: 'drive',

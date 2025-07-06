@@ -211,7 +211,40 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     setShowProgressDialog(false);
                     return;
                 } else {
-                    toast.success('File uploaded to Supabase!');
+                    // Prepare metadata for backend
+                    const modelMeta = {
+                        name: formData.modelName,
+                        description: formData.description,
+                        useCases: formData.useCases,
+                        setup: formData.setup,
+                        features: features.join(','),
+                        tags: JSON.stringify(tags),
+                        price: formData.price,
+                        uploadType: 'zip',
+                        fileStorage: JSON.stringify({
+                            type: 'zip',
+                            fileName: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type,
+                            supabasePath: filePath,
+                            url: filePath, // Add this line to satisfy schema
+                            uploadedAt: new Date().toISOString(),
+                        })
+                    };
+                    // Send metadata to backend
+                    const response = await fetch('/api/pending-models', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(modelMeta),
+                    });
+                    if (!response.ok) {
+                        const data = await response.json();
+                        toast.error('Backend error: ' + (data.error || 'Failed to create pending model'));
+                        setIsSubmitting(false);
+                        setShowProgressDialog(false);
+                        return;
+                    }
+                    toast.success('Model metadata saved!');
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setFormData(prev => ({ ...prev, modelFile: null }));
@@ -287,12 +320,10 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     onUploadSuccess();
                 }, 1500);
             }
-        } catch (error) {
-            console.error('Upload error:', error);
-            setShowProgressDialog(false);
-            toast.error(error.message || 'Failed to upload model. Please try again.');
-        } finally {
+        } catch (err) {
+            toast.error('Unexpected error: ' + err.message);
             setIsSubmitting(false);
+            setShowProgressDialog(false);
         }
     };
 
