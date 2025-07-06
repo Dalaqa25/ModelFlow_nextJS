@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from './UploadProgressDialog';
+import { supabase } from '../../../lib/supabase';
 
 export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const router = useRouter();
@@ -193,6 +194,31 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
         try {
             if (uploadType === 'zip' && formData.modelFile) {
+                // Upload ZIP file to Supabase Storage
+                const file = formData.modelFile;
+                const fileName = `${Date.now()}-${file.name}`;
+                const filePath = `models/${fileName}`;
+                const { data, error } = await supabase.storage
+                    .from('models')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: false,
+                        contentType: file.type,
+                    });
+                if (error) {
+                    toast.error('Supabase upload failed: ' + error.message);
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    return;
+                } else {
+                    toast.success('File uploaded to Supabase!');
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    setFormData(prev => ({ ...prev, modelFile: null }));
+                    onClose && onClose();
+                    return;
+                }
+            } else if (uploadType === 'drive') {
                 const fastApiFormData = new FormData();
                 fastApiFormData.append('file', formData.modelFile);
                 fastApiFormData.append('description', formData.description);
@@ -249,35 +275,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
                 const data = await response.json();
                 console.log('Next.js API response:', data);
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to upload model');
-                }
-
-                setUploadStage('success');
-                setTimeout(() => {
-                    setShowProgressDialog(false);
-                    toast.success('Model uploaded successfully!');
-                    onUploadSuccess();
-                }, 1500);
-            } else if (uploadType === 'drive') {
-                const formDataToSend = new FormData();
-                formDataToSend.append('name', formData.modelName);
-                formDataToSend.append('description', formData.description);
-                formDataToSend.append('useCases', formData.useCases);
-                formDataToSend.append('setup', formData.setup);
-                formDataToSend.append('features', features.join(','));
-                formDataToSend.append('tags', JSON.stringify(tags));
-                formDataToSend.append('price', formData.price);
-                formDataToSend.append('uploadType', uploadType);
-                formDataToSend.append('driveLink', formData.driveLink);
-
-                const response = await fetch('/api/pending-models', {
-                    method: 'POST',
-                    body: formDataToSend,
-                });
-
-                const data = await response.json();
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to upload model');
