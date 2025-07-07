@@ -33,7 +33,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="mt-10 bg-white py-10">
+        <div className="mt-10 bg-white/45 backdrop-blur-sm w-[85%] max-w-[1800px] mx-auto py-10">
             <div className="max-w-5xl mx-auto px-4">
                 {/* Dashboard Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
