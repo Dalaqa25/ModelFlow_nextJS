@@ -105,7 +105,17 @@ export default function UploadedModels({ isRowLayout }) {
                 onClick={() => { setUploadedModels(false); setEditDialog({ isOpen: false, model: null }); }}
                 style={{ transitionProperty: 'opacity' }}>
             </div>
-            <div className="flex flex-col mt-15 mb-15">
+            <div className="flex flex-col mt-6 mb-10">
+                {/* Storage Usage Indicator */}
+                <div className="mb-4">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">Storage used</span>
+                        <span className="text-sm font-medium text-gray-500">55MB / 250MB</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="bg-purple-600 h-3 rounded-full" style={{ width: `${(55/250)*100}%` }}></div>
+                    </div>
+                </div>
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
                     <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Uploaded Models</h2>   
                     <button

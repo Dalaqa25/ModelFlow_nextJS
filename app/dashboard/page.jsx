@@ -3,13 +3,15 @@
 import PurchasedModels from "./purchasedModels"
 import UploadedModels from "./uploadedModels"
 import { useState, useEffect } from 'react';
-import { FaList, FaThLarge } from 'react-icons/fa';
+import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
+import ArchivedModels from './ArchivedModels';
 import ModelUpload from '../components/model/modelUpload';
 
 export default function Dashboard() {
     const [isRowLayout, setIsRowLayout] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     // Load layout preference from localStorage on component mount
     useEffect(() => {
@@ -33,8 +35,8 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="mt-10 bg-white/45 backdrop-blur-sm w-[85%] max-w-[1800px] mx-auto py-10">
-            <div className="max-w-5xl mx-auto px-4">
+        <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50/25 py-12 px-6">
+            <div className="max-w-5xl mx-auto shadow-sm bg-white rounded-3xl p-8">
                 {/* Dashboard Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                     <div>
@@ -57,6 +59,13 @@ export default function Dashboard() {
                             {isRowLayout ? <FaList size={20} /> : <FaThLarge size={20} />}
                             <span className="text-sm font-medium hidden sm:inline">Layout</span>
                         </button>
+                        <button
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 font-semibold"
+                            onClick={() => setShowArchived(true)}
+                        >
+                            <FaArchive size={20} />
+                            <span>Archived</span>
+                        </button>
                     </div>
                 </div>
                 {/* Main Content */}
@@ -76,6 +85,7 @@ export default function Dashboard() {
                         <UploadedModels isRowLayout={isRowLayout} />
                     </section>
                 </div>
+                <ArchivedModels isOpen={showArchived} onClose={() => setShowArchived(false)} />
                 <ModelUpload
                     isOpen={showUploadModal}
                     onClose={() => setShowUploadModal(false)}
