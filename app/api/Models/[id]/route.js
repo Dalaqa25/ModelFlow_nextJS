@@ -1,6 +1,7 @@
 // /app/api/models/[id]/route.js
 import connect from "@/lib/db/connect";
 import Model from "@/lib/db/Model";
+import ArchivedModel from "@/lib/db/ArchivedModel";
 import { NextResponse } from "next/server";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
@@ -40,9 +41,16 @@ export async function DELETE(req, { params }) {
             return NextResponse.json({ error: "You can only archive your own models" }, { status: 403 });
         }
 
-        // Archive the model instead of deleting
-        model.archived = true;
-        await model.save();
+        // Create archived model document with trimmed fields
+        await ArchivedModel.create({
+            name: model.name,
+            authorEmail: model.authorEmail,
+            fileStorage: model.fileStorage,
+            createdAt: model.createdAt
+        });
+
+        // Remove the original model
+        await Model.findByIdAndDelete(params.id);
         return NextResponse.json({ message: "Model archived successfully" });
     } catch (error) {
         console.error("Error archiving model:", error);

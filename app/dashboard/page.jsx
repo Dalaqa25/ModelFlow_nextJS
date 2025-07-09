@@ -4,7 +4,7 @@ import PurchasedModels from "./purchasedModels"
 import UploadedModels from "./uploadedModels"
 import { useState, useEffect } from 'react';
 import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
-import ArchivedModels from './ArchivedModels';
+import ArchiveBox from './archive/ArchiveBox';
 import ModelUpload from '../components/model/modelUpload';
 
 export default function Dashboard() {
@@ -85,7 +85,7 @@ export default function Dashboard() {
                         <UploadedModels isRowLayout={isRowLayout} />
                     </section>
                 </div>
-                <ArchivedModels isOpen={showArchived} onClose={() => setShowArchived(false)} />
+                <ArchiveBox isOpen={showArchived} onClose={() => setShowArchived(false)} />
                 <ModelUpload
                     isOpen={showUploadModal}
                     onClose={() => setShowUploadModal(false)}

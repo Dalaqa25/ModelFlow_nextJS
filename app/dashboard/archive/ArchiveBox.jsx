@@ -1,7 +1,23 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import ArchivedModels from './archivedModels';
 
-export default function ArchivedModels({ isOpen, onClose }) {
+export default function ArchiveBox({ isOpen, onClose }) {
+    const [models, setModels] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setLoading(true);
+        fetch('/api/models/archived')
+            .then(res => res.json())
+            .then(data => {
+                setModels(Array.isArray(data) ? data : (data.models || []));
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    }, [isOpen]);
+
     return (
         <Transition.Root show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -41,9 +57,12 @@ export default function ArchivedModels({ isOpen, onClose }) {
                                         <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${(50/100)*100}%` }}></div>
                                     </div>
                                 </div>
-                                <div className="text-gray-600">
-                                    {/* Placeholder content */}
-                                    No archived models yet.
+                                <div className="text-gray-600 min-h-[100px]">
+                                    {loading ? (
+                                        <div className="text-center text-gray-400">Loading...</div>
+                                    ) : (
+                                        <ArchivedModels models={models} />
+                                    )}
                                 </div>
                                 <div className="mt-6 flex justify-end">
                                     <button

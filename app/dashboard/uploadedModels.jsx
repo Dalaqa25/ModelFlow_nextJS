@@ -7,12 +7,14 @@ import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import ArchiveConfirm from './archive/ArchiveConfirm';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
+    const [archiveDialog, setArchiveDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const { user } = useKindeBrowserClient();
     const router = useRouter();
     const modelsPerPage = 5;
@@ -72,23 +74,26 @@ export default function UploadedModels({ isRowLayout }) {
         router.push(`/modelsList/${modelId}`);
     };
 
-    // Add handleArchiveClick function to handle archiving
-    const handleArchiveClick = async (modelId, modelName) => {
+    // Replace handleArchiveClick to open confirmation dialog
+    const handleArchiveClick = (modelId, modelName) => {
+        setArchiveDialog({ isOpen: true, modelId, modelName });
+    };
+    // Confirm archive action
+    const confirmArchive = async () => {
         try {
-            const response = await fetch(`/api/models/archive-model/${modelId}`, {
+            const response = await fetch(`/api/models/archive-model/${archiveDialog.modelId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to archive model');
             }
-
-            const data = await response.json();
+            await response.json();
             refetch();
+            setArchiveDialog({ isOpen: false, modelId: null, modelName: '' });
             alert('Model archived successfully!');
         } catch (error) {
             alert(`Error archiving model: ${error.message}`);
@@ -131,6 +136,12 @@ export default function UploadedModels({ isRowLayout }) {
                 onClick={() => { setUploadedModels(false); setEditDialog({ isOpen: false, model: null }); }}
                 style={{ transitionProperty: 'opacity' }}>
             </div>
+            {/* Archive confirmation dialog */}
+            <ArchiveConfirm
+                isOpen={archiveDialog.isOpen}
+                onConfirm={confirmArchive}
+                onCancel={() => setArchiveDialog({ isOpen: false, modelId: null, modelName: '' })}
+            />
             <div className="flex flex-col mt-6 mb-10">
                 {/* Storage Usage Indicator */}
                 <div className="mb-4">
