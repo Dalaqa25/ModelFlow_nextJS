@@ -5,6 +5,9 @@ import ArchivedModels from './archivedModels';
 export default function ArchiveBox({ isOpen, onClose }) {
     const [models, setModels] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [totalStorageUsedMB, setTotalStorageUsedMB] = useState(0);
+    const storageCapMB = 150;
+    const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -13,6 +16,7 @@ export default function ArchiveBox({ isOpen, onClose }) {
             .then(res => res.json())
             .then(data => {
                 setModels(Array.isArray(data) ? data : (data.models || []));
+                setTotalStorageUsedMB(data.totalStorageUsedMB ?? 0);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -51,10 +55,10 @@ export default function ArchiveBox({ isOpen, onClose }) {
                                 <div className="mb-6">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-sm font-medium text-gray-700">Storage used</span>
-                                        <span className="text-sm font-medium text-gray-500">50MB / 100MB</span>
+                                        <span className="text-sm font-medium text-gray-500">{totalStorageUsedMB}MB / {storageCapMB}MB</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${(50/100)*100}%` }}></div>
+                                        <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${storagePercent}%` }}></div>
                                     </div>
                                 </div>
                                 <div className="text-gray-600 min-h-[100px]">
