@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Service role key for backend
+);
 
 export async function GET(request) {
     try {
@@ -54,7 +60,38 @@ export async function GET(request) {
 
         console.log(`Found ${allModels.length} total models (${models.length} regular, ${pendingModels.length} pending)`);
 
-        return NextResponse.json(allModels || []);
+        // --- Storage usage calculation ---
+        let totalBytes = 0;
+        // List all files in the root of the 'models' bucket
+        const { data: allFiles, error: storageError } = await supabase
+            .storage
+            .from('models')
+            .list('', { limit: 1000 });
+
+        if (storageError) {
+            console.error('Error listing files in Supabase Storage:', storageError);
+            // Still return models, but with storage error
+            return NextResponse.json({
+                models: allModels,
+                totalStorageUsedMB: null,
+                storageError: storageError.message
+            });
+        }
+
+        for (const model of allModels) {
+            const supabasePath = model.fileStorage?.supabasePath;
+            if (!supabasePath) continue;
+            const file = allFiles.find(f => f.name === supabasePath);
+            if (file && file.metadata && file.metadata.size) {
+                totalBytes += file.metadata.size;
+            }
+        }
+        const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(2));
+
+        return NextResponse.json({
+            models: allModels,
+            totalStorageUsedMB
+        });
     } catch (error) {
         console.error('Detailed error in user-models API:', error);
         return NextResponse.json(

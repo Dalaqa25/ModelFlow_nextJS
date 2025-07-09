@@ -3,10 +3,8 @@ import { FiPlus } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import ModelUpload from '../components/model/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
-import DeletionDialog from './delation';
-import EditModel from './editModel';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -19,7 +17,8 @@ export default function UploadedModels({ isRowLayout }) {
     const router = useRouter();
     const modelsPerPage = 5;
 
-    const { data: models = [], isLoading, error, refetch } = useQuery({
+    // Updated useQuery to handle new API response shape
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['userModels', user?.email],
         queryFn: async () => {
             if (!user?.email) {
@@ -31,13 +30,17 @@ export default function UploadedModels({ isRowLayout }) {
                 throw new Error(errorData.error || 'Failed to fetch models');
             }
             const data = await response.json();
-            if (!Array.isArray(data)) {
-                throw new Error('Invalid data format received');
-            }
+            // Expecting { models, totalStorageUsedMB }
             return data;
         },
         enabled: !!user?.email,
     });
+
+    // Extract models and storage used from API response
+    const models = data?.models || [];
+    const totalStorageUsedMB = data?.totalStorageUsedMB ?? 0;
+    const storageCapMB = 250;
+    const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
     // Pagination logic
     const totalPages = Math.ceil((models?.length || 0) / modelsPerPage);
@@ -67,6 +70,29 @@ export default function UploadedModels({ isRowLayout }) {
 
     const handleViewModel = (modelId) => {
         router.push(`/modelsList/${modelId}`);
+    };
+
+    // Add handleArchiveClick function to handle archiving
+    const handleArchiveClick = async (modelId, modelName) => {
+        try {
+            const response = await fetch(`/api/models/archive-model/${modelId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to archive model');
+            }
+
+            const data = await response.json();
+            refetch();
+            alert('Model archived successfully!');
+        } catch (error) {
+            alert(`Error archiving model: ${error.message}`);
+        }
     };
 
     if (isLoading) {
@@ -110,10 +136,10 @@ export default function UploadedModels({ isRowLayout }) {
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700">Storage used</span>
-                        <span className="text-sm font-medium text-gray-500">55MB / 250MB</span>
+                        <span className="text-sm font-medium text-gray-500">{totalStorageUsedMB}MB / {storageCapMB}MB</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div className="bg-purple-600 h-3 rounded-full" style={{ width: `${(55/250)*100}%` }}></div>
+                        <div className="bg-purple-600 h-3 rounded-full" style={{ width: `${storagePercent}%` }}></div>
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
@@ -218,25 +244,22 @@ export default function UploadedModels({ isRowLayout }) {
 
                                     <div className={`flex ${isRowLayout ? 'flex-col gap-2' : 'flex-col gap-3'} sm:flex-row mt-auto`}>
                                         <button 
-                                            onClick={() => handleViewModel(model._id)}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 transition-colors text-sm sm:text-base"
+                                            onClick={() => !model.status || model.status !== 'pending' ? handleViewModel(model._id) : null}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors 
+                                                ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-purple-700 text-white hover:bg-purple-800'}`}
+                                            disabled={model.status === 'pending'}
                                         >
                                             <FaEye />
                                             <span>View</span>
                                         </button>
                                         <button 
-                                            onClick={() => handleEditClick(model)}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                                            onClick={() => model.status !== 'pending' ? handleArchiveClick(model._id, model.name) : null}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors border 
+                                                ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'}`}
+                                            disabled={model.status === 'pending'}
                                         >
-                                            <FaEye />
-                                            <span>Edit</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDeleteClick(model._id, model.name)}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm sm:text-base"
-                                        >
-                                            <FaTrash />
-                                            <span>Delete</span>
+                                            <FaArchive />
+                                            <span>Archive</span>
                                         </button>
                                     </div>
                                 </div>
@@ -294,19 +317,6 @@ export default function UploadedModels({ isRowLayout }) {
                     </div>
                 )}
             </div>
-            <DeletionDialog
-                isOpen={deleteDialog.isOpen}
-                onClose={() => setDeleteDialog({ isOpen: false, modelId: null, modelName: '' })}
-                modelId={deleteDialog.modelId}
-                modelName={deleteDialog.modelName}
-                onDeleteSuccess={refetch}
-            />
-            <EditModel
-                isOpen={editDialog.isOpen}
-                onClose={() => setEditDialog({ isOpen: false, model: null })}
-                model={editDialog.model}
-                onEditSuccess={refetch}
-            />
         </>
     );
 }

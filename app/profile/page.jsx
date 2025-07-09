@@ -55,7 +55,7 @@ export default function Profile() {
                 }
                 const data = await response.json();
                 console.log('Models data received:', data);
-                setUserModels(data);
+                setUserModels(data.models || []);
             } catch (error) {
                 console.error("Error fetching user models:", error);
             } finally {
