@@ -4,6 +4,9 @@ import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import EditProfile from "./editProfile";
 import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import BasicTag from '../components/plans/planTags/basicTag';
+import ProTag from '../components/plans/planTags/proTag';
+import EnterpriseTag from '../components/plans/planTags/enterpriseTag';
 
 export default function Profile() { 
     const [showEdit, setShowEdit] = useState(false);
@@ -110,7 +113,17 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50 py-12 px-6">
-            <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-3xl p-8">
+            <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-3xl p-8 relative">
+                {/* Floating Plan Tag (dynamic) */}
+                <div className="absolute top-6 right-6 z-10">
+                  {userData.subscription?.plan === 'professional' ? (
+                    <ProTag />
+                  ) : userData.subscription?.plan === 'enterprise' ? (
+                    <EnterpriseTag />
+                  ) : (
+                    <BasicTag />
+                  )}
+                </div>
                 {/* Profile Header */}
                 <div className="flex flex-col items-center text-center space-y-4">
                     <img
