@@ -90,7 +90,8 @@ export async function GET(request) {
 
         return NextResponse.json({
             models: allModels,
-            totalStorageUsedMB
+            totalStorageUsedMB,
+            plan: user.subscription?.plan || 'basic'
         });
     } catch (error) {
         console.error('Detailed error in user-models API:', error);

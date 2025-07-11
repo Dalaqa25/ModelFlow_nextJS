@@ -8,6 +8,7 @@ import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamation
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import ArchiveConfirm from './archive/ArchiveConfirm';
+import PLANS from '../plans';
 
 export default function UploadedModels({ isRowLayout }) { 
     const [uploadedModels, setUploadedModels] = useState(false);
@@ -41,7 +42,16 @@ export default function UploadedModels({ isRowLayout }) {
     // Extract models and storage used from API response
     const models = data?.models || [];
     const totalStorageUsedMB = data?.totalStorageUsedMB ?? 0;
-    const storageCapMB = 250;
+    const userPlan = data?.plan || 'basic';
+    // Parse the storage cap from PLANS based on the user's plan
+    const storageCapStr = PLANS[userPlan]?.features?.activeStorage || '250 MB';
+    // Extract the number (in MB or GB) and convert to MB
+    let storageCapMB = 250;
+    if (storageCapStr.toLowerCase().includes('gb')) {
+        storageCapMB = parseInt(storageCapStr) * 1024;
+    } else if (storageCapStr.toLowerCase().includes('mb')) {
+        storageCapMB = parseInt(storageCapStr);
+    }
     const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
     // Pagination logic
