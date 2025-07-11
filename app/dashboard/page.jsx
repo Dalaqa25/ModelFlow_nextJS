@@ -6,12 +6,14 @@ import { useState, useEffect } from 'react';
 import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
 import ArchiveBox from './archive/ArchiveBox';
 import ModelUpload from '../components/model/modelUpload';
+import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 
 export default function Dashboard() {
     const [isRowLayout, setIsRowLayout] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
+    const { user } = useKindeBrowserClient();
 
     // Load layout preference from localStorage on component mount
     useEffect(() => {
@@ -85,7 +87,7 @@ export default function Dashboard() {
                         <UploadedModels isRowLayout={isRowLayout} />
                     </section>
                 </div>
-                <ArchiveBox isOpen={showArchived} onClose={() => setShowArchived(false)} />
+                <ArchiveBox isOpen={showArchived} onClose={() => setShowArchived(false)} userEmail={user?.email} />
                 <ModelUpload
                     isOpen={showUploadModal}
                     onClose={() => setShowUploadModal(false)}

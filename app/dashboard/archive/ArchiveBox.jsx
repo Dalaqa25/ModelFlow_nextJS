@@ -1,26 +1,36 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ArchivedModels from './archivedModels';
+import PLANS from '../../plans';
 
-export default function ArchiveBox({ isOpen, onClose }) {
+export default function ArchiveBox({ isOpen, onClose, userEmail }) {
     const [models, setModels] = useState([]);
     const [loading, setLoading] = useState(true);
     const [totalStorageUsedMB, setTotalStorageUsedMB] = useState(0);
-    const storageCapMB = 150;
+    const [userPlan, setUserPlan] = useState('basic');
+    // Parse the archive storage cap from PLANS based on the user's plan
+    const archiveStorageStr = PLANS[userPlan]?.features?.archiveStorage || '100 MB';
+    let storageCapMB = 150;
+    if (archiveStorageStr.toLowerCase().includes('gb')) {
+        storageCapMB = parseInt(archiveStorageStr) * 1024;
+    } else if (archiveStorageStr.toLowerCase().includes('mb')) {
+        storageCapMB = parseInt(archiveStorageStr);
+    }
     const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
     useEffect(() => {
         if (!isOpen) return;
         setLoading(true);
-        fetch('/api/models/archived')
+        fetch(`/api/models/archived?email=${encodeURIComponent(userEmail || '')}`)
             .then(res => res.json())
             .then(data => {
                 setModels(Array.isArray(data) ? data : (data.models || []));
                 setTotalStorageUsedMB(data.totalStorageUsedMB ?? 0);
+                setUserPlan(data.plan || 'basic');
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, [isOpen]);
+    }, [isOpen, userEmail]);
 
     return (
         <Transition.Root show={isOpen} as={Fragment}>
