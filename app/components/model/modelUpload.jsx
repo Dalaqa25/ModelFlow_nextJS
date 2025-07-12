@@ -165,17 +165,30 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
+    // Get max file size for current plan
+    const getMaxFileSize = () => {
+        const userPlan = userStorageData?.plan || 'basic';
+        const maxFileSizeStr = PLANS[userPlan]?.features?.maxFileSize || '50 MB';
+        let maxFileSizeBytes = 50 * 1024 * 1024; // default 50MB
+        if (maxFileSizeStr.toLowerCase().includes('gb')) {
+            maxFileSizeBytes = parseInt(maxFileSizeStr) * 1024 * 1024 * 1024;
+        } else if (maxFileSizeStr.toLowerCase().includes('mb')) {
+            maxFileSizeBytes = parseInt(maxFileSizeStr) * 1024 * 1024;
+        }
+        return { maxFileSizeBytes, maxFileSizeStr };
+    };
+
     // Update handleFileChange function with storage validation
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+        const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
 
         if (file) {
             if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed') {
-                if (file.size > maxSize) {
+                if (file.size > maxFileSizeBytes) {
                     setErrors(prev => ({
                         ...prev,
-                        modelFile: 'File size must be less than 100MB'
+                        modelFile: `File size must be less than ${maxFileSizeStr}`
                     }));
                     e.target.value = '';
                     return;
@@ -311,6 +324,14 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
         // Final storage validation before upload
         if (uploadType === 'zip' && formData.modelFile) {
+            const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
+            if (formData.modelFile.size > maxFileSizeBytes) {
+                setErrors(prev => ({
+                    ...prev,
+                    modelFile: `File size must be less than ${maxFileSizeStr}`
+                }));
+                return;
+            }
             const storageValidation = calculateStorageValidation(formData.modelFile.size);
             if (!storageValidation.canUpload) {
                 toast.error('File would exceed storage limit');
@@ -783,7 +804,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                             {errors.modelFile && (
                                                                 <p className="text-red-500 text-sm">{errors.modelFile}</p>
                                                             )}
-                                                            <p className="text-gray-500 text-xs mt-1">Max file size: 100MB (ZIP only)</p>
+                                                            {storageLoading ? (
+                                                                <p className="text-gray-400 text-xs mt-1 animate-pulse">Loading file size limit...</p>
+                                                            ) : (
+                                                                <p className="text-gray-500 text-xs mt-1">Max file size: <span className='font-semibold text-purple-600'>{getMaxFileSize().maxFileSizeStr} (ZIP only)</span></p>
+                                                            )}
                                                         </div>
                                                     )}
 
