@@ -37,8 +37,8 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50/25 py-12 px-6">
-            <div className="max-w-5xl mx-auto bg-white rounded-3xl p-8">
+        <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-purple-50/25 py-12 px-6">
+            <div className="max-w-5xl mx-auto rounded-3xl p-8">
                 {/* Dashboard Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                     <div>

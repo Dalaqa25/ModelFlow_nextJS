@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 const STORE_ID = process.env.LEMONSQUEEZY_STORE_ID ? parseInt(process.env.LEMONSQUEEZY_STORE_ID, 10) : 194698;
 
 export default function ProPlan({ user }) {
+  const isCurrentPlan = user?.subscription?.plan === 'professional';
+
   const handleUpgrade = async () => {
     const res = await fetch('/api/lemon/checkout-subscription', {
       method: 'POST',
@@ -35,10 +37,15 @@ export default function ProPlan({ user }) {
         <li className="flex items-center gap-3 mb-2"><FaStar className="text-yellow-400 text-xl" /> <span className="font-bold text-purple-700">1000</span> <span className="bg-purple-100 text-xs px-2 py-0.5 rounded-full ml-1">Downloads/Month</span></li>
       </ul>
       <button
-        className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-transform transition-colors duration-200 hover:scale-105 hover:bg-purple-700"
-        onClick={handleUpgrade}
+        className={`px-8 py-3 rounded-lg text-lg font-semibold transition-transform transition-colors duration-200 hover:scale-105 ${
+          isCurrentPlan 
+            ? 'bg-purple-200 text-purple-700 cursor-default hover:bg-purple-300' 
+            : 'bg-purple-600 text-white hover:bg-purple-700'
+        }`}
+        onClick={isCurrentPlan ? undefined : handleUpgrade}
+        disabled={isCurrentPlan}
       >
-        Upgrade
+        {isCurrentPlan ? 'Current Plan' : 'Upgrade'}
       </button>
     </div>
   );

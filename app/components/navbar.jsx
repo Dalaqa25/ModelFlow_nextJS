@@ -35,7 +35,7 @@ export default function Navbar() {
 
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
-            <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-2xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
+            <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-4xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
                 <Link className="flex items-center text-center gap-1 flex-shrink-0" href="/"> 
                     <img 
@@ -52,7 +52,7 @@ export default function Navbar() {
 
                 {/* Centered Navigation Links for desktop */}
                 <div className="flex-1 flex justify-center">
-                    <ul className="hidden lg:flex gap-10 text-base items-center py-2.5 px-7 bg-white rounded-xl">
+                    <ul className="hidden lg:flex gap-10 text-base items-center py-2.5 px-7 bg-white rounded-4xl">
                         {navLinks.map(({ href, title }) => {
                             const isActive = pathname === href;
                             return (

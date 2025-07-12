@@ -9,7 +9,7 @@ export default function ModelsList() {
 
     return (
         <>
-            <div className="mt-24 mx-auto w-[90%] max-w-[1500px]">
+            <div className="mt-24 mx-auto w-[90%] max-w-[1500px">
                 <h1 className="text-3xl font-bold mb-2 text-center">Explore Models</h1>
                 <p className="text-gray-500 text-center mb-8">Browse and discover AI models for your projects.</p>
                 <div className="flex w-full mb-10 justify-center">
