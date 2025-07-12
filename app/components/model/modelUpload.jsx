@@ -1,18 +1,35 @@
 'use client';
-import { useState, Fragment } from 'react';
-import { FaCloudUploadAlt, FaPlus, FaTrash, FaGoogleDrive } from 'react-icons/fa';
+import { useState, Fragment, useEffect } from 'react';
+import { FaCloudUploadAlt, FaPlus, FaTrash, FaGoogleDrive, FaExclamationTriangle } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from './UploadProgressDialog';
+import StorageWarningDialog from './StorageWarningDialog';
 import { supabase } from '../../../lib/supabase';
+import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
+import PLANS from '../../plans';
 
 export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const router = useRouter();
+    const { user } = useKindeBrowserClient();
     const [uploadType, setUploadType] = useState('zip'); // 'zip' or 'drive'
     const [features, setFeatures] = useState(['']);
     const [tags, setTags] = useState([]); // Initialize tags as empty array for multi-selection
+    const [userStorageData, setUserStorageData] = useState(null);
+    const [storageLoading, setStorageLoading] = useState(true);
+    const [storageWarningDialog, setStorageWarningDialog] = useState({
+        isOpen: false,
+        warningType: null,
+        currentUsageMB: 0,
+        fileSizeMB: 0,
+        totalAfterUploadMB: 0,
+        storageCapMB: 0,
+        storageCapStr: '',
+        planName: ''
+    });
+    
     // Predefined price tiers that match Lemon Squeezy variants
     const PRICE_TIERS = [
         { value: 500, label: '$5.00', description: 'Basic tier' },
@@ -42,6 +59,74 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         "Image Generation",
         "Translation",
     ];
+
+    // Fetch user storage data when component opens
+    useEffect(() => {
+        if (isOpen && user?.email) {
+            fetchUserStorageData();
+        }
+    }, [isOpen, user?.email]);
+
+    const fetchUserStorageData = async () => {
+        try {
+            setStorageLoading(true);
+            const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
+            if (response.ok) {
+                const data = await response.json();
+                setUserStorageData(data);
+            }
+        } catch (error) {
+            console.error('Error fetching user storage data:', error);
+        } finally {
+            setStorageLoading(false);
+        }
+    };
+
+    // Calculate storage limits and check if upload would exceed limit
+    const calculateStorageValidation = (fileSize) => {
+        if (!userStorageData || !userStorageData.plan) return { canUpload: true, warning: null };
+
+        const currentUsageMB = userStorageData.totalStorageUsedMB || 0;
+        const userPlan = userStorageData.plan;
+        const storageCapStr = PLANS[userPlan]?.features?.activeStorage || '250 MB';
+        
+        // Parse storage cap
+        let storageCapMB = 250;
+        if (storageCapStr.toLowerCase().includes('gb')) {
+            storageCapMB = parseInt(storageCapStr) * 1024;
+        } else if (storageCapStr.toLowerCase().includes('mb')) {
+            storageCapMB = parseInt(storageCapStr);
+        }
+
+        const fileSizeMB = fileSize / (1024 * 1024);
+        const totalAfterUpload = currentUsageMB + fileSizeMB;
+
+        if (totalAfterUpload > storageCapMB) {
+            return {
+                canUpload: false,
+                warning: 'exceeds',
+                currentUsageMB,
+                fileSizeMB,
+                totalAfterUpload,
+                storageCapMB,
+                storageCapStr,
+                planName: PLANS[userPlan]?.name || 'Basic'
+            };
+        } else if (totalAfterUpload > storageCapMB * 0.9) {
+            return {
+                canUpload: true,
+                warning: 'near_limit',
+                currentUsageMB,
+                fileSizeMB,
+                totalAfterUpload,
+                storageCapMB,
+                storageCapStr,
+                planName: PLANS[userPlan]?.name || 'Basic'
+            };
+        }
+
+        return { canUpload: true, warning: null };
+    };
 
     // Tag selection handler
     const handleTagToggle = (tagLabel) => {
@@ -80,7 +165,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-    // Update handleFileChange function
+    // Update handleFileChange function with storage validation
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         const maxSize = 100 * 1024 * 1024; // 100MB in bytes
@@ -95,6 +180,29 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     e.target.value = '';
                     return;
                 }
+
+                // Check storage validation
+                const storageValidation = calculateStorageValidation(file.size);
+                if (!storageValidation.canUpload) {
+                    setErrors(prev => ({
+                        ...prev,
+                        modelFile: 'File would exceed storage limit'
+                    }));
+                    e.target.value = '';
+                    // Show storage warning dialog
+                    setStorageWarningDialog({
+                        isOpen: true,
+                        warningType: storageValidation.warning,
+                        currentUsageMB: storageValidation.currentUsageMB,
+                        fileSizeMB: storageValidation.fileSizeMB,
+                        totalAfterUploadMB: storageValidation.totalAfterUpload,
+                        storageCapMB: storageValidation.storageCapMB,
+                        storageCapStr: storageValidation.storageCapStr,
+                        planName: storageValidation.planName
+                    });
+                    return;
+                }
+
                 setFormData(prev => ({
                     ...prev,
                     modelFile: file
@@ -103,6 +211,20 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     ...prev,
                     modelFile: ''
                 }));
+
+                // Show warning dialog if near limit
+                if (storageValidation.warning === 'near_limit') {
+                    setStorageWarningDialog({
+                        isOpen: true,
+                        warningType: storageValidation.warning,
+                        currentUsageMB: storageValidation.currentUsageMB,
+                        fileSizeMB: storageValidation.fileSizeMB,
+                        totalAfterUploadMB: storageValidation.totalAfterUpload,
+                        storageCapMB: storageValidation.storageCapMB,
+                        storageCapStr: storageValidation.storageCapStr,
+                        planName: storageValidation.planName
+                    });
+                }
             } else {
                 setErrors(prev => ({
                     ...prev,
@@ -133,7 +255,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-    // Update validateForm to include tags, price, and setup validation
+    // Update validateForm to include storage validation
     const validateForm = () => {
         const newErrors = {};
         
@@ -166,7 +288,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
             newErrors.price = 'Please select a valid price tier';
         }
 
-        
         if (uploadType === 'zip' && !formData.modelFile) {
             newErrors.modelFile = 'Model file is required';
         }
@@ -187,6 +308,15 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+
+        // Final storage validation before upload
+        if (uploadType === 'zip' && formData.modelFile) {
+            const storageValidation = calculateStorageValidation(formData.modelFile.size);
+            if (!storageValidation.canUpload) {
+                toast.error('File would exceed storage limit');
+                return;
+            }
+        }
 
         setIsSubmitting(true);
         setShowProgressDialog(true);
@@ -341,6 +471,62 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
+    const handleArchiveClick = () => {
+        setStorageWarningDialog(prev => ({ ...prev, isOpen: false }));
+        // Close upload dialog and open archive dialog
+        onClose();
+        // You can add logic here to open the archive dialog
+        // For now, we'll just show a toast
+        toast.success('Please use the Archive button in your dashboard to free up space');
+    };
+
+    const handleDeleteClick = () => {
+        setStorageWarningDialog(prev => ({ ...prev, isOpen: false }));
+        // Close upload dialog and show delete instructions
+        onClose();
+        toast.success('Please delete models from your dashboard to free up space');
+    };
+
+    // Display storage info
+    const renderStorageInfo = () => {
+        if (storageLoading) {
+            return <div className="text-gray-500 text-sm">Loading storage info...</div>;
+        }
+
+        if (!userStorageData) {
+            return null;
+        }
+
+        const currentUsageMB = userStorageData.totalStorageUsedMB || 0;
+        const userPlan = userStorageData.plan || 'basic';
+        const storageCapStr = PLANS[userPlan]?.features?.activeStorage || '250 MB';
+        
+        let storageCapMB = 250;
+        if (storageCapStr.toLowerCase().includes('gb')) {
+            storageCapMB = parseInt(storageCapStr) * 1024;
+        } else if (storageCapStr.toLowerCase().includes('mb')) {
+            storageCapMB = parseInt(storageCapStr);
+        }
+
+        const usagePercent = (currentUsageMB / storageCapMB) * 100;
+
+        return (
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">Storage Usage</span>
+                    <span className="text-sm font-medium text-gray-500">{currentUsageMB.toFixed(1)}MB / {storageCapMB}MB</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div 
+                        className={`h-2 rounded-full ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 75 ? 'bg-yellow-500' : 'bg-green-500'}`} 
+                        style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                    ></div>
+                </div>
+                <p className="text-xs text-gray-500">Plan: {PLANS[userPlan]?.name || 'Basic'}</p>
+            </div>
+        );
+    };
+
     return (
         <>
             <Transition.Root show={isOpen} as={Fragment}>
@@ -384,6 +570,10 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                             <Dialog.Title as="h3" className="text-xl font-semibold leading-6 text-gray-900">
                                                 Upload Your Model
                                             </Dialog.Title>
+                                            
+                                            {/* Storage Info */}
+                                            {renderStorageInfo()}
+                                            
                                             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                                                 <div className="flex flex-col gap-2">
                                                     <label htmlFor="modelName" className="font-medium text-gray-700">
@@ -637,6 +827,19 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 isOpen={showProgressDialog} 
                 stage={uploadStage} 
                 onClose={() => setShowProgressDialog(false)} 
+            />
+            <StorageWarningDialog
+                isOpen={storageWarningDialog.isOpen}
+                onClose={() => setStorageWarningDialog(prev => ({ ...prev, isOpen: false }))}
+                warningType={storageWarningDialog.warningType}
+                currentUsageMB={storageWarningDialog.currentUsageMB}
+                fileSizeMB={storageWarningDialog.fileSizeMB}
+                totalAfterUploadMB={storageWarningDialog.totalAfterUploadMB}
+                storageCapMB={storageWarningDialog.storageCapMB}
+                storageCapStr={storageWarningDialog.storageCapStr}
+                planName={storageWarningDialog.planName}
+                onArchiveClick={handleArchiveClick}
+                onDeleteClick={handleDeleteClick}
             />
         </>
     );

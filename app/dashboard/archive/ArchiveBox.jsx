@@ -8,6 +8,7 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
     const [loading, setLoading] = useState(true);
     const [totalStorageUsedMB, setTotalStorageUsedMB] = useState(0);
     const [userPlan, setUserPlan] = useState('basic');
+    const [planLoading, setPlanLoading] = useState(true);
     // Parse the archive storage cap from PLANS based on the user's plan
     const archiveStorageStr = PLANS[userPlan]?.features?.archiveStorage || '100 MB';
     let storageCapMB = 150;
@@ -21,6 +22,7 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
     useEffect(() => {
         if (!isOpen) return;
         setLoading(true);
+        setPlanLoading(true);
         fetch(`/api/models/archived?email=${encodeURIComponent(userEmail || '')}`)
             .then(res => res.json())
             .then(data => {
@@ -28,8 +30,12 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                 setTotalStorageUsedMB(data.totalStorageUsedMB ?? 0);
                 setUserPlan(data.plan || 'basic');
                 setLoading(false);
+                setPlanLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch(() => {
+                setLoading(false);
+                setPlanLoading(false);
+            });
     }, [isOpen, userEmail]);
 
     return (
@@ -62,6 +68,7 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                                     Archived Models
                                 </Dialog.Title>
                                 {/* Storage Usage Indicator */}
+                                {!planLoading && (
                                 <div className="mb-6">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-sm font-medium text-gray-700">Storage used</span>
@@ -71,6 +78,7 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                                         <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${storagePercent}%` }}></div>
                                     </div>
                                 </div>
+                                )}
                                 <div className="text-gray-600 min-h-[100px]">
                                     {loading ? (
                                         <div className="text-center text-gray-400">Loading...</div>
