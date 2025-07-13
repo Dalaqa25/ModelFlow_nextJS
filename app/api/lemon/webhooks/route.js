@@ -56,6 +56,12 @@ export async function POST(req) {
     });
     await buyer.save();
 
+    // Add buyer's email to model's purchasedBy array
+    await Model.updateOne(
+      { _id: model._id },
+      { $addToSet: { purchasedBy: buyerEmail } }
+    );
+
     // Update seller's earnings
     if (authorEmail) {
       const seller = await User.findOne({ email: authorEmail });
