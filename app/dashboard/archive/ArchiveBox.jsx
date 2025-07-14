@@ -38,6 +38,16 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
             });
     }, [isOpen, userEmail]);
 
+    // Log supabasePath for each model whenever models change
+    useEffect(() => {
+        if (models && models.length > 0) {
+            models.forEach(model => {
+                const supabasePath = model?.fileStorage?.supabasePath;
+                console.log(`Archived model: ${model.name}, supabasePath:`, supabasePath);
+            });
+        }
+    }, [models]);
+
     // Add this function to re-fetch models after deletion
     const refetchModels = () => {
         setLoading(true);
