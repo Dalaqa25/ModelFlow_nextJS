@@ -1,4 +1,18 @@
-export default function ArchivedModels({ models = [] }) {
+export default function ArchivedModels({ models = [], onModelDeleted }) {
+    const handleDelete = async (modelId) => {
+        if (!window.confirm('Are you sure you want to permanently delete this model? This action cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/models/archived/${modelId}`, { method: 'DELETE' });
+            if (res.ok) {
+                if (onModelDeleted) onModelDeleted(modelId);
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to delete model.');
+            }
+        } catch (err) {
+            alert('Error deleting model: ' + err.message);
+        }
+    };
     return (
         <div className="space-y-4">
             {models.length === 0 ? (
@@ -10,8 +24,14 @@ export default function ArchivedModels({ models = [] }) {
                             <div className="text-lg font-semibold text-purple-800">{model.name}</div>
                             <div className="text-sm text-gray-500">By: {model.authorEmail}</div>
                         </div>
-                        <div className="text-sm text-gray-600 mt-2 sm:mt-0">
-                            Archived on: {new Date(model.createdAt).toLocaleDateString()}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 sm:mt-0">
+                            <div className="text-sm text-gray-600">Archived on: {new Date(model.createdAt).toLocaleDateString()}</div>
+                            <button
+                                className="ml-4 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-semibold"
+                                onClick={() => handleDelete(model._id)}
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
                 ))

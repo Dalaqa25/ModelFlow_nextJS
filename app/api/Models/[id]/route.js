@@ -22,39 +22,15 @@ export async function GET(req, { params }) {
 
 export async function DELETE(req, { params }) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
-        
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         await connect();
-        const model = await Model.findById(params.id);
-
-        if (!model) {
-            return NextResponse.json({ error: "Model not found" }, { status: 404 });
+        const { id } = params;
+        const deleted = await Model.findByIdAndDelete(id);
+        if (!deleted) {
+            return NextResponse.json({ error: 'Model not found' }, { status: 404 });
         }
-
-        // Check if the user is the author of the model
-        if (model.authorEmail !== user.email) {
-            return NextResponse.json({ error: "You can only archive your own models" }, { status: 403 });
-        }
-
-        // Create archived model document with trimmed fields
-        await ArchivedModel.create({
-            name: model.name,
-            authorEmail: model.authorEmail,
-            fileStorage: model.fileStorage,
-            createdAt: model.createdAt
-        });
-
-        // Remove the original model
-        await Model.findByIdAndDelete(params.id);
-        return NextResponse.json({ message: "Model archived successfully" });
+        return NextResponse.json({ message: 'Model deleted successfully' }, { status: 200 });
     } catch (error) {
-        console.error("Error archiving model:", error);
-        return NextResponse.json({ error: "Error archiving model" }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 

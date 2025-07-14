@@ -38,6 +38,25 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
             });
     }, [isOpen, userEmail]);
 
+    // Add this function to re-fetch models after deletion
+    const refetchModels = () => {
+        setLoading(true);
+        setPlanLoading(true);
+        fetch(`/api/models/archived?email=${encodeURIComponent(userEmail || '')}`)
+            .then(res => res.json())
+            .then(data => {
+                setModels(Array.isArray(data) ? data : (data.models || []));
+                setTotalStorageUsedMB(data.totalStorageUsedMB ?? 0);
+                setUserPlan(data.plan || 'basic');
+                setLoading(false);
+                setPlanLoading(false);
+            })
+            .catch(() => {
+                setLoading(false);
+                setPlanLoading(false);
+            });
+    };
+
     return (
         <Transition.Root show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -83,7 +102,7 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                                     {loading ? (
                                         <div className="text-center text-gray-400">Loading...</div>
                                     ) : (
-                                        <ArchivedModels models={models} />
+                                        <ArchivedModels models={models} onModelDeleted={refetchModels} />
                                     )}
                                 </div>
                                 <div className="mt-6 flex justify-end">
