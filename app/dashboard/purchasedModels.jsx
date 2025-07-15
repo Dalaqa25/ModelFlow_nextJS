@@ -160,61 +160,104 @@ export default function PurchasedModels({ isRowLayout }) {
                                     </div>
                                 </div>
 
-                                <div className="mb-4">
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <FaTag className="mr-2" />
-                                        <span className="font-medium">Tags:</span>
+                                {/* Actions and warning for archived models */}
+                                {model.archived ? (
+                                  <>
+                                    <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
+                                      {model.fileStorage?.supabasePath ? (
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const res = await fetch(`/api/models/${model._id}/download`);
+                                              const data = await res.json();
+                                              if (data.downloadUrl) {
+                                                window.open(data.downloadUrl, '_blank');
+                                              } else {
+                                                alert('Failed to get download link.');
+                                              }
+                                            } catch (err) {
+                                              alert('Error downloading: ' + err.message);
+                                            }
+                                          }}
+                                          className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                          <FaDownload />
+                                          <span>Download</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
+                                          disabled
+                                          title="This model is not available for download."
+                                        >
+                                          <FaDownload />
+                                          <span>Download</span>
+                                        </button>
+                                      )}
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
-                                            <span 
-                                                key={idx} 
-                                                className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-sm"
-                                            >
-                                                {tag}
-                                            </span>
-                                        ))}
+                                    <div className="text-xs text-purple-700 mt-2">
+                                      This model has been archived by the author and may be deleted from the publisher at any time. Download now to keep a copy.
                                     </div>
-                                </div>
-
-                                <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
-                                    <button 
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="mb-4">
+                                      <div className="flex items-center text-gray-600 mb-2">
+                                          <FaTag className="mr-2" />
+                                          <span className="font-medium">Tags:</span>
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                          {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
+                                              <span 
+                                                  key={idx} 
+                                                  className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-sm"
+                                              >
+                                                  {tag}
+                                              </span>
+                                          ))}
+                                      </div>
+                                    </div>
+                                    <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
+                                      <button 
                                         onClick={() => handleViewModel(model._id)}
                                         className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                                    >
+                                      >
                                         <FaEye />
                                         <span>View Details</span>
-                                    </button>
-                                    {model.fileStorage?.supabasePath || model.fileStorage?.url ? (
-                                      <button
-                                        onClick={async () => {
-                                          try {
-                                            const res = await fetch(`/api/models/${model._id}/download`);
-                                            const data = await res.json();
-                                            if (data.downloadUrl) {
-                                              window.open(data.downloadUrl, '_blank');
-                                            } else {
-                                              alert('Failed to get download link.');
+                                      </button>
+                                      {model.fileStorage?.supabasePath ? (
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const res = await fetch(`/api/models/${model._id}/download`);
+                                              const data = await res.json();
+                                              if (data.downloadUrl) {
+                                                window.open(data.downloadUrl, '_blank');
+                                              } else {
+                                                alert('Failed to get download link.');
+                                              }
+                                            } catch (err) {
+                                              alert('Error downloading: ' + err.message);
                                             }
-                                          } catch (err) {
-                                            alert('Error downloading: ' + err.message);
-                                          }
-                                        }}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                                      >
-                                        <FaDownload />
-                                        <span>Download</span>
-                                      </button>
-                                    ) : (
-                                      <button
-                                        className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
-                                        disabled
-                                      >
-                                        <FaDownload />
-                                        <span>Download</span>
-                                      </button>
-                                    )}
-                                </div>
+                                          }}
+                                          className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                          <FaDownload />
+                                          <span>Download</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
+                                          disabled
+                                          title="This model is not available for download."
+                                        >
+                                          <FaDownload />
+                                          <span>Download</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
                             </div>
                         </div>
                     ))}

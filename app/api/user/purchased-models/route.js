@@ -34,19 +34,10 @@ export async function GET() {
         const missingIds = modelIds.filter(id => !foundModelIds.includes(id)).map(id => new mongoose.Types.ObjectId(id));
         let archivedModels = [];
         if (missingIds.length > 0) {
-            console.log('missingIds:', missingIds);
-            console.log('user.email:', user.email);
-            // Debug: log the actual archived document for the first missingId
-            const debugDoc = await ArchivedModel.findOne({ _id: missingIds[0] });
-            console.log('Debug archived doc:', debugDoc);
-            if (debugDoc) {
-                console.log('purchasedBy:', debugDoc.purchasedBy, Array.isArray(debugDoc.purchasedBy));
-            }
-            // Temporarily remove purchasedBy filter for debugging
             archivedModels = await ArchivedModel.find({
-                _id: { $in: missingIds }
+                _id: { $in: missingIds },
+                purchasedBy: user.email
             });
-            console.log('archivedModels (no purchasedBy filter):', archivedModels);
         }
         const archivedModelMap = Object.fromEntries(archivedModels.map(m => [m._id.toString(), m]));
         const modelMap = Object.fromEntries(models.map(m => [m._id.toString(), m]));
