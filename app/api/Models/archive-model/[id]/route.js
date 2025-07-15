@@ -19,10 +19,12 @@ export async function PUT(req, { params }) {
         if (model.authorEmail !== user.email) {
             return NextResponse.json({ error: 'You can only archive your own models' }, { status: 403 });
         }
-        // Create archived model with trimmed fields
+        // Create archived model with trimmed fields and preserve original _id
         await ArchivedModel.create({
+            _id: model._id, // preserve the original ID
             name: model.name,
             authorEmail: model.authorEmail,
+            purchasedBy: model.purchasedBy, // copy purchasedBy
             fileStorage: model.fileStorage,
             createdAt: model.createdAt
         });

@@ -20,6 +20,9 @@ export default function PurchasedModels({ isRowLayout }) {
                 throw new Error('Failed to fetch purchased models');
             }
             const data = await response.json();
+            // Log all archived purchased models for debugging
+            const archivedModels = data.filter(m => m.archived);
+            console.log('Archived purchased models:', archivedModels);
             return data;
         },
         enabled: !!user,
@@ -141,15 +144,19 @@ export default function PurchasedModels({ isRowLayout }) {
                             
                             <div className={`p-4 ${isRowLayout ? 'flex-1' : ''}`}>
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{model.name}</h3>
-                                
+                                {model.archived && (
+                                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded mb-2">
+                                    Archived
+                                  </span>
+                                )}
                                 <div className="space-y-2 mb-4">
                                     <div className="flex items-center text-gray-600">
                                         <FaUser className="mr-2" />
-                                        <span>{model.authorEmail}</span>
+                                        <span>{model.authorEmail || "Unknown Author"}</span>
                                     </div>
                                     <div className="flex items-center text-gray-600">
                                         <FaCalendarAlt className="mr-2" />
-                                        <span>Purchased {new Date(model.purchasedAt).toLocaleDateString()}</span>
+                                        <span>Purchased {model.purchasedAt ? new Date(model.purchasedAt).toLocaleDateString() : "Unknown date"}</span>
                                     </div>
                                 </div>
 
@@ -159,7 +166,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                         <span className="font-medium">Tags:</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {model.tags.map((tag, idx) => (
+                                        {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
                                             <span 
                                                 key={idx} 
                                                 className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-sm"

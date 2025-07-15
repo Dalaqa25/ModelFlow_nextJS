@@ -19,7 +19,9 @@ export async function GET(request) {
             }
         }
         await connect();
-        const models = await ArchivedModel.find({}).sort({ createdAt: -1 });
+        const models = email
+            ? await ArchivedModel.find({ authorEmail: email }).sort({ createdAt: -1 })
+            : [];
         // Calculate total storage used in MB
         const totalBytes = models.reduce((sum, model) => sum + (model.fileStorage?.fileSize || 0), 0);
         const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(2));

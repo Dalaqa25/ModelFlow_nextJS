@@ -2,7 +2,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
 export default function LoadingDialog({ isOpen, message = 'Processing...' }) {
-  return (
+    return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={() => {}}>
         <Transition.Child
@@ -34,5 +34,5 @@ export default function LoadingDialog({ isOpen, message = 'Processing...' }) {
         </div>
       </Dialog>
     </Transition.Root>
-  );
+    );
 } 
