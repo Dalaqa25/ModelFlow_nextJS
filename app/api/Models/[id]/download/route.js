@@ -1,14 +1,20 @@
 import { supabase } from '@/lib/supabase';
 import Model from '@/lib/db/Model';
+import ArchivedModel from '@/lib/db/ArchivedModel';
 import { NextResponse } from 'next/server';
 
 export async function GET(req, context) {
   try {
     const { id } = await context.params;
     console.log('Download request for model ID:', id);
-    // 1. Get model from DB
-    const model = await Model.findById(id);
-    console.log('Model found:', model);
+    // 1. Get model from DB (try Model first, then ArchivedModel)
+    let model = await Model.findById(id);
+    if (!model) {
+      model = await ArchivedModel.findById(id);
+      console.log('Checked ArchivedModel, found:', model);
+    } else {
+      console.log('Model found:', model);
+    }
     if (!model) return NextResponse.json({ error: 'Model not found' }, { status: 404 });
 
     // 2. Get file path from model

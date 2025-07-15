@@ -13,7 +13,7 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setHasMounted(true);
     setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 4000);
+    const timer = setTimeout(() => setLoading(false), 3500);
     return () => clearTimeout(timer);
   }, []);
 
