@@ -13,7 +13,7 @@ export async function GET(req, context) {
       model = await ArchivedModel.findById(id);
       console.log('Checked ArchivedModel, found:', model);
     } else {
-      console.log('Model found:', model);
+    console.log('Model found:', model);
     }
     if (!model) return NextResponse.json({ error: 'Model not found' }, { status: 404 });
 
