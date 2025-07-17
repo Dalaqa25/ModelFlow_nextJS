@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import LoadingDialog from '../../components/plans/LoadingDialog';
 import DeleteSuccessDialog from '../../components/model/DeleteSuccessDialog';
+import PendingDeletionDialog from '../../components/model/PendingDeletionDialog';
 
 export default function ArchivedModels({ models = [], onModelDeleted }) {
     const [notifying, setNotifying] = useState(false);
     const [notifyMessage, setNotifyMessage] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
+    const [showPending, setShowPending] = useState(false);
 
     const handleNotify = async (modelId) => {
         setNotifyMessage('Notifying all purchasers...');
@@ -17,6 +19,8 @@ export default function ArchivedModels({ models = [], onModelDeleted }) {
                 setShowSuccess(true);
                 // Optionally remove the model from UI if needed:
                 // if (onModelDeleted) onModelDeleted(modelId);
+            } else if (res.ok && data.message && data.message.includes('purchasers')) {
+                setShowPending(true);
             } else if (res.ok) {
                 alert(data.message || 'Notification emails sent!');
             } else {
@@ -34,6 +38,7 @@ export default function ArchivedModels({ models = [], onModelDeleted }) {
         <>
             <LoadingDialog isOpen={notifying} message={notifyMessage} />
             <DeleteSuccessDialog isOpen={showSuccess} onClose={() => setShowSuccess(false)} />
+            <PendingDeletionDialog isOpen={showPending} onClose={() => setShowPending(false)} />
         <div className="space-y-4">
             {models.length === 0 ? (
                 <div className="text-gray-400 text-center">No archived models yet.</div>

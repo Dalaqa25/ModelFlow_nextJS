@@ -37,11 +37,11 @@ export default function DeleteSuccessDialog({ isOpen, onClose, message = 'Model 
           >
             <Dialog.Panel className="bg-white rounded-xl shadow-xl p-8 flex flex-col items-center gap-4">
               {/* Animated Tick */}
-              <svg className="w-16 h-16 text-green-500 animate-tick-pop" viewBox="0 0 52 52">
+              <svg className="w-16 h-16 text-purple-500 animate-tick-pop" viewBox="0 0 52 52">
                 <circle className="text-green-100" cx="26" cy="26" r="25" fill="currentColor" />
                 <path className="tick" fill="none" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" d="M14 27l7 7 16-16" />
               </svg>
-              <div className="text-lg font-semibold text-green-700 text-center">{message}</div>
+              <div className="text-lg font-semibold text-purple-700 text-center">{message}</div>
             </Dialog.Panel>
           </Transition.Child>
         </div>

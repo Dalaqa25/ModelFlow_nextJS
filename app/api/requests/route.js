@@ -7,7 +7,7 @@ import Comment from '@/lib/db/Comment';
 export async function GET() {
   try {
     await connect();
-    
+
     const requests = await Request.find()
       .sort({ createdAt: -1 })
       .populate('comments')
