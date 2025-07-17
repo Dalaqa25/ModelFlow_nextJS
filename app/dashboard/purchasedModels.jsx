@@ -20,9 +20,6 @@ export default function PurchasedModels({ isRowLayout }) {
                 throw new Error('Failed to fetch purchased models');
             }
             const data = await response.json();
-            // Log all archived purchased models for debugging
-            const archivedModels = data.filter(m => m.archived);
-            console.log('Archived purchased models:', archivedModels);
             return data;
         },
         enabled: !!user,

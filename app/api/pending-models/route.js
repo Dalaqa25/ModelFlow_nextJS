@@ -53,7 +53,6 @@ export async function POST(req) {
         } else {
             data = Object.fromEntries(await req.formData());
         }
-        console.log('fileStorage received in backend:', data.fileStorage);
 
         // Validate required fields
         const requiredFields = ['name', 'description', 'useCases', 'features', 'tags', 'uploadType', 'setup', 'price'];

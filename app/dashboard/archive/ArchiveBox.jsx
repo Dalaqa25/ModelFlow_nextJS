@@ -43,7 +43,6 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
         if (models && models.length > 0) {
             models.forEach(model => {
                 const supabasePath = model?.fileStorage?.supabasePath;
-                console.log(`Archived model: ${model.name}, supabasePath:`, supabasePath);
             });
         }
     }, [models]);

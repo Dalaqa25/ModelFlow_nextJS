@@ -4,7 +4,6 @@ import { updateUserSubscription } from "@/lib/lemon/subscription";
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log("Lemon Squeezy Subscription Webhook received:", body);
 
     // Get event type
     const event = body.meta?.event_name;

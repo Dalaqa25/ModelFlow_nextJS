@@ -6,7 +6,6 @@ import connect from "@/lib/db/connect";
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log("Lemon Squeezy Webhook received:", body);
 
     // Only handle order_created events
     if (body.meta?.event_name !== "order_created") {
@@ -83,7 +82,6 @@ export async function POST(req) {
         });
         
         await seller.save();
-        console.log(`Updated seller earnings: ${authorEmail} earned ${sellerCut} cents`);
       }
     }
 

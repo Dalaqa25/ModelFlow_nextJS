@@ -30,7 +30,6 @@ export default function Navbar() {
     ];
 
     useEffect(() => {
-        console.log("isAuthenticated:", isAuthenticated, "user:", user);
     }, [isAuthenticated, user]);
 
     return (

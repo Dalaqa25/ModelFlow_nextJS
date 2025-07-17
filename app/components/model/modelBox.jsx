@@ -21,7 +21,6 @@ export default function ModelBox({ search = "" }) {
                 throw new Error('Failed to fetch models');
             }
             const data = await res.json();
-            console.log('Models fetched:', data); // Debug log
             return data;
         },
         staleTime: 0, // Remove stale time to always fetch fresh data
@@ -40,18 +39,8 @@ export default function ModelBox({ search = "" }) {
         const matchesTag = !selectedTag || model.tags.includes(selectedTag);
         const matchesPrice = model.price >= price[0] && model.price <= price[1];
         
-        // Debug logging
-        if (!matchesPrice) {
-            console.log(`Model "${model.name}" filtered out by price: ${model.price} not in range [${price[0]}, ${price[1]}]`);
-        }
-        if (!matchesTag) {
-            console.log(`Model "${model.name}" filtered out by tag: ${selectedTag} not in ${model.tags}`);
-        }
-        
         return matchesSearch && matchesTag && matchesPrice;
     });
-    
-    console.log('Filtered models:', filteredModels.length, 'out of', models.length);
 
     const totalPages = Math.ceil(filteredModels.length / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;

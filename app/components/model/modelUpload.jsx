@@ -384,7 +384,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                             uploadedAt: new Date().toISOString(),
                         })
                     };
-                    console.log('modelMeta sent to backend:', modelMeta);
                     // Send metadata to backend
                     const response = await fetch('/api/pending-models', {
                         method: 'POST',
@@ -412,7 +411,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 fastApiFormData.append('setup', formData.setup);
 
                 setUploadStage('extracting');
-                console.log('Sending request to FastAPI...');
                 const apiUrl = process.env.NEXT_PUBLIC_MODEL_VALIDATOR_API_URL || 'http://127.0.0.1:8000';
                 const fastApiResponse = await fetch(`${apiUrl}/process-zip`, {
                     method: 'POST',
@@ -427,7 +425,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
                 setUploadStage('analyzing');
                 const validationResult = await fastApiResponse.json();
-                console.log('FastAPI response:', validationResult);
 
 
                 let processedAiAnalysis = validationResult.ai_analysis;
@@ -454,14 +451,12 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     has_requirements: validationResult.has_requirements
                 }));
 
-                console.log('Sending request to Next.js API...');
                 const response = await fetch('/api/pending-models', {
                     method: 'POST',
                     body: formDataToSend,
                 });
 
                 const data = await response.json();
-                console.log('Next.js API response:', data);
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to upload model');

@@ -6,20 +6,15 @@ import Comment from '@/lib/db/Comment';
 
 export async function GET() {
   try {
-    console.log('Attempting to connect to database...');
     await connect();
-    console.log('Database connection successful');
-
-    console.log('Fetching requests...');
+    
     const requests = await Request.find()
       .sort({ createdAt: -1 })
       .populate('comments')
       .populate('commentsCount');
-    console.log('Requests fetched successfully:', requests.length);
     
     return NextResponse.json(requests);
   } catch (error) {
-    console.error('Detailed error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

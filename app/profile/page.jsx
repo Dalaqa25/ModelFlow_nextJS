@@ -29,7 +29,6 @@ export default function Profile() {
                     throw new Error('Failed to fetch user data');
                 }
                 const data = await response.json();
-                console.log('User data received:', data);
                 setUserName(data.name);
                 setUserData(data);
                 return data; // Return the data so we can use it
@@ -49,7 +48,6 @@ export default function Profile() {
                     return;
                 }
                 
-                console.log('Fetching models for email:', userData.email);
                 const response = await fetch(`/api/models/user-models?email=${userData.email}`);
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -57,7 +55,6 @@ export default function Profile() {
                     throw new Error('Failed to fetch user models');
                 }
                 const data = await response.json();
-                console.log('Models data received:', data);
                 setUserModels(data.models || []);
             } catch (error) {
                 console.error("Error fetching user models:", error);
