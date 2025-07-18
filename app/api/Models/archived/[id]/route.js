@@ -49,7 +49,7 @@ export async function DELETE(req, context) {
   }
 }
 
-// POST: Notify all purchasers of an archived model (delete file and metadata if purchasedBy.length === 0)
+// POST: Notify all purchasers of an archived model (set scheduledDeletionDate and send email with real date if purchasedBy.length > 0)
 export async function POST(req, context) {
   const { params } = await context;
   const { id } = await params;
@@ -58,6 +58,23 @@ export async function POST(req, context) {
     const archivedModel = await ArchivedModel.findById(id);
     if (!archivedModel) {
       return NextResponse.json({ error: 'Archived model not found' }, { status: 404 });
+    }
+    if (Array.isArray(archivedModel.purchasedBy) && archivedModel.purchasedBy.length > 0) {
+      // Calculate the real deletion date (3 days from now)
+      const deletionDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      archivedModel.scheduledDeletionDate = deletionDate;
+      await archivedModel.save();
+      // Send notification emails with the exact scheduled deletion date
+      await Promise.all(
+        archivedModel.purchasedBy.map(email =>
+          sendDeletionWarningEmail({
+            to: email,
+            modelName: archivedModel.name,
+            deletionDate: archivedModel.scheduledDeletionDate.toLocaleDateString(),
+          })
+        )
+      );
+      return NextResponse.json({ message: 'Model has purchasers. Scheduled deletion date set and emails sent.', scheduledDeletionDate: deletionDate.toISOString() });
     }
     if (!Array.isArray(archivedModel.purchasedBy) || archivedModel.purchasedBy.length === 0) {
       // Delete file from Supabase Storage
@@ -74,8 +91,6 @@ export async function POST(req, context) {
       // Delete the archived model document
       await ArchivedModel.findByIdAndDelete(id);
       return NextResponse.json({ message: 'File and model metadata deleted successfully.' });
-    } else {
-      return NextResponse.json({ message: 'Model has purchasers, not deleting file or metadata.' });
     }
   } catch (error) {
     return NextResponse.json({ error: 'Failed to process request.' }, { status: 500 });
