@@ -60,8 +60,8 @@ export async function POST(req, context) {
       return NextResponse.json({ error: 'Archived model not found' }, { status: 404 });
     }
     if (Array.isArray(archivedModel.purchasedBy) && archivedModel.purchasedBy.length > 0) {
-      // Calculate the real deletion date (3 days from now)
-      const deletionDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      // Calculate the real deletion date (1 minute from now for testing)
+      const deletionDate = new Date(Date.now() + 1 * 60 * 1000); // 1 minute from now
       archivedModel.scheduledDeletionDate = deletionDate;
       await archivedModel.save();
       // Send notification emails with the exact scheduled deletion date
@@ -94,5 +94,22 @@ export async function POST(req, context) {
     }
   } catch (error) {
     return NextResponse.json({ error: 'Failed to process request.' }, { status: 500 });
+  }
+}
+
+// Scheduled deletion job (for testing, can be run manually or as a cron job)
+export async function DELETE_EXPIRED_MODELS() {
+  await connect();
+  const now = new Date();
+  const expiredModels = await ArchivedModel.find({
+    scheduledDeletionDate: { $lte: now }
+  });
+  for (const model of expiredModels) {
+    // Delete file from Supabase Storage
+    const supabasePath = model.fileStorage?.supabasePath;
+    if (supabasePath) {
+      await supabase.storage.from('models').remove([supabasePath]);
+    }
+    await ArchivedModel.findByIdAndDelete(model._id);
   }
 } 
