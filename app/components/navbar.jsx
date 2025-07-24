@@ -16,6 +16,7 @@ export default function Navbar() {
     const { isAuthenticated, isLoading, user } = useKindeAuth();
     const pathname = usePathname() || '/'; 
     const [menuOpen, setMenuOpen] = useState(false);
+    const [showNavLinks, setShowNavLinks] = useState(false);
     const toggleMenu = () => setMenuOpen(!menuOpen);
 
     // Conditionally filter out "Home" if authenticated, and add "Profile" if authenticated
@@ -30,7 +31,14 @@ export default function Navbar() {
     ];
 
     useEffect(() => {
-    }, [isAuthenticated, user]);
+        if (!isLoading) {
+            // Delay to allow skeleton to disappear first
+            const timeout = setTimeout(() => setShowNavLinks(true), 50);
+            return () => clearTimeout(timeout);
+        } else {
+            setShowNavLinks(false);
+        }
+    }, [isLoading]);
 
     return (
         <header className="flex justify-center py-3 w-full bg-transparent">
@@ -45,28 +53,42 @@ export default function Navbar() {
                         className="flex-shrink-0"
                     />
                     <span className="text-3xl -mr-7 xl:text-3xl 2xl:text-4xl font-bold tracking-tight text-gray-900 flex items-baseline">
-                        Modelflow<span className="text-4xl xl:text-5xl 2xl:text-6xl text-purple-500 -mt-2">.</span>
+                        ModelGrow<span className="text-4xl xl:text-5xl 2xl:text-6xl text-purple-500 -mt-2">.</span>
                     </span>
                 </Link>
 
                 {/* Centered Navigation Links for desktop */}
                 <div className="flex-1 flex justify-center">
                     <ul className="hidden lg:flex gap-10 text-base items-center py-2.5 px-7 bg-white rounded-4xl">
-                        {navLinks.map(({ href, title }) => {
-                            const isActive = pathname === href;
-                            return (
-                                <li className="xl:text-xl 2xl:text-2xl flex items-center" key={href}>
-                                    <Link
-                                        href={href}
-                                        className={`transition-colors duration-200 ${
-                                            isActive ? 'text-black' : 'text-[#b6b6b6]'
-                                        } hover:text-purple-800`}
-                                    >
-                                        {title}
-                                    </Link>
+                        {isLoading ? (
+                            // Skeleton loader for nav links
+                            Array.from({ length: 4 }).map((_, idx) => (
+                                <li key={idx}>
+                                    <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
                                 </li>
-                            );
-                        })}
+                            ))
+                        ) : (
+                            <div className={`flex gap-10 transition-all duration-500 ${showNavLinks ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                                {navLinks.map(({ href, title }) => {
+                                    const isActive = pathname === href;
+                                    return (
+                                        <li className="text-base sm:text-lg md:text-xl xl:text-2xl flex items-center" key={href}>
+                                            <Link
+                                                href={href}
+                                                className={`relative transition-colors duration-200 px-1
+                                                    ${isActive ? 'text-black' : 'text-[#b6b6b6]'}
+                                                    hover:text-purple-800
+                                                    group
+                                                `}
+                                            >
+                                                <span className="relative z-10">{title}</span>
+                                                <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center rounded-lg" />
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </ul>
                 </div>
 
@@ -95,18 +117,32 @@ export default function Navbar() {
                         menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5 pointer-events-none'
                     }`}>
                     <ul className="flex flex-col gap-5 cursor-pointer">
-                        {navLinks.map(({ href, title }) => (
-                            <Link href={href} onClick={toggleMenu} key={href}>
-                                <li className='flex items-center gap-3'>
-                                    {title === 'Home' && <AiFillHome />}
-                                    {title === 'Dashboard' && <MdDashboard />}
-                                    {title === 'Models' && <AiOutlineRobot />}
-                                    {title === 'Plans' && <BsClipboardCheck />}
-                                    {title === 'Requests' && <FiSend />}
-                                    {title}
+                        {isLoading ? (
+                            Array.from({ length: 4 }).map((_, idx) => (
+                                <li key={idx}>
+                                    <div className="h-6 w-32 bg-gray-200 rounded-full animate-pulse mb-2" />
                                 </li>
-                            </Link>
-                        ))}
+                            ))
+                        ) : (
+                            <div className={`flex flex-col gap-5 transition-all duration-500 ${showNavLinks ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                                {navLinks.map(({ href, title }) => (
+                                    <Link href={href} onClick={toggleMenu} key={href}
+                                        className="relative px-1 group">
+                                        <li className='flex items-center gap-3 relative'>
+                                            <span className="relative z-10 flex items-center gap-3">
+                                                {title === 'Home' && <AiFillHome />}
+                                                {title === 'Dashboard' && <MdDashboard />}
+                                                {title === 'Models' && <AiOutlineRobot />}
+                                                {title === 'Plans' && <BsClipboardCheck />}
+                                                {title === 'Requests' && <FiSend />}
+                                                {title}
+                                            </span>
+                                            <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center rounded-lg" />
+                                        </li>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
 
                         {isAuthenticated && (
                             <>

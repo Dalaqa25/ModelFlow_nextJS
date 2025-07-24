@@ -13,7 +13,7 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setHasMounted(true);
     setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 3500);
+    const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -30,17 +30,28 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
 }
 
 function SplashScreen() {
+  // Add animation using Tailwind and a custom keyframes style
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white backdrop-blur-sm">
-      <div className="mb-6">
-        <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
+    <>
+      <style jsx global>{`
+        @keyframes popIn {
+          0% { transform: scale(0.7); opacity: 0; }
+          80% { transform: scale(1.08); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white backdrop-blur-sm min-h-screen">
+        <div className="flex-1 flex flex-col justify-center items-center w-full">
+          <img
+            src="/3dcube.png"
+            alt="ModelFlow Logo"
+            className="w-56 h-56 object-contain mb-8 animate-[popIn_0.7s_ease]"
+          />
+        </div>
+        <div className="w-full flex justify-center pb-8">
+          <span className="text-gray-400 text-sm tracking-wide">Powered by Dalaqa</span>
+        </div>
       </div>
-      <h1 className="text-3xl font-extrabold text-purple-500 drop-shadow-lg tracking-wide animate-pulse">
-        Loading ModelFlow...
-      </h1>
-    </div>
+    </>
   );
 }
