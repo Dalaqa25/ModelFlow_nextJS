@@ -5,7 +5,7 @@ import UploadedModels from "./uploadedModels"
 import { useState, useEffect } from 'react';
 import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
 import ArchiveBox from './archive/ArchiveBox';
-import ModelUpload from '../components/model/modelUpload';
+import ModelUpload from '../components/model/modelupload/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 
 export default function Dashboard() {

@@ -72,7 +72,7 @@ export default function Navbar() {
                                 {navLinks.map(({ href, title }) => {
                                     const isActive = pathname === href;
                                     return (
-                                        <li className="text-base sm:text-lg md:text-xl xl:text-2xl flex items-center" key={href}>
+                                        <li className="xl:text-xl 2xl:text-2xl flex items-center" key={href}>
                                             <Link
                                                 href={href}
                                                 className={`relative transition-colors duration-200 px-1

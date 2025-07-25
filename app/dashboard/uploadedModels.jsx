@@ -1,7 +1,7 @@
 'use client';
 import { FiPlus } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import ModelUpload from '../components/model/modelUpload';
+import ModelUpload from '../components/model/modelupload/modelUpload';
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
