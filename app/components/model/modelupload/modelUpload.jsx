@@ -347,6 +347,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
 
         setErrors(newErrors);
+        console.log('Validation errors:', newErrors); // DEBUG
         return Object.keys(newErrors).length === 0;
     };
 
@@ -387,17 +388,23 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
     // Update handleSubmit to only submit on last step
     const handleSubmit = async (e) => {
+        console.log('submit'); // DEBUG: Check if form submit is triggered
         e.preventDefault();
         if (step !== totalSteps) {
+            console.log('Not on last step, moving to next');
             handleNext();
             return;
         }
-        if (!validateForm()) return;
-
+        if (!validateForm()) {
+            console.log('Validation failed');
+            return;
+        }
+        console.log('Validation passed');
         // Final storage validation before upload
         if (formData.modelFile) {
             const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
             if (formData.modelFile.size > maxFileSizeBytes) {
+                console.log('File size too large');
                 setErrors(prev => ({
                     ...prev,
                     modelFile: `File size must be less than ${maxFileSizeStr}`
@@ -406,6 +413,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
             }
             const storageValidation = calculateStorageValidation(formData.modelFile.size);
             if (!storageValidation.canUpload) {
+                console.log('Storage validation failed');
                 toast.error('File would exceed storage limit');
                 return;
             }
@@ -430,6 +438,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         contentType: file.type,
                     });
                 if (error) {
+                    console.log('Supabase upload failed', error);
                     toast.error('Supabase upload failed: ' + error.message);
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
@@ -445,32 +454,35 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         useCases: useCases.join('\n'), // Send as joined string
                         setup: formData.setup,
                         features: features.join(','),
-                        tags: JSON.stringify(tags),
+                        tags, // send as array
                         price: formData.price,
                         uploadType: 'zip',
-                        fileStorage: JSON.stringify({
+                        fileStorage: {
                             type: 'zip',
                             fileName: file.name,
                             fileSize: file.size,
                             mimeType: file.type,
                             supabasePath: filePath, // Only store the file path
                             uploadedAt: new Date().toISOString(),
-                        })
+                        }
                     };
+                    console.log('About to POST to /api/pending-models', modelMeta);
                     // Send metadata to backend
                     const response = await fetch('/api/pending-models', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(modelMeta),
                     });
+                    console.log('POST response', response);
                     if (!response.ok) {
                         const data = await response.json();
-                        toast.error('Backend error: ' + (data.error || 'Failed to create pending model'));
+                        console.log('POST failed', data);
+                        toast.error('Submission failed: ' + (data.error || 'Failed to create pending model'));
                         setIsSubmitting(false);
                         setShowProgressDialog(false);
                         return;
                     }
-                    toast.success('Model metadata saved!');
+                    toast.success('Model submitted successfully!');
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setFormData(prev => ({ ...prev, modelFile: null }));
@@ -479,6 +491,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 }
             }
         } catch (err) {
+            console.log('Catch block error', err);
             toast.error('Unexpected error: ' + err.message);
             setIsSubmitting(false);
             setShowProgressDialog(false);
@@ -595,6 +608,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                           handleUseCaseChange={handleUseCaseChange}
                                                           addUseCase={addUseCase}
                                                           removeUseCase={removeUseCase}
+                                                          formData={formData}
+                                                          handleInputChange={handleInputChange}
                                                         />
                                                       )}
                                                       {step === 3 && (

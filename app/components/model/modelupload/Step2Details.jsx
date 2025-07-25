@@ -4,7 +4,8 @@ import { FaPlus, FaTrash } from 'react-icons/fa';
 export default function Step2Details({
   tags, predefinedTags, features, useCases, errors,
   handleTagToggle, handleChange, addFeature, removeFeature,
-  handleUseCaseChange, addUseCase, removeUseCase
+  handleUseCaseChange, addUseCase, removeUseCase,
+  formData, handleInputChange
 }) {
   return (
     <div className="transition-all duration-300 ease-in-out">
@@ -103,6 +104,19 @@ export default function Step2Details({
         >
           <FaPlus size={16} /> Add Another Use Case
         </button>
+      </div>
+      {/* Setup Instructions */}
+      <div className="flex flex-col gap-2 mb-4">
+        <label htmlFor="setup" className="font-semibold text-gray-700">Setup Instructions</label>
+        <textarea
+          id="setup"
+          value={formData.setup}
+          onChange={handleInputChange}
+          placeholder="Describe how to set up or use the model"
+          rows={3}
+          className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-base ${errors.setup ? 'border-red-500' : 'border-gray-300'}`}
+        />
+        {errors.setup && <p className="text-red-500 text-xs">{errors.setup}</p>}
       </div>
     </div>
   );
