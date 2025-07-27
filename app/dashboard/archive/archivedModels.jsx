@@ -17,8 +17,8 @@ export default function ArchivedModels({ models = [], onModelDeleted }) {
             const data = await res.json();
             if (res.ok && data.message && data.message.includes('deleted')) {
                 setShowSuccess(true);
-                // Optionally remove the model from UI if needed:
-                // if (onModelDeleted) onModelDeleted(modelId);
+                // Remove the model from UI and update storage calculation
+                if (onModelDeleted) onModelDeleted();
             } else if (res.ok && data.message && data.message.includes('purchasers')) {
                 setShowPending(true);
             } else if (res.ok) {

@@ -48,9 +48,9 @@ export default function UploadedModels({ isRowLayout }) {
     // Extract the number (in MB or GB) and convert to MB
     let storageCapMB = 250;
     if (storageCapStr.toLowerCase().includes('gb')) {
-        storageCapMB = parseInt(storageCapStr) * 1024;
+        storageCapMB = parseInt(storageCapStr.replace(/\D/g, '')) * 1024;
     } else if (storageCapStr.toLowerCase().includes('mb')) {
-        storageCapMB = parseInt(storageCapStr);
+        storageCapMB = parseInt(storageCapStr.replace(/\D/g, ''));
     }
     const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
@@ -157,7 +157,9 @@ export default function UploadedModels({ isRowLayout }) {
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700">Storage used</span>
-                        <span className="text-sm font-medium text-gray-500">{totalStorageUsedMB}MB / {storageCapMB}MB</span>
+                        <span className="text-sm font-medium text-gray-500">
+                            {totalStorageUsedMB < 0.01 ? `${(totalStorageUsedMB * 1024).toFixed(1)}KB` : `${totalStorageUsedMB.toFixed(2)}MB`} / {storageCapMB}MB
+                        </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                         <div className="bg-purple-600 h-3 rounded-full" style={{ width: `${storagePercent}%` }}></div>

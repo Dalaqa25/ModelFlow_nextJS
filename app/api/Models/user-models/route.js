@@ -75,7 +75,7 @@ export async function GET(request) {
                 totalBytes += file.metadata.size;
             }
         }
-        const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(2));
+        const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(4));
 
         return NextResponse.json({
             models: allModels,

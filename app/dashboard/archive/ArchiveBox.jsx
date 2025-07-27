@@ -11,11 +11,11 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
     const [planLoading, setPlanLoading] = useState(true);
     // Parse the archive storage cap from PLANS based on the user's plan
     const archiveStorageStr = PLANS[userPlan]?.features?.archiveStorage || '100 MB';
-    let storageCapMB = 150;
+    let storageCapMB = 100;
     if (archiveStorageStr.toLowerCase().includes('gb')) {
-        storageCapMB = parseInt(archiveStorageStr) * 1024;
+        storageCapMB = parseInt(archiveStorageStr.replace(/\D/g, '')) * 1024;
     } else if (archiveStorageStr.toLowerCase().includes('mb')) {
-        storageCapMB = parseInt(archiveStorageStr);
+        storageCapMB = parseInt(archiveStorageStr.replace(/\D/g, ''));
     }
     const storagePercent = Math.min((totalStorageUsedMB / storageCapMB) * 100, 100);
 
@@ -100,7 +100,9 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                                 <div className="mb-6">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-sm font-medium text-gray-700">Storage used</span>
-                                        <span className="text-sm font-medium text-gray-500">{totalStorageUsedMB}MB / {storageCapMB}MB</span>
+                                        <span className="text-sm font-medium text-gray-500">
+                                            {totalStorageUsedMB < 0.01 ? `${(totalStorageUsedMB * 1024).toFixed(1)}KB` : `${totalStorageUsedMB.toFixed(2)}MB`} / {storageCapMB}MB
+                                        </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
                                         <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${storagePercent}%` }}></div>

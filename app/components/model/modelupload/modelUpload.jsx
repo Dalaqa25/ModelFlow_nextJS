@@ -127,9 +127,9 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         // Parse storage cap
         let storageCapMB = 250;
         if (storageCapStr.toLowerCase().includes('gb')) {
-            storageCapMB = parseInt(storageCapStr) * 1024;
+            storageCapMB = parseInt(storageCapStr.replace(/\D/g, '')) * 1024;
         } else if (storageCapStr.toLowerCase().includes('mb')) {
-            storageCapMB = parseInt(storageCapStr);
+            storageCapMB = parseInt(storageCapStr.replace(/\D/g, ''));
         }
 
         const fileSizeMB = fileSize / (1024 * 1024);
@@ -222,9 +222,9 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         const maxFileSizeStr = PLANS[userPlan]?.features?.maxFileSize || '50 MB';
         let maxFileSizeBytes = 50 * 1024 * 1024; // default 50MB
         if (maxFileSizeStr.toLowerCase().includes('gb')) {
-            maxFileSizeBytes = parseInt(maxFileSizeStr) * 1024 * 1024 * 1024;
+            maxFileSizeBytes = parseInt(maxFileSizeStr.replace(/\D/g, '')) * 1024 * 1024 * 1024;
         } else if (maxFileSizeStr.toLowerCase().includes('mb')) {
-            maxFileSizeBytes = parseInt(maxFileSizeStr) * 1024 * 1024;
+            maxFileSizeBytes = parseInt(maxFileSizeStr.replace(/\D/g, '')) * 1024 * 1024;
         }
         return { maxFileSizeBytes, maxFileSizeStr };
     };
