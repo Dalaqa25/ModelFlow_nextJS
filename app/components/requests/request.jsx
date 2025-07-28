@@ -9,7 +9,7 @@ export default function Request() {
     const { data: requests = [], isLoading, error, refetch } = useQuery({
         queryKey: ['requests'],
         queryFn: async () => {
-            const res = await fetch('/api/requests');
+            const res = await fetch('/api/requests', { credentials: 'include' });
             if (!res.ok) {
                 throw new Error('Failed to fetch requests');
             }

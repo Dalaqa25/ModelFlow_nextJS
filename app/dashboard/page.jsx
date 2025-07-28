@@ -1,39 +1,43 @@
-"use client"
+'use client';
 
-import PurchasedModels from "./purchasedModels"
-import UploadedModels from "./uploadedModels"
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
+import PurchasedModels from './purchasedModels';
+import UploadedModels from './uploadedModels';
 import ArchiveBox from './archive/ArchiveBox';
 import ModelUpload from '../components/model/modelupload/modelUpload';
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
+import { useAuth } from '@/lib/supabase-auth-context';
 
 export default function Dashboard() {
-    const [isRowLayout, setIsRowLayout] = useState(false);
-    const [isTransitioning, setIsTransitioning] = useState(false);
+    const { user, isAuthenticated } = useAuth();
+    const [isRowLayout, setIsRowLayout] = useState(true);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
-    const { user } = useKindeBrowserClient();
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const router = useRouter();
 
-    // Load layout preference from localStorage on component mount
+    // Auth check
     useEffect(() => {
-        const savedLayout = localStorage.getItem('dashboardLayout');
-        if (savedLayout !== null) {
-            setIsRowLayout(savedLayout === 'row');
+        if (user === null && !isAuthenticated) {
+            router.replace("https://25eb-2a0b-6204-6ef-7b00-fcbf-a992-6695-d3c7.ngrok-free.app");
         }
+    }, [user, isAuthenticated, router]);
+
+    // Layout preference from localStorage
+    useEffect(() => {
+        const layout = localStorage.getItem('dashboardLayout');
+        if (layout) setIsRowLayout(layout === 'row');
     }, []);
 
-    // Save layout preference to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem('dashboardLayout', isRowLayout ? 'row' : 'col');
+    }, [isRowLayout]);
+
     const handleLayoutChange = () => {
         setIsTransitioning(true);
-        const newLayout = !isRowLayout;
-        setIsRowLayout(newLayout);
-        localStorage.setItem('dashboardLayout', newLayout ? 'row' : 'column');
-        
-        // Reset transition state after animation completes
-        setTimeout(() => {
-            setIsTransitioning(false);
-        }, 300); // Match this with the transition duration
+        setIsRowLayout(prev => !prev);
+        setTimeout(() => setIsTransitioning(false), 300);
     };
 
     return (

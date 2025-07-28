@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import DefaultModelImage from "@/app/components/model/defaultModelImage";
 import Link from "next/link";
 import { use } from "react";
@@ -8,7 +7,6 @@ import { FaGlobe, FaEnvelope, FaCalendarAlt, FaEdit, FaCode } from "react-icons/
 
 export default function Profile(props) {
     const params = use(props.params);
-    const { isAuthenticated, user } = useKindeAuth();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userModels, setUserModels] = useState([]);
@@ -152,15 +150,7 @@ export default function Profile(props) {
                                 </div>
                             </div>
 
-                            {isAuthenticated && user?.email === params.email && (
-                                <Link 
-                                    href="/profile/edit" 
-                                    className='mt-4 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-sm hover:shadow-md'
-                                >
-                                    <FaEdit />
-                                    Edit Profile
-                                </Link>
-                            )}
+                            {/* Removed Kinde auth specific edit link */}
                         </div>
                     </div>
                 </div>

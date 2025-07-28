@@ -1,79 +1,72 @@
-"use client"
+"use client";
 import { useState, useEffect } from "react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/supabase-auth-context";
 import EditProfile from "./editProfile";
-import Link from "next/link";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import BasicTag from '../components/plans/planTags/basicTag';
-import ProTag from '../components/plans/planTags/proTag';
-import EnterpriseTag from '../components/plans/planTags/enterpriseTag';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import BasicTag from "@/app/components/plans/planTags/basicTag";
+import ProTag from "@/app/components/plans/planTags/proTag";
+import EnterpriseTag from "@/app/components/plans/planTags/enterpriseTag";
 
-export default function Profile() { 
-    const [showEdit, setShowEdit] = useState(false);
-    const [userName, setUserName] = useState("Loading...");
-    const [userData, setUserData] = useState({
-        name: "",
-        aboutMe: "",
-        websiteLink: "",
-        contactEmail: "",
-        email: ""
-    });
+export default function Profile() {
+    const router = useRouter();
+    const { user, loading: authLoading, isAuthenticated } = useAuth();
+    const [userData, setUserData] = useState({});
     const [userModels, setUserModels] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch('/api/user');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user data');
-                }
-                const data = await response.json();
-                setUserName(data.name);
-                setUserData(data);
-                return data; // Return the data so we can use it
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-                setUserName("User");
-                return null;
-            }
-        };
-
-        const fetchUserModels = async () => {
-            try {
-                // First get user data
-                const userData = await fetchUserData();
-                if (!userData || !userData.email) {
-                    console.error('No user data or email available');
-                    return;
-                }
-                
-                const response = await fetch(`/api/models/user-models?email=${userData.email}`);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('API Error:', errorData);
-                    throw new Error('Failed to fetch user models');
-                }
-                const data = await response.json();
-                setUserModels(data.models || []);
-            } catch (error) {
-                console.error("Error fetching user models:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        // Call fetchUserModels directly since it now handles fetching user data
-        fetchUserModels();
-    }, []);
-
+    const [showEdit, setShowEdit] = useState(false);
+    const [loading, setLoading] = useState(true);
+    
     // Pagination state for models
     const [currentPage, setCurrentPage] = useState(1);
     const modelsPerPage = 3;
+    
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                if (!isAuthenticated) {
+                    router.push("/auth/login");
+                    return;
+                }
+                
+                // Fetch user data
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserData(data);
+                }
+                
+                // Fetch user models
+                const modelsResponse = await fetch('/api/models/user-models');
+                if (modelsResponse.ok) {
+                    const models = await modelsResponse.json();
+                    setUserModels(Array.isArray(models) ? models : []);
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        if (!authLoading) {
+            fetchUserData();
+        }
+    }, [router, isAuthenticated, authLoading]);
+    
+    const handleSignOut = async () => {
+        try {
+            await fetch('/api/auth/signout', { method: 'POST' });
+            router.push('/');
+        } catch (error) {
+            console.error("Error signing out:", error);
+        }
+    };
+    
     const totalPages = Math.ceil(userModels.length / modelsPerPage);
     const indexOfLastModel = currentPage * modelsPerPage;
     const indexOfFirstModel = indexOfLastModel - modelsPerPage;
     const currentModels = userModels.slice(indexOfFirstModel, indexOfLastModel);
+    const userName = userData.name || user?.user_metadata?.name || user?.email || 'User';
 
     const handleSave = async (data) => {
         try {
@@ -107,6 +100,14 @@ export default function Profile() {
         date,
         amount: amount / 100 // convert cents to GEL/USD
     }));
+    
+    if (authLoading || loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50 py-12 px-6">
@@ -139,9 +140,12 @@ export default function Profile() {
                         >
                             Edit Profile
                         </button>
-                        <LogoutLink className="px-4 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
+                        <button 
+                            onClick={handleSignOut}
+                            className="px-4 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
+                        >
                             Sign Out
-                        </LogoutLink>
+                        </button>
                     </div>
                 </div>
 

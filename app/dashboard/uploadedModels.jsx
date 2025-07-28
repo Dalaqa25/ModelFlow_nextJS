@@ -2,7 +2,6 @@
 import { FiPlus } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import ModelUpload from '../components/model/modelupload/modelUpload';
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
@@ -16,18 +15,14 @@ export default function UploadedModels({ isRowLayout }) {
     const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
     const [archiveDialog, setArchiveDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
-    const { user } = useKindeBrowserClient();
     const router = useRouter();
     const modelsPerPage = 5;
 
     // Updated useQuery to handle new API response shape
     const { data, isLoading, error, refetch } = useQuery({
-        queryKey: ['userModels', user?.email],
+        queryKey: ['userModels'],
         queryFn: async () => {
-            if (!user?.email) {
-                throw new Error('User email is required');
-            }
-            const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
+            const response = await fetch(`/api/models/user-models`);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to fetch models');
@@ -36,7 +31,7 @@ export default function UploadedModels({ isRowLayout }) {
             // Expecting { models, totalStorageUsedMB }
             return data;
         },
-        enabled: !!user?.email,
+        enabled: true,
     });
 
     // Extract models and storage used from API response

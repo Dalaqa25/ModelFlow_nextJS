@@ -1,9 +1,23 @@
-import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
+'use client';
+
 import Image from "next/image"
 import HomeFeatures from "app/components/homeComponents/homeFeatures"
 import Footer from "app/components/homeComponents/footer"
+import { useAuth } from "@/lib/supabase-auth-context"
+import { useRouter } from "next/navigation"
 
 export default function mainPage() {
+    const { user, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    const handleGetStarted = () => {
+        if (isAuthenticated) {
+            router.push('/dashboard'); // or wherever authenticated users should go
+        } else {
+            router.push('/auth/signin'); // redirect to sign in page
+        }
+    };
+
     return (
         <>
             {/* Main Section */}
@@ -16,14 +30,13 @@ export default function mainPage() {
                             <span style={{color:'#6472ef'}}>AI</span> Models.
                         </h1>
                         <p className='text-gray-400 text-[18px] xl:text-3xl'>Pre-trained AI models for businesses</p>
-                        <LoginLink>
-                            <button 
-                                style={{background:'#6472ef'}} 
-                                className='py-4 text-white text-sm w-1/3 hover:shadow-xl rounded-2xl xl:text-2xl'
-                            >
-                                Get Started
-                            </button>
-                        </LoginLink>
+                        <button 
+                            onClick={handleGetStarted}
+                            style={{background:'#6472ef'}} 
+                            className='py-4 text-white text-sm w-1/3 hover:shadow-xl rounded-2xl xl:text-2xl'
+                        >
+                            {isAuthenticated ? 'Go to Dashboard' : 'Get Started'}
+                        </button>
                     </div>
                     <Image src='/main.png' alt='main' width={1024} height={1024} className='w-[50%] animate-float'/>
                 </section>

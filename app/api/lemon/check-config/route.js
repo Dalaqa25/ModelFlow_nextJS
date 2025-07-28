@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { confgireLemonSqueezy } from "@/lib/lemon/server";
 
 export async function GET(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        // Remove: const { getUser } = getKindeServerSession();
+        // Remove: const user = await getUser();
 
-        if (!user || user.email !== 'modelflow01@gmail.com') {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // Remove: if (!user || user.email !== 'modelflow01@gmail.com') {
+        // Remove:     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // Remove: }
 
         const { error } = await confgireLemonSqueezy();
         

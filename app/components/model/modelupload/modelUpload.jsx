@@ -7,7 +7,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from '../UploadProgressDialog';
 import StorageWarningDialog from '../StorageWarningDialog';
 import { supabase } from '../../../../lib/supabase';
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
+import { useAuth } from '../../../../lib/supabase-auth-context';
 import PLANS from '../../../plans';
 import Step1BasicInfo from './Step1BasicInfo';
 import Step2Details from './Step2Details';
@@ -15,7 +15,7 @@ import Step3FileUpload from './Step3FileUpload';
 
 export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const router = useRouter();
-    const { user } = useKindeBrowserClient();
+    const { user } = useAuth();
     const [features, setFeatures] = useState(['']);
     const [tags, setTags] = useState([]); // Initialize tags as empty array for multi-selection
     const [userStorageData, setUserStorageData] = useState(null);
@@ -96,10 +96,10 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
     // Fetch user storage data when component opens
     useEffect(() => {
-        if (isOpen && user?.email) {
+        if (isOpen) {
             fetchUserStorageData();
         }
-    }, [isOpen, user?.email]);
+    }, [isOpen]);
 
     const fetchUserStorageData = async () => {
         try {

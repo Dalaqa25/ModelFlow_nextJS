@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import connect from "@/lib/db/connect";
 import PendingModel from "@/lib/db/PendingModel";
 import Model from "@/lib/db/Model";
@@ -8,10 +8,9 @@ import User from "@/lib/db/User";
 // Get all pending models (admin only)
 export async function GET(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
-        if (!user || user.email !== 'modelflow01@gmail.com') {
+        if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -31,8 +30,7 @@ export async function GET(req) {
 // Create a new pending model
 export async function POST(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,7 +39,12 @@ export async function POST(req) {
         await connect();
 
         // Find the user document
-        const userDoc = await User.findOne({ email: user.email });
+        const userDoc = await User.findOne({
+            $or: [
+                { authId: user.id },
+                { email: user.email }
+            ]
+        });
         if (!userDoc) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }

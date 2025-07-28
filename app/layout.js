@@ -1,6 +1,6 @@
 "use client";
 import "./globals.css";
-import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
+import { AuthProvider } from "@/lib/supabase-auth-context";
 import Navbar from "@/app/components/navbar";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
@@ -24,10 +24,10 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
           <SplashProvider>
-            <KindeProvider>
+            <AuthProvider>
               {!isLoginOrSignUp &&  <Navbar/>}
               {children}
-            </KindeProvider>
+            </AuthProvider>
           </SplashProvider>
           <Toaster position="top-right" />
         </QueryClientProvider>

@@ -1,12 +1,10 @@
 'use client';
 
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 export default function LemonSqueezyAdminPage() {
-    const { user, isLoading } = useKindeBrowserClient();
     const router = useRouter();
     const [isConfigured, setIsConfigured] = useState(false);
     const [configError, setConfigError] = useState('');

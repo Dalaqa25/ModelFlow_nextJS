@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import connect from "@/lib/db/connect";
 import Notification from "@/lib/db/Notification";
 
 // Get user's notifications
 export async function GET(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user || !user.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,8 +27,7 @@ export async function GET(req) {
 // Delete notifications
 export async function PATCH(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user || !user.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

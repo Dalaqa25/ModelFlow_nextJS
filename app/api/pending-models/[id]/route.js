@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import connect from "@/lib/db/connect";
 import PendingModel from "@/lib/db/PendingModel";
 import Model from "@/lib/db/Model";
@@ -7,10 +7,9 @@ import Notification from "@/lib/db/Notification";
 
 export async function PATCH(req, { params }) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
-        if (!user || user.email !== 'modelflow01@gmail.com') {
+        if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

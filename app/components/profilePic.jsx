@@ -1,7 +1,7 @@
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import DropDownMenu from "./dropDownMenu"
-import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs"
+import { useAuth } from "@/lib/supabase-auth-context"
 import { MdDashboard } from "react-icons/md";
 import { FaRegCreditCard, FaRegEnvelope, FaCubes, FaRegGem, FaUser } from "react-icons/fa";
 import { usePathname } from "next/navigation";
@@ -10,24 +10,28 @@ export default function ProfilePic() {
     const [showMenu, setShowMenu] = useState(false)
     const [profileImage, setProfileImage] = useState(null)
     const [imageError, setImageError] = useState(false)
-    const { user, isLoading } = useKindeAuth()
+    const { user, loading: isLoading } = useAuth()
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await fetch('/api/user')
+                console.log('ProfilePic - Fetching user data for:', user?.email);
+                const response = await fetch('/api/user', { credentials: 'include' });
                 if (!response.ok) {
-                    throw new Error('Failed to fetch user data')
+                    console.error('ProfilePic - API response not ok:', response.status, response.statusText);
+                    throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`)
                 }
                 const data = await response.json()
+                console.log('ProfilePic - User data received:', data ? 'Success' : 'No data');
                 if (data.profileImageUrl) {
                     setProfileImage(data.profileImageUrl)
                     setImageError(false)
                 }
             } catch (error) {
-                console.error("Error fetching user data:", error)
+                console.error("ProfilePic - Error fetching user data:", error)
                 setProfileImage(null)
+                // Don't throw the error, just log it and continue
             } finally {
                 setLoading(false)
             }

@@ -2,7 +2,7 @@ import connect from "@/lib/db/connect";
 import Model from "@/lib/db/Model";
 import User from "@/lib/db/User";
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function GET() {
   try {
@@ -17,8 +17,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
+    const user = await getSupabaseUser();
     
     if (!user) {
       return NextResponse.json(

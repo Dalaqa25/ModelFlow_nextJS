@@ -98,7 +98,8 @@ export async function POST(req, context) {
 }
 
 // Scheduled deletion job (for testing, can be run manually or as a cron job)
-export async function DELETE_EXPIRED_MODELS() {
+// This function should be moved to a separate utility file or cron job
+async function deleteExpiredModels() {
   await connect();
   const now = new Date();
   const expiredModels = await ArchivedModel.find({
@@ -112,4 +113,4 @@ export async function DELETE_EXPIRED_MODELS() {
     }
     await ArchivedModel.findByIdAndDelete(model._id);
   }
-} 
+}

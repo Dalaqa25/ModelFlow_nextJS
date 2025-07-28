@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { useRouter } from "next/navigation";
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
@@ -8,12 +7,11 @@ import { useQuery } from '@tanstack/react-query';
 
 export default function PurchasedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
-    const { user } = useKindeAuth();
     const router = useRouter();
     const modelsPerPage = 5;
 
     const { data: models = [], isLoading, error, refetch } = useQuery({
-        queryKey: ['purchasedModels', user?.email],
+        queryKey: ['purchasedModels'],
         queryFn: async () => {
             const response = await fetch('/api/user/purchased-models');
             if (!response.ok) {
@@ -22,7 +20,7 @@ export default function PurchasedModels({ isRowLayout }) {
             const data = await response.json();
             return data;
         },
-        enabled: !!user,
+        enabled: true, // Removed enabled: !!user
     });
 
     // Pagination logic

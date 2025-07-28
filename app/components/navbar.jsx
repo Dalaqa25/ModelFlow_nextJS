@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link";
-import { useKindeAuth, LoginLink, LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import { useAuth } from "@/lib/supabase-auth-context";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
@@ -13,7 +13,7 @@ import { MdPrivacyTip, MdDashboard } from "react-icons/md";
 import ProfilePic from "./profilePic";
 
 export default function Navbar() {
-    const { isAuthenticated, isLoading, user } = useKindeAuth();
+    const { isAuthenticated, loading: isLoading, user } = useAuth();
     const pathname = usePathname() || '/'; 
     const [menuOpen, setMenuOpen] = useState(false);
     const [showNavLinks, setShowNavLinks] = useState(false);
@@ -99,9 +99,9 @@ export default function Navbar() {
                         isAuthenticated ? (
                             <ProfilePic user={user} />
                         ) : (
-                            <LoginLink className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl px-7 py-2.5 text-base xl:text-lg">
+                            <Link href="/auth/login" className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl px-7 py-2.5 text-base xl:text-lg">
                                 Sign In
-                            </LoginLink>
+                            </Link>
                         )
                     )}
 
@@ -150,7 +150,7 @@ export default function Navbar() {
                                 <Link href="/profile" onClick={toggleMenu}>
                                     <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
                                         <p className="text-gray-400">Profile</p>
-                                        <p className="text-xl">{user?.given_name || 'User'}</p>
+                                        <p className="text-xl">{user?.user_metadata?.name || user?.email || 'User'}</p>
                                     </li>
                                 </Link>
                                 <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
@@ -177,11 +177,11 @@ export default function Navbar() {
                                     </li>
                                 </Link>
                                 <hr className="border-gray-200 my-1" />
-                                <LogoutLink onClick={toggleMenu}>
+                                <button onClick={toggleMenu} className="w-full text-left">
                                     <li className='flex items-center hover:bg-gray-100 rounded-lg transition-all p-2 text-gray-500'>
                                         <p className="text-xl">Sign out</p>
                                     </li>
-                                </LogoutLink>
+                                </button>
                             </>
                         )}
                     </ul>

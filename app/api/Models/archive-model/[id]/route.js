@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import connect from '@/lib/db/connect';
 import Model from '@/lib/db/Model';
 import ArchivedModel from '@/lib/db/ArchivedModel';
-import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
+import { getSupabaseUser } from '@/lib/auth-utils';
 
 export async function PUT(req, { params }) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }

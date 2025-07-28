@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import clientPromise from "@/lib/mongodb";
 import Model from "@/lib/db/Model";
 import User from "@/lib/db/User";
 
 export async function POST(request, { params }) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +27,12 @@ export async function POST(request, { params }) {
         }
 
         // Find the user document
-        const userDoc = await User.findOne({ email: user.email });
+        const userDoc = await User.findOne({
+            $or: [
+                { authId: user.id },
+                { email: user.email }
+            ]
+        });
         if (!userDoc) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }

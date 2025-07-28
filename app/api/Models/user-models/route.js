@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseUser } from '@/lib/auth-utils';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -10,13 +11,18 @@ const supabase = createClient(
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
-        const email = searchParams.get('email');
+        let email = searchParams.get('email');
 
+        // If no email parameter, get it from authenticated user
         if (!email) {
-            return NextResponse.json(
-                { error: 'Email parameter is required' }, 
-                { status: 400 }
-            );
+            const user = await getSupabaseUser();
+            if (!user) {
+                return NextResponse.json(
+                    { error: 'Unauthorized' },
+                    { status: 401 }
+                );
+            }
+            email = user.email;
         }
 
         const client = await clientPromise;

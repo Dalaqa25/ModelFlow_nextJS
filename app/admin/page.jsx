@@ -1,42 +1,47 @@
 'use client';
 
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../lib/supabase-auth-context';
 
 export default function AdminPage() {
-    const { user, isLoading } = useKindeBrowserClient();
     const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
     const [pendingModels, setPendingModels] = useState([]);
     const [loading, setLoading] = useState(true);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedModel, setSelectedModel] = useState(null);
 
     useEffect(() => {
-        if (!isLoading && user?.email !== 'modelflow01@gmail.com') {
-            router.push('/');
-        }
-    }, [user, isLoading, router]);
-
-    useEffect(() => {
-        const fetchPendingModels = async () => {
+        const checkAdminAndFetchModels = async () => {
+            if (authLoading) return; // Wait for auth to load
+            
             try {
                 const response = await fetch('/api/pending-models');
+                if (!response.ok) {
+                    // Handle 401 (unauthorized) - redirect non-admin users
+                    if (response.status === 401) {
+                        router.push('/');
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                setPendingModels(data);
+                // If we get here, user is admin and we have data
+                setPendingModels(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Error fetching pending models:', error);
                 toast.error('Failed to fetch pending models');
+                setPendingModels([]);
+                // Don't redirect on network errors, only on 401
             } finally {
                 setLoading(false);
             }
         };
 
-        if (user?.email === 'modelflow01@gmail.com') {
-            fetchPendingModels();
-        }
-    }, [user]);
+        checkAdminAndFetchModels();
+    }, [authLoading, router]);
 
     const handleApprove = async (modelId) => {
         try {
@@ -94,11 +99,12 @@ export default function AdminPage() {
         }
     };
 
-    if (isLoading || loading) {
+    if (authLoading || loading) {
         return <div>Loading...</div>;
     }
 
-    if (user?.email === 'modelflow01@gmail.com') {
+    // Show admin panel if we have successfully loaded (no redirect occurred)
+    if (!authLoading && !loading) {
         return (
             <div className="container mx-auto p-4 mt-15">
                 <div className="flex justify-between items-center mb-6">
@@ -110,7 +116,7 @@ export default function AdminPage() {
                         Lemon Squeezy Settings
                     </a>
                 </div>
-                {pendingModels.length === 0 ? (
+                {!Array.isArray(pendingModels) || pendingModels.length === 0 ? (
                     <p className="text-gray-500">No pending models to review</p>
                 ) : (
                     <div className="grid gap-4">

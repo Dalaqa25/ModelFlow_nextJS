@@ -9,7 +9,7 @@ export async function POST(req) {
         const { getUser } = getKindeServerSession();
         const user = await getUser();
 
-        if (!user || user.email !== 'modelflow01@gmail.com') {
+        if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -18,7 +18,7 @@ export async function POST(req) {
         // Create a test model if none exists
         let testModel = await Model.findOne({ name: "Test Model for Webhook" });
         if (!testModel) {
-            const testUser = await User.findOne({ email: "modelflow01@gmail.com" });
+            const testUser = await User.findOne({ email: "g.dalaqishvili01@gmail.com" });
             if (!testUser) {
                 return NextResponse.json({ error: "Test user not found" }, { status: 404 });
             }
@@ -26,7 +26,7 @@ export async function POST(req) {
             testModel = await Model.create({
                 name: "Test Model for Webhook",
                 author: testUser._id,
-                authorEmail: "modelflow01@gmail.com",
+                authorEmail: "g.dalaqishvili01@gmail.com",
                 tags: ["test"],
                 description: "This is a test model for webhook testing",
                 features: "Test features",

@@ -1,13 +1,11 @@
 'use client';
 import { FiSend } from "react-icons/fi";
 import { useState } from "react";
-import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import toast from 'react-hot-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function RequestCommnetCreateion({ requestId, onCommentAdded }) { 
     const [content, setContent] = useState('');
-    const { user } = useKindeBrowserClient();
     const queryClient = useQueryClient();
 
     const { mutate: postComment, isPending } = useMutation({
@@ -43,7 +41,7 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!content.trim() || !user) return;
+        if (!content.trim()) return;
         postComment(content);
     };
 
@@ -55,11 +53,11 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="write a comment..."
                     className="bg-white p-2 w-full text-base focus:outline-none focus:ring-0 focus:border-transparent font-light resize-none overflow-y-auto"
-                    disabled={isPending || !user}
+                    disabled={isPending}
                 />
                 <button 
                     type="submit"
-                    disabled={isPending || !user || !content.trim()}
+                    disabled={isPending || !content.trim()}
                     className="cursor-pointer text-2xl ml-auto hover:text-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <FiSend />

@@ -1,20 +1,20 @@
 import { AiOutlinePlus } from "react-icons/ai";
 import { FaDollarSign } from "react-icons/fa";
 import { MdPrivacyTip } from "react-icons/md";
-import { LogoutLink, useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
+import { useAuth } from "@/lib/supabase-auth-context";
 import Link from "next/link";
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import Notifications from './notifications';
 
 export default function DropDownMenu() {
-    const { user } = useKindeAuth();
+    const { user, signOut } = useAuth();
     const [showNotifications, setShowNotifications] = useState(false);
 
     const { data: userData, isLoading } = useQuery({
         queryKey: ['userData', user?.email],
         queryFn: async () => {
-            const response = await fetch('/api/user');
+            const response = await fetch('/api/user', { credentials: 'include' });
             if (!response.ok) {
                 throw new Error('Failed to fetch user data');
             }
@@ -29,7 +29,7 @@ export default function DropDownMenu() {
         queryKey: ['notifications', user?.email],
         queryFn: async () => {
             if (!user?.email) return [];
-            const response = await fetch('/api/notifications');
+            const response = await fetch('/api/notifications', { credentials: 'include' });
             if (!response.ok) throw new Error('Failed to fetch notifications');
             return response.json();
         },
@@ -37,7 +37,15 @@ export default function DropDownMenu() {
     });
 
     const unreadCount = notifications.filter(n => !n.read).length;
-    const userName = userData?.name || user?.given_name || 'User';
+    const userName = userData?.name || user?.user_metadata?.name || user?.email || 'User';
+
+    const handleSignOut = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
 
     return (
         <>
@@ -77,9 +85,12 @@ export default function DropDownMenu() {
                     <p className="text-xl">Privacy</p>
                 </Link>
                 <hr className="border-gray-200"/>
-                <LogoutLink className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 text-gray-500">
+                <button 
+                    onClick={handleSignOut}
+                    className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 text-gray-500 w-full text-left"
+                >
                     <p className="text-xl">Sign out</p>
-                </LogoutLink>
+                </button>
             </div>
 
             <Notifications 

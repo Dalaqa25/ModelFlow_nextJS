@@ -1,6 +1,5 @@
 import HomeFeatures from 'app/components/homeComponents/homeFeatures'
 import Footer from 'app/components/homeComponents/footer'
-import { LoginLink } from "@kinde-oss/kinde-auth-nextjs";
 import { useState } from 'react'
 
 export default function resMainPage() {
@@ -20,9 +19,9 @@ export default function resMainPage() {
                         Upload. Host. Buy. Sell. <span className='font-semibold'>Downloads for businesses.</span>
                     </p>
                     <div className='flex  justify-center text-center items-center gap-3'>
-                        <LoginLink className='bg-black text-white p-3 px-8 rounded-4xl'>
+                        <a href='/login' className='bg-black text-white p-3 px-8 rounded-4xl'>
                             Sign up
-                        </LoginLink>
+                        </a>
                         <p className='text-gray-400'>or</p>
                         <a href='/modelsList' className='cursor-pointer border-b'>Explore models</a>
                     </div>

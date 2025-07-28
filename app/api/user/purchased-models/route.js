@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import connect from "@/lib/db/connect";
 import User from "@/lib/db/User";
 import Model from "@/lib/db/Model";
@@ -8,8 +8,7 @@ import mongoose from "mongoose";
 
 export async function GET() {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

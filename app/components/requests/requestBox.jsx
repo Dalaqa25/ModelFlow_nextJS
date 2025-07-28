@@ -2,14 +2,12 @@
 import { useState } from 'react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 
 export default function RequestBox({ onClose, onRequestPublished }) { 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState(['']);
     const [loading, setLoading] = useState(false);
-    const { user } = useKindeBrowserClient();
 
     const handleTagChange = (index, value) => {
         const updated = [...tags];
@@ -25,7 +23,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user?.email) {
+        if (!loading) { // Removed user check as Kinde auth is removed
             toast.error('You must be logged in to publish a request.');
             return;
         }
@@ -38,7 +36,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
                     title: name,
                     description,
                     tags: tags.filter(tag => tag.trim() !== ''),
-                    authorEmail: user.email,
+                    authorEmail: 'anonymous@example.com', // Placeholder for authorEmail
                 }),
             });
             if (!res.ok) throw new Error('Failed to publish request');
@@ -117,7 +115,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
                 <button 
                     className="btn-primary text-white py-2 sm:py-3 text-base sm:text-lg w-full sm:w-1/3 rounded-lg mx-auto mt-2 disabled:opacity-50"
                     type="submit"
-                    disabled={loading || !user}
+                    disabled={loading}
                 >
                     {loading ? 'Publishing...' : 'Publish'}
                 </button>              

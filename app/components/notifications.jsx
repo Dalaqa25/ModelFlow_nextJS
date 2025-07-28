@@ -1,24 +1,21 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { FaBell, FaTimes, FaCheck, FaExclamationTriangle, FaComment, FaShoppingCart } from 'react-icons/fa';
 import { Dialog, Transition } from '@headlessui/react';
 
 export default function Notifications({ isOpen, onClose }) {
-    const { user } = useKindeBrowserClient();
     const [selectedNotifications, setSelectedNotifications] = useState([]);
 
     const { data: notifications = [], isLoading, refetch } = useQuery({
-        queryKey: ['notifications', user?.email],
+        queryKey: ['notifications'],
         queryFn: async () => {
-            if (!user?.email) return [];
             const response = await fetch('/api/notifications');
             if (!response.ok) throw new Error('Failed to fetch notifications');
             return response.json();
         },
-        enabled: !!user?.email,
+        enabled: true,
     });
 
     const handleMarkAsRead = async () => {
