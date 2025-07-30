@@ -1,6 +1,6 @@
 "use client"
 import { useState } from 'react';
-import Link from 'next/link';
+import NavigationLink from '../NavigationLink';
 import Filter from './filter';
 import { FiDownload } from 'react-icons/fi';
 import { AiOutlineHeart } from 'react-icons/ai';
@@ -119,7 +119,7 @@ export default function ModelBox({ search = "" }) {
                     {!isLoading && !error && currentModels.length > 0 && (
                         <>
                             {currentModels.map(model => (
-                                <Link key={model._id || model.id} href={`/modelsList/${model._id}`} className='shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-lg border-2 border-transparent hover:border-purple-300 transition-all max-w-[900px]'>
+                                <NavigationLink key={model._id || model.id} href={`/modelsList/${model._id}`} className='shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-lg border-2 border-transparent hover:border-purple-300 transition-all max-w-[900px]'>
                                     <div className='p-4 flex flex-col gap-5'>
                                         <div className='flex gap-4'>
                                             {model.imgUrl ? (
@@ -162,7 +162,7 @@ export default function ModelBox({ search = "" }) {
                                             Price: <span className='flex'>$<p>{(model.price / 100).toFixed(2)}</p></span>
                                         </span>
                                     </div>
-                                </Link>
+                                </NavigationLink>
                             ))}
                             {totalPages > 1 && (
                                 <div className="flex justify-center gap-2 mt-4 mb-10">

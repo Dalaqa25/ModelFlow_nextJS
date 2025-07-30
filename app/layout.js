@@ -1,7 +1,9 @@
 "use client";
 import "./globals.css";
 import { AuthProvider } from "@/lib/supabase-auth-context";
+import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
 import Navbar from "@/app/components/navbar";
+import NavigationLoader from "@/app/components/NavigationLoader";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
@@ -23,12 +25,15 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
-          <SplashProvider>
-            <AuthProvider>
-              {!isLoginOrSignUp &&  <Navbar/>}
-              {children}
-            </AuthProvider>
-          </SplashProvider>
+          <NavigationLoadingProvider>
+            <SplashProvider>
+              <AuthProvider>
+                {!isLoginOrSignUp &&  <Navbar/>}
+                {children}
+                <NavigationLoader />
+              </AuthProvider>
+            </SplashProvider>
+          </NavigationLoadingProvider>
           <Toaster position="top-right" />
         </QueryClientProvider>
       </body>

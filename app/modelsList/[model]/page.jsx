@@ -1,7 +1,6 @@
 "use client";
 import { use } from "react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import ModelDescription from "./modelDescription";
 import ModelFeatures from "./modelFeatures";

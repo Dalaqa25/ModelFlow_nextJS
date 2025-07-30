@@ -2,7 +2,7 @@ import { AiOutlinePlus } from "react-icons/ai";
 import { FaDollarSign } from "react-icons/fa";
 import { MdPrivacyTip } from "react-icons/md";
 import { useAuth } from "@/lib/supabase-auth-context";
-import Link from "next/link";
+import NavigationLink from "./NavigationLink";
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import Notifications from './notifications';
@@ -58,13 +58,13 @@ export default function DropDownMenu() {
     return (
         <>
             <div className="flex flex-col bg-white shadow-lg rounded-lg w-[250px] p-3 z-50">
-                <Link
+                <NavigationLink
                     href="/profile"
                     className="cursor-pointer flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2"
                 >
                     <p className="text-gray-400">Profile</p>
                     <p className="text-xl">{isLoading ? 'Loading...' : userName}</p>
-                </Link>
+                </NavigationLink>
                 <div 
                     onClick={() => setShowNotifications(true)}
                     className="cursor-pointer flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2 mb-1.5"
@@ -80,18 +80,18 @@ export default function DropDownMenu() {
                     </div>
                 </div>
                 <hr className="border-gray-200"/>
-                <Link href="/dashboard" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5">
+                <NavigationLink href="/dashboard" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5">
                     <AiOutlinePlus size={20} className="text-gray-400 mr-2" />
                     <p className="text-xl">New Model</p>
-                </Link>
-                <Link href="/billing" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5">
+                </NavigationLink>
+                <NavigationLink href="/billing" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5">
                     <FaDollarSign size={20} className="text-gray-400 mr-2" />
                     <p className="text-xl">Billing</p>
-                </Link>
-                <Link href="/privacy" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 mb-1.5">
+                </NavigationLink>
+                <NavigationLink href="/privacy" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 mb-1.5">
                     <MdPrivacyTip size={20} className="text-gray-400 mr-2" />
                     <p className="text-xl">Privacy</p>
-                </Link>
+                </NavigationLink>
                 <hr className="border-gray-200"/>
                 <button 
                     onClick={handleSignOut}

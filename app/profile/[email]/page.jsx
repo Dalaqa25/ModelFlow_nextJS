@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import DefaultModelImage from "@/app/components/model/defaultModelImage";
-import Link from "next/link";
+import NavigationLink from "@/app/components/NavigationLink";
 import { use } from "react";
 import { FaGlobe, FaEnvelope, FaCalendarAlt, FaEdit, FaCode } from "react-icons/fa";
 
@@ -176,8 +176,8 @@ export default function Profile(props) {
                     </div>
                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
                         {userModels.map((model) => (
-                            <Link 
-                                href={`/modelsList/${model._id}`} 
+                            <NavigationLink
+                                href={`/modelsList/${model._id}`}
                                 key={model._id}
                                 className='group'
                             >
@@ -212,7 +212,7 @@ export default function Profile(props) {
                                         </div>
                                     </div>
                                 </div>
-                            </Link>
+                            </NavigationLink>
                         ))}
                     </div>
                     {userModels.length === 0 && (

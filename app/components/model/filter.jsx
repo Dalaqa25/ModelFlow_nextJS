@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import NavigationLink from "../NavigationLink";
 import { FaLanguage, FaEye, FaComments, FaImage } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 
@@ -65,11 +65,11 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                         ${(price[0] / 100).toFixed(2)} - ${(price[1] / 100).toFixed(2)}
                     </div>
                 </div>
-                <Link href="/requests" className="block">
+                <NavigationLink href="/requests" className="block">
                     <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl shadow-md transition-all text-base mt-4">
                         Request a Model
                     </button>
-                </Link>
+                </NavigationLink>
                 <p className="text-xs text-gray-400 text-center mt-1">
                     If a specific model doesn't exist, make a request.
                 </p>

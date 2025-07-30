@@ -1,5 +1,5 @@
 'use client';
-import Link from "next/link";
+import NavigationLink from "./NavigationLink";
 import { useAuth } from "@/lib/supabase-auth-context";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -44,7 +44,7 @@ export default function Navbar() {
         <header className="flex justify-center py-3 w-full bg-transparent">
             <nav className="w-[85%] max-w-[1800px] fixed z-50 rounded-4xl flex justify-between items-center change-width bg-white/30 backdrop-blur">
                 {/* Logo + Brand */}
-                <Link className="flex items-center text-center gap-1 flex-shrink-0" href="/"> 
+                <NavigationLink className="flex items-center text-center gap-1 flex-shrink-0" href="/">
                     <img 
                         src="logo.png" 
                         alt="logo.svg" 
@@ -55,7 +55,7 @@ export default function Navbar() {
                     <span className="text-3xl -mr-7 xl:text-3xl 2xl:text-4xl font-bold tracking-tight text-gray-900 flex items-baseline">
                         ModelGrow<span className="text-4xl xl:text-5xl 2xl:text-6xl text-purple-500 -mt-2">.</span>
                     </span>
-                </Link>
+                </NavigationLink>
 
                 {/* Centered Navigation Links for desktop */}
                 <div className="flex-1 flex justify-center">
@@ -73,7 +73,7 @@ export default function Navbar() {
                                     const isActive = pathname === href;
                                     return (
                                         <li className="xl:text-xl 2xl:text-2xl flex items-center" key={href}>
-                                            <Link
+                                            <NavigationLink
                                                 href={href}
                                                 className={`relative transition-colors duration-200 px-1
                                                     ${isActive ? 'text-black' : 'text-[#b6b6b6]'}
@@ -83,7 +83,7 @@ export default function Navbar() {
                                             >
                                                 <span className="relative z-10">{title}</span>
                                                 <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center rounded-lg" />
-                                            </Link>
+                                            </NavigationLink>
                                         </li>
                                     );
                                 })}
@@ -99,9 +99,9 @@ export default function Navbar() {
                         isAuthenticated ? (
                             <ProfilePic user={user} />
                         ) : (
-                            <Link href="/auth/login" className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl px-7 py-2.5 text-base xl:text-lg">
+                            <NavigationLink href="/auth/login" className="hidden sm:inline-block btn-primary cursor-pointer text-white rounded-2xl px-7 py-2.5 text-base xl:text-lg">
                                 Sign In
-                            </Link>
+                            </NavigationLink>
                         )
                     )}
 
@@ -126,7 +126,7 @@ export default function Navbar() {
                         ) : (
                             <div className={`flex flex-col gap-5 transition-all duration-500 ${showNavLinks ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                                 {navLinks.map(({ href, title }) => (
-                                    <Link href={href} onClick={toggleMenu} key={href}
+                                    <NavigationLink href={href} onClick={toggleMenu} key={href}
                                         className="relative px-1 group">
                                         <li className='flex items-center gap-3 relative'>
                                             <span className="relative z-10 flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function Navbar() {
                                             </span>
                                             <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center rounded-lg" />
                                         </li>
-                                    </Link>
+                                    </NavigationLink>
                                 ))}
                             </div>
                         )}
@@ -147,35 +147,35 @@ export default function Navbar() {
                         {isAuthenticated && (
                             <>
                                 <hr className="border-gray-200 my-1" />
-                                <Link href="/profile" onClick={toggleMenu}>
+                                <NavigationLink href="/profile" onClick={toggleMenu}>
                                     <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
                                         <p className="text-gray-400">Profile</p>
                                         <p className="text-xl">{user?.user_metadata?.name || user?.email || 'User'}</p>
                                     </li>
-                                </Link>
+                                </NavigationLink>
                                 <li className='flex flex-col hover:bg-gray-100 rounded-lg transition-all p-2'>
                                     <p className="text-gray-400">Notifications</p>
                                     <p className="text-xl">Inbox (0)</p>
                                 </li>
                                 <hr className="border-gray-200 my-1" />
-                                <Link href="/upload" onClick={toggleMenu}>
+                                <NavigationLink href="/upload" onClick={toggleMenu}>
                                     <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
                                         <AiOutlinePlus size={20} className="text-gray-400" />
                                         <p className="text-xl">New Model</p>
                                     </li>
-                                </Link>
-                                <Link href="/billing" onClick={toggleMenu}>
+                                </NavigationLink>
+                                <NavigationLink href="/billing" onClick={toggleMenu}>
                                     <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
                                         <FaDollarSign size={20} className="text-gray-400" />
                                         <p className="text-xl">Billing</p>
                                     </li>
-                                </Link>
-                                <Link href="/privacy" onClick={toggleMenu}>
+                                </NavigationLink>
+                                <NavigationLink href="/privacy" onClick={toggleMenu}>
                                     <li className='flex items-center gap-3 hover:bg-gray-100 rounded-lg transition-all p-2'>
                                         <MdPrivacyTip size={20} className="text-gray-400" />
                                         <p className="text-xl">Privacy</p>
                                     </li>
-                                </Link>
+                                </NavigationLink>
                                 <hr className="border-gray-200 my-1" />
                                 <button onClick={toggleMenu} className="w-full text-left">
                                     <li className='flex items-center hover:bg-gray-100 rounded-lg transition-all p-2 text-gray-500'>
