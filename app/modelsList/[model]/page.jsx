@@ -12,12 +12,14 @@ import DefaultModelImage from "@/app/components/model/defaultModelImage";
 import { FaHeart, FaRegHeart, FaPlay, FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import ConfirmationDialog from "@/app/components/confirmationDialog/ConfirmationDialog";
+import { useAuth } from "@/lib/supabase-auth-context";
 
 import { createCheckoutUrl } from "@/lib/lemon/server";
 
 export default function Model(props) {
     const params = use(props.params);
     const router = useRouter();
+    const { user, isAuthenticated } = useAuth();
     const [model, setModel] = useState(null);
     const [loading, setLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
@@ -36,12 +38,14 @@ export default function Model(props) {
                 setModel(data);
                 setLikeCount(data.likes || 0);
                 // Check if user is the author
-                setIsAuthor(data.authorEmail === null); // Assuming user is not authenticated, so no user object
-                // Check if user owns the model
-                const purchasedRes = await fetch('/api/user/purchased-models');
-                if (purchasedRes.ok) {
-                    const purchasedModels = await purchasedRes.json();
-                    setIsOwned(purchasedModels.some(m => m._id === data._id));
+                setIsAuthor(isAuthenticated && user?.email === data.authorEmail);
+                // Check if user owns the model (only if authenticated)
+                if (isAuthenticated) {
+                    const purchasedRes = await fetch('/api/user/purchased-models');
+                    if (purchasedRes.ok) {
+                        const purchasedModels = await purchasedRes.json();
+                        setIsOwned(purchasedModels.some(m => m._id === data._id));
+                    }
                 }
                 setLoading(false);
             } catch (error) {
@@ -49,18 +53,17 @@ export default function Model(props) {
             }
         };
         fetchModel();
-    }, [params.model]);
+    }, [params.model, isAuthenticated, user]);
 
     // Generate checkout URL when component mounts and user is authenticated
     useEffect(() => {
         const generateCheckoutURL = async () => {
-            // Assuming user is not authenticated, so no isAuthenticated check
-            if (!isOwned && !isAuthor && model) {
+            if (isAuthenticated && !isOwned && !isAuthor && model) {
                 try {
                     const url = await createCheckoutUrl({
                         price: model.price,
-                        userEmail: null, // No user email for unauthenticated users
-                        userId: null, // No user ID for unauthenticated users
+                        userEmail: user?.email || null,
+                        userId: user?.id || null,
                         modelId: model._id,
                         modelName: model.name,
                         authorEmail: model.authorEmail,
@@ -74,16 +77,21 @@ export default function Model(props) {
         };
         
         generateCheckoutURL();
-    }, [isOwned, isAuthor, model]);
+    }, [isOwned, isAuthor, model, isAuthenticated, user]);
 
     const handleLike = async () => {
-        // Assuming user is not authenticated, so no isAuthenticated check
-        toast.error("Please sign in to like models");
-        return;
+        if (!isAuthenticated) {
+            toast.error("Please sign in to like models");
+            return;
+        }
+        // Add like functionality here if needed
     };
 
     const handlePurchase = () => {
-        // Assuming user is not authenticated, so no isAuthenticated check
+        if (!isAuthenticated) {
+            toast.error("Please sign in to purchase models");
+            return;
+        }
         setIsPurchaseDialogOpen(true);
     };
 
@@ -156,8 +164,9 @@ export default function Model(props) {
                         <div className='flex items-center gap-2'>
                             <button
                                 onClick={handleLike}
-                                disabled={true} // isLiked is not managed by Kinde auth
-                                className={`flex items-center gap-1.5 text-gray-500 hover:text-purple-500 transition-colors`}
+                                disabled={!isAuthenticated}
+                                className={`flex items-center gap-1.5 ${isAuthenticated ? 'text-gray-500 hover:text-purple-500' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
+                                title={!isAuthenticated ? "Please sign in to like models" : ""}
                             >
                                 <FaRegHeart />
                                 <span>{likeCount}</span>
@@ -178,13 +187,25 @@ export default function Model(props) {
                     ))}
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto'>
-                    <button 
-                        className='group w-full sm:w-auto flex items-center justify-center gap-2 text-white button btn-primary px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 shadow-md'
+                    <button
+                        onClick={() => {
+                            if (!isAuthenticated) {
+                                toast.error("Please sign in to test models");
+                                return;
+                            }
+                            // Add test model functionality here
+                        }}
+                        disabled={!isAuthenticated}
+                        className={`group w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 shadow-md ${
+                            isAuthenticated
+                                ? 'text-white button btn-primary hover:bg-purple-700'
+                                : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        }`}
+                        title={!isAuthenticated ? "Please sign in to test models" : "Test this model"}
                     >
                         <FaPlay className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-200" />
                         Test Model
                     </button>
-                    {/* Assuming user is not authenticated, so no isAuthenticated check */}
                     {isAuthor ? (
                         <button 
                             disabled
@@ -202,14 +223,20 @@ export default function Model(props) {
                             Already Purchased
                         </button>
                     ) : (
-                        <button 
+                        <button
                             onClick={handlePurchase}
-                            disabled={!checkoutURL}
-                            className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${!checkoutURL ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
-                            title={checkoutURL ? "Purchase this model" : "Loading checkout..."}
+                            disabled={!isAuthenticated || !checkoutURL}
+                            className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${(!isAuthenticated || !checkoutURL) ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
+                            title={
+                                !isAuthenticated
+                                    ? "Please sign in to purchase models"
+                                    : checkoutURL
+                                        ? "Purchase this model"
+                                        : "Loading checkout..."
+                            }
                         >
                             <FaShoppingCart className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-500" />
-                            {checkoutURL ? 'Purchase' : 'Loading...'}
+                            {!isAuthenticated ? 'Sign in to Purchase' : checkoutURL ? 'Purchase' : 'Loading...'}
                         </button>
                     )}
                 

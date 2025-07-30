@@ -17,10 +17,11 @@ export default function Dashboard() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const router = useRouter();
 
-    // Auth check
+    // Auth check - middleware will handle redirects, but we can show loading state
     useEffect(() => {
         if (user === null && !isAuthenticated) {
-            router.replace("https://25eb-2a0b-6204-6ef-7b00-fcbf-a992-6695-d3c7.ngrok-free.app");
+            // Middleware will redirect to home page, no need for manual redirect
+            return;
         }
     }, [user, isAuthenticated, router]);
 

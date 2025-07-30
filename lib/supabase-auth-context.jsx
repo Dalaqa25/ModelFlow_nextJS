@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createBrowserSupabaseClient } from './supabase';
+import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({});
 
@@ -17,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserSupabaseClient();
+  const router = useRouter();
 
   useEffect(() => {
     // Get initial session
@@ -60,6 +62,10 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Redirect to home page immediately after sign out
+      router.push('/');
+    }
     return { error };
   };
 

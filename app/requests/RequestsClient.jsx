@@ -1,11 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/supabase-auth-context";
 import RequestBox from "@/app/components/requests/requestBox";
 import Request from "@/app/components/requests/request";
 
 export default function RequestsClient() {
     const [isClicked, setIsClicked] = useState(false);
+    const { user, loading } = useAuth();
+    const router = useRouter();
+
+    const handleNewRequestClick = () => {
+        if (!user) {
+            // Redirect to login if user is not authenticated
+            router.push('/auth/login');
+            return;
+        }
+        // If user is authenticated, show the request box
+        setIsClicked(true);
+    };
 
     return (
         <>
@@ -20,13 +34,14 @@ export default function RequestsClient() {
                     <p className="text-sm sm:text-lg font-light text-gray-500 mt-2 sm:mt-3 px-4 text-center">
                         Suggest and discuss AI models to be created
                     </p>
-                    <button 
-                        onClick={() => setIsClicked(true)} 
-                        className="btn-primary text-white py-2.5 sm:py-3 text-base sm:text-lg px-8 sm:px-10 rounded-xl mt-4 sm:mt-5 hover:shadow-lg hover:scale-105"
+                    <button
+                        onClick={handleNewRequestClick}
+                        disabled={loading}
+                        className="btn-primary text-white py-2.5 sm:py-3 text-base sm:text-lg px-8 sm:px-10 rounded-xl mt-4 sm:mt-5 hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        New Request
+                        {loading ? 'Loading...' : 'New Request'}
                     </button>
-                    {isClicked && <RequestBox/>}
+                    {isClicked && user && <RequestBox/>}
                 </div>
                 <div className="flex flex-col items-center justify-center mt-12 sm:mt-20 gap-3 sm:gap-5 mb-15">
                     <Request />

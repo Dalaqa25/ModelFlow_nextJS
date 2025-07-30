@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import Notifications from './notifications';
+import { toast } from 'react-hot-toast';
 
 export default function DropDownMenu() {
     const { user, signOut } = useAuth();
@@ -41,9 +42,16 @@ export default function DropDownMenu() {
 
     const handleSignOut = async () => {
         try {
-            await signOut();
+            const { error } = await signOut();
+            if (error) {
+                console.error('Error signing out:', error);
+                toast.error('Failed to sign out. Please try again.');
+            } else {
+                toast.success('Successfully signed out');
+            }
         } catch (error) {
             console.error('Error signing out:', error);
+            toast.error('Failed to sign out. Please try again.');
         }
     };
 

@@ -28,7 +28,23 @@ export async function middleware(request) {
   );
 
   // Refresh session if expired - required for Server Components
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Get the current pathname
+  const url = request.nextUrl.clone();
+  const pathname = url.pathname;
+
+  // If user is authenticated and trying to access root, redirect to dashboard
+  if (user && pathname === '/') {
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // If user is not authenticated and trying to access dashboard or other protected routes
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/admin'))) {
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
