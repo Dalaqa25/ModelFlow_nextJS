@@ -116,6 +116,15 @@ export default function AdminPage() {
                         Lemon Squeezy Settings
                     </a>
                 </div>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">Admin Dashboard - Pending Models</h1>
+                    <a 
+                        href="/admin/withdrawals" 
+                        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                    >
+                        withdrawals Admin Page
+                    </a>
+                </div>
                 {!Array.isArray(pendingModels) || pendingModels.length === 0 ? (
                     <p className="text-gray-500">No pending models to review</p>
                 ) : (

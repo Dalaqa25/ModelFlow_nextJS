@@ -7,6 +7,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import BasicTag from "@/app/components/plans/planTags/basicTag";
 import ProTag from "@/app/components/plans/planTags/proTag";
 import EnterpriseTag from "@/app/components/plans/planTags/enterpriseTag";
+import WithdrawConfirm from "./withdrawConfrim";
 
 export default function Profile() {
     const router = useRouter();
@@ -15,6 +16,7 @@ export default function Profile() {
     const [userModels, setUserModels] = useState([]);
     const [showEdit, setShowEdit] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
     
     // Pagination state for models
     const [currentPage, setCurrentPage] = useState(1);
@@ -101,6 +103,11 @@ export default function Profile() {
         amount: amount / 100 // convert cents to GEL/USD
     }));
     
+    const handleWithdrawal = (email) => {
+        console.log('Processing withdrawal to:', email);
+        setShowWithdrawDialog(false);
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -150,22 +157,44 @@ export default function Profile() {
                 </div>
 
                 {/* Stats Section */}
-                <div className="flex justify-around text-center mt-10">
-                    <div>
-                        <h3 className="text-xl font-semibold text-gray-700">{userModels.length}</h3>
-                        <p className="text-sm text-gray-500">Models Uploaded</p>
+                <div className="flex flex-col space-y-6 mt-10">
+                    <div className="flex justify-around text-center">
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700">{userModels.length}</h3>
+                            <p className="text-sm text-gray-500">Models Uploaded</p>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700">
+                                {userModels.filter(model => model.sold).length}
+                            </h3>
+                            <p className="text-sm text-gray-500">Models Sold</p>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700">
+                                ${((userData.totalEarnings || 0) / 100).toFixed(2)}
+                            </h3>
+                            <p className="text-sm text-gray-500">Total Revenue</p>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700">
+                                ${((userData.availableBalance || 0) / 100).toFixed(2)}
+                            </h3>
+                            <p className="text-sm text-gray-500">Available Balance</p>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700">
+                                ${((userData.withdrawnAmount || 0) / 100).toFixed(2)}
+                            </h3>
+                            <p className="text-sm text-gray-500">Withdrawn</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-xl font-semibold text-gray-700">
-                            {userModels.filter(model => model.sold).length}
-                        </h3>
-                        <p className="text-sm text-gray-500">Models Sold</p>
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold text-gray-700">
-                            ${((userData.totalEarnings || 0) / 100).toFixed(2)}
-                        </h3>
-                        <p className="text-sm text-gray-500">Revenue</p>
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => setShowWithdrawDialog(true)}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                        >
+                            Withdraw Funds
+                        </button>
                     </div>
                 </div>
 
@@ -243,6 +272,13 @@ export default function Profile() {
                         initialData={userData}
                     />
                 )}
+
+                {/* Withdraw Confirmation Dialog */}
+                <WithdrawConfirm
+                    isOpen={showWithdrawDialog}
+                    onClose={() => setShowWithdrawDialog(false)}
+                    onConfirm={handleWithdrawal}
+                />
             </div>
         </div>
     )
