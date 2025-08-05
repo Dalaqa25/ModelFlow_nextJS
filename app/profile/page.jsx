@@ -176,8 +176,16 @@ export default function Profile() {
                             <p className="text-sm text-gray-500">Total Revenue</p>
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700">
-                                ${((userData.availableBalance || 0) / 100).toFixed(2)}
+                            <h3 className="text-xl font-semibold text-gray-700 group relative">
+                                ${(userData.withdrawnAmount === 0 
+                                    ? ((userData.totalEarnings || 0) / 100).toFixed(2)
+                                    : ((userData.availableBalance || 0) / 100).toFixed(2)
+                                )}
+                                <span className="invisible group-hover:visible absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                    {userData.withdrawnAmount === 0 
+                                        ? "Total earnings available" 
+                                        : "Current available balance"}
+                                </span>
                             </h3>
                             <p className="text-sm text-gray-500">Available Balance</p>
                         </div>
