@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../../lib/supabase-auth-context';
 
 export default function LemonSqueezyAdminPage() {
     const router = useRouter();
+    const { user, loading: isLoading } = useAuth();
     const [isConfigured, setIsConfigured] = useState(false);
     const [configError, setConfigError] = useState('');
 
@@ -18,7 +20,9 @@ export default function LemonSqueezyAdminPage() {
     };
 
     useEffect(() => {
-        if (!isLoading && user?.email !== 'modelflow01@gmail.com') {
+        if (!isLoading && user?.email !== 'g.dalaqishvili01@gmail.com') {
+            console.log('Access denied - not admin:', user?.email);
+            toast.error('Access denied - Admin privileges required');
             router.push('/');
         }
     }, [user, isLoading, router]);
@@ -36,7 +40,7 @@ export default function LemonSqueezyAdminPage() {
             }
         };
 
-        if (user?.email === 'modelflow01@gmail.com') {
+        if (user?.email === 'g.dalaqishvili01@gmail.com') {
             checkConfiguration();
         }
     }, [user]);
@@ -61,7 +65,7 @@ export default function LemonSqueezyAdminPage() {
         return <div>Loading...</div>;
     }
 
-    if (user?.email !== 'modelflow01@gmail.com') {
+    if (user?.email !== 'g.dalaqishvili01@gmail.com') {
         return null;
     }
 

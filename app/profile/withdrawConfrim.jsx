@@ -2,12 +2,18 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 
-export default function WithdrawConfirm({ isOpen, onClose, onConfirm, amount }) {
+export default function WithdrawConfirm({ isOpen, onClose, onConfirm, userData }) {
     const [email, setEmail] = useState('')
     const [confirmEmail, setConfirmEmail] = useState('')
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+
+    const getAvailableAmount = () => {
+        return userData.withdrawnAmount === 0 
+            ? userData.totalEarnings || 0
+            : userData.availableBalance || 0;
+    };
 
     const handleSubmit = async () => {
         setError('');
@@ -32,7 +38,7 @@ export default function WithdrawConfirm({ isOpen, onClose, onConfirm, amount }) 
                 },
                 body: JSON.stringify({
                     paypalEmail: email,
-                    amount: amount || 1500
+                    amount: getAvailableAmount() // Use the actual amount
                 })
             });
 
@@ -92,6 +98,9 @@ export default function WithdrawConfirm({ isOpen, onClose, onConfirm, amount }) 
                                 >
                                     Confirm Withdrawal
                                 </Dialog.Title>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Amount to withdraw: ${(getAvailableAmount() / 100).toFixed(2)}
+                                </p>
 
                                 <div className="mt-4 space-y-4">
                                     <div>

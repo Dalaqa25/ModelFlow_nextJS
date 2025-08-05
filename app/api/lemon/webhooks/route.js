@@ -2,30 +2,55 @@ import { NextResponse } from "next/server";
 import User from "@/lib/db/User";
 import Model from "@/lib/db/Model";
 import connect from "@/lib/db/connect";
+import crypto from "crypto";
+import {
+  updateUserBalance,
+  calculateSellerCut,
+  validateWebhookSaleData
+} from "@/lib/lemon/balanceUtils";
+
+// Webhook signature validation function
+function verifyWebhookSignature(rawBody, signature, secret) {
+  if (!signature || !secret) {
+    return false;
+  }
+  
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(rawBody, 'utf8');
+  const expectedSignature = hmac.digest('hex');
+  
+  // Remove 'sha256=' prefix if present
+  const cleanSignature = signature.replace('sha256=', '');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature, 'hex'),
+    Buffer.from(cleanSignature, 'hex')
+  );
+}
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
+
+    // Verify webhook signature if secret is configured
+    const webhookSecret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const signature = req.headers.get('x-signature');
+      if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+        console.error('Invalid webhook signature');
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
+    }
 
     // Only handle order_created events
     if (body.meta?.event_name !== "order_created") {
       return NextResponse.json({ message: "Event ignored" }, { status: 200 });
     }
 
-    // Extract buyer email and custom data
-    const buyerEmail = body.data?.attributes?.user_email;
-    const customData = body.meta?.custom_data || body.data?.attributes?.custom_data;
-    const orderId = body.data?.id;
-    const totalAmount = body.data?.attributes?.total; // Amount in cents
-
-    // Extract modelId from custom data
-    const modelId = customData?.model_id;
-    const modelName = customData?.model_name;
-    const authorEmail = customData?.author_email;
-
-    if (!buyerEmail || !modelId) {
-      return NextResponse.json({ error: "Missing buyer email or modelId" }, { status: 400 });
-    }
+    // Validate and extract webhook data
+    const { buyerEmail, modelId, modelName, authorEmail, orderId, totalAmount } = validateWebhookSaleData(body);
 
     await connect();
 
@@ -61,29 +86,24 @@ export async function POST(req) {
       { $addToSet: { purchasedBy: buyerEmail } }
     );
 
-    // Update seller's earnings
-    if (authorEmail) {
-      const seller = await User.findOne({ email: authorEmail });
-      if (seller) {
-        // Calculate seller's cut (you can adjust this percentage)
-        const sellerCut = Math.floor(totalAmount * 0.8); // 80% to seller, 20% platform fee
-        
-        // Update total earnings
-        seller.totalEarnings += sellerCut;
-        
-        // Add to earnings history
-        seller.earningsHistory.push({
-          modelId: model._id,
-          modelName: modelName || model.name,
-          buyerEmail: buyerEmail,
-          amount: sellerCut,
-          lemonSqueezyOrderId: orderId,
-          earnedAt: new Date()
-        });
-        
-        await seller.save();
-      }
-    }
+    // Update seller's earnings using the balance utility
+    const sellerCut = calculateSellerCut(totalAmount); // 80% to seller, 20% platform fee
+    
+    const balanceUpdate = await updateUserBalance(authorEmail, {
+      modelId: model._id,
+      modelName: modelName || model.name,
+      buyerEmail: buyerEmail,
+      amount: sellerCut,
+      lemonSqueezyOrderId: orderId,
+      earnedAt: new Date()
+    });
+
+    console.log('Balance updated for seller:', {
+      email: balanceUpdate.email,
+      totalEarnings: balanceUpdate.totalEarnings,
+      availableBalance: balanceUpdate.availableBalance,
+      newEarningAmount: balanceUpdate.newEarning.amount
+    });
 
     return NextResponse.json({ message: "Purchase processed successfully" }, { status: 200 });
   } catch (error) {

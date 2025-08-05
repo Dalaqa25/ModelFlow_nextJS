@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import User from "@/lib/db/User";
 import Model from "@/lib/db/Model";
 import connect from "@/lib/db/connect";
+import { updateUserBalance, calculateSellerCut } from "@/lib/lemon/balanceUtils";
 
 export async function POST(req) {
     try {
-        const { getUser } = getKindeServerSession();
-        const user = await getUser();
+        const user = await getSupabaseUser();
 
         if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -91,27 +91,29 @@ export async function POST(req) {
         });
         await buyer.save();
 
-        // Update seller's earnings
-        const seller = await User.findOne({ email: testModel.authorEmail });
-        if (seller) {
-            const sellerCut = Math.floor(500 * 0.8); // 80% to seller
-            seller.totalEarnings += sellerCut;
-            seller.earningsHistory.push({
-                modelId: model._id,
-                modelName: model.name,
-                buyerEmail: buyer.email,
-                amount: sellerCut,
-                lemonSqueezyOrderId: testWebhookData.data.id,
-                earnedAt: new Date()
-            });
-            await seller.save();
-        }
+        // Update seller's earnings using the balance utility
+        const sellerCut = calculateSellerCut(500); // 80% to seller, 20% platform fee
+        
+        const balanceUpdate = await updateUserBalance(testModel.authorEmail, {
+            modelId: model._id,
+            modelName: model.name,
+            buyerEmail: buyer.email,
+            amount: sellerCut,
+            lemonSqueezyOrderId: testWebhookData.data.id,
+            earnedAt: new Date()
+        });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Test webhook processed successfully",
             testData: testWebhookData,
             buyerUpdated: true,
-            sellerUpdated: !!seller
+            sellerUpdated: true,
+            balanceUpdate: {
+                email: balanceUpdate.email,
+                totalEarnings: balanceUpdate.totalEarnings,
+                availableBalance: balanceUpdate.availableBalance,
+                newEarningAmount: balanceUpdate.newEarning.amount
+            }
         });
 
     } catch (error) {

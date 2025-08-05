@@ -1,15 +1,34 @@
 "use client"
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../../../lib/supabase-auth-context';
 
 export default function WithdrawalsAdminPage() {
+    const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
     const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [updatingId, setUpdatingId] = useState(null);
 
     useEffect(() => {
-        fetchWithdrawals();
-    }, []);
+        const checkAdminAndFetch = async () => {
+            if (authLoading) return;
+            
+            // Check if user is admin (email-based check)
+            if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
+                console.log('Access denied - not admin:', user?.email);
+                toast.error('Access denied - Admin privileges required');
+                router.push('/');
+                return;
+            }
+            
+            fetchWithdrawals();
+        };
+        
+        checkAdminAndFetch();
+    }, [authLoading, user, router]);
 
     const fetchWithdrawals = async () => {
         try {
@@ -32,15 +51,18 @@ export default function WithdrawalsAdminPage() {
     const updateWithdrawalStatus = async (requestId, status, rejectedReason = '') => {
         try {
             setUpdatingId(requestId);
-            const response = await fetch('/api/admin/withdrawals', {
-                method: 'PUT',
+            const endpoint = status === 'approved' 
+                ? '/api/withdraw/approve'
+                : '/api/withdraw/reject';
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     requestId,
-                    status,
-                    rejectedReason
+                    ...(status === 'rejected' && { rejectedReason })
                 }),
             });
 
@@ -50,12 +72,9 @@ export default function WithdrawalsAdminPage() {
                 throw new Error(data.error || 'Failed to update withdrawal');
             }
 
-            // Update the local state
-            setWithdrawals(prev => 
-                prev.map(withdrawal => 
-                    withdrawal._id === requestId ? data : withdrawal
-                )
-            );
+            // Refresh the withdrawals list after successful update
+            await fetchWithdrawals();
+
         } catch (err) {
             setError(err.message);
         } finally {
@@ -100,7 +119,7 @@ export default function WithdrawalsAdminPage() {
         }
     };
 
-    if (loading) {
+    if (authLoading || loading) {
         return (
             <div className="p-6">
                 <h1 className="text-2xl font-bold mb-6">Withdrawal Requests</h1>

@@ -26,13 +26,13 @@ export async function GET() {
       );
     }
     
-    // TODO: Uncomment this when admin users are properly set up
-    // if (!user.isAdmin) {
-    //   return NextResponse.json(
-    //     { error: 'Forbidden - Admin access required' },
-    //     { status: 403 }
-    //   );
-    // }
+    // Check if user is admin (using email-based check for simplicity)
+    if (supabaseUser.email !== 'g.dalaqishvili01@gmail.com') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
 
     // Fetch all withdrawal requests with user information
     const withdrawalRequests = await WithdrawalRequest.find({})
@@ -72,13 +72,13 @@ export async function PUT(request) {
       );
     }
     
-    // TODO: Uncomment this when admin users are properly set up
-    // if (!user.isAdmin) {
-    //   return NextResponse.json(
-    //     { error: 'Forbidden - Admin access required' },
-    //     { status: 403 }
-    //   );
-    // }
+    // Check if user is admin (using email-based check for simplicity)
+    if (supabaseUser.email !== 'g.dalaqishvili01@gmail.com') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const { requestId, status, rejectedReason } = body;

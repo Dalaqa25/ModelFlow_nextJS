@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 import { confgireLemonSqueezy } from "@/lib/lemon/server";
 
 export async function GET(req) {
     try {
-        // Remove: const { getUser } = getKindeServerSession();
-        // Remove: const user = await getUser();
+        const user = await getSupabaseUser();
 
-        // Remove: if (!user || user.email !== 'modelflow01@gmail.com') {
-        // Remove:     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        // Remove: }
+        if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         const { error } = await confgireLemonSqueezy();
         

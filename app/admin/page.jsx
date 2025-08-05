@@ -12,36 +12,49 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedModel, setSelectedModel] = useState(null);
+    const [userStatus, setUserStatus] = useState(null);
 
     useEffect(() => {
         const checkAdminAndFetchModels = async () => {
-            if (authLoading) return; // Wait for auth to load
+            if (authLoading) return;
             
             try {
+                // First, check user status
+                const userResponse = await fetch('/api/user');
+                const userData = await userResponse.json();
+                setUserStatus(userData);
+
+                // Check if user is admin (email-based check)
+                if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
+                    console.log('Access denied - not admin:', user?.email);
+                    toast.error('Access denied - Admin privileges required');
+                    router.push('/');
+                    return;
+                }
+
                 const response = await fetch('/api/pending-models');
                 if (!response.ok) {
-                    // Handle 401 (unauthorized) - redirect non-admin users
-                    if (response.status === 401) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Auth/Admin failed:', userData);
+                        toast.error('Access denied - Admin privileges required');
                         router.push('/');
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                // If we get here, user is admin and we have data
                 setPendingModels(Array.isArray(data) ? data : []);
             } catch (error) {
-                console.error('Error fetching pending models:', error);
-                toast.error('Failed to fetch pending models');
-                setPendingModels([]);
-                // Don't redirect on network errors, only on 401
+                console.error('Error:', error);
+                toast.error('Failed to fetch data');
+                router.push('/');
             } finally {
                 setLoading(false);
             }
         };
 
         checkAdminAndFetchModels();
-    }, [authLoading, router]);
+    }, [authLoading, router, user]);
 
     const handleApprove = async (modelId) => {
         try {
@@ -107,6 +120,19 @@ export default function AdminPage() {
     if (!authLoading && !loading) {
         return (
             <div className="container mx-auto p-4 mt-15">
+                {/* Debug information */}
+                <div className="mb-4 p-4 bg-gray-100 rounded">
+                    <h2 className="font-bold">Debug Info:</h2>
+                    <pre className="text-sm">
+                        {JSON.stringify({
+                            isAdmin: userStatus?.isAdmin,
+                            email: userStatus?.email,
+                            authLoading,
+                            loading
+                        }, null, 2)}
+                    </pre>
+                </div>
+
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold">Admin Dashboard - Pending Models</h1>
                     <a 

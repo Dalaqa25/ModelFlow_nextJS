@@ -286,6 +286,7 @@ export default function Profile() {
                     isOpen={showWithdrawDialog}
                     onClose={() => setShowWithdrawDialog(false)}
                     onConfirm={handleWithdrawal}
+                    userData={userData}
                 />
             </div>
         </div>
