@@ -1,6 +1,6 @@
 "use client"
 import { Dialog, Transition } from '@headlessui/react'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 
 export default function WithdrawConfirm({ isOpen, onClose, onConfirm, userData }) {
     const [email, setEmail] = useState('')
@@ -8,11 +8,29 @@ export default function WithdrawConfirm({ isOpen, onClose, onConfirm, userData }
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [availableAmount, setAvailableAmount] = useState(0)
+
+    // Fetch available balance when component opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchAvailableBalance();
+        }
+    }, [isOpen]);
+
+    const fetchAvailableBalance = async () => {
+        try {
+            const res = await fetch('/api/withdraw/available-balance');
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableAmount(data.availableBalance);
+            }
+        } catch (err) {
+            console.error('Failed to fetch available balance:', err);
+        }
+    };
 
     const getAvailableAmount = () => {
-        return userData.withdrawnAmount === 0 
-            ? userData.totalEarnings || 0
-            : userData.availableBalance || 0;
+        return availableAmount;
     };
 
     const handleSubmit = async () => {

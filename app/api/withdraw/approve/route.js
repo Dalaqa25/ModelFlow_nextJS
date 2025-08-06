@@ -31,10 +31,9 @@ export async function POST(request) {
     const user = withdrawal.userId;
     const newWithdrawnAmount = (user.withdrawnAmount || 0) + withdrawal.amount;
 
-    // Update user
+    // Update user's withdrawn amount
     await User.findByIdAndUpdate(user._id, {
-      withdrawnAmount: newWithdrawnAmount,
-      availableBalance: user.totalEarnings - newWithdrawnAmount
+      withdrawnAmount: newWithdrawnAmount
     });
 
     // Update withdrawal request

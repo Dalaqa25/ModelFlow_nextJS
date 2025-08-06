@@ -17,6 +17,7 @@ export default function Profile() {
     const [showEdit, setShowEdit] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+    const [availableBalance, setAvailableBalance] = useState(0);
     
     // Pagination state for models
     const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +47,17 @@ export default function Profile() {
             } catch (error) {
                 console.error("Error fetching user data:", error);
             } finally {
+                // Fetch available balance
+                try {
+                    const balanceResponse = await fetch('/api/withdraw/available-balance');
+                    if (balanceResponse.ok) {
+                        const balanceData = await balanceResponse.json();
+                        setAvailableBalance(balanceData.availableBalance);
+                    }
+                } catch (error) {
+                    console.error("Error fetching available balance:", error);
+                }
+                
                 setLoading(false);
             }
         };
@@ -177,14 +189,9 @@ export default function Profile() {
                         </div>
                         <div>
                             <h3 className="text-xl font-semibold text-gray-700 group relative">
-                                ${(userData.withdrawnAmount === 0 
-                                    ? ((userData.totalEarnings || 0) / 100).toFixed(2)
-                                    : ((userData.availableBalance || 0) / 100).toFixed(2)
-                                )}
+                                ${(availableBalance / 100).toFixed(2)}
                                 <span className="invisible group-hover:visible absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                                    {userData.withdrawnAmount === 0 
-                                        ? "Total earnings available" 
-                                        : "Current available balance"}
+                                    Current available balance
                                 </span>
                             </h3>
                             <p className="text-sm text-gray-500">Available Balance</p>
