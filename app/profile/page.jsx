@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/supabase-auth-context";
 import EditProfile from "./editProfile";
+import EarningHistory from "./EarningHistory";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import BasicTag from "@/app/components/plans/planTags/basicTag";
 import ProTag from "@/app/components/plans/planTags/proTag";
@@ -241,6 +242,9 @@ export default function Profile() {
                         </ResponsiveContainer>
                     </div>
                 </div>
+
+                {/* Earning History Section */}
+                <EarningHistory earnings={userData.earningsHistory || []} />
 
                 {/* About Me Section */}
                 <div className="mt-12">
