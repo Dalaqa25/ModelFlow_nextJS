@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import WithdrawalRequest from '../../../../lib/db/WithdrawalRequest';
-import User from '../../../../lib/db/User';
-import connect from '../../../../lib/db/connect';
+import { prisma } from '../../../../lib/db/prisma';
 
 export async function GET() {
   try {
@@ -14,11 +12,11 @@ export async function GET() {
         { status: 401 }
       );
     }
-
-    await connect();
     
     // Get the user from our database to check admin status
-    const user = await User.findOne({ authId: supabaseUser.id });
+    const user = await prisma.user.findFirst({
+      where: { email: supabaseUser.email }
+    });
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -35,9 +33,19 @@ export async function GET() {
     }
 
     // Fetch all withdrawal requests with user information
-    const withdrawalRequests = await WithdrawalRequest.find({})
-      .populate('userId', 'name email')
-      .sort({ submittedAt: -1 }); // Most recent first
+    const withdrawalRequests = await prisma.withdrawalRequest.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        submittedAt: 'desc'
+      }
+    });
 
     return NextResponse.json(withdrawalRequests);
 
@@ -60,11 +68,11 @@ export async function PUT(request) {
         { status: 401 }
       );
     }
-
-    await connect();
     
     // Get the user from our database to check admin status
-    const user = await User.findOne({ authId: supabaseUser.id });
+    const user = await prisma.user.findFirst({
+      where: { email: supabaseUser.email }
+    });
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -108,11 +116,18 @@ export async function PUT(request) {
       updateData.rejectedReason = rejectedReason;
     }
 
-    const updatedRequest = await WithdrawalRequest.findByIdAndUpdate(
-      requestId,
-      updateData,
-      { new: true }
-    ).populate('userId', 'name email');
+    const updatedRequest = await prisma.withdrawalRequest.update({
+      where: { id: requestId },
+      data: updateData,
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
 
     if (!updatedRequest) {
       return NextResponse.json(

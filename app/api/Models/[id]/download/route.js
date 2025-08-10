@@ -1,16 +1,21 @@
 import { supabase } from '@/lib/supabase';
-import Model from '@/lib/db/Model';
-import ArchivedModel from '@/lib/db/ArchivedModel';
+import { prisma } from '@/lib/db/prisma';
 import { NextResponse } from 'next/server';
 
 export async function GET(req, context) {
   try {
     const { id } = await context.params;
     // 1. Get model from DB (try Model first, then ArchivedModel)
-    let model = await Model.findById(id);
+    let model = await prisma.model.findUnique({
+      where: { id }
+    });
+    
     if (!model) {
-      model = await ArchivedModel.findById(id);
+      model = await prisma.archivedModel.findUnique({
+        where: { id }
+      });
     }
+    
     if (!model) return NextResponse.json({ error: 'Model not found' }, { status: 404 });
 
     // 2. Get file path from model

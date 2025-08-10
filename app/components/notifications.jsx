@@ -104,19 +104,19 @@ export default function Notifications({ isOpen, onClose }) {
                                         <div className="space-y-4">
                                             {notifications.map((notification) => (
                                                 <div 
-                                                    key={notification._id}
+                                                    key={notification.id}
                                                     className={`p-4 rounded-lg border ${
                                                         notification.read ? 'bg-gray-50' : 'bg-white'
                                                     } ${
-                                                        selectedNotifications.includes(notification._id)
+                                                        selectedNotifications.includes(notification.id)
                                                             ? 'border-purple-500'
                                                             : 'border-gray-200'
                                                     }`}
                                                     onClick={() => {
                                                         setSelectedNotifications(prev =>
-                                                            prev.includes(notification._id)
-                                                                ? prev.filter(id => id !== notification._id)
-                                                                : [...prev, notification._id]
+                                                            prev.includes(notification.id)
+                                                                ? prev.filter(id => id !== notification.id)
+                                                                : [...prev, notification.id]
                                                         );
                                                     }}
                                                 >

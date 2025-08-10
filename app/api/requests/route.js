@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import connect from "@/lib/db/connect";
-import Request from '@/lib/db/Request';
-import Comment from '@/lib/db/Comment';
+import { prisma } from "@/lib/db/prisma";
 
 
 export async function GET() {
   try {
-    await connect();
-
-    const requests = await Request.find()
-      .sort({ createdAt: -1 })
-      .populate('comments')
-      .populate('commentsCount');
+    const requests = await prisma.request.findMany({
+      include: {
+        comments: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     
     return NextResponse.json(requests);
   } catch (error) {
@@ -20,11 +20,14 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  await connect();
-
   try {
     const body = await req.json();
-    const newRequest = await Request.create(body);
+    const newRequest = await prisma.request.create({
+      data: body,
+      include: {
+        comments: true
+      }
+    });
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -32,17 +35,17 @@ export async function POST(req) {
 }
 
 export async function DELETE(_, { params }) {
-  await connect();
   const { id } = params;
 
   try {
-    const deletedRequest = await Request.findByIdAndDelete(id);
+    const deletedRequest = await prisma.request.delete({
+      where: { id }
+    });
     if (!deletedRequest) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
-    // Optionally delete related comments
-    await Comment.deleteMany({ requestId: id });
+    // Related comments will be deleted automatically due to cascade delete
 
     return NextResponse.json({ message: 'Request and related comments deleted' });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '../../../../lib/mongodb';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request) {
     try {
@@ -13,9 +13,18 @@ export async function GET(request) {
             );
         }
 
-        const client = await clientPromise;
-        const db = client.db();
-        const user = await db.collection('users').findOne({ email });
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+                name: true,
+                email: true,
+                contactEmail: true,
+                websiteLink: true,
+                aboutMe: true,
+                profileImageUrl: true,
+                createdAt: true
+            }
+        });
 
         if (!user) {
             return NextResponse.json(
@@ -24,18 +33,7 @@ export async function GET(request) {
             );
         }
 
-        // Return only necessary user data
-        const userData = {
-            name: user.name,
-            email: user.email,
-            contactEmail: user.contactEmail,
-            websiteLink: user.websiteLink,
-            aboutMe: user.aboutMe,
-            profileImageUrl: user.profileImageUrl,
-            createdAt: user.createdAt
-        };
-
-        return NextResponse.json(userData);
+        return NextResponse.json(user);
     } catch (error) {
         console.error('Error fetching user profile:', error);
         return NextResponse.json(
@@ -43,4 +41,4 @@ export async function GET(request) {
             { status: 500 }
         );
     }
-} 
+}

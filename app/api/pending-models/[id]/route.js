@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import connect from "@/lib/db/connect";
-import PendingModel from "@/lib/db/PendingModel";
-import Model from "@/lib/db/Model";
-import Notification from "@/lib/db/Notification";
+import { prisma } from "@/lib/db/prisma";
 
 export async function PATCH(req, { params }) {
     try {
@@ -13,11 +10,12 @@ export async function PATCH(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
         const { id } = params;
         const { action, rejectionReason } = await req.json();
 
-        const pendingModel = await PendingModel.findById(id);
+        const pendingModel = await prisma.pendingModel.findUnique({
+            where: { id }
+        });
         if (!pendingModel) {
             return NextResponse.json({ error: "Pending model not found" }, { status: 404 });
         }
@@ -26,7 +24,7 @@ export async function PATCH(req, { params }) {
             // Create a new model from the pending model
             const modelData = {
                 name: pendingModel.name,
-                author: pendingModel.author,
+                authorId: pendingModel.authorId,
                 authorEmail: pendingModel.authorEmail,
                 tags: pendingModel.tags,
                 description: pendingModel.description,
@@ -41,20 +39,26 @@ export async function PATCH(req, { params }) {
                 downloads: 0
             };
 
-            const newModel = await Model.create(modelData);
+            const newModel = await prisma.model.create({
+                data: modelData
+            });
             
             // Create approval notification
-            await Notification.create({
-                userId: pendingModel.author,
-                userEmail: pendingModel.authorEmail,
-                type: 'model_approval',
-                title: 'Model Approved',
-                message: `Your model "${pendingModel.name}" has been approved and is now live on the platform.`,
-                relatedModelId: newModel._id
+            await prisma.notification.create({
+                data: {
+                    userId: pendingModel.authorId,
+                    userEmail: pendingModel.authorEmail,
+                    type: 'model_approval',
+                    title: 'Model Approved',
+                    message: `Your model "${pendingModel.name}" has been approved and is now live on the platform.`,
+                    relatedModelId: newModel.id
+                }
             });
 
             // Delete the pending model after successful approval
-            await PendingModel.findByIdAndDelete(id);
+            await prisma.pendingModel.delete({
+                where: { id }
+            });
 
             return NextResponse.json({ 
                 message: "Model approved successfully",
@@ -69,17 +73,21 @@ export async function PATCH(req, { params }) {
             }
 
             // Create rejection notification
-            await Notification.create({
-                userId: pendingModel.author,
-                userEmail: pendingModel.authorEmail,
-                type: 'model_rejection',
-                title: 'Model Rejected',
-                message: `Your model "${pendingModel.name}" has been rejected. Reason: ${rejectionReason}`,
-                relatedModelId: pendingModel._id
+            await prisma.notification.create({
+                data: {
+                    userId: pendingModel.authorId,
+                    userEmail: pendingModel.authorEmail,
+                    type: 'model_rejection',
+                    title: 'Model Rejected',
+                    message: `Your model "${pendingModel.name}" has been rejected. Reason: ${rejectionReason}`,
+                    relatedModelId: pendingModel.id
+                }
             });
 
             // Delete the pending model after creating notification
-            await PendingModel.findByIdAndDelete(id);
+            await prisma.pendingModel.delete({
+                where: { id }
+            });
 
             return NextResponse.json({ 
                 message: "Model rejected successfully"

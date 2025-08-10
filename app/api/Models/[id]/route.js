@@ -1,15 +1,32 @@
 // /app/api/models/[id]/route.js
-import connect from "@/lib/db/connect";
-import Model from "@/lib/db/Model";
-import ArchivedModel from "@/lib/db/ArchivedModel";
+import { prisma } from "@/lib/db/prisma";
 import { NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function GET(req, { params }) {
-    await connect();
     try {
         const { id } = await params;
-        const model = await Model.findById(id).populate("author", "name profileImage");
+        
+        // Try to find in regular models first
+        let model = await prisma.model.findUnique({
+            where: { id },
+            include: {
+                author: {
+                    select: {
+                        name: true,
+                        profileImageUrl: true
+                    }
+                }
+            }
+        });
+        
+        // If not found in models, try archived models
+        if (!model) {
+            model = await prisma.archivedModel.findUnique({
+                where: { id }
+            });
+        }
+        
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
@@ -22,9 +39,12 @@ export async function GET(req, { params }) {
 
 export async function DELETE(req, { params }) {
     try {
-        await connect();
         const { id } = params;
-        const deleted = await Model.findByIdAndDelete(id);
+        
+        const deleted = await prisma.model.delete({
+            where: { id }
+        });
+        
         if (!deleted) {
             return NextResponse.json({ error: 'Model not found' }, { status: 404 });
         }

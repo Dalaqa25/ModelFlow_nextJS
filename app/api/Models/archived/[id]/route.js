@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import ArchivedModel from '@/lib/db/ArchivedModel';
-import connect from '@/lib/db/connect';
+import { prisma } from '@/lib/db/prisma';
 import { supabase } from '@/lib/supabase';
 import { sendDeletionWarningEmail } from '@/lib/email/sendDeletionWarning';
 
@@ -8,8 +7,9 @@ export async function DELETE(req, context) {
   const { params } = await context;
   const { id } = await params;
   try {
-    await connect();
-    const archivedModel = await ArchivedModel.findById(id);
+    const archivedModel = await prisma.archivedModel.findUnique({
+      where: { id }
+    });
     if (!archivedModel) {
       return NextResponse.json({ error: 'Archived model not found' }, { status: 404 });
     }
@@ -41,7 +41,9 @@ export async function DELETE(req, context) {
         }
       }
       // Delete the archived model document
-      await ArchivedModel.findByIdAndDelete(id);
+      await prisma.archivedModel.delete({
+        where: { id }
+      });
       return NextResponse.json({ message: 'Archived model and file deleted successfully' }, { status: 200 });
     }
   } catch (error) {
@@ -54,16 +56,19 @@ export async function POST(req, context) {
   const { params } = await context;
   const { id } = await params;
   try {
-    await connect();
-    const archivedModel = await ArchivedModel.findById(id);
+    const archivedModel = await prisma.archivedModel.findUnique({
+      where: { id }
+    });
     if (!archivedModel) {
       return NextResponse.json({ error: 'Archived model not found' }, { status: 404 });
     }
     if (Array.isArray(archivedModel.purchasedBy) && archivedModel.purchasedBy.length > 0) {
       // Calculate the real deletion date (1 minute from now for testing)
       const deletionDate = new Date(Date.now() + 1 * 60 * 1000); // 1 minute from now
-      archivedModel.scheduledDeletionDate = deletionDate;
-      await archivedModel.save();
+      await prisma.archivedModel.update({
+        where: { id },
+        data: { scheduledDeletionDate: deletionDate }
+      });
       // Send notification emails with the exact scheduled deletion date
       await Promise.all(
         archivedModel.purchasedBy.map(email =>
@@ -89,7 +94,9 @@ export async function POST(req, context) {
         }
       }
       // Delete the archived model document
-      await ArchivedModel.findByIdAndDelete(id);
+      await prisma.archivedModel.delete({
+        where: { id }
+      });
       return NextResponse.json({ message: 'File and model metadata deleted successfully.' });
     }
   } catch (error) {
@@ -100,10 +107,13 @@ export async function POST(req, context) {
 // Scheduled deletion job (for testing, can be run manually or as a cron job)
 // This function should be moved to a separate utility file or cron job
 async function deleteExpiredModels() {
-  await connect();
   const now = new Date();
-  const expiredModels = await ArchivedModel.find({
-    scheduledDeletionDate: { $lte: now }
+  const expiredModels = await prisma.archivedModel.findMany({
+    where: {
+      scheduledDeletionDate: {
+        lte: now
+      }
+    }
   });
   for (const model of expiredModels) {
     // Delete file from Supabase Storage
@@ -111,6 +121,8 @@ async function deleteExpiredModels() {
     if (supabasePath) {
       await supabase.storage.from('models').remove([supabasePath]);
     }
-    await ArchivedModel.findByIdAndDelete(model._id);
+    await prisma.archivedModel.delete({
+      where: { id: model.id }
+    });
   }
 }

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import User from "@/lib/db/User";
-import Model from "@/lib/db/Model";
-import connect from "@/lib/db/connect";
+import { prisma } from "@/lib/db/prisma";
 import { updateUserBalance, calculateSellerCut } from "@/lib/lemon/balanceUtils";
 
 export async function POST(req) {
@@ -13,41 +11,48 @@ export async function POST(req) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
-
         // Create a test model if none exists
-        let testModel = await Model.findOne({ name: "Test Model for Webhook" });
+        let testModel = await prisma.model.findFirst({
+            where: { name: "Test Model for Webhook" }
+        });
         if (!testModel) {
-            const testUser = await User.findOne({ email: "g.dalaqishvili01@gmail.com" });
+            const testUser = await prisma.user.findUnique({
+                where: { email: "g.dalaqishvili01@gmail.com" }
+            });
             if (!testUser) {
                 return NextResponse.json({ error: "Test user not found" }, { status: 404 });
             }
 
-            testModel = await Model.create({
-                name: "Test Model for Webhook",
-                author: testUser._id,
-                authorEmail: "g.dalaqishvili01@gmail.com",
-                tags: ["test"],
-                description: "This is a test model for webhook testing",
-                features: "Test features",
-                useCases: "Test use cases",
-                setup: "Test setup",
-                price: 500, // $5.00
-                fileStorage: {
-                    type: "zip",
-                    url: "https://example.com/test.zip",
-                    fileName: "test.zip"
+            testModel = await prisma.model.create({
+                data: {
+                    name: "Test Model for Webhook",
+                    authorId: testUser.id,
+                    authorEmail: "g.dalaqishvili01@gmail.com",
+                    tags: ["test"],
+                    description: "This is a test model for webhook testing",
+                    features: "Test features",
+                    useCases: "Test use cases",
+                    setup: "Test setup",
+                    price: 500, // $5.00
+                    fileStorage: {
+                        type: "zip",
+                        url: "https://example.com/test.zip",
+                        fileName: "test.zip"
+                    }
                 }
             });
         }
 
         // Create a test user if none exists
-        let testBuyer = await User.findOne({ email: "test@example.com" });
+        let testBuyer = await prisma.user.findUnique({
+            where: { email: "test@example.com" }
+        });
         if (!testBuyer) {
-            testBuyer = await User.create({
-                authId: "test-auth-id",
-                email: "test@example.com",
-                name: "Test User"
+            testBuyer = await prisma.user.create({
+                data: {
+                    email: "test@example.com",
+                    name: "Test User"
+                }
             });
         }
 
@@ -56,7 +61,7 @@ export async function POST(req) {
             meta: {
                 event_name: "order_created",
                 custom_data: {
-                    model_id: testModel._id.toString(),
+                    model_id: testModel.id,
                     model_name: testModel.name,
                     author_email: testModel.authorEmail
                 }
@@ -71,31 +76,38 @@ export async function POST(req) {
         };
 
         // Process the test webhook
-        const buyer = await User.findOne({ email: testBuyer.email });
-        const model = await Model.findById(testModel._id);
+        const buyer = await prisma.user.findUnique({
+            where: { email: testBuyer.email },
+            include: { purchasedModels: true }
+        });
+        const model = await prisma.model.findUnique({
+            where: { id: testModel.id }
+        });
 
         // Check if already purchased
-        const alreadyPurchased = buyer.purchasedModels.some(p => p.modelId.toString() === testModel._id.toString());
+        const alreadyPurchased = buyer.purchasedModels.some(p => p.modelId === testModel.id);
         if (alreadyPurchased) {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 message: "Test completed - model already purchased by test user",
                 testData: testWebhookData
             });
         }
 
         // Add to buyer's purchased models
-        buyer.purchasedModels.push({
-            modelId: model._id,
-            purchasedAt: new Date(),
-            price: model.price
+        await prisma.purchasedModel.create({
+            data: {
+                modelId: model.id,
+                userId: buyer.id,
+                purchasedAt: new Date(),
+                price: model.price
+            }
         });
-        await buyer.save();
 
         // Update seller's earnings using the balance utility
         const sellerCut = calculateSellerCut(500); // 80% to seller, 20% platform fee
         
         const balanceUpdate = await updateUserBalance(testModel.authorEmail, {
-            modelId: model._id,
+            modelId: model.id,
             modelName: model.name,
             buyerEmail: buyer.email,
             amount: sellerCut,

@@ -37,7 +37,7 @@ export default function RequestInfo({ request }) {
                     showOtherComments ? 'h-[250px] sm:h-[300px]' : 'h-auto'
                 }`}>
                 <RequestCommnetCreateion 
-                    requestId={request._id} 
+                    requestId={request.id}
                     onCommentAdded={handleCommentAdded}
                 />
                 <p 
@@ -48,7 +48,7 @@ export default function RequestInfo({ request }) {
                 </p>
                 {showOtherComments && (
                     <OtherComments 
-                        requestId={request._id} 
+                        requestId={request.id}
                         onClose={() => setShowOtherComments(false)} 
                         key={commentsUpdated}
                     />

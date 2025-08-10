@@ -1,5 +1,4 @@
-import connect from '@/lib/db/connect';
-import User from '@/lib/db/User';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET() {
     try {
@@ -10,33 +9,31 @@ export async function GET() {
         // Remove:     return Response.json({ synced: false, reason: "No Kinde user found" }, { status: 400 });
         // Remove: }
 
-        await connect();
-        const mongoUser = await User.findOne({ authId: "test_auth_id" }); // Placeholder for authId
+        const postgresUser = await prisma.user.findFirst({
+            where: { email: "test@example.com" } // Placeholder for email
+        });
 
-        if (mongoUser) {
-            // Update existing user with latest Kinde data
-            const updatedUser = await User.findOneAndUpdate(
-                { authId: "test_auth_id" }, // Placeholder for authId
-                {
-                    $set: {
-                        name: "Test Name", // Placeholder for name
-                        email: "test@example.com", // Placeholder for email
-                        profileImageUrl: "https://via.placeholder.com/150" // Placeholder for profileImageUrl
-                    }
-                },
-                { new: true }
-            );
+        if (postgresUser) {
+            // Update existing user with latest data
+            const updatedUser = await prisma.user.update({
+                where: { email: "test@example.com" }, // Placeholder for email
+                data: {
+                    name: "Test Name", // Placeholder for name
+                    profileImageUrl: "https://via.placeholder.com/150" // Placeholder for profileImageUrl
+                }
+            });
             return Response.json({ synced: true, user: updatedUser });
         } else {
             // Create new user
-            const newUser = await User.create({
-                authId: "test_auth_id", // Placeholder for authId
-                name: "Test Name", // Placeholder for name
-                email: "test@example.com", // Placeholder for email
-                profileImageUrl: "https://via.placeholder.com/150", // Placeholder for profileImageUrl
-                aboutMe: "",
-                websiteLink: "",
-                contactEmail: "test@example.com" // Placeholder for contactEmail
+            const newUser = await prisma.user.create({
+                data: {
+                    name: "Test Name", // Placeholder for name
+                    email: "test@example.com", // Placeholder for email
+                    profileImageUrl: "https://via.placeholder.com/150", // Placeholder for profileImageUrl
+                    aboutMe: "",
+                    websiteLink: "",
+                    contactEmail: "test@example.com" // Placeholder for contactEmail
+                }
             });
             return Response.json({ synced: true, user: newUser, created: true });
         }

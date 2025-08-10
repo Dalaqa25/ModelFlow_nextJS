@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import connect from "@/lib/db/connect";
-import PendingModel from "@/lib/db/PendingModel";
-import Model from "@/lib/db/Model";
-import User from "@/lib/db/User";
+import { prisma } from "@/lib/db/prisma";
+import { withDatabaseRetry } from "@/lib/db/connection-utils";
 
 // Get all pending models (admin only)
 export async function GET(req) {
@@ -14,11 +12,17 @@ export async function GET(req) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
-        const pendingModels = await PendingModel.find({ status: 'pending' })
-            .sort({ createdAt: -1 })
-            .populate('author', 'name email')
-            .select('+aiAnalysis +validationStatus');
+        const pendingModels = await withDatabaseRetry(async () => {
+            return await prisma.pendingModel.findMany({
+                where: { status: 'pending' },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    author: {
+                        select: { name: true, email: true }
+                    }
+                }
+            });
+        });
 
         return NextResponse.json(pendingModels);
     } catch (error) {
@@ -36,14 +40,11 @@ export async function POST(req) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
-
         // Find the user document
-        const userDoc = await User.findOne({
-            $or: [
-                { authId: user.id },
-                { email: user.email }
-            ]
+        const userDoc = await withDatabaseRetry(async () => {
+            return await prisma.user.findUnique({
+                where: { email: user.email }
+            });
         });
         if (!userDoc) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -94,7 +95,7 @@ export async function POST(req) {
             tags: tags,
             setup: data.setup,
             price: parseFloat(data.price) || 0,
-            author: userDoc._id,
+            authorId: userDoc.id,
             authorEmail: user.email,
             status: 'pending'
         };
@@ -126,7 +127,11 @@ export async function POST(req) {
             );
         }
 
-        const pendingModel = await PendingModel.create(modelData);
+        const pendingModel = await withDatabaseRetry(async () => {
+            return await prisma.pendingModel.create({
+                data: modelData
+            });
+        });
         return NextResponse.json(pendingModel, { status: 201 });
     } catch (error) {
         console.error('Error creating pending model:', error);

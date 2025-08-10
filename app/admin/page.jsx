@@ -72,7 +72,7 @@ export default function AdminPage() {
 
             toast.success('Model approved successfully');
             // Remove the approved model from the list
-            setPendingModels(prev => prev.filter(model => model._id !== modelId));
+            setPendingModels(prev => prev.filter(model => model.id !== modelId));
         } catch (error) {
             console.error('Error approving model:', error);
             toast.error('Failed to approve model');
@@ -103,7 +103,7 @@ export default function AdminPage() {
 
             toast.success('Model rejected successfully');
             // Remove the rejected model from the list
-            setPendingModels(prev => prev.filter(model => model._id !== modelId));
+            setPendingModels(prev => prev.filter(model => model.id !== modelId));
             setRejectionReason('');
             setSelectedModel(null);
         } catch (error) {
@@ -157,7 +157,7 @@ export default function AdminPage() {
                     <div className="grid gap-4">
                         {pendingModels.map((model) => {
                             return (
-                                <div key={model._id} className="border rounded-lg p-4 shadow-sm">
+                                <div key={model.id} className="border rounded-lg p-4 shadow-sm">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h2 className="text-xl font-semibold">{model.name}</h2>
@@ -191,13 +191,13 @@ export default function AdminPage() {
                                                 <div className="whitespace-pre-wrap text-gray-700">
                                                     {model.aiAnalysis.split('\n').map((line, index) => {
                                                         if (line.includes('✅ PUBLISH')) {
-                                                            return <div key={index} className="text-green-600 font-semibold">{line}</div>;
+                                                            return <div key={`analysis-${model.id}-${index}`} className="text-green-600 font-semibold">{line}</div>;
                                                         } else if (line.includes('❌ REJECT')) {
-                                                            return <div key={index} className="text-red-600 font-semibold">{line}</div>;
+                                                            return <div key={`analysis-${model.id}-${index}`} className="text-red-600 font-semibold">{line}</div>;
                                                         } else if (line.startsWith('**')) {
-                                                            return <div key={index} className="font-semibold">{line}</div>;
+                                                            return <div key={`analysis-${model.id}-${index}`} className="font-semibold">{line}</div>;
                                                         }
-                                                        return <div key={index}>{line}</div>;
+                                                        return <div key={`analysis-${model.id}-${index}`}>{line}</div>;
                                                     })}
                                                 </div>
                                             </div>
@@ -230,7 +230,7 @@ export default function AdminPage() {
 
                                     <div className="mt-4 flex gap-4">
                                         <button
-                                            onClick={() => handleApprove(model._id)}
+                                            onClick={() => handleApprove(model.id)}
                                             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
                                         >
                                             Approve
@@ -271,7 +271,7 @@ export default function AdminPage() {
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={() => handleReject(selectedModel._id)}
+                                    onClick={() => handleReject(selectedModel.id)}
                                     className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
                                 >
                                     Confirm Rejection

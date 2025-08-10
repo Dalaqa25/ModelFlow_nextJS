@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import connect from "@/lib/db/connect";
-import Model from "@/lib/db/Model";
+import { prisma } from "@/lib/db/prisma";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function POST(req, { params }) {
@@ -11,8 +10,9 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
-        const model = await Model.findById(params.id);
+        const model = await prisma.model.findUnique({
+            where: { id: params.id }
+        });
 
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
@@ -24,13 +24,21 @@ export async function POST(req, { params }) {
         }
 
         // Add user's email to likedBy array and increment likes count
-        model.likedBy.push(user.email);
-        model.likes += 1;
-        await model.save();
+        const updatedModel = await prisma.model.update({
+            where: { id: params.id },
+            data: {
+                likedBy: {
+                    push: user.email
+                },
+                likes: {
+                    increment: 1
+                }
+            }
+        });
 
-        return NextResponse.json({ likes: model.likes });
+        return NextResponse.json({ likes: updatedModel.likes });
     } catch (error) {
         console.error("Error liking model:", error);
         return NextResponse.json({ error: "Error liking model" }, { status: 500 });
     }
-} 
+}

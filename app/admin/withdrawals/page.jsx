@@ -167,7 +167,7 @@ export default function WithdrawalsAdminPage() {
                 <div className="bg-white shadow overflow-hidden sm:rounded-md">
                     <ul className="divide-y divide-gray-200">
                         {withdrawals.map((withdrawal) => (
-                            <li key={withdrawal._id} className="px-6 py-4">
+                            <li key={withdrawal.id} className="px-6 py-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
@@ -211,18 +211,18 @@ export default function WithdrawalsAdminPage() {
                                         {withdrawal.status === 'pending' && (
                                             <div className="mt-4 flex space-x-3">
                                                 <button
-                                                    onClick={() => handleApprove(withdrawal._id)}
-                                                    disabled={updatingId === withdrawal._id}
+                                                    onClick={() => handleApprove(withdrawal.id)}
+                                                    disabled={updatingId === withdrawal.id}
                                                     className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    {updatingId === withdrawal._id ? 'Updating...' : 'Approve'}
+                                                    {updatingId === withdrawal.id ? 'Updating...' : 'Approve'}
                                                 </button>
                                                 <button
-                                                    onClick={() => handleReject(withdrawal._id)}
-                                                    disabled={updatingId === withdrawal._id}
+                                                    onClick={() => handleReject(withdrawal.id)}
+                                                    disabled={updatingId === withdrawal.id}
                                                     className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    {updatingId === withdrawal._id ? 'Updating...' : 'Reject'}
+                                                    {updatingId === withdrawal.id ? 'Updating...' : 'Reject'}
                                                 </button>
                                             </div>
                                         )}

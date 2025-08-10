@@ -1,5 +1,4 @@
-import User from "../db/User";
-import connect from "../db/connect";
+import { prisma } from "../db/prisma";
 
 /**
  * Update a user's subscription plan and status.
@@ -10,34 +9,35 @@ export async function updateUserSubscription(
   status: string,
   lemonSqueezySubscriptionId?: string
 ): Promise<any> {
-  await connect();
-  const update: any = {
-    "subscription.plan": plan,
-    "subscription.status": status,
+  const subscriptionData: any = {
+    plan,
+    status,
   };
   if (lemonSqueezySubscriptionId) {
-    update["subscription.lemonSqueezySubscriptionId"] = lemonSqueezySubscriptionId;
+    subscriptionData.lemonSqueezySubscriptionId = lemonSqueezySubscriptionId;
   }
-  // @ts-ignore
-  return User.findOneAndUpdate(
-    { email },
-    { $set: update },
-    { new: true }
-  );
+  
+  return prisma.user.update({
+    where: { email },
+    data: { subscription: subscriptionData }
+  });
 }
 
 export async function getUserSubscription(email: string): Promise<any> {
-  await connect();
-  // @ts-ignore
-  return User.findOne({ email }, { subscription: 1 });
+  return prisma.user.findUnique({
+    where: { email },
+    select: { subscription: true }
+  });
 }
 
 export async function cancelUserSubscription(email: string): Promise<any> {
-  await connect();
-  // @ts-ignore
-  return User.findOneAndUpdate(
-    { email },
-    { $set: { "subscription.plan": "basic", "subscription.status": "canceled" } },
-    { new: true }
-  );
+  return prisma.user.update({
+    where: { email },
+    data: {
+      subscription: {
+        plan: "basic",
+        status: "canceled"
+      }
+    }
+  });
 }

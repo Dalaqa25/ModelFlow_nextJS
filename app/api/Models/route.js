@@ -1,13 +1,25 @@
-import connect from "@/lib/db/connect";
-import Model from "@/lib/db/Model";
-import User from "@/lib/db/User";
+import { prisma } from "@/lib/db/prisma";
+import { withDatabaseRetry } from "@/lib/db/connection-utils";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function GET() {
   try {
-    await connect();
-    const models = await Model.find({}).sort({ createdAt: -1 }).populate('author', 'name email');
+    const models = await withDatabaseRetry(async () => {
+      return await prisma.model.findMany({
+        include: {
+          author: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    });
     return NextResponse.json(models);
   } catch (error) {
     console.error('Error fetching models:', error);
@@ -26,10 +38,12 @@ export async function POST(req) {
       );
     }
 
-    await connect();
-
     // Find the user document first
-    const userDoc = await User.findOne({ email: user.email });
+    const userDoc = await withDatabaseRetry(async () => {
+      return await prisma.user.findFirst({
+        where: { email: user.email }
+      });
+    });
     if (!userDoc) {
       return NextResponse.json(
         { error: 'User not found in database' },
@@ -76,26 +90,15 @@ export async function POST(req) {
       );
     }
 
-    const modelData = {
-      name: formData.get('name'),
-      description: formData.get('description'),
-      useCases: formData.get('useCases'),
-      features: formData.get('features'),
-      tags: tags,
-      setup: formData.get('setup'),
-      price: parseFloat(formData.get('price')) || 0,
-      author: userDoc._id, // Use the user's MongoDB ID
-      authorEmail: user.email,
-    };
-
     // Handle file storage information
     const uploadType = formData.get('uploadType');
     const modelFile = formData.get('modelFile');
     const driveLink = formData.get('driveLink');
 
+    let fileStorage = {};
     if (uploadType === 'zip' && modelFile) {
       // For ZIP file upload
-      modelData.fileStorage = {
+      fileStorage = {
         type: 'zip',
         url: modelFile.name, // This will be replaced with actual storage URL
         fileName: modelFile.name,
@@ -106,7 +109,7 @@ export async function POST(req) {
       };
     } else if (uploadType === 'drive' && driveLink) {
       // For Google Drive link
-      modelData.fileStorage = {
+      fileStorage = {
         type: 'drive',
         url: driveLink,
         fileName: driveLink.split('/').pop() || 'drive-file',
@@ -120,6 +123,19 @@ export async function POST(req) {
       );
     }
 
+    const modelData = {
+      name: formData.get('name'),
+      description: formData.get('description'),
+      useCases: formData.get('useCases'),
+      features: formData.get('features'),
+      tags: tags,
+      setup: formData.get('setup'),
+      price: parseFloat(formData.get('price')) || 0,
+      authorId: userDoc.id, // Use the user's Prisma ID
+      authorEmail: user.email,
+      fileStorage: fileStorage
+    };
+
     console.log('Creating model with data:', {
       ...modelData,
       fileStorage: {
@@ -128,7 +144,19 @@ export async function POST(req) {
       }
     });
 
-    const model = await Model.create(modelData);
+    const model = await withDatabaseRetry(async () => {
+      return await prisma.model.create({
+        data: modelData,
+        include: {
+          author: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+    });
     return NextResponse.json(model, { status: 201 });
   } catch (error) {
     console.error('Error creating model:', error);

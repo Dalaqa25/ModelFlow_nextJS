@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import connect from '@/lib/db/connect';
-import ArchivedModel from '@/lib/db/ArchivedModel';
-import clientPromise from '@/lib/mongodb';
+import { prisma } from '@/lib/db/prisma';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -16,17 +14,21 @@ export async function GET(request) {
         const email = searchParams.get('email');
         let plan = 'basic';
         if (email) {
-            // Fetch user from MongoDB
-            const client = await clientPromise;
-            const db = client.db();
-            const user = await db.collection('users').findOne({ email });
+            // Fetch user from Prisma
+            const user = await prisma.user.findUnique({
+                where: { email },
+                select: { subscription: true }
+            });
             if (user && user.subscription?.plan) {
                 plan = user.subscription.plan;
             }
         }
-        await connect();
+        
         const models = email
-            ? await ArchivedModel.find({ authorEmail: email }).sort({ createdAt: -1 })
+            ? await prisma.archivedModel.findMany({
+                where: { authorEmail: email },
+                orderBy: { createdAt: 'desc' }
+            })
             : [];
         
         console.log(`[DEBUG] Found ${models.length} archived models for ${email}`);

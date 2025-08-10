@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { prisma } from '@/lib/db/prisma';
+import { withDatabaseRetry } from '@/lib/db/connection-utils';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth-utils';
 
@@ -25,33 +26,36 @@ export async function GET(request) {
             email = user.email;
         }
 
-        const client = await clientPromise;
+        // First check if the user exists with retry logic
+        const user = await withDatabaseRetry(async () => {
+            return await prisma.user.findUnique({
+                where: { email }
+            });
+        });
         
-        const db = client.db();
-        
-        // First check if the user exists
-        const user = await db.collection('users').findOne({ email });
         if (!user) {
             return NextResponse.json(
-                { error: 'User not found' }, 
+                { error: 'User not found' },
                 { status: 404 }
             );
         }
 
-        // Fetch both regular models and pending models
-        const [models, pendingModels] = await Promise.all([
-            db.collection('models')
-                .find({ authorEmail: email })
-                .sort({ createdAt: -1 })
-                .toArray(),
-            db.collection('pendingmodels')
-                .find({ authorEmail: email })
-                .sort({ createdAt: -1 })
-                .toArray()
-        ]);
+        // Fetch both regular models and pending models with retry logic
+        const [models, pendingModels] = await withDatabaseRetry(async () => {
+            return await Promise.all([
+                prisma.model.findMany({
+                    where: { authorEmail: email },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                prisma.pendingModel.findMany({
+                    where: { authorEmail: email },
+                    orderBy: { createdAt: 'desc' }
+                })
+            ]);
+        });
 
         // Combine both arrays and sort by createdAt
-        const allModels = [...models, ...pendingModels].sort((a, b) => 
+        const allModels = [...models, ...pendingModels].sort((a, b) =>
             new Date(b.createdAt) - new Date(a.createdAt)
         );
 

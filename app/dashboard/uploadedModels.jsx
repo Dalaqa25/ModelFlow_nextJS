@@ -190,7 +190,7 @@ export default function UploadedModels({ isRowLayout }) {
                     <div className={`grid ${isRowLayout ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-6'}`}>
                         {currentModels.map(model => (
                             <div 
-                                key={model._id} 
+                                key={model.id}
                                 className={`bg-white rounded-xl shadow-md border border-gray-100 transition-shadow duration-200 overflow-hidden ${
                                     isRowLayout ? 'flex p-4 items-center gap-4' : 'p-4'
                                 }`}
@@ -262,7 +262,7 @@ export default function UploadedModels({ isRowLayout }) {
 
                                     <div className={`flex ${isRowLayout ? 'flex-col gap-2' : 'flex-col gap-3'} sm:flex-row mt-auto`}>
                                         <button 
-                                            onClick={() => !model.status || model.status !== 'pending' ? handleViewModel(model._id) : null}
+                                            onClick={() => !model.status || model.status !== 'pending' ? handleViewModel(model.id) : null}
                                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors 
                                                 ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-purple-700 text-white hover:bg-purple-800'}`}
                                             disabled={model.status === 'pending'}
@@ -271,7 +271,7 @@ export default function UploadedModels({ isRowLayout }) {
                                             <span>View</span>
                                         </button>
                                         <button 
-                                            onClick={() => model.status !== 'pending' ? handleArchiveClick(model._id, model.name) : null}
+                                            onClick={() => model.status !== 'pending' ? handleArchiveClick(model.id, model.name) : null}
                                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors border 
                                                 ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'}`}
                                             disabled={model.status === 'pending'}

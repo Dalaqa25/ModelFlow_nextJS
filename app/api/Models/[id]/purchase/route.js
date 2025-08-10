@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import clientPromise from "@/lib/mongodb";
-import Model from "@/lib/db/Model";
-import User from "@/lib/db/User";
+import { prisma } from "@/lib/db/prisma";
 
 export async function POST(request, { params }) {
     try {
@@ -12,11 +10,12 @@ export async function POST(request, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await clientPromise;
-
         // Find the model
         const { id } = params;
-        const model = await Model.findById(id);
+        const model = await prisma.model.findUnique({
+            where: { id }
+        });
+        
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
@@ -27,24 +26,18 @@ export async function POST(request, { params }) {
         }
 
         // Find the user document
-        const userDoc = await User.findOne({
-            $or: [
-                { authId: user.id },
-                { email: user.email }
-            ]
+        const userDoc = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { purchasedModels: true }
         });
+        
         if (!userDoc) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Initialize purchasedModels array if it doesn't exist
-        if (!userDoc.purchasedModels) {
-            userDoc.purchasedModels = [];
-        }
-
         // Check if user has already purchased this model
         const alreadyPurchased = userDoc.purchasedModels.some(
-            purchase => purchase.modelId.toString() === id
+            purchase => purchase.modelId === id
         );
 
         if (alreadyPurchased) {
@@ -52,27 +45,28 @@ export async function POST(request, { params }) {
         }
 
         // Add the model to user's purchased models with price
-        userDoc.purchasedModels.push({
-            modelId: model._id,
-            purchasedAt: new Date(),
-            price: model.price
+        await prisma.purchasedModel.create({
+            data: {
+                modelId: model.id,
+                userId: userDoc.id,
+                price: model.price,
+                purchasedAt: new Date()
+            }
         });
 
-        await userDoc.save();
-
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: "Model purchased successfully",
             model: {
-                id: model._id,
+                id: model.id,
                 name: model.name,
                 price: model.price
             }
         });
     } catch (error) {
         console.error("Error purchasing model:", error);
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: "Failed to purchase model",
-            details: error.message 
+            details: error.message
         }, { status: 500 });
     }
-} 
+}

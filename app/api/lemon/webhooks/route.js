@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import User from "@/lib/db/User";
-import Model from "@/lib/db/Model";
-import connect from "@/lib/db/connect";
+import { prisma } from "@/lib/db/prisma";
 import crypto from "crypto";
 import {
   updateUserBalance,
@@ -52,45 +50,54 @@ export async function POST(req) {
     // Validate and extract webhook data
     const { buyerEmail, modelId, modelName, authorEmail, orderId, totalAmount } = validateWebhookSaleData(body);
 
-    await connect();
-
     // Find the buyer
-    const buyer = await User.findOne({ email: buyerEmail });
+    const buyer = await prisma.user.findUnique({
+      where: { email: buyerEmail },
+      include: { purchasedModels: true }
+    });
     if (!buyer) {
       return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
 
     // Find the model
-    const model = await Model.findById(modelId);
+    const model = await prisma.model.findUnique({
+      where: { id: modelId }
+    });
     if (!model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
     // Check if already purchased
-    const alreadyPurchased = buyer.purchasedModels.some(p => p.modelId.toString() === modelId);
+    const alreadyPurchased = buyer.purchasedModels.some(p => p.modelId === modelId);
     if (alreadyPurchased) {
       return NextResponse.json({ message: "Model already purchased" }, { status: 200 });
     }
 
     // Add to buyer's purchased models
-    buyer.purchasedModels.push({
-      modelId: model._id,
-      purchasedAt: new Date(),
-      price: model.price
+    await prisma.purchasedModel.create({
+      data: {
+        modelId: model.id,
+        userId: buyer.id,
+        purchasedAt: new Date(),
+        price: model.price
+      }
     });
-    await buyer.save();
 
     // Add buyer's email to model's purchasedBy array
-    await Model.updateOne(
-      { _id: model._id },
-      { $addToSet: { purchasedBy: buyerEmail } }
-    );
+    await prisma.model.update({
+      where: { id: model.id },
+      data: {
+        purchasedBy: {
+          push: buyerEmail
+        }
+      }
+    });
 
     // Update seller's earnings using the balance utility
     const sellerCut = calculateSellerCut(totalAmount); // 80% to seller, 20% platform fee
     
     const balanceUpdate = await updateUserBalance(authorEmail, {
-      modelId: model._id,
+      modelId: model.id,
       modelName: modelName || model.name,
       buyerEmail: buyerEmail,
       amount: sellerCut,

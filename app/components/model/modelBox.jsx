@@ -119,7 +119,7 @@ export default function ModelBox({ search = "" }) {
                     {!isLoading && !error && currentModels.length > 0 && (
                         <>
                             {currentModels.map(model => (
-                                <NavigationLink key={model._id || model.id} href={`/modelsList/${model._id}`} className='shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-lg border-2 border-transparent hover:border-purple-300 transition-all max-w-[900px]'>
+                                <NavigationLink key={model.id} href={`/modelsList/${model.id}`} className='shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-lg border-2 border-transparent hover:border-purple-300 transition-all max-w-[900px]'>
                                     <div className='p-4 flex flex-col gap-5'>
                                         <div className='flex gap-4'>
                                             {model.imgUrl ? (

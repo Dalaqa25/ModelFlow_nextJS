@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import User from '@/lib/db/User';
-import connect from '@/lib/db/connect';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET() {
   try {
@@ -10,11 +9,11 @@ export async function GET() {
     if (!supabaseUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    await connect();
     
     // Get the user from our database
-    const user = await User.findOne({ authId: supabaseUser.id });
+    const user = await prisma.user.findFirst({
+      where: { email: supabaseUser.email }
+    });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

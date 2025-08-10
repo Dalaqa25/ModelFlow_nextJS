@@ -43,7 +43,7 @@ export default function Model(props) {
                     const purchasedRes = await fetch('/api/user/purchased-models');
                     if (purchasedRes.ok) {
                         const purchasedModels = await purchasedRes.json();
-                        setIsOwned(purchasedModels.some(m => m._id === data._id));
+                        setIsOwned(purchasedModels.some(m => m.id === data.id));
                     }
                 }
                 setLoading(false);
@@ -63,7 +63,7 @@ export default function Model(props) {
                         price: model.price,
                         userEmail: user?.email || null,
                         userId: user?.id || null,
-                        modelId: model._id,
+                        modelId: model.id,
                         modelName: model.name,
                         authorEmail: model.authorEmail,
                         embed: false

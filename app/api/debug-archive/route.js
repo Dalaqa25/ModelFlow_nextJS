@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import connect from '@/lib/db/connect';
-import ArchivedModel from '@/lib/db/ArchivedModel';
+import { prisma } from '@/lib/db/prisma';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -17,10 +16,11 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
         }
 
-        await connect();
-        
-        // Get archived models from database
-        const models = await ArchivedModel.find({ authorEmail: email }).sort({ createdAt: -1 });
+        // Get archived models from database using Prisma
+        const models = await prisma.archivedModel.findMany({
+            where: { authorEmail: email },
+            orderBy: { createdAt: 'desc' }
+        });
         
         // Get files from Supabase
         const { data: allFiles, error: storageError } = await supabase
@@ -32,7 +32,7 @@ export async function GET(request) {
             email,
             archivedModelsCount: models.length,
             archivedModels: models.map(model => ({
-                id: model._id,
+                id: model.id,
                 name: model.name,
                 fileStorage: model.fileStorage,
                 supabasePath: model.fileStorage?.supabasePath,

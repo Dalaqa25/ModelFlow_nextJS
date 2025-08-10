@@ -74,11 +74,11 @@ export default function Request() {
 
             {requests.map((req) => (
                 <div
-                    key={req._id}
-                    onClick={() => setSelectedRequestId(req._id)}
+                    key={req.id}
+                    onClick={() => setSelectedRequestId(req.id)}
                     className="w-[95%] sm:w-[85%] md:w-1/2 max-w-[950px] min-w-[280px] border rounded-2xl border-gray-200 cursor-pointer hover:shadow transition-all duration-300 ease-in-out"
                 >
-                    {selectedRequestId === req._id && <RequestInfo request={req} onClose={() => setSelectedRequestId(null)} />}
+                    {selectedRequestId === req.id && <RequestInfo request={req} onClose={() => setSelectedRequestId(null)} />}
                     <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3">
                         <h1 className="text-xl sm:text-2xl font-semibold">{req.title}</h1>
                         <p className="text-sm sm:text-base font-light text-gray-600">

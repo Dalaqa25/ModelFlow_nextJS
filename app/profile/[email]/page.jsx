@@ -177,8 +177,8 @@ export default function Profile(props) {
                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
                         {userModels.map((model) => (
                             <NavigationLink
-                                href={`/modelsList/${model._id}`}
-                                key={model._id}
+                                href={`/modelsList/${model.id}`}
+                                key={model.id}
                                 className='group'
                             >
                                 <div className='bg-white/50 rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-300 overflow-hidden'>

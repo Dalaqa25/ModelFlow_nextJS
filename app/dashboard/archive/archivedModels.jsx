@@ -53,7 +53,7 @@ export default function ArchivedModels({ models = [], onModelDeleted }) {
                                 <div className="text-sm text-gray-600">Archived on: {new Date(model.createdAt).toLocaleDateString()}</div>
                                 <button
                                     className="ml-4 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-semibold"
-                                    onClick={() => handleNotify(model._id)}
+                                    onClick={() => handleNotify(model.id)}
                                     disabled={notifying}
                                 >
                                     Notify Purchasers

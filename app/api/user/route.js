@@ -1,7 +1,7 @@
 import { getSupabaseUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
-import connect from "@/lib/db/connect";
-import User from "@/lib/db/User";
+import { prisma } from "@/lib/db/prisma";
+import { withDatabaseRetry } from "@/lib/db/connection-utils";
 
 export async function GET() {
     try {
@@ -19,38 +19,31 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connect();
         console.log('GET /api/user - Connected to database');
         
-        let userData = await User.findOne({ authId: user.id });
+        let userData = await withDatabaseRetry(async () => {
+            return await prisma.user.findFirst({
+                where: { email: user.email }
+            });
+        });
         console.log('GET /api/user - User data from DB:', userData ? 'Found' : 'Not found');
-
-        // If not found by authId, try by email (for migrated/legacy users)
-        if (!userData) {
-            userData = await User.findOne({ email: user.email });
-            if (userData) {
-                // Update authId if missing
-                if (!userData.authId) {
-                    userData.authId = user.id;
-                    await userData.save();
-                }
-                return NextResponse.json(userData);
-            }
-        }
 
         if (!userData) {
             console.log('GET /api/user - Creating new user in database');
             // If user doesn't exist in our database, create them
-            const newUser = await User.create({
-                authId: user.id,
-                name: user.user_metadata?.name || user.email,
-                email: user.email,
-                profileImageUrl: user.user_metadata?.avatar_url || null,
-                aboutMe: "",
-                websiteLink: "",
-                contactEmail: user.email
+            const newUser = await withDatabaseRetry(async () => {
+                return await prisma.user.create({
+                    data: {
+                        name: user.user_metadata?.name || user.email,
+                        email: user.email,
+                        profileImageUrl: user.user_metadata?.avatar_url || null,
+                        aboutMe: "",
+                        websiteLink: "",
+                        contactEmail: user.email
+                    }
+                });
             });
-            console.log('GET /api/user - New user created:', newUser._id);
+            console.log('GET /api/user - New user created:', newUser.id);
             return NextResponse.json(newUser);
         }
 
@@ -58,9 +51,9 @@ export async function GET() {
         return NextResponse.json(userData);
     } catch (error) {
         console.error("Error in GET /api/user:", error);
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: "Internal Server Error",
-            details: error.message 
+            details: error.message
         }, { status: 500 });
     }
 }
@@ -74,7 +67,6 @@ export async function PUT(request) {
         }
 
         const data = await request.json();
-        await connect();
 
         const updateData = {
             aboutMe: data.aboutMe,
@@ -87,11 +79,12 @@ export async function PUT(request) {
             updateData.profileImageUrl = data.profileImageUrl;
         }
 
-        const updatedUser = await User.findOneAndUpdate(
-            { authId: user.id },
-            { $set: updateData },
-            { new: true }
-        );
+        const updatedUser = await withDatabaseRetry(async () => {
+            return await prisma.user.update({
+                where: { email: user.email },
+                data: updateData
+            });
+        });
 
         if (!updatedUser) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -102,4 +95,4 @@ export async function PUT(request) {
         console.error("Error in PUT /api/user:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-} 
+}

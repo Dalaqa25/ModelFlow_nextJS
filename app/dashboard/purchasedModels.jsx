@@ -111,7 +111,7 @@ export default function PurchasedModels({ isRowLayout }) {
                 <div className={`grid ${isRowLayout ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-6'}`}>
                     {currentModels.map(model => (
                         <div 
-                            key={model._id} 
+                            key={model.id}
                             className={`bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden ${
                                 isRowLayout ? 'flex flex-col sm:flex-row' : ''
                             }`}
@@ -163,7 +163,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                         <button
                                           onClick={async () => {
                                             try {
-                                              const res = await fetch(`/api/models/${model._id}/download`);
+                                              const res = await fetch(`/api/models/${model.id}/download`);
                                               const data = await res.json();
                                               if (data.downloadUrl) {
                                                 window.open(data.downloadUrl, '_blank');
@@ -214,7 +214,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                     </div>
                                     <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
                                       <button 
-                                        onClick={() => handleViewModel(model._id)}
+                                        onClick={() => handleViewModel(model.id)}
                                         className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                                       >
                                         <FaEye />
@@ -224,7 +224,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                         <button
                                           onClick={async () => {
                                             try {
-                                              const res = await fetch(`/api/models/${model._id}/download`);
+                                              const res = await fetch(`/api/models/${model.id}/download`);
                                               const data = await res.json();
                                               if (data.downloadUrl) {
                                                 window.open(data.downloadUrl, '_blank');

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import WithdrawalRequest from '../../../../lib/db/WithdrawalRequest';
-import User from '../../../../lib/db/User';
-import connect from '../../../../lib/db/connect';
+import { prisma } from '../../../../lib/db/prisma';
 
 export async function POST(request) {
   try {
@@ -14,11 +12,11 @@ export async function POST(request) {
         { status: 401 }
       );
     }
-
-    await connect();
     
     // Get the user from our database
-    const user = await User.findOne({ authId: supabaseUser.id });
+    const user = await prisma.user.findFirst({
+      where: { email: supabaseUser.email }
+    });
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -55,19 +53,19 @@ export async function POST(request) {
     }
 
     // Create new withdrawal request
-    const withdrawalRequest = new WithdrawalRequest({
-      userId: user._id, // Use the actual user's MongoDB ObjectId
-      paypalEmail,
-      amount,
-      status: 'pending'
+    const withdrawalRequest = await prisma.withdrawalRequest.create({
+      data: {
+        userId: user.id, // Use the actual user's Prisma ID
+        paypalEmail,
+        amount,
+        status: 'pending'
+      }
     });
 
-    await withdrawalRequest.save();
-
     return NextResponse.json(
-      { 
+      {
         message: 'Withdrawal request submitted successfully',
-        requestId: withdrawalRequest._id
+        requestId: withdrawalRequest.id
       },
       { status: 201 }
     );

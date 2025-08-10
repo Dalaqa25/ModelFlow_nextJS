@@ -61,7 +61,7 @@ export default function OtherComments({ requestId, onClose }) {
                 ) : (
                     comments.map((comment, idx) => (
                         <div
-                            key={comment._id}
+                            key={comment.id}
                             className={`w-full flex items-center my-2 px-4 mb-3 ${idx % 2 === 0 ? 'justify-start' : 'justify-end'}`}
                         >
                             <div className={`p-3 rounded-2xl bg-white max-w-[60%] ${idx % 2 === 0 ? '' : 'bg-purple-50'} break-words flex flex-col`}>
