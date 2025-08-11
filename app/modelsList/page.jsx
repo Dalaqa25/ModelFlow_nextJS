@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Search } from 'lucide-react';
 import ModelBox from '@/app/components/model/modelBox';
-import Footer from '../components/homeComponents/footer';
 
 export default function ModelsList() {
     const [search, setSearch] = useState("");
@@ -26,7 +25,6 @@ export default function ModelsList() {
                 </div>
                 <ModelBox search={search} />
             </div>
-            <Footer />
         </>
     )
 }
