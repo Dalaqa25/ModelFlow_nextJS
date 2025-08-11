@@ -2,7 +2,8 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
-import Navbar from "@/app/components/navbar";
+import NavbarController from "@/app/components/navbar/NavbarController";
+import LayoutWrapper from "@/app/components/navbar/LayoutWrapper";
 import NavigationLoader from "@/app/components/NavigationLoader";
 import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
@@ -28,8 +29,10 @@ export default function RootLayout({ children }) {
           <NavigationLoadingProvider>
             <SplashProvider>
               <AuthProvider>
-                {!isLoginOrSignUp &&  <Navbar/>}
-                {children}
+                {!isLoginOrSignUp &&  <NavbarController/>}
+                <LayoutWrapper>
+                  {children}
+                </LayoutWrapper>
                 <NavigationLoader />
               </AuthProvider>
             </SplashProvider>

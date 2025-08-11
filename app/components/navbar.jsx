@@ -9,7 +9,6 @@ import { BsClipboardCheck } from 'react-icons/bs';
 import { FiSend } from "react-icons/fi";
 import { FaDollarSign } from "react-icons/fa";
 import { MdPrivacyTip, MdDashboard } from "react-icons/md";
-
 import ProfilePic from "./profilePic";
 
 export default function Navbar() {
