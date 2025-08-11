@@ -14,9 +14,12 @@ export default function ModernLandingPage() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
-  const springConfig = { damping: 25, stiffness: 700 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [15, -15]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-15, 15]), springConfig);
+  const springConfig = { damping: 40, stiffness: 300 };
+  const lightSpringConfig = { damping: 50, stiffness: 200 };
+  
+  // Much more subtle 3D cube rotations
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [3, -3]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-3, 3]), springConfig);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -46,8 +49,20 @@ export default function ModernLandingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative pt-16">
       {/* Animated background elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <motion.div
+          style={{
+            x: useTransform(mouseX, [-0.5, 0.5], [-3, 3]),
+            y: useTransform(mouseY, [-0.5, 0.5], [-2, 2]),
+          }}
+          className="absolute top-20 left-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"
+        ></motion.div>
+        <motion.div
+          style={{
+            x: useTransform(mouseX, [-0.5, 0.5], [4, -4]),
+            y: useTransform(mouseY, [-0.5, 0.5], [2, -2]),
+          }}
+          className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"
+        ></motion.div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-purple-500/10 to-transparent rounded-full"></div>
       </div>
 
@@ -75,7 +90,10 @@ export default function ModernLandingPage() {
         ))}
       </div>
 
-      <div ref={containerRef} className="relative z-10 min-h-screen flex items-center justify-center px-6">
+      <div
+        ref={containerRef}
+        className="relative z-10 min-h-screen flex items-center justify-center px-6"
+      >
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <motion.div
