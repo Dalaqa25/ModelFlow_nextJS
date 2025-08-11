@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from "@/lib/supabase-auth-context";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import NavigationLink from "../../NavigationLink";
 import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
@@ -14,17 +14,21 @@ import {
     MdMenu,
     MdClose,
     MdChevronLeft,
-    MdChevronRight
+    MdChevronRight,
+    MdLogout,
+    MdKeyboardArrowDown
 } from "react-icons/md";
 
 export default function AuthorizedNavbar() {
     console.log("🔒 AuthorizedNavbar is currently displayed");
     
-    const { user } = useAuth();
+    const { user, signOut } = useAuth();
     const pathname = usePathname() || '/';
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [sidebarPinned, setSidebarPinned] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     // Load pinned state from localStorage on component mount
     useEffect(() => {
@@ -60,6 +64,29 @@ export default function AuthorizedNavbar() {
         setSidebarPinned(newPinnedState);
         setSidebarExpanded(newPinnedState);
     };
+
+    // Handle sign out
+    const handleSignOut = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Sign out error:', error);
+        }
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setUserDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Navigation routes with icons
     const navRoutes = [
@@ -101,13 +128,49 @@ export default function AuthorizedNavbar() {
 
                 {/* Right side - User info */}
                 <div className="ml-auto flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                            {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
-                        </div>
-                        <span className="text-sm text-gray-700">
-                            {user?.user_metadata?.name || user?.email || 'User'}
-                        </span>
+                    <div className="hidden sm:flex items-center relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                        >
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
+                            </div>
+                            <span className="text-sm text-gray-700">
+                                {user?.user_metadata?.name || user?.email || 'User'}
+                            </span>
+                            <MdKeyboardArrowDown
+                                className={`text-gray-400 transition-transform duration-200 ${
+                                    userDropdownOpen ? 'rotate-180' : ''
+                                }`}
+                                size={16}
+                            />
+                        </button>
+
+                        {/* User Dropdown Menu */}
+                        {userDropdownOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                <NavigationLink
+                                    href="/profile"
+                                    onClick={() => setUserDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    <MdPerson size={16} />
+                                    View Profile
+                                </NavigationLink>
+                                <hr className="my-1 border-gray-100" />
+                                <button
+                                    onClick={() => {
+                                        setUserDropdownOpen(false);
+                                        handleSignOut();
+                                    }}
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                                >
+                                    <MdLogout size={16} />
+                                    Sign Out
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
