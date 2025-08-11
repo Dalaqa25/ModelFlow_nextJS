@@ -20,7 +20,7 @@ export default function ModernUnauthorizedNavbar() {
         { href: '/', title: 'Home' },
         { href: '/modelsList', title: 'Models' },
         { href: '/plans', title: 'Plans' },
-        { href: '/requests', title: 'Requests' }
+        { href: '/requests', title: 'Community' }
     ];
 
     return (

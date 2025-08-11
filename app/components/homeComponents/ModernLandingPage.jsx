@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useRouter } from 'next/navigation';
+import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
 
 export default function ModernLandingPage() {
   const { user, isAuthenticated } = useAuth();
@@ -46,53 +47,10 @@ export default function ModernLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative pt-16">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <motion.div
-          style={{
-            x: useTransform(mouseX, [-0.5, 0.5], [-3, 3]),
-            y: useTransform(mouseY, [-0.5, 0.5], [-2, 2]),
-          }}
-          className="absolute top-20 left-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"
-        ></motion.div>
-        <motion.div
-          style={{
-            x: useTransform(mouseX, [-0.5, 0.5], [4, -4]),
-            y: useTransform(mouseY, [-0.5, 0.5], [2, -2]),
-          }}
-          className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"
-        ></motion.div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-purple-500/10 to-transparent rounded-full"></div>
-      </div>
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/30 rounded-full"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
-            }}
-            animate={{
-              y: [null, Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800)],
-              x: [null, Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200)],
-            }}
-            transition={{
-              duration: Math.random() * 20 + 10,
-              repeat: Infinity,
-              repeatType: "reverse",
-              ease: "linear",
-            }}
-          />
-        ))}
-      </div>
-
+    <UnifiedBackground variant="landing" showParticles={true} className="pt-16">
       <div
         ref={containerRef}
-        className="relative z-10 min-h-screen flex items-center justify-center px-6"
+        className="min-h-screen flex items-center justify-center px-6"
       >
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
@@ -247,6 +205,6 @@ export default function ModernLandingPage() {
           </motion.div>
         </div>
       </div>
-    </div>
+    </UnifiedBackground>
   );
 }

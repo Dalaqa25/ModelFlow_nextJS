@@ -9,6 +9,8 @@ import BasicTag from "@/app/components/plans/planTags/basicTag";
 import ProTag from "@/app/components/plans/planTags/proTag";
 import EnterpriseTag from "@/app/components/plans/planTags/enterpriseTag";
 import WithdrawConfirm from "./withdrawConfrim";
+import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function Profile() {
     const router = useRouter();
@@ -123,91 +125,94 @@ export default function Profile() {
 
     if (authLoading || loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
+            <UnifiedBackground variant="content" className="pt-16">
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-400"></div>
+                </div>
+            </UnifiedBackground>
         );
     }
 
     return (
-        <div className="min-h-screen mt-10 bg-gradient-to-b from-white to-blue-50 py-12 px-6">
-            <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-3xl p-8 relative">
-                {/* Floating Plan Tag (dynamic) */}
-                <div className="absolute top-6 right-6 z-10">
-                  {userData.subscription?.plan === 'professional' ? (
-                    <ProTag />
-                  ) : userData.subscription?.plan === 'enterprise' ? (
-                    <EnterpriseTag />
-                  ) : (
-                    <BasicTag />
-                  )}
-                </div>
-                {/* Profile Header */}
-                <div className="flex flex-col items-center text-center space-y-4">
-                    <img
-                        src={userData.profileImageUrl || "/default-image.png"}
-                        alt="User Avatar"
-                        className="w-28 h-28 rounded-full border-4 border-indigo-300 shadow-md object-cover"
-                    />
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">{userName}</h2>
-                        <p className="text-sm text-gray-500">@{userName.toLowerCase().replace(/\s+/g, '')}</p>
+        <UnifiedBackground variant="content" className="pt-16">
+            <div className="pt-24 pb-12 px-6">
+                <UnifiedCard variant="content" className="max-w-4xl mx-auto relative" padding="lg">
+                    {/* Floating Plan Tag (dynamic) */}
+                    <div className="absolute top-6 right-6 z-10">
+                      {userData.subscription?.plan === 'professional' ? (
+                        <ProTag />
+                      ) : userData.subscription?.plan === 'enterprise' ? (
+                        <EnterpriseTag />
+                      ) : (
+                        <BasicTag />
+                      )}
                     </div>
-                    <div className="flex justify-center gap-4">
-                        <button
-                            className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition"
-                            onClick={() => setShowEdit(true)}
-                        >
-                            Edit Profile
-                        </button>
-                        <button 
-                            onClick={handleSignOut}
-                            className="px-4 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
-                        >
-                            Sign Out
-                        </button>
+                    {/* Profile Header */}
+                    <div className="flex flex-col items-center text-center space-y-4">
+                        <img
+                            src={userData.profileImageUrl || "/default-image.png"}
+                            alt="User Avatar"
+                            className="w-28 h-28 rounded-full border-4 border-purple-400 shadow-md object-cover"
+                        />
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">{userName}</h2>
+                            <p className="text-sm text-gray-300">@{userName.toLowerCase().replace(/\s+/g, '')}</p>
+                        </div>
+                        <div className="flex justify-center gap-4">
+                            <button
+                                className="px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all duration-300 hover:scale-105"
+                                onClick={() => setShowEdit(true)}
+                            >
+                                Edit Profile
+                            </button>
+                            <button
+                                onClick={handleSignOut}
+                                className="px-4 py-2 text-sm bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 transition-all duration-300"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
-                </div>
 
                 {/* Stats Section */}
                 <div className="flex flex-col space-y-6 mt-10">
                     <div className="flex justify-around text-center">
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700">{userModels.length}</h3>
-                            <p className="text-sm text-gray-500">Models Uploaded</p>
+                            <h3 className="text-xl font-semibold text-white">{userModels.length}</h3>
+                            <p className="text-sm text-gray-300">Models Uploaded</p>
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700">
+                            <h3 className="text-xl font-semibold text-white">
                                 {userModels.filter(model => model.sold).length}
                             </h3>
-                            <p className="text-sm text-gray-500">Models Sold</p>
+                            <p className="text-sm text-gray-300">Models Sold</p>
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700">
+                            <h3 className="text-xl font-semibold text-white">
                                 ${((userData.totalEarnings || 0) / 100).toFixed(2)}
                             </h3>
-                            <p className="text-sm text-gray-500">Total Revenue</p>
+                            <p className="text-sm text-gray-300">Total Revenue</p>
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700 group relative">
+                            <h3 className="text-xl font-semibold text-white group relative">
                                 ${(availableBalance / 100).toFixed(2)}
-                                <span className="invisible group-hover:visible absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                <span className="invisible group-hover:visible absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-700 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
                                     Current available balance
                                 </span>
                             </h3>
-                            <p className="text-sm text-gray-500">Available Balance</p>
+                            <p className="text-sm text-gray-300">Available Balance</p>
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-gray-700">
+                            <h3 className="text-xl font-semibold text-white">
                                 ${((userData.withdrawnAmount || 0) / 100).toFixed(2)}
                             </h3>
-                            <p className="text-sm text-gray-500">Withdrawn</p>
+                            <p className="text-sm text-gray-300">Withdrawn</p>
                         </div>
                     </div>
                     <div className="flex justify-center">
                         <button
                             onClick={() => setShowWithdrawDialog(true)}
-                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                            className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-300 hover:scale-105"
                         >
                             Withdraw Funds
                         </button>
@@ -216,7 +221,7 @@ export default function Profile() {
 
                 {/* Earnings Chart Section */}
                 <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Earnings Over Time</h4>
+                    <h4 className="text-lg font-semibold text-white mb-4">Earnings Over Time</h4>
                     <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer width="100%" height={300}>
                             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -248,34 +253,34 @@ export default function Profile() {
 
                 {/* About Me Section */}
                 <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-2">About Me</h4>
-                    <p className="text-gray-600 text-base">
+                    <h4 className="text-lg font-semibold text-white mb-2">About Me</h4>
+                    <p className="text-gray-300 text-base">
                         {userData.aboutMe || "No description provided yet."}
                     </p>
                 </div>
 
                 {/* Contact Section */}
                 <div className="mt-12">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-4">Contact</h4>
+                    <h4 className="text-lg font-semibold text-white mb-4">Contact</h4>
                     <div className="flex flex-col sm:flex-row gap-4 sm:gap-10">
                         {userData.websiteLink && (
                             <div>
-                                <span className="font-medium text-gray-600">Website: </span>
+                                <span className="font-medium text-gray-300">Website: </span>
                                 <a
                                     href={userData.websiteLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:underline"
+                                    className="text-purple-400 hover:text-purple-300 hover:underline transition-colors duration-200"
                                 >
                                     {userData.websiteLink}
                                 </a>
                             </div>
                         )}
                         <div>
-                            <span className="font-medium text-gray-600">Email: </span>
+                            <span className="font-medium text-gray-300">Email: </span>
                             <a
                                 href={`mailto:${userData.contactEmail || userData.email}`}
-                                className="text-indigo-600 hover:underline"
+                                className="text-purple-400 hover:text-purple-300 hover:underline transition-colors duration-200"
                             >
                                 {userData.contactEmail || userData.email}
                             </a>
@@ -299,7 +304,8 @@ export default function Profile() {
                     onConfirm={handleWithdrawal}
                     userData={userData}
                 />
+                </UnifiedCard>
             </div>
-        </div>
+        </UnifiedBackground>
     )
 }

@@ -62,12 +62,12 @@ export default function PurchasedModels({ isRowLayout }) {
         return (
             <div className="flex flex-col mt-15 mb-15">
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Purchased Models</h2>   
+                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white`}>Purchased Models</h2>
                 </div>
                 <div className="text-center py-10">
                     <div className="animate-pulse flex flex-col items-center">
-                        <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
-                        <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                        <div className="h-8 w-32 bg-slate-700/50 rounded mb-4"></div>
+                        <div className="h-4 w-48 bg-slate-700/50 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -77,10 +77,10 @@ export default function PurchasedModels({ isRowLayout }) {
     if (error) {
         return (
             <div className="text-center py-10">
-                <p className="text-red-500 text-lg">Error loading models: {error.message}</p>
-                <button 
+                <p className="text-red-300 text-lg">Error loading models: {error.message}</p>
+                <button
                     onClick={() => refetch()}
-                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                 >
                     Try Again
                 </button>
@@ -91,17 +91,17 @@ export default function PurchasedModels({ isRowLayout }) {
     return (
         <div className="flex flex-col mt-15 mb-15">
             <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Purchased Models</h2>   
+                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white`}>Purchased Models</h2>
             </div>
             {models.length === 0 ? (
-                <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="text-center py-10 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                     <div className="max-w-md mx-auto">
                         <div className="text-6xl mb-4">📦</div>
-                        <p className="text-gray-600 text-lg font-medium">No Purchased Models Yet</p>
-                        <p className="text-gray-400 mt-2">Explore our marketplace to find amazing models!</p>
-                        <button 
+                        <p className="text-white text-lg font-medium">No Purchased Models Yet</p>
+                        <p className="text-gray-300 mt-2">Explore our marketplace to find amazing models!</p>
+                        <button
                             onClick={() => router.push('/modelsList')}
-                            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                         >
                             Browse Models
                         </button>
@@ -110,9 +110,9 @@ export default function PurchasedModels({ isRowLayout }) {
             ) : (
                 <div className={`grid ${isRowLayout ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-6'}`}>
                     {currentModels.map(model => (
-                        <div 
+                        <div
                             key={model.id}
-                            className={`bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden ${
+                            className={`bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg hover:shadow-purple-500/25 transition-all duration-200 overflow-hidden ${
                                 isRowLayout ? 'flex flex-col sm:flex-row' : ''
                             }`}
                         >
@@ -132,24 +132,24 @@ export default function PurchasedModels({ isRowLayout }) {
                                         <DefaultModelImage size={isRowLayout ? "small" : "medium"} />
                                     </div>
                                 )}
-                                <div className="absolute top-2 right-2 bg-purple-600 text-white px-2 py-1 rounded-lg text-sm font-medium">
-                                                                            ${(model.price / 100).toFixed(2)}
+                                <div className="absolute top-2 right-2 bg-purple-500 text-white px-2 py-1 rounded-lg text-sm font-medium">
+                                    ${(model.price / 100).toFixed(2)}
                                 </div>
                             </div>
                             
                             <div className={`p-4 ${isRowLayout ? 'flex-1' : ''}`}>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">{model.name}</h3>
+                                <h3 className="text-xl font-semibold text-white mb-2">{model.name}</h3>
                                 {model.archived && (
-                                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded mb-2">
+                                  <span className="inline-block bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-2 py-1 rounded mb-2">
                                     Archived
                                   </span>
                                 )}
                                 <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-gray-600">
+                                    <div className="flex items-center text-gray-300">
                                         <FaUser className="mr-2" />
                                         <span>{model.authorEmail || "Unknown Author"}</span>
                                     </div>
-                                    <div className="flex items-center text-gray-600">
+                                    <div className="flex items-center text-gray-300">
                                         <FaCalendarAlt className="mr-2" />
                                         <span>Purchased {model.purchasedAt ? new Date(model.purchasedAt).toLocaleDateString() : "Unknown date"}</span>
                                     </div>
@@ -174,14 +174,14 @@ export default function PurchasedModels({ isRowLayout }) {
                                               alert('Error downloading: ' + err.message);
                                             }
                                           }}
-                                          className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/50 text-gray-300 border border-slate-600/50 px-4 py-2 rounded-lg hover:bg-slate-600/50 transition-colors"
                                         >
                                           <FaDownload />
                                           <span>Download</span>
                                         </button>
                                       ) : (
                                         <button
-                                          className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
+                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/30 text-gray-500 border border-slate-600/30 px-4 py-2 rounded-lg cursor-not-allowed"
                                           disabled
                                           title="This model is not available for download."
                                         >
@@ -190,22 +190,22 @@ export default function PurchasedModels({ isRowLayout }) {
                                         </button>
                                       )}
                                     </div>
-                                    <div className="text-xs text-purple-700 mt-2">
+                                    <div className="text-xs text-purple-300 mt-2">
                                       This model has been archived by the author and may be deleted from the publisher at any time. Download now to keep a copy.
                                     </div>
                                   </>
                                 ) : (
                                   <>
                                     <div className="mb-4">
-                                      <div className="flex items-center text-gray-600 mb-2">
+                                      <div className="flex items-center text-gray-300 mb-2">
                                           <FaTag className="mr-2" />
                                           <span className="font-medium">Tags:</span>
                                       </div>
                                       <div className="flex flex-wrap gap-2">
                                           {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
-                                              <span 
-                                                  key={idx} 
-                                                  className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-sm"
+                                              <span
+                                                  key={idx}
+                                                  className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-1 rounded-md text-sm"
                                               >
                                                   {tag}
                                               </span>
@@ -215,7 +215,7 @@ export default function PurchasedModels({ isRowLayout }) {
                                     <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
                                       <button 
                                         onClick={() => handleViewModel(model.id)}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                                       >
                                         <FaEye />
                                         <span>View Details</span>
@@ -235,14 +235,14 @@ export default function PurchasedModels({ isRowLayout }) {
                                               alert('Error downloading: ' + err.message);
                                             }
                                           }}
-                                          className="flex-1 flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/50 text-gray-300 border border-slate-600/50 px-4 py-2 rounded-lg hover:bg-slate-600/50 transition-colors"
                                         >
                                           <FaDownload />
                                           <span>Download</span>
                                         </button>
                                       ) : (
                                         <button
-                                          className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed"
+                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/30 text-gray-500 border border-slate-600/30 px-4 py-2 rounded-lg cursor-not-allowed"
                                           disabled
                                           title="This model is not available for download."
                                         >
@@ -271,7 +271,7 @@ export default function PurchasedModels({ isRowLayout }) {
                             });
                         }}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Previous
                     </button>
@@ -284,9 +284,9 @@ export default function PurchasedModels({ isRowLayout }) {
                                     setTimeout(scrollToTop, 0);
                                 }}
                                 className={`w-10 h-10 rounded-lg ${
-                                    currentPage === i + 1 
-                                        ? 'bg-purple-600 text-white' 
-                                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                    currentPage === i + 1
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50'
                                 } transition-colors`}
                             >
                                 {i + 1}
@@ -302,7 +302,7 @@ export default function PurchasedModels({ isRowLayout }) {
                             });
                         }}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Next
                     </button>

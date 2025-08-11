@@ -101,23 +101,23 @@ export default function AuthorizedNavbar() {
     return (
         <>
             {/* Top Bar */}
-            <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-40 flex items-center px-4">
+            <header className="fixed top-0 left-0 right-0 h-16 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 z-40 flex items-center px-4 shadow-lg">
                 <div className="flex items-center gap-4">
                     {/* Mobile menu button */}
-                    <button 
+                    <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                        className="lg:hidden p-2 rounded-md hover:bg-slate-800/50 text-purple-400"
                     >
                         {mobileMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
                     </button>
                     
                     {/* Logo */}
                     <div className="flex items-center gap-3">
-                        <img 
-                            src="/3dcube.png" 
-                            alt="3D Cube Logo" 
-                            width={32} 
-                            height={32} 
+                        <img
+                            src="/3dcube.png"
+                            alt="3D Cube Logo"
+                            width={32}
+                            height={32}
                             className="flex-shrink-0"
                         />
                         
@@ -131,16 +131,16 @@ export default function AuthorizedNavbar() {
                     <div className="hidden sm:flex items-center relative" ref={dropdownRef}>
                         <button
                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 transition-colors duration-200"
                         >
-                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                                 {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
                             </div>
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-white">
                                 {user?.user_metadata?.name || user?.email || 'User'}
                             </span>
                             <MdKeyboardArrowDown
-                                className={`text-gray-400 transition-transform duration-200 ${
+                                className={`text-gray-300 transition-transform duration-200 ${
                                     userDropdownOpen ? 'rotate-180' : ''
                                 }`}
                                 size={16}
@@ -149,22 +149,22 @@ export default function AuthorizedNavbar() {
 
                         {/* User Dropdown Menu */}
                         {userDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-slate-800/95 backdrop-blur-md rounded-lg shadow-xl border border-slate-700/50 py-2 z-50">
                                 <NavigationLink
                                     href="/profile"
                                     onClick={() => setUserDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-slate-700/50 transition-colors"
                                 >
                                     <MdPerson size={16} />
                                     View Profile
                                 </NavigationLink>
-                                <hr className="my-1 border-gray-100" />
+                                <hr className="my-1 border-slate-600/50" />
                                 <button
                                     onClick={() => {
                                         setUserDropdownOpen(false);
                                         handleSignOut();
                                     }}
-                                    className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/20 transition-colors w-full text-left"
                                 >
                                     <MdLogout size={16} />
                                     Sign Out
@@ -177,9 +177,9 @@ export default function AuthorizedNavbar() {
 
             {/* Sidebar */}
             <aside
-                className={`fixed left-0 top-16 bottom-0 bg-gray-50 border-r border-gray-200 z-30 transition-all duration-300 ease-in-out ${
+                className={`fixed left-0 top-16 bottom-0 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50 z-30 transition-all duration-300 ease-in-out ${
                     sidebarExpanded ? 'w-64' : 'w-16'
-                } hidden lg:flex lg:flex-col`}
+                } hidden lg:flex lg:flex-col shadow-lg`}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
@@ -191,9 +191,9 @@ export default function AuthorizedNavbar() {
                                 key={href}
                                 href={href}
                                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                                    isActive 
-                                        ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-500' 
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                    isActive
+                                        ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border-l-4 border-purple-400 shadow-sm'
+                                        : 'text-gray-300 hover:bg-slate-800/50 hover:text-purple-400'
                                 }`}
                             >
                                 <Icon size={20} className="flex-shrink-0" />
@@ -208,11 +208,11 @@ export default function AuthorizedNavbar() {
                 </nav>
 
                 {/* Sidebar Toggle Button */}
-                <div className="p-4 border-t border-gray-200">
+                <div className="p-4 border-t border-slate-700/50">
                     <button
                         onClick={toggleSidebarPin}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 w-full ${
-                            sidebarPinned ? 'bg-purple-50 text-purple-700' : ''
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:bg-slate-800/50 hover:text-purple-400 w-full ${
+                            sidebarPinned ? 'bg-slate-800/50 text-purple-300' : ''
                         }`}
                         title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar'}
                     >

@@ -78,7 +78,7 @@ export default function ModelBox({ search = "" }) {
                                     <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                                 </svg>
                             </div>
-                            <h1 className="text-xl font-extrabold text-gray-600 drop-shadow-lg tracking-wide animate-pulse">
+                            <h1 className="text-xl font-extrabold text-white drop-shadow-lg tracking-wide animate-pulse">
                                 Loading models...
                             </h1>
                         </div>
@@ -86,11 +86,11 @@ export default function ModelBox({ search = "" }) {
 
                     {error && (
                         <div className="w-full flex justify-center items-center min-h-[200px]">
-                            <div className="text-red-500 text-center">
+                            <div className="text-red-400 text-center">
                                 <p className="text-lg font-semibold">{error.message || 'Failed to load models'}</p>
-                                <button 
-                                    onClick={() => window.location.reload()} 
-                                    className="mt-4 px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="mt-4 px-4 py-2 bg-purple-500/20 border border-purple-500/50 text-purple-300 rounded-lg hover:bg-purple-500/30 transition-colors"
                                 >
                                     Try Again
                                 </button>
@@ -100,15 +100,15 @@ export default function ModelBox({ search = "" }) {
 
                     {!isLoading && !error && currentModels.length === 0 && (
                         <div className="w-full flex justify-center items-center min-h-[200px]">
-                            <div className="text-gray-500 text-center">
+                            <div className="text-gray-300 text-center">
                                 <p className="text-lg">No models found</p>
                                 <p className="text-sm mt-2">Try adjusting your search or filters</p>
-                                <button 
+                                <button
                                     onClick={() => {
                                         setSelectedTag(null);
                                         setPrice([0, 2000]);
-                                    }} 
-                                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                    }}
+                                    className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                                 >
                                     Clear Filters
                                 </button>
@@ -119,13 +119,13 @@ export default function ModelBox({ search = "" }) {
                     {!isLoading && !error && currentModels.length > 0 && (
                         <>
                             {currentModels.map(model => (
-                                <NavigationLink key={model.id} href={`/modelsList/${model.id}`} className='shadow-md p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-lg border-2 border-transparent hover:border-purple-300 transition-all max-w-[900px]'>
+                                <NavigationLink key={model.id} href={`/modelsList/${model.id}`} className='bg-slate-800/90 backdrop-blur-md border border-slate-700/50 shadow-2xl p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-purple-500/25 hover:border-purple-500/50 transition-all max-w-[900px]'>
                                     <div className='p-4 flex flex-col gap-5'>
                                         <div className='flex gap-4'>
                                             {model.imgUrl ? (
-                                                <img 
-                                                    src={model.imgUrl} 
-                                                    alt={model.name} 
+                                                <img
+                                                    src={model.imgUrl}
+                                                    alt={model.name}
                                                     className='w-14 h-14 sm:w-20 sm:h-20 rounded-lg object-cover'
                                                     onError={(e) => {
                                                         e.target.onerror = null;
@@ -139,8 +139,8 @@ export default function ModelBox({ search = "" }) {
                                                 </div>
                                             )}
                                             <div className='flex flex-col gap-1'>
-                                                <h2 className='text-2xl font-bold'>{model.name}</h2>
-                                                <span className='flex gap-1 text-gray-400 text-sm font-light'>
+                                                <h2 className='text-2xl font-bold text-white'>{model.name}</h2>
+                                                <span className='flex gap-1 text-gray-300 text-sm font-light'>
                                                     author: <p>{model.authorEmail}</p>
                                                 </span>
                                             </div>
@@ -153,12 +153,12 @@ export default function ModelBox({ search = "" }) {
                                                 </span>
                                             ))}
                                         </div>
-                                        <div className='flex items-center gap-4 font-light text-sm text-gray-600'>
+                                        <div className='flex items-center gap-4 font-light text-sm text-gray-300'>
                                             <p>Uploaded: <span>{new Date(model.createdAt).toLocaleDateString()}</span></p>
                                             <p className='flex items-center gap-1'><FiDownload/><span>{model.downloads}</span></p>
                                             <p className='flex items-center gap-1'><AiOutlineHeart/><span>{model.likes}</span></p>
                                         </div>
-                                        <span className='flex gap-1 text-base font-semibold text-purple-600'>
+                                        <span className='flex gap-1 text-base font-semibold text-purple-400'>
                                             Price: <span className='flex'>$<p>{(model.price / 100).toFixed(2)}</p></span>
                                         </span>
                                     </div>
@@ -172,7 +172,7 @@ export default function ModelBox({ search = "" }) {
                                             scrollToModelListTop();
                                         }}
                                         disabled={currentPage === 1}
-                                        className={`${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'} bg-gray-200 px-3 py-1 rounded`}
+                                        className={`${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-600/50'} bg-slate-700/50 border border-slate-600/50 text-gray-300 px-3 py-1 rounded`}
                                     >
                                         Previous
                                     </button>
@@ -183,7 +183,7 @@ export default function ModelBox({ search = "" }) {
                                                 setCurrentPage(i + 1);
                                                 scrollToModelListTop();
                                             }}
-                                            className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                                            className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white border border-purple-500' : 'bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50'}`}
                                         >
                                             {i + 1}
                                         </button>
@@ -194,7 +194,7 @@ export default function ModelBox({ search = "" }) {
                                             scrollToModelListTop();
                                         }}
                                         disabled={currentPage === totalPages}
-                                        className={`${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'} bg-gray-200 px-3 py-1 rounded`}
+                                        className={`${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-600/50'} bg-slate-700/50 border border-slate-600/50 text-gray-300 px-3 py-1 rounded`}
                                     >
                                         Next
                                     </button>

@@ -44,8 +44,8 @@ export default function LayoutWrapper({ children }) {
     // For authenticated users, add padding for sidebar and top bar
     if (isAuthenticated) {
         return (
-            <div className={`pt-16 transition-all duration-300 ${sidebarPinned ? 'lg:pl-64' : 'lg:pl-16'}`}>
-                <main className="min-h-screen bg-gray-50">
+            <div className={`transition-all duration-300 ${sidebarPinned ? 'lg:pl-64' : 'lg:pl-16'}`}>
+                <main className="min-h-screen">
                     {children}
                 </main>
             </div>

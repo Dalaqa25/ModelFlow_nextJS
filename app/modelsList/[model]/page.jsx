@@ -12,6 +12,8 @@ import { FaHeart, FaRegHeart, FaPlay, FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import ConfirmationDialog from "@/app/components/confirmationDialog/ConfirmationDialog";
 import { useAuth } from "@/lib/supabase-auth-context";
+import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 import { createCheckoutUrl } from "@/lib/lemon/server";
 
@@ -103,30 +105,35 @@ export default function Model(props) {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
-                <svg className="animate-spin h-12 w-12 text-purple-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                <span className="text-lg text-purple-500 font-semibold">Loading...</span>
-            </div>
+            <UnifiedBackground variant="content" className="pt-16">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+                    <svg className="animate-spin h-12 w-12 text-purple-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    <span className="text-lg text-white font-semibold">Loading...</span>
+                </div>
+            </UnifiedBackground>
         );
     }
 
     if (!model) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-                </svg>
-                <span className="text-lg text-red-500 font-semibold">Sorry, this model could not be found.</span>
-                <span className="text-gray-500 mt-2">It may have been removed or the link is incorrect.</span>
-            </div>
+            <UnifiedBackground variant="content" className="pt-16">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+                    </svg>
+                    <span className="text-lg text-red-300 font-semibold">Sorry, this model could not be found.</span>
+                    <span className="text-gray-300 mt-2">It may have been removed or the link is incorrect.</span>
+                </div>
+            </UnifiedBackground>
         );
     }
 
     return (
-        <section className='mt-10 sm:mt-17 w-[90%] sm:w-[70%] max-w-[1500px] mx-auto px-2 sm:px-6'>
+        <UnifiedBackground variant="content" className="pt-16">
+            <section className='pt-24 pb-12 w-[90%] sm:w-[70%] max-w-[1500px] mx-auto px-2 sm:px-6'>
             {/* header section */}
             <div className='flex flex-col sm:flex-row gap-4 sm:gap-8'>
                 <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 rounded-xl overflow-hidden">
@@ -148,14 +155,14 @@ export default function Model(props) {
                     )}
                 </div>
                 <div className='flex flex-col gap-2 justify-center items-center sm:items-start w-full sm:gap-5'>
-                    <h1 className='text-xl sm:text-2xl md:text-4xl lg:text-5xl font-semibold text-center sm:text-left'>
+                    <h1 className='text-xl sm:text-2xl md:text-4xl lg:text-5xl font-semibold text-center sm:text-left text-white'>
                         {model.name}
                     </h1>
                     <div className='flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0'>
-                        <p className='font-light text-gray-400 text-xs sm:text-sm md:text-base lg:text-lg text-center sm:text-left'>
-                            author: <span 
+                        <p className='font-light text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg text-center sm:text-left'>
+                            author: <span
                                 onClick={() => router.push(`/profile/${model.authorEmail || model.author?.name}`)}
-                                className='hover:underline cursor-pointer'
+                                className='hover:underline cursor-pointer text-purple-300 hover:text-purple-200'
                             >
                                 {model.authorEmail || model.author?.name}
                             </span>
@@ -164,14 +171,14 @@ export default function Model(props) {
                             <button
                                 onClick={handleLike}
                                 disabled={!isAuthenticated}
-                                className={`flex items-center gap-1.5 ${isAuthenticated ? 'text-gray-500 hover:text-purple-500' : 'text-gray-400 cursor-not-allowed'} transition-colors`}
+                                className={`flex items-center gap-1.5 ${isAuthenticated ? 'text-gray-300 hover:text-purple-400' : 'text-gray-500 cursor-not-allowed'} transition-colors`}
                                 title={!isAuthenticated ? "Please sign in to like models" : ""}
                             >
                                 <FaRegHeart />
                                 <span>{likeCount}</span>
                             </button>
                             <span className='text-gray-400'>•</span>
-                            <p className='text-gray-500 text-sm'>Created at {new Date(model.createdAt).toLocaleDateString()}</p>
+                            <p className='text-gray-300 text-sm'>Created at {new Date(model.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
                 </div>
@@ -180,7 +187,7 @@ export default function Model(props) {
             <div className='flex flex-col sm:flex-row justify-between gap-4 sm:gap-0 w-full sm:w-[100%] mx-auto my-6 sm:mb-10'>
                 <div className='flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start'>
                     {model.tags.map((tag, index) => (
-                        <p key={index} className='px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium border border-purple-100 hover:bg-purple-100 transition-colors text-center min-w-[80px] flex items-center justify-center'>
+                        <p key={index} className='px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-lg text-sm font-medium border border-purple-500/30 hover:bg-purple-500/30 transition-colors text-center min-w-[80px] flex items-center justify-center'>
                             {tag}
                         </p>
                     ))}
@@ -197,8 +204,8 @@ export default function Model(props) {
                         disabled={!isAuthenticated}
                         className={`group w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 shadow-md ${
                             isAuthenticated
-                                ? 'text-white button btn-primary hover:bg-purple-700'
-                                : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                ? 'text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                                : 'text-gray-400 bg-slate-700/50 cursor-not-allowed'
                         }`}
                         title={!isAuthenticated ? "Please sign in to test models" : "Test this model"}
                     >
@@ -206,17 +213,17 @@ export default function Model(props) {
                         Test Model
                     </button>
                     {isAuthor ? (
-                        <button 
+                        <button
                             disabled
-                            className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                            className='w-full sm:w-auto text-gray-400 bg-slate-700/50 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
                             title="You are the author of this model."
                         >
                             Your Model
                         </button>
                     ) : isOwned ? (
-                        <button 
+                        <button
                             disabled
-                            className='w-full sm:w-auto text-gray-400 button bg-gray-100 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
+                            className='w-full sm:w-auto text-gray-400 bg-slate-700/50 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl cursor-not-allowed'
                             title="You have already purchased this model."
                         >
                             Already Purchased
@@ -225,7 +232,7 @@ export default function Model(props) {
                         <button
                             onClick={handlePurchase}
                             disabled={!isAuthenticated || !checkoutURL}
-                            className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-black button bg-white shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${(!isAuthenticated || !checkoutURL) ? 'cursor-not-allowed text-gray-400 bg-gray-100' : ''}`}
+                            className={`group w-full sm:w-auto flex items-center justify-center gap-2 text-white bg-slate-800/80 border border-slate-600/50 shadow px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl hover:bg-slate-700/80 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 ${(!isAuthenticated || !checkoutURL) ? 'cursor-not-allowed text-gray-400 bg-slate-700/50' : ''}`}
                             title={
                                 !isAuthenticated
                                     ? "Please sign in to purchase models"
@@ -257,5 +264,6 @@ export default function Model(props) {
                 description={`Are you sure you want to purchase ${model.name}? This action will redirect you to the payment page.`}
             />
         </section>
+        </UnifiedBackground>
     );
 }

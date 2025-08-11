@@ -80,27 +80,27 @@ export default function BreadcrumbNavigation() {
 
     if (breadcrumbs.length <= 1) {
         return (
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-400">
                 <span>/</span>
-                <span className="font-medium text-gray-900">Dashboard</span>
+                <span className="font-medium text-white">Dashboard</span>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center gap-2 text-gray-600 overflow-x-auto">
+        <div className="flex items-center gap-2 text-gray-300 overflow-x-auto">
             {breadcrumbs.map((crumb, index) => (
                 <div key={crumb.href} className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-gray-400">/</span>
+                    <span className="text-gray-500">/</span>
                     {crumb.isClickable && index < breadcrumbs.length - 1 ? (
                         <NavigationLink
                             href={crumb.href}
-                            className="text-gray-600 hover:text-purple-600 transition-colors duration-200 font-medium"
+                            className="text-gray-300 hover:text-purple-400 transition-colors duration-200 font-medium"
                         >
                             {crumb.label}
                         </NavigationLink>
                     ) : (
-                        <span className={`font-medium ${index === breadcrumbs.length - 1 ? 'text-gray-900' : 'text-gray-600'}`}>
+                        <span className={`font-medium ${index === breadcrumbs.length - 1 ? 'text-white' : 'text-gray-300'}`}>
                             {crumb.label}
                         </span>
                     )}

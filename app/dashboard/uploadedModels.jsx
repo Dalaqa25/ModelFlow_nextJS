@@ -108,11 +108,11 @@ export default function UploadedModels({ isRowLayout }) {
     if (isLoading) {
         return ( 
             <div className="flex flex-col mt-15 mb-15">
-                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800 mb-8`}>Uploaded Models</h2>   
+                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white mb-8`}>Uploaded Models</h2>
                 <div className="text-center py-10">
                     <div className="animate-pulse flex flex-col items-center">
-                        <div className="h-8 w-32 bg-gray-200 rounded mb-4"></div>
-                        <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                        <div className="h-8 w-32 bg-slate-700/50 rounded mb-4"></div>
+                        <div className="h-4 w-48 bg-slate-700/50 rounded"></div>
                     </div>
                 </div>
             </div>
@@ -122,10 +122,10 @@ export default function UploadedModels({ isRowLayout }) {
     if (error) {
         return (
             <div className="text-center py-10">
-                <p className="text-red-500 text-lg">Error loading models: {error.message}</p>
-                <button 
+                <p className="text-red-300 text-lg">Error loading models: {error.message}</p>
+                <button
                     onClick={() => refetch()}
-                    className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                 >
                     Try Again
                 </button>
@@ -151,20 +151,20 @@ export default function UploadedModels({ isRowLayout }) {
                 {/* Storage Usage Indicator */}
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">Storage used</span>
-                        <span className="text-sm font-medium text-gray-500">
+                        <span className="text-sm font-medium text-white">Storage used</span>
+                        <span className="text-sm font-medium text-gray-300">
                             {totalStorageUsedMB < 0.01 ? `${(totalStorageUsedMB * 1024).toFixed(1)}KB` : `${totalStorageUsedMB.toFixed(2)}MB`} / {storageCapMB}MB
                         </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div className="bg-purple-600 h-3 rounded-full" style={{ width: `${storagePercent}%` }}></div>
+                    <div className="w-full bg-slate-700/50 rounded-full h-3">
+                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full" style={{ width: `${storagePercent}%` }}></div>
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-gray-800`}>Uploaded Models</h2>   
+                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white`}>Uploaded Models</h2>
                     <button
                         onClick={() => setUploadedModels(true)}
-                        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm font-medium"
                     >
                         <FiPlus size={20} />
                         <span>Upload Model</span>
@@ -179,11 +179,11 @@ export default function UploadedModels({ isRowLayout }) {
                     }}
                 />
                 {models.length === 0 ? (
-                    <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div className="text-center py-10 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                         <div className="max-w-md mx-auto">
                             <div className="text-6xl mb-4">🚀</div>
-                            <p className="text-gray-600 text-lg font-medium">No Models Uploaded Yet</p>
-                            <p className="text-gray-400 mt-2">Click the "Upload Model" button to share your first creation!</p>
+                            <p className="text-white text-lg font-medium">No Models Uploaded Yet</p>
+                            <p className="text-gray-300 mt-2">Click the "Upload Model" button to share your first creation!</p>
                         </div>
                     </div>
                 ) : (
@@ -191,7 +191,7 @@ export default function UploadedModels({ isRowLayout }) {
                         {currentModels.map(model => (
                             <div 
                                 key={model.id}
-                                className={`bg-white rounded-xl shadow-md border border-gray-100 transition-shadow duration-200 overflow-hidden ${
+                                className={`bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-200 overflow-hidden ${
                                     isRowLayout ? 'flex p-4 items-center gap-4' : 'p-4'
                                 }`}
                             >
@@ -221,38 +221,38 @@ export default function UploadedModels({ isRowLayout }) {
                                 </div>
                                 
                                 <div className={`flex flex-col ${isRowLayout ? 'flex-1 justify-center' : 'mt-4'}`}>
-                                    <h3 className={`font-semibold text-gray-800 ${isRowLayout ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>{model.name}</h3>
+                                    <h3 className={`font-semibold text-white ${isRowLayout ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>{model.name}</h3>
                                     
                                     {model.status === 'pending' && (
-                                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                            <p className="text-yellow-700 text-sm flex items-center gap-2">
-                                                <FaExclamationTriangle className="text-yellow-500" />
+                                        <div className="mb-3 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                                            <p className="text-yellow-300 text-sm flex items-center gap-2">
+                                                <FaExclamationTriangle className="text-yellow-400" />
                                                 This model is currently under review. It will be visible to others once approved.
                                             </p>
                                         </div>
                                     )}
 
-                                    <div className="space-y-1 text-sm text-gray-600 mb-2">
+                                    <div className="space-y-1 text-sm text-gray-300 mb-2">
                                         <div className="flex items-center">
-                                            <FaUser className="mr-2 text-gray-500" />
+                                            <FaUser className="mr-2 text-gray-400" />
                                             <span>{model.authorEmail}</span>
                                         </div>
                                         <div className="flex items-center">
-                                            <FaCalendarAlt className="mr-2 text-gray-500" />
+                                            <FaCalendarAlt className="mr-2 text-gray-400" />
                                             <span>Uploaded {new Date(model.createdAt).toLocaleDateString()}</span>
                                         </div>
                                     </div>
 
                                     <div className="mb-4">
-                                        <div className="flex items-center text-gray-600 mb-1">
-                                            <FaTag className="mr-2 text-gray-500" />
+                                        <div className="flex items-center text-gray-300 mb-1">
+                                            <FaTag className="mr-2 text-gray-400" />
                                             <span className="font-medium">Tags:</span>
                                         </div>
                                         <div className="flex flex-wrap gap-1.5">
                                             {model.tags.map((tag, idx) => (
-                                                <span 
-                                                    key={idx} 
-                                                    className="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-medium"
+                                                <span
+                                                    key={idx}
+                                                    className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-full text-xs font-medium"
                                                 >
                                                     {tag.toUpperCase()}
                                                 </span>
@@ -263,8 +263,8 @@ export default function UploadedModels({ isRowLayout }) {
                                     <div className={`flex ${isRowLayout ? 'flex-col gap-2' : 'flex-col gap-3'} sm:flex-row mt-auto`}>
                                         <button 
                                             onClick={() => !model.status || model.status !== 'pending' ? handleViewModel(model.id) : null}
-                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors 
-                                                ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-purple-700 text-white hover:bg-purple-800'}`}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors
+                                                ${model.status === 'pending' ? 'bg-slate-700/30 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'}`}
                                             disabled={model.status === 'pending'}
                                         >
                                             <FaEye />
@@ -272,8 +272,8 @@ export default function UploadedModels({ isRowLayout }) {
                                         </button>
                                         <button 
                                             onClick={() => model.status !== 'pending' ? handleArchiveClick(model.id, model.name) : null}
-                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors border 
-                                                ${model.status === 'pending' ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'}`}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors border
+                                                ${model.status === 'pending' ? 'bg-slate-700/30 text-gray-500 border-slate-600/30 cursor-not-allowed' : 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30'}`}
                                             disabled={model.status === 'pending'}
                                         >
                                             <FaArchive />
@@ -297,7 +297,7 @@ export default function UploadedModels({ isRowLayout }) {
                                 });
                             }}
                             disabled={currentPage === 1}
-                            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Previous
                         </button>
@@ -310,9 +310,9 @@ export default function UploadedModels({ isRowLayout }) {
                                         setTimeout(scrollToTop, 0);
                                     }}
                                     className={`w-10 h-10 rounded-lg ${
-                                        currentPage === i + 1 
-                                            ? 'bg-purple-600 text-white' 
-                                            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                        currentPage === i + 1
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50'
                                     } transition-colors`}
                                 >
                                     {i + 1}
@@ -328,7 +328,7 @@ export default function UploadedModels({ isRowLayout }) {
                                 });
                             }}
                             disabled={currentPage === totalPages}
-                            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600/50 text-gray-300 hover:bg-slate-600/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Next
                         </button>

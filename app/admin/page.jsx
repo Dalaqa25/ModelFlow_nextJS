@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../lib/supabase-auth-context';
+import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function AdminPage() {
     const router = useRouter();
@@ -113,71 +115,77 @@ export default function AdminPage() {
     };
 
     if (authLoading || loading) {
-        return <div>Loading...</div>;
+        return (
+            <UnifiedBackground variant="content" className="pt-16">
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-400"></div>
+                </div>
+            </UnifiedBackground>
+        );
     }
 
     // Show admin panel if we have successfully loaded (no redirect occurred)
     if (!authLoading && !loading) {
         return (
-            <div className="container mx-auto p-4 mt-15">
-                {/* Debug information */}
-                <div className="mb-4 p-4 bg-gray-100 rounded">
-                    <h2 className="font-bold">Debug Info:</h2>
-                    <pre className="text-sm">
-                        {JSON.stringify({
-                            isAdmin: userStatus?.isAdmin,
-                            email: userStatus?.email,
-                            authLoading,
-                            loading
-                        }, null, 2)}
-                    </pre>
-                </div>
+            <UnifiedBackground variant="content" className="pt-16">
+                <div className="container mx-auto p-4 pt-20">
+                    {/* Debug information */}
+                    <UnifiedCard variant="solid" className="mb-6">
+                        <h2 className="font-bold text-white mb-2">Debug Info:</h2>
+                        <pre className="text-sm text-gray-300">
+                            {JSON.stringify({
+                                isAdmin: userStatus?.isAdmin,
+                                email: userStatus?.email,
+                                authLoading,
+                                loading
+                            }, null, 2)}
+                        </pre>
+                    </UnifiedCard>
 
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Admin Dashboard - Pending Models</h1>
-                    <a 
-                        href="/admin/lemon-squeezy" 
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-                    >
-                        Lemon Squeezy Settings
-                    </a>
-                </div>
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Admin Dashboard - Pending Models</h1>
-                    <a 
-                        href="/admin/withdrawals" 
-                        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
-                    >
-                        withdrawals Admin Page
-                    </a>
-                </div>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+                        <h1 className="text-2xl font-bold text-white">Admin Dashboard - Pending Models</h1>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <a
+                                href="/admin/lemon-squeezy"
+                                className="bg-blue-500/20 border border-blue-500/50 text-blue-300 px-4 py-2 rounded hover:bg-blue-500/30 transition-colors text-center"
+                            >
+                                Lemon Squeezy Settings
+                            </a>
+                            <a
+                                href="/admin/withdrawals"
+                                className="bg-purple-500/20 border border-purple-500/50 text-purple-300 px-4 py-2 rounded hover:bg-purple-500/30 transition-colors text-center"
+                            >
+                                Withdrawals Admin Page
+                            </a>
+                        </div>
+                    </div>
                 {!Array.isArray(pendingModels) || pendingModels.length === 0 ? (
-                    <p className="text-gray-500">No pending models to review</p>
+                    <p className="text-gray-300">No pending models to review</p>
                 ) : (
                     <div className="grid gap-4">
                         {pendingModels.map((model) => {
                             return (
-                                <div key={model.id} className="border rounded-lg p-4 shadow-sm">
+                                <UnifiedCard key={model.id} variant="solid">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <h2 className="text-xl font-semibold">{model.name}</h2>
-                                            <p className="text-gray-600 mt-1">Author: {model.authorEmail}</p>
-                                            <p className="text-gray-600">Price: ${(model.price / 100).toFixed(2)}</p>
-                                            <p className="text-gray-600">Upload Type: {model.fileStorage.type}</p>
-                                            <p className="font-bold text-gray-700 mt-3">Setup: <br/> {model.setup}</p>
-                                            <p className="font-bold text-blue-600 mt-3">Model URL: <br/> {model.fileStorage.url}</p>
+                                            <h2 className="text-xl font-semibold text-white">{model.name}</h2>
+                                            <p className="text-gray-300 mt-1">Author: {model.authorEmail}</p>
+                                            <p className="text-gray-300">Price: ${(model.price / 100).toFixed(2)}</p>
+                                            <p className="text-gray-300">Upload Type: {model.fileStorage.type}</p>
+                                            <p className="font-bold text-gray-200 mt-3">Setup: <br/> {model.setup}</p>
+                                            <p className="font-bold text-blue-400 mt-3">Model URL: <br/> {model.fileStorage.url}</p>
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-gray-400">
                                             Submitted: {new Date(model.createdAt).toLocaleDateString()}
                                         </div>
                                     </div>
                                     <div className="mt-3">
-                                        <p>Description:</p>
-                                        <p className="text-gray-700">{model.description}</p>
+                                        <p className="text-white">Description:</p>
+                                        <p className="text-gray-300">{model.description}</p>
                                     </div>
                                     <div className="mt-2 flex gap-2">
                                         {model.tags.map((tag, index) => (
-                                            <span key={index} className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm">
+                                            <span key={index} className="bg-slate-700/50 text-gray-300 px-2 py-1 rounded-full text-sm">
                                                 {tag}
                                             </span>
                                         ))}
@@ -185,10 +193,10 @@ export default function AdminPage() {
 
                                     {/* AI Analysis Section */}
                                     {model.aiAnalysis && (
-                                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                                            <h3 className="font-semibold text-lg mb-2">AI Analysis</h3>
+                                        <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
+                                            <h3 className="font-semibold text-lg mb-2 text-white">AI Analysis</h3>
                                             <div className="prose max-w-none">
-                                                <div className="whitespace-pre-wrap text-gray-700">
+                                                <div className="whitespace-pre-wrap text-gray-300">
                                                     {model.aiAnalysis.split('\n').map((line, index) => {
                                                         if (line.includes('✅ PUBLISH')) {
                                                             return <div key={`analysis-${model.id}-${index}`} className="text-green-600 font-semibold">{line}</div>;
@@ -217,11 +225,11 @@ export default function AdminPage() {
                                     {/* Validation Status */}
                                     {model.validationStatus && (
                                         <div className="mt-3">
-                                            <h3 className="font-semibold">Validation Status:</h3>
+                                            <h3 className="font-semibold text-white">Validation Status:</h3>
                                             <div className={`mt-1 p-2 rounded ${
-                                                model.validationStatus.isValid 
-                                                    ? 'bg-green-100 text-green-800' 
-                                                    : 'bg-red-100 text-red-800'
+                                                model.validationStatus.isValid
+                                                    ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                                                    : 'bg-red-500/20 text-red-300 border border-red-500/50'
                                             }`}>
                                                 {model.validationStatus.message}
                                             </div>
@@ -231,18 +239,18 @@ export default function AdminPage() {
                                     <div className="mt-4 flex gap-4">
                                         <button
                                             onClick={() => handleApprove(model.id)}
-                                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+                                            className="bg-green-500/20 border border-green-500/50 text-green-300 px-4 py-2 rounded hover:bg-green-500/30 transition-colors"
                                         >
                                             Approve
                                         </button>
                                         <button
                                             onClick={() => setSelectedModel(model)}
-                                            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                                            className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 rounded hover:bg-red-500/30 transition-colors"
                                         >
                                             Reject
                                         </button>
                                     </div>
-                                </div>
+                                </UnifiedCard>
                             );
                         })}
                     </div>
@@ -250,14 +258,14 @@ export default function AdminPage() {
 
                 {/* Rejection Modal */}
                 {selectedModel && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                            <h3 className="text-lg font-semibold mb-4">Reject Model</h3>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <UnifiedCard variant="solid" className="max-w-md w-full">
+                            <h3 className="text-lg font-semibold mb-4 text-white">Reject Model</h3>
                             <textarea
                                 value={rejectionReason}
                                 onChange={(e) => setRejectionReason(e.target.value)}
                                 placeholder="Enter reason for rejection..."
-                                className="w-full p-2 border rounded-lg mb-4"
+                                className="w-full p-2 bg-slate-700/50 border border-slate-600/50 rounded-lg mb-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 rows="4"
                             />
                             <div className="flex justify-end gap-4">
@@ -266,21 +274,22 @@ export default function AdminPage() {
                                         setSelectedModel(null);
                                         setRejectionReason('');
                                     }}
-                                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                                    className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => handleReject(selectedModel.id)}
-                                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                                    className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 rounded hover:bg-red-500/30 transition-colors"
                                 >
                                     Confirm Rejection
                                 </button>
                             </div>
-                        </div>
+                        </UnifiedCard>
                     </div>
                 )}
-            </div>
+                </div>
+            </UnifiedBackground>
         );
     }
 
