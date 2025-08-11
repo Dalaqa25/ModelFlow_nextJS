@@ -84,3 +84,76 @@ button {
         display: none !important;
     }
 }
+
+/* 3D Transform utilities */
+.transform-gpu {
+  transform: translate3d(0, 0, 0);
+}
+
+.translateZ-48 {
+  transform: translateZ(12rem);
+}
+
+.rotateY-90 {
+  transform: rotateY(90deg);
+}
+
+.rotateY-180 {
+  transform: rotateY(180deg);
+}
+
+.rotateY-270 {
+  transform: rotateY(270deg);
+}
+
+.rotateX-90 {
+  transform: rotateX(90deg);
+}
+
+.rotateX-270 {
+  transform: rotateX(270deg);
+}
+
+/* Gradient utilities */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* 3D perspective */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Enhanced animations */
+@keyframes float-3d {
+  0%, 100% {
+    transform: translateY(0) rotateX(0) rotateY(0);
+  }
+  33% {
+    transform: translateY(-10px) rotateX(5deg) rotateY(5deg);
+  }
+  66% {
+    transform: translateY(5px) rotateX(-5deg) rotateY(-5deg);
+  }
+}
+
+.animate-float-3d {
+  animation: float-3d 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
