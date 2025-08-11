@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import NavigationLink from "../../NavigationLink";
 import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
+import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import {
     MdDashboard,
     MdViewInAr,
@@ -69,11 +70,6 @@ export default function AuthorizedNavbar() {
         { href: '/profile', title: 'Profile', icon: MdPerson },
     ];
 
-    // Get current route name for breadcrumb
-    const getCurrentRouteName = () => {
-        const currentRoute = navRoutes.find(route => route.href === pathname);
-        return currentRoute ? currentRoute.title : 'Dashboard';
-    };
 
     return (
         <>
@@ -98,11 +94,8 @@ export default function AuthorizedNavbar() {
                             className="flex-shrink-0"
                         />
                         
-                        {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-gray-600">
-                            <span>/</span>
-                            <span className="font-medium text-gray-900">{getCurrentRouteName()}</span>
-                        </div>
+                        {/* Dynamic Breadcrumb Navigation */}
+                        <BreadcrumbNavigation />
                     </div>
                 </div>
 
