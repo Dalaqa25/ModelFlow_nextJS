@@ -13,7 +13,7 @@ import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
-    const [isRowLayout, setIsRowLayout] = useState(true);
+    const [isRowLayout, setIsRowLayout] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -30,11 +30,16 @@ export default function Dashboard() {
     // Layout preference from localStorage
     useEffect(() => {
         const layout = localStorage.getItem('dashboardLayout');
-        if (layout) setIsRowLayout(layout === 'row');
+        if (layout) {
+            setIsRowLayout(layout === 'row');
+        } else {
+            // Default to column layout if no preference is saved
+            setIsRowLayout(false);
+        }
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('dashboardLayout', isRowLayout ? 'row' : 'col');
+        localStorage.setItem('dashboardLayout', isRowLayout ? 'row' : 'column');
     }, [isRowLayout]);
 
     const handleLayoutChange = () => {
@@ -45,20 +50,8 @@ export default function Dashboard() {
 
     return (
         <UnifiedBackground variant="content" className="pt-16">
-            <div className="pt-24 pb-12 px-6">
+            <div className="pt-10 pb-10 px-6">
                 <div className="max-w-5xl mx-auto">
-                    {/* Dashboard Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-6">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-                            Your Dashboard
-                        </div>
-                        <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">
-                            Welcome Back
-                        </h1>
-                        <p className="text-lg text-gray-300 mb-8">Your models and activity at a glance</p>
-                    </div>
-
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                         <div className="flex gap-3 justify-center sm:justify-start">
                             <button
