@@ -64,7 +64,7 @@ export default function Notifications({ isOpen, onClose }) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-gray-400/30 backdrop-blur-sm" />
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
                 </Transition.Child>
 
                 <div className="fixed inset-0 overflow-y-auto">
@@ -78,15 +78,15 @@ export default function Notifications({ isOpen, onClose }) {
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all flex flex-col">
+                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-700/60 p-6 text-left align-middle shadow-2xl transition-all flex flex-col">
                                 <Dialog.Title
                                     as="h3"
-                                    className="text-xl font-semibold leading-6 text-gray-900 border-b pb-4 mb-4 flex justify-between items-center"
+                                    className="text-xl font-semibold leading-6 text-white border-b border-slate-700 pb-4 mb-4 flex justify-between items-center"
                                 >
                                     Notifications
                                     <button 
                                         onClick={onClose}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200"
                                     >
                                         <FaTimes />
                                     </button>
@@ -97,7 +97,7 @@ export default function Notifications({ isOpen, onClose }) {
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
                                         </div>
                                     ) : notifications.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-500">
+                                        <div className="text-center py-8 text-slate-400">
                                             No notifications
                                         </div>
                                     ) : (
@@ -105,12 +105,12 @@ export default function Notifications({ isOpen, onClose }) {
                                             {notifications.map((notification) => (
                                                 <div 
                                                     key={notification.id}
-                                                    className={`p-4 rounded-lg border ${
-                                                        notification.read ? 'bg-gray-50' : 'bg-white'
+                                                    className={`p-4 rounded-xl border transition-all duration-200 ${
+                                                        notification.read ? 'bg-slate-700/30' : 'bg-slate-700/50'
                                                     } ${
                                                         selectedNotifications.includes(notification.id)
-                                                            ? 'border-purple-500'
-                                                            : 'border-gray-200'
+                                                            ? 'border-purple-500 shadow-lg shadow-purple-500/25'
+                                                            : 'border-slate-600/50'
                                                     }`}
                                                     onClick={() => {
                                                         setSelectedNotifications(prev =>
@@ -125,13 +125,13 @@ export default function Notifications({ isOpen, onClose }) {
                                                             {getNotificationIcon(notification.type)}
                                                         </div>
                                                         <div className="flex-1">
-                                                            <h3 className="font-medium text-gray-900">
+                                                            <h3 className="font-medium text-white">
                                                                 {notification.title}
                                                             </h3>
-                                                            <p className="text-gray-600 mt-1">
+                                                            <p className="text-slate-300 mt-1">
                                                                 {notification.message}
                                                             </p>
-                                                            <p className="text-sm text-gray-500 mt-2">
+                                                            <p className="text-sm text-slate-400 mt-2">
                                                                 {new Date(notification.createdAt).toLocaleDateString()}
                                                             </p>
                                                         </div>
@@ -143,13 +143,13 @@ export default function Notifications({ isOpen, onClose }) {
                                 </div>
 
                                 {notifications.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t">
+                                    <div className="mt-4 pt-4 border-t border-slate-700">
                                         <button
                                             onClick={handleMarkAsRead}
                                             disabled={selectedNotifications.length === 0}
-                                            className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
                                         >
-                                            Delete Selected
+                                            Mark as Read ({selectedNotifications.length})
                                         </button>
                                     </div>
                                 )}

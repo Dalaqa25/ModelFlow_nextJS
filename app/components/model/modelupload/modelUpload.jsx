@@ -541,7 +541,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <div className="fixed inset-0 bg-gray-100/30 backdrop-blur-md bg-opacity-75 transition-opacity" />
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
                     </Transition.Child>
 
                     <div className="fixed inset-0 z-10 overflow-y-auto">
@@ -555,11 +555,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                 leaveFrom="opacity-100 translate-x-0"
                                 leaveTo="opacity-0 -translate-x-8"
                             >
-                                <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-white px-8 pb-8 pt-7 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:p-10 border border-gray-200">
-                                    <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                                <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-700/60 px-8 pb-8 pt-7 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:p-10">
+                                    <div className="absolute right-4 top-4">
                                         <button
                                             type="button"
-                                            className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                                            className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                             onClick={onClose}
                                         >
                                             <span className="sr-only">Close</span>
@@ -568,10 +568,10 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                     </div>
                                     <div className="sm:flex sm:items-start">
                                         <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                            <Dialog.Title as="h3" className="text-2xl font-bold leading-7 text-gray-900 mb-2">
+                                            <Dialog.Title as="h3" className="text-2xl font-bold leading-7 text-white mb-2">
                                                 Upload Your Model
                                             </Dialog.Title>
-                                            <p className="text-gray-500 mb-6 text-base">Step {step} of {totalSteps}</p>
+                                            <p className="text-slate-400 mb-6 text-base">Step {step} of {totalSteps}</p>
                                             <form onSubmit={handleSubmit} className="mt-4 space-y-6">
                                                 <div className="relative min-h-[300px]">
                                                   <Transition

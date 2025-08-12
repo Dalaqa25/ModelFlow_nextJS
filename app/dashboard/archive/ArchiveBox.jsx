@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import ArchivedModels from './archivedModels';
 import PLANS from '../../plans';
 
@@ -78,10 +80,10 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-gray-200/50 backdrop-blur-lg bg-opacity-40 transition-opacity" />
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
                 </Transition.Child>
                 <div className="fixed inset-0 z-50 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <div className="flex min-h-full items-center justify-center p-4">
                         <Transition.Child
                             as={Fragment}
                             enter="ease-out duration-300"
@@ -91,39 +93,88 @@ export default function ArchiveBox({ isOpen, onClose, userEmail }) {
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 text-left">
-                                <Dialog.Title as="h3" className="text-2xl font-bold mb-4 text-gray-900">
-                                    Archived Models
-                                </Dialog.Title>
+                            <Dialog.Panel className="relative bg-slate-800/90 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl w-full max-w-2xl p-8 text-left">
+                                {/* Close button */}
+                                <div className="absolute right-4 top-4">
+                                    <button
+                                        type="button"
+                                        className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                                        onClick={onClose}
+                                    >
+                                        <span className="sr-only">Close</span>
+                                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                    </button>
+                                </div>
+
+                                {/* Header */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <Dialog.Title as="h3" className="text-2xl font-bold mb-6 text-white">
+                                        Archived Models
+                                    </Dialog.Title>
+                                </motion.div>
+
                                 {/* Storage Usage Indicator */}
                                 {!planLoading && (
-                                <div className="mb-6">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-sm font-medium text-gray-700">Storage used</span>
-                                        <span className="text-sm font-medium text-gray-500">
-                                            {totalStorageUsedMB < 0.01 ? `${(totalStorageUsedMB * 1024).toFixed(1)}KB` : `${totalStorageUsedMB.toFixed(2)}MB`} / {storageCapMB}MB
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div className="bg-purple-600 h-3 rounded-full shadow-lg ring-2 ring-purple-400 animate-pulse" style={{ width: `${storagePercent}%` }}></div>
-                                    </div>
-                                </div>
+                                    <motion.div 
+                                        className="mb-8"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: 0.1 }}
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-sm font-medium text-slate-300">Storage used</span>
+                                            <span className="text-sm font-medium text-slate-400">
+                                                {totalStorageUsedMB < 0.01 ? `${(totalStorageUsedMB * 1024).toFixed(1)}KB` : `${totalStorageUsedMB.toFixed(2)}MB`} / {storageCapMB}MB
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+                                            <motion.div 
+                                                className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full shadow-lg"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${storagePercent}%` }}
+                                                transition={{ duration: 0.8, delay: 0.2 }}
+                                            />
+                                        </div>
+                                    </motion.div>
                                 )}
-                                <div className="text-gray-600 min-h-[100px]">
+
+                                {/* Content */}
+                                <motion.div 
+                                    className="text-slate-300 min-h-[200px]"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.2 }}
+                                >
                                     {loading ? (
-                                        <div className="text-center text-gray-400">Loading...</div>
+                                        <div className="flex items-center justify-center h-32">
+                                            <div className="flex items-center space-x-3 text-slate-400">
+                                                <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                                <span>Loading archived models...</span>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <ArchivedModels models={models} onModelDeleted={refetchModels} />
                                     )}
-                                </div>
-                                <div className="mt-6 flex justify-end">
+                                </motion.div>
+
+                                {/* Footer */}
+                                <motion.div 
+                                    className="mt-8 flex justify-end"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.3 }}
+                                >
                                     <button
                                         onClick={onClose}
-                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-purple-500/25 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                     >
                                         Close
                                     </button>
-                                </div>
+                                </motion.div>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>

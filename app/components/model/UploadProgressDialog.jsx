@@ -1,33 +1,22 @@
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-export default function UploadProgressDialog({ isOpen, stage, onClose }) {
-    const stages = {
-        uploading: {
-            title: 'Uploading Model',
-            description: 'Please wait while we upload your model...',
-            icon: '📤'
-        },
-        extracting: {
-            title: 'Extracting Files',
-            description: 'Extracting and validating your model files...',
-            icon: '📦'
-        },
-        analyzing: {
-            title: 'Analyzing Model',
-            description: 'Running AI analysis on your model...',
-            icon: '🤖'
-        },
-        success: {
-            title: 'Upload Complete',
-            description: 'Your model has been successfully uploaded!',
-            icon: '✅'
+export default function UploadProgressDialog({ isOpen, progress, stage, fileName }) {
+    const getStageText = (stage) => {
+        switch (stage) {
+            case 'uploading':
+                return 'Uploading your model...';
+            case 'processing':
+                return 'Processing your model...';
+            case 'analyzing':
+                return 'Analyzing model structure...';
+            case 'validating':
+                return 'Validating model files...';
+            default:
+                return 'Processing...';
         }
     };
-
-    const currentStage = stages[stage] || stages.uploading;
 
     return (
         <Transition.Root show={isOpen} as={Fragment}>
@@ -41,55 +30,77 @@ export default function UploadProgressDialog({ isOpen, stage, onClose }) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-gray-100/30 backdrop-blur-md bg-opacity-75 transition-opacity" />
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
                 </Transition.Child>
 
                 <div className="fixed inset-0 z-10 overflow-y-auto">
-                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <div className="flex min-h-full items-center justify-center p-4">
                         <Transition.Child
                             as={Fragment}
                             enter="ease-out duration-300"
-                            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            enterTo="opacity-100 translate-y-0 sm:scale-100"
+                            enterFrom="opacity-0 scale-95"
+                            enterTo="opacity-100 scale-100"
                             leave="ease-in duration-200"
-                            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            leaveFrom="opacity-100 scale-100"
+                            leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                                <div className="sm:flex sm:items-start">
-                                    <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mx-0 sm:h-10 sm:w-10">
-                                        <AnimatePresence mode="wait">
-                                            {stage === 'success' ? (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    exit={{ scale: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <CheckCircleIcon className="h-6 w-6 text-purple-600" aria-hidden="true" />
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    animate={{ rotate: 360 }}
-                                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                                    className="text-2xl"
-                                                >
-                                                    {currentStage.icon}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                            <Dialog.Panel className="relative bg-slate-800/90 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-6 max-w-md w-full">
+                                {/* Animated Upload Icon */}
+                                <motion.div
+                                    className="relative"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                >
+                                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                </motion.div>
+
+                                {/* Stage Text */}
+                                <motion.div 
+                                    className="text-center"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <Dialog.Title as="h3" className="text-lg font-semibold text-white mb-2">
+                                        {getStageText(stage)}
+                                    </Dialog.Title>
+                                    {fileName && (
+                                        <p className="text-sm text-slate-400 truncate max-w-xs">
+                                            {fileName}
+                                        </p>
+                                    )}
+                                </motion.div>
+
+                                {/* Progress Bar */}
+                                <motion.div 
+                                    className="w-full"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.1 }}
+                                >
+                                    <div className="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+                                        <motion.div 
+                                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full shadow-lg"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progress}%` }}
+                                            transition={{ duration: 0.5 }}
+                                        />
                                     </div>
-                                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                                        <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
-                                            {currentStage.title}
-                                        </Dialog.Title>
-                                        <div className="mt-2">
-                                            <p className="text-sm text-gray-500">
-                                                {currentStage.description}
-                                            </p>
-                                        </div>
+                                    <div className="flex justify-between mt-2">
+                                        <span className="text-xs text-slate-400">Progress</span>
+                                        <span className="text-xs text-slate-400">{progress}%</span>
                                     </div>
-                                </div>
+                                </motion.div>
+
+                                {/* Please wait message */}
+                                <motion.p 
+                                    className="text-sm text-slate-400 text-center"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, delay: 0.2 }}
+                                >
+                                    Please wait while we process your model. This may take a few moments.
+                                </motion.p>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>

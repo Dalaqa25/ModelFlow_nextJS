@@ -10,19 +10,19 @@ export default function Step2Details({
   return (
     <div className="transition-all duration-300 ease-in-out">
       {/* Tags */}
-      <div className="flex flex-col gap-2 mb-4">
-        <label className="font-semibold text-gray-700">Tags</label>
-        <div className="flex flex-wrap gap-2 mb-2">
+      <div className="flex flex-col gap-3 mb-6">
+        <label className="font-semibold text-slate-300">Tags</label>
+        <div className="flex flex-wrap gap-2 mb-3">
           {tags.map(tag => (
             <span
               key={tag}
-              className="flex items-center bg-purple-100 text-purple-700 border border-purple-300 rounded-full px-3 py-1 text-sm font-medium mr-1 transition-all duration-200 ease-out transform scale-100 opacity-100"
+              className="flex items-center bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 ease-out transform scale-100 opacity-100"
             >
               {tag}
               <button
                 type="button"
                 onClick={() => handleTagToggle(tag)}
-                className="ml-2 text-purple-500 hover:text-red-500 focus:outline-none"
+                className="ml-2 text-purple-400 hover:text-red-400 focus:outline-none transition-colors duration-200"
                 title="Remove tag"
               >
                 ×
@@ -34,7 +34,9 @@ export default function Step2Details({
               key={tag}
               type="button"
               onClick={() => handleTagToggle(tag)}
-              className={`px-4 py-2 rounded-full border transition-all duration-200 text-gray-700 border-gray-300 hover:bg-purple-50 hover:text-purple-700 focus:ring-2 focus:ring-purple-300 text-sm font-medium ${tags.length >= 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-4 py-2 rounded-full border transition-all duration-200 text-slate-300 border-slate-600/50 hover:bg-purple-500/20 hover:text-purple-300 hover:border-purple-500/30 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800 text-sm font-medium ${
+                tags.length >= 2 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               disabled={tags.length >= 2}
             >
               {tag}
@@ -42,26 +44,29 @@ export default function Step2Details({
           ))}
         </div>
       </div>
+      
       {/* Features */}
-      <div className="flex flex-col gap-2 mb-4">
-        <label className="font-semibold text-gray-700">Features</label>
+      <div className="flex flex-col gap-3 mb-6">
+        <label className="font-semibold text-slate-300">Features</label>
         {features.map((feature, index) => (
-          <div key={index} className="flex items-center gap-2 mb-1">
+          <div key={index} className="flex items-center gap-3 mb-2">
             <input
               type="text"
               value={feature}
               onChange={e => handleChange(index, e.target.value)}
               placeholder={`Feature #${index + 1}`}
-              className={`flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-base transition-shadow duration-150 ${errors.features && !feature.trim() ? 'border-red-500' : 'border-gray-300'} hover:shadow-md`}
+              className={`flex-grow px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder:text-slate-400 transition-all duration-200 hover:border-slate-500 ${
+                errors.features && !feature.trim() ? 'border-red-500 focus:ring-red-500' : ''
+              }`}
             />
             {features.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeFeature(index)}
-                className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors duration-200 focus:ring-2 focus:ring-red-300"
+                className="p-3 text-red-400 bg-red-500/20 rounded-xl hover:text-red-300 hover:bg-red-500/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                 title="Remove Feature"
               >
-                <FaTrash size={20} />
+                <FaTrash size={16} />
               </button>
             )}
           </div>
@@ -69,30 +74,33 @@ export default function Step2Details({
         <button
           type="button"
           onClick={addFeature}
-          className="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium self-start mt-2 transition-colors duration-200 focus:ring-2 focus:ring-purple-300"
+          className="flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium self-start mt-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
         >
           <FaPlus size={16} /> Add Another Feature
         </button>
       </div>
+      
       {/* Use Cases */}
-      <div className="flex flex-col gap-2 mb-4">
-        <label className="font-semibold text-gray-700">Use Cases</label>
+      <div className="flex flex-col gap-3 mb-6">
+        <label className="font-semibold text-slate-300">Use Cases</label>
         {useCases.map((uc, idx) => (
-          <div key={idx} className="flex items-center gap-2 mb-1">
+          <div key={idx} className="flex items-center gap-3 mb-2">
             <input
               type="text"
               value={uc}
               onChange={e => handleUseCaseChange(idx, e.target.value)}
               placeholder={`Case #${idx + 1}`}
-              className={`flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-base ${errors.useCases && !uc.trim() ? 'border-red-500' : 'border-gray-300'}`}
+              className={`flex-grow px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder:text-slate-400 transition-all duration-200 hover:border-slate-500 ${
+                errors.useCases && !uc.trim() ? 'border-red-500 focus:ring-red-500' : ''
+              }`}
             />
             {useCases.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeUseCase(idx)}
-                className="text-red-500 hover:text-red-700 p-2 rounded-full transition-colors duration-200"
+                className="p-3 text-red-400 bg-red-500/20 rounded-xl hover:text-red-300 hover:bg-red-500/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-800"
               >
-                <FaTrash size={20} />
+                <FaTrash size={16} />
               </button>
             )}
           </div>
@@ -100,23 +108,26 @@ export default function Step2Details({
         <button
           type="button"
           onClick={addUseCase}
-          className="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium self-start mt-2"
+          className="flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium self-start mt-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
         >
           <FaPlus size={16} /> Add Another Use Case
         </button>
       </div>
+      
       {/* Setup Instructions */}
-      <div className="flex flex-col gap-2 mb-4">
-        <label htmlFor="setup" className="font-semibold text-gray-700">Setup Instructions</label>
+      <div className="flex flex-col gap-3 mb-6">
+        <label htmlFor="setup" className="font-semibold text-slate-300">Setup Instructions</label>
         <textarea
           id="setup"
           value={formData.setup}
           onChange={handleInputChange}
           placeholder="Describe how to set up or use the model"
           rows={3}
-          className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 text-base ${errors.setup ? 'border-red-500' : 'border-gray-300'}`}
+          className={`px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder:text-slate-400 resize-none transition-all duration-200 hover:border-slate-500 ${
+            errors.setup ? 'border-red-500 focus:ring-red-500' : ''
+          }`}
         />
-        {errors.setup && <p className="text-red-500 text-xs">{errors.setup}</p>}
+        {errors.setup && <p className="text-red-400 text-sm">{errors.setup}</p>}
       </div>
     </div>
   );
