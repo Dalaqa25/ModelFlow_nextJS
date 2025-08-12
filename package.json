@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "health": "node scripts/health-check.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
