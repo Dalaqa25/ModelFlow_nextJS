@@ -5,6 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import NavigationLink from "../../NavigationLink";
 import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
+import Notifications from "../../notifications";
+import ModelUpload from "../../model/modelupload/modelUpload";
 import {
     MdDashboard,
     MdViewInAr,
@@ -16,8 +18,13 @@ import {
     MdChevronLeft,
     MdChevronRight,
     MdLogout,
-    MdKeyboardArrowDown
+    MdKeyboardArrowDown,
+    MdNotifications,
+    MdAdd,
+    MdSearch,
+    MdSettings
 } from "react-icons/md";
+import { useQuery } from '@tanstack/react-query';
 
 export default function AuthorizedNavbar() {
     console.log("🔒 AuthorizedNavbar is currently displayed");
@@ -28,7 +35,23 @@ export default function AuthorizedNavbar() {
     const [sidebarPinned, setSidebarPinned] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const dropdownRef = useRef(null);
+
+    // Fetch notifications for unread count
+    const { data: notifications = [] } = useQuery({
+        queryKey: ['notifications', user?.email],
+        queryFn: async () => {
+            if (!user?.email) return [];
+            const response = await fetch('/api/notifications', { credentials: 'include' });
+            if (!response.ok) throw new Error('Failed to fetch notifications');
+            return response.json();
+        },
+        enabled: !!user?.email,
+    });
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     // Load pinned state from localStorage on component mount
     useEffect(() => {
@@ -91,7 +114,7 @@ export default function AuthorizedNavbar() {
     // Navigation routes with icons
     const navRoutes = [
         { href: '/dashboard', title: 'Dashboard', icon: MdDashboard },
-        { href: '/modelsList', title: 'Models', icon: MdViewInAr },
+        { href: '/modelsList', title: 'Explore Models', icon: MdViewInAr },
         { href: '/requests', title: 'Community', icon: MdGroup },
         { href: '/plans', title: 'Billing', icon: MdPayment },
         { href: '/profile', title: 'Profile', icon: MdPerson },
@@ -124,10 +147,46 @@ export default function AuthorizedNavbar() {
                         {/* Dynamic Breadcrumb Navigation */}
                         <BreadcrumbNavigation />
                     </div>
+
+                    {/* Search Bar */}
+                    <div className="hidden md:flex items-center ml-8">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search models..."
+                                className="w-64 px-4 py-2 pl-10 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            />
+                            <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Right side - User info */}
                 <div className="ml-auto flex items-center gap-4">
+                    {/* Quick Upload Button */}
+                    <button
+                        onClick={() => setUploadDialogOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+                        title="Upload New Model"
+                    >
+                        <MdAdd size={20} />
+                        <span className="hidden sm:inline">Upload Model</span>
+                    </button>
+
+                    {/* Notifications Bell */}
+                    <button
+                        onClick={() => setNotificationsOpen(true)}
+                        className="relative p-2 rounded-lg hover:bg-slate-800/50 transition-colors duration-200 text-gray-300 hover:text-purple-400"
+                        title="Notifications"
+                    >
+                        <MdNotifications size={20} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
+                    
                     <div className="hidden sm:flex items-center relative" ref={dropdownRef}>
                         <button
                             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -157,6 +216,14 @@ export default function AuthorizedNavbar() {
                                 >
                                     <MdPerson size={16} />
                                     View Profile
+                                </NavigationLink>
+                                <NavigationLink
+                                    href="/profile"
+                                    onClick={() => setUserDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-slate-700/50 transition-colors"
+                                >
+                                    <MdSettings size={16} />
+                                    Settings
                                 </NavigationLink>
                                 <hr className="my-1 border-slate-600/50" />
                                 <button
@@ -235,6 +302,30 @@ export default function AuthorizedNavbar() {
                 isOpen={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
                 navRoutes={navRoutes}
+                onUploadClick={() => {
+                    setMobileMenuOpen(false);
+                    setUploadDialogOpen(true);
+                }}
+                onNotificationsClick={() => {
+                    setMobileMenuOpen(false);
+                    setNotificationsOpen(true);
+                }}
+            />
+
+            {/* Notifications Dialog */}
+            <Notifications
+                isOpen={notificationsOpen}
+                onClose={() => setNotificationsOpen(false)}
+            />
+
+            {/* Model Upload Dialog */}
+            <ModelUpload
+                isOpen={uploadDialogOpen}
+                onClose={() => setUploadDialogOpen(false)}
+                onUploadSuccess={() => {
+                    setUploadDialogOpen(false);
+                    // Optionally refresh data or show success message
+                }}
             />
         </>
     );

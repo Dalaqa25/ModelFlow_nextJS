@@ -9,10 +9,13 @@ import {
     MdPayment,
     MdPerson,
     MdClose,
-    MdLogout
+    MdLogout,
+    MdSearch,
+    MdAdd,
+    MdNotifications
 } from "react-icons/md";
 
-export default function ResponsiveAuthNavbar({ isOpen, onClose, navRoutes }) {
+export default function ResponsiveAuthNavbar({ isOpen, onClose, navRoutes, onUploadClick, onNotificationsClick }) {
     const { user, signOut } = useAuth();
     const pathname = usePathname() || '/';
 
@@ -47,6 +50,37 @@ export default function ResponsiveAuthNavbar({ isOpen, onClose, navRoutes }) {
                     >
                         <MdClose size={20} />
                     </button>
+                </div>
+
+                {/* Mobile Search Bar */}
+                <div className="px-4 py-3 border-b border-slate-700/50">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search models..."
+                            className="w-full px-4 py-2 pl-10 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                        <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="px-4 py-3 border-b border-slate-700/50">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onUploadClick}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium text-sm"
+                        >
+                            <MdAdd size={16} />
+                            Upload Model
+                        </button>
+                        <button
+                            onClick={onNotificationsClick}
+                            className="flex items-center justify-center px-3 py-2 bg-slate-800/50 border border-slate-700/50 text-gray-300 rounded-lg hover:bg-slate-700/50"
+                        >
+                            <MdNotifications size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Mobile menu navigation */}

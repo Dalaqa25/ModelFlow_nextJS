@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import { prisma } from "@/lib/db/prisma";
+import { notificationDB } from "@/lib/db/supabase-db";
 
 // Get user's notifications
 export async function GET(req) {
@@ -11,12 +11,7 @@ export async function GET(req) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const notifications = await prisma.notification.findMany({
-            where: { userEmail: user.email },
-            orderBy: { createdAt: 'desc' },
-            take: 50
-        });
-
+        const notifications = await notificationDB.getNotificationsByUser(user.email);
         return NextResponse.json(notifications);
     } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -39,13 +34,7 @@ export async function PATCH(req) {
             return NextResponse.json({ error: "Invalid notification IDs" }, { status: 400 });
         }
 
-        await prisma.notification.deleteMany({
-            where: {
-                id: { in: notificationIds },
-                userEmail: user.email
-            }
-        });
-
+        await notificationDB.deleteNotifications(notificationIds);
         return NextResponse.json({ message: "Notifications deleted successfully" });
     } catch (error) {
         console.error('Error deleting notifications:', error);

@@ -1,29 +1,13 @@
-import { prisma } from "@/lib/db/prisma";
-import { withDatabaseRetry } from "@/lib/db/connection-utils";
+import { modelDB } from "@/lib/db/supabase-db";
 import { NextResponse } from "next/server";
-import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function GET() {
   try {
-    const models = await withDatabaseRetry(async () => {
-      return await prisma.model.findMany({
-        include: {
-          author: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-    });
+    const models = await modelDB.getAllModels();
     return NextResponse.json(models);
   } catch (error) {
     console.error('Error fetching models:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 

@@ -1,43 +1,31 @@
-import { prisma } from "../db/prisma";
+import { userDB } from "../db/supabase-db";
 
-/**
- * Update a user's subscription plan and status.
- */
-export async function updateUserSubscription(
-  email: string,
-  plan: string,
-  status: string,
-  lemonSqueezySubscriptionId?: string
-): Promise<any> {
-  const subscriptionData: any = {
-    plan,
-    status,
-  };
-  if (lemonSqueezySubscriptionId) {
-    subscriptionData.lemonSqueezySubscriptionId = lemonSqueezySubscriptionId;
+export async function updateUserSubscription(email: string, subscriptionData: any) {
+  try {
+    const updatedUser = await userDB.updateUserSubscription(email, subscriptionData);
+    return { success: true, user: updatedUser };
+  } catch (error) {
+    console.error('Error updating user subscription:', error);
+    return { success: false, error };
   }
-  
-  return prisma.user.update({
-    where: { email },
-    data: { subscription: subscriptionData }
-  });
 }
 
-export async function getUserSubscription(email: string): Promise<any> {
-  return prisma.user.findUnique({
-    where: { email },
-    select: { subscription: true }
-  });
+export async function getUserByEmail(email: string) {
+  try {
+    const user = await userDB.getUserByEmail(email);
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    return { success: false, error };
+  }
 }
 
-export async function cancelUserSubscription(email: string): Promise<any> {
-  return prisma.user.update({
-    where: { email },
-    data: {
-      subscription: {
-        plan: "basic",
-        status: "canceled"
-      }
-    }
-  });
+export async function updateUserBalance(email: string, balance: number) {
+  try {
+    const updatedUser = await userDB.updateUserSubscription(email, { balance });
+    return { success: true, user: updatedUser };
+  } catch (error) {
+    console.error('Error updating user balance:', error);
+    return { success: false, error };
+  }
 }

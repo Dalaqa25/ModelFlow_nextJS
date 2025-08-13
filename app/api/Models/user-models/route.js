@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { withReadRetry } from '@/lib/db/connection-utils';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth-utils';
+import { modelDB, pendingModelDB } from '@/lib/db/supabase-db';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // Service role key for backend
+    process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function GET(request) {
@@ -25,41 +25,22 @@ export async function GET(request) {
             email = user.email;
         }
 
-        // Use retry logic for all database operations
-        const result = await withReadRetry(async () => {
-            const { prisma } = await import("@/lib/db/prisma");
-            
-            // First check if the user exists
-            const user = await prisma.user.findUnique({
-                where: { email }
-            });
-            
-            if (!user) {
-                throw new Error('User not found');
-            }
+        // Get user data
+        const user = await modelDB.getUserByEmail(email);
+        if (!user) {
+            throw new Error('User not found');
+        }
 
-            // Fetch both regular models and pending models
-            const [models, pendingModels] = await Promise.all([
-                prisma.model.findMany({
-                    where: { authorEmail: email },
-                    orderBy: { createdAt: 'desc' }
-                }),
-                prisma.pendingModel.findMany({
-                    where: { authorEmail: email },
-                    orderBy: { createdAt: 'desc' }
-                })
-            ]);
+        // Fetch both regular models and pending models
+        const [models, pendingModels] = await Promise.all([
+            modelDB.getModelsByAuthor(email),
+            pendingModelDB.getPendingModelsByAuthor(email)
+        ]);
 
-            // Combine both arrays and sort by createdAt
-            const allModels = [...models, ...pendingModels].sort((a, b) =>
-                new Date(b.createdAt) - new Date(a.createdAt)
-            );
-
-            return {
-                user,
-                allModels
-            };
-        });
+        // Combine both arrays and sort by createdAt
+        const allModels = [...models, ...pendingModels].sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
 
         // --- Storage usage calculation ---
         let totalBytes = 0;
@@ -76,7 +57,7 @@ export async function GET(request) {
                 console.error('Error listing files in Supabase Storage:', supabaseError);
                 storageError = supabaseError.message;
             } else {
-                for (const model of result.allModels) {
+                for (const model of allModels) {
                     const supabasePath = model.fileStorage?.supabasePath;
                     if (!supabasePath) continue;
                     const file = allFiles.find(f => f.name === supabasePath);
@@ -93,27 +74,13 @@ export async function GET(request) {
         const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(4));
 
         return NextResponse.json({
-            models: result.allModels,
+            models: allModels,
             totalStorageUsedMB,
-            plan: result.user.subscription?.plan || 'basic',
-            ...(storageError && { storageError })
+            plan: user.subscription?.plan || 'basic',
+            storageError
         });
     } catch (error) {
-        console.error('Detailed error in user-models API:', error);
-        
-        if (error.message === 'User not found') {
-            return NextResponse.json(
-                { error: 'User not found' },
-                { status: 404 }
-            );
-        }
-        
-        return NextResponse.json(
-            { 
-                error: 'Failed to fetch user models', 
-                details: error.message 
-            }, 
-            { status: 500 }
-        );
+        console.error('Error fetching user models:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 } 

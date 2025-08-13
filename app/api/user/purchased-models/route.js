@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import { withReadRetry } from "@/lib/db/connection-utils";
+import { purchaseDB } from "@/lib/db/supabase-db";
 
 export async function GET() {
     try {
@@ -10,83 +10,14 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Use retry logic for all database operations
-        const result = await withReadRetry(async () => {
-            const { prisma } = await import("@/lib/db/prisma");
-            
-            // Find the user and get purchased models
-            const userDoc = await prisma.user.findFirst({
-                where: { email: user.email },
-                include: {
-                    purchasedModels: true
-                }
-            });
-            
-            if (!userDoc) {
-                throw new Error("User not found");
-            }
-
-            const purchasedModels = userDoc.purchasedModels || [];
-            const modelIds = purchasedModels.map(pm => pm.modelId);
-
-            // Fetch all active models
-            const models = await prisma.model.findMany({
-                where: { id: { in: modelIds } }
-            });
-            const foundModelIds = models.map(m => m.id);
-
-            // Find missing IDs (archived)
-            const missingIds = modelIds.filter(id => !foundModelIds.includes(id));
-            let archivedModels = [];
-            if (missingIds.length > 0) {
-                archivedModels = await prisma.archivedModel.findMany({
-                    where: {
-                        id: { in: missingIds },
-                        purchasedBy: { has: user.email }
-                    }
-                });
-            }
-            
-            const archivedModelMap = Object.fromEntries(archivedModels.map(m => [m.id, m]));
-            const modelMap = Object.fromEntries(models.map(m => [m.id, m]));
-
-            // Compose the response, marking archived models
-            return purchasedModels.map(purchase => {
-                if (!purchase.modelId) return null;
-                const model = modelMap[purchase.modelId];
-                if (model) {
-                    return {
-                        ...model,
-                        purchasedAt: purchase.purchasedAt,
-                        price: purchase.price,
-                        archived: false
-                    };
-                }
-                const archived = archivedModelMap[purchase.modelId];
-                if (archived) {
-                    return {
-                        ...archived,
-                        purchasedAt: purchase.purchasedAt,
-                        price: purchase.price,
-                        archived: true
-                    };
-                }
-                // If not found in either, skip
-                return null;
-            }).filter(Boolean);
-        });
-
-        return NextResponse.json(result);
+        const purchasedModels = await purchaseDB.getPurchasedModelsByUser(user.email);
+        
+        // Filter out archived models and return only active ones
+        const activeModels = purchasedModels.filter(purchase => purchase.model && !purchase.model.archived);
+        
+        return NextResponse.json(activeModels);
     } catch (error) {
-        console.error("Error fetching purchased models:", error);
-        
-        if (error.message === "User not found") {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
-        
-        return NextResponse.json({ 
-            error: "Failed to fetch purchased models",
-            details: error.message 
-        }, { status: 500 });
+        console.error('Error fetching purchased models:', error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
