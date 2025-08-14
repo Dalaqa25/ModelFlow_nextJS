@@ -1,5 +1,6 @@
 "use client";
 import "./globals.css";
+import "./globals-light.css";
 import { AuthProvider } from "@/lib/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
 import NavbarController from "@/app/components/navbar/NavbarController";
@@ -10,6 +11,7 @@ import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from "@/lib/theme-context";
 
 const inter = Inter({
     subsets: ['latin'],
@@ -26,18 +28,20 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
-          <NavigationLoadingProvider>
-            <SplashProvider>
-              <AuthProvider>
-                {!isLoginOrSignUp &&  <NavbarController/>}
-                <LayoutWrapper>
-                  {children}
-                </LayoutWrapper>
-                <NavigationLoader />
-              </AuthProvider>
-            </SplashProvider>
-          </NavigationLoadingProvider>
-          <Toaster position="top-right" />
+          <ThemeProvider>
+            <NavigationLoadingProvider>
+              <SplashProvider>
+                <AuthProvider>
+                  {!isLoginOrSignUp &&  <NavbarController/>}
+                  <LayoutWrapper>
+                    {children}
+                  </LayoutWrapper>
+                  <NavigationLoader />
+                </AuthProvider>
+              </SplashProvider>
+            </NavigationLoadingProvider>
+            <Toaster position="top-right" />
+          </ThemeProvider>
         </QueryClientProvider>
       </body>
     </html>

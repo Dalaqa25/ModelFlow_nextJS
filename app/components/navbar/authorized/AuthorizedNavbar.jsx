@@ -9,6 +9,7 @@ import Notifications from "../../notifications";
 import ModelUpload from "../../model/modelupload/modelUpload";
 import ArchiveBox from "../../../dashboard/archive/ArchiveBox";
 import PLANS from "../../../plans";
+import { useTheme } from "../../../../lib/theme-context";
 import {
     MdDashboard,
     MdViewInAr,
@@ -43,7 +44,9 @@ export default function AuthorizedNavbar() {
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+
+    // Use theme context instead of local state
+    const { isDarkMode, toggleTheme } = useTheme();
 
     // Storage data state
     const [storageData, setStorageData] = useState({
@@ -142,9 +145,8 @@ export default function AuthorizedNavbar() {
 
     // Handle theme toggle
     const handleThemeToggle = () => {
-        setIsDarkMode(!isDarkMode);
-        // Here you would implement actual theme switching logic
-        console.log('Theme toggled to:', !isDarkMode ? 'dark' : 'light');
+        toggleTheme();
+        console.log('Theme toggled to:', !isDarkMode ? 'light' : 'dark');
     };
 
     // Handle sign out

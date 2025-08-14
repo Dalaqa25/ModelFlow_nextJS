@@ -14,18 +14,12 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const [rejectionReason, setRejectionReason] = useState('');
     const [selectedModel, setSelectedModel] = useState(null);
-    const [userStatus, setUserStatus] = useState(null);
 
     useEffect(() => {
         const checkAdminAndFetchModels = async () => {
             if (authLoading) return;
             
             try {
-                // First, check user status
-                const userResponse = await fetch('/api/user');
-                const userData = await userResponse.json();
-                setUserStatus(userData);
-
                 // Check if user is admin (email-based check)
                 if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
                     console.log('Access denied - not admin:', user?.email);
@@ -37,7 +31,7 @@ export default function AdminPage() {
                 const response = await fetch('/api/pending-models');
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
-                        console.log('Auth/Admin failed:', userData);
+                        console.log('Auth/Admin failed');
                         toast.error('Access denied - Admin privileges required');
                         router.push('/');
                         return;
@@ -129,19 +123,6 @@ export default function AdminPage() {
         return (
             <UnifiedBackground variant="content" className="pt-16">
                 <div className="container mx-auto p-4 pt-20">
-                    {/* Debug information */}
-                    <UnifiedCard variant="solid" className="mb-6">
-                        <h2 className="font-bold text-white mb-2">Debug Info:</h2>
-                        <pre className="text-sm text-gray-300">
-                            {JSON.stringify({
-                                isAdmin: userStatus?.isAdmin,
-                                email: userStatus?.email,
-                                authLoading,
-                                loading
-                            }, null, 2)}
-                        </pre>
-                    </UnifiedCard>
-
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                         <h1 className="text-2xl font-bold text-white">Admin Dashboard - Pending Models</h1>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -164,19 +145,28 @@ export default function AdminPage() {
                 ) : (
                     <div className="grid gap-4">
                         {pendingModels.map((model) => {
+                            // Parse file storage from img_url field (temporary storage location)
+                            let fileStorage = null;
+                            try {
+                                fileStorage = model.img_url ? JSON.parse(model.img_url) : null;
+                            } catch (e) {
+                                console.error('Error parsing file storage:', e);
+                                fileStorage = { type: 'unknown', url: model.img_url || 'N/A' };
+                            }
+
                             return (
                                 <UnifiedCard key={model.id} variant="solid">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h2 className="text-xl font-semibold text-white">{model.name}</h2>
-                                            <p className="text-gray-300 mt-1">Author: {model.authorEmail}</p>
+                                            <p className="text-gray-300 mt-1">Author: {model.author_email}</p>
                                             <p className="text-gray-300">Price: ${(model.price / 100).toFixed(2)}</p>
-                                            <p className="text-gray-300">Upload Type: {model.fileStorage.type}</p>
+                                            <p className="text-gray-300">Upload Type: {fileStorage?.type || 'Unknown'}</p>
                                             <p className="font-bold text-gray-200 mt-3">Setup: <br/> {model.setup}</p>
-                                            <p className="font-bold text-blue-400 mt-3">Model URL: <br/> {model.fileStorage.url}</p>
+                                            <p className="font-bold text-blue-400 mt-3">Model URL: <br/> {fileStorage?.url || fileStorage?.supabasePath || 'N/A'}</p>
                                         </div>
                                         <div className="text-sm text-gray-400">
-                                            Submitted: {new Date(model.createdAt).toLocaleDateString()}
+                                            Submitted: {new Date(model.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
                                     <div className="mt-3">
@@ -184,7 +174,7 @@ export default function AdminPage() {
                                         <p className="text-gray-300">{model.description}</p>
                                     </div>
                                     <div className="mt-2 flex gap-2">
-                                        {model.tags.map((tag, index) => (
+                                        {(model.tags || []).map((tag, index) => (
                                             <span key={index} className="bg-slate-700/50 text-gray-300 px-2 py-1 rounded-full text-sm">
                                                 {tag}
                                             </span>
@@ -192,12 +182,12 @@ export default function AdminPage() {
                                     </div>
 
                                     {/* AI Analysis Section */}
-                                    {model.aiAnalysis && (
+                                    {model.ai_analysis && (
                                         <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
                                             <h3 className="font-semibold text-lg mb-2 text-white">AI Analysis</h3>
                                             <div className="prose max-w-none">
                                                 <div className="whitespace-pre-wrap text-gray-300">
-                                                    {model.aiAnalysis.split('\n').map((line, index) => {
+                                                    {model.ai_analysis.split('\n').map((line, index) => {
                                                         if (line.includes('✅ PUBLISH')) {
                                                             return <div key={`analysis-${model.id}-${index}`} className="text-green-600 font-semibold">{line}</div>;
                                                         } else if (line.includes('❌ REJECT')) {
@@ -209,12 +199,12 @@ export default function AdminPage() {
                                                     })}
                                                 </div>
                                             </div>
-                                            {model.aiAnalysis.includes('✅ PUBLISH') && (
+                                            {model.ai_analysis.includes('✅ PUBLISH') && (
                                                 <div className="mt-2 text-green-600 font-semibold">
                                                     AI Recommendation: PUBLISH
                                                 </div>
                                             )}
-                                            {model.aiAnalysis.includes('❌ REJECT') && (
+                                            {model.ai_analysis.includes('❌ REJECT') && (
                                                 <div className="mt-2 text-red-600 font-semibold">
                                                     AI Recommendation: REJECT
                                                 </div>
@@ -223,15 +213,15 @@ export default function AdminPage() {
                                     )}
 
                                     {/* Validation Status */}
-                                    {model.validationStatus && (
+                                    {model.validation_status && (
                                         <div className="mt-3">
                                             <h3 className="font-semibold text-white">Validation Status:</h3>
                                             <div className={`mt-1 p-2 rounded ${
-                                                model.validationStatus.isValid
+                                                model.validation_status.isValid
                                                     ? 'bg-green-500/20 text-green-300 border border-green-500/50'
                                                     : 'bg-red-500/20 text-red-300 border border-red-500/50'
                                             }`}>
-                                                {model.validationStatus.message}
+                                                {model.validation_status.message}
                                             </div>
                                         </div>
                                     )}

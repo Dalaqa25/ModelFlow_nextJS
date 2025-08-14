@@ -52,6 +52,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadStage, setUploadStage] = useState(null);
     const [showProgressDialog, setShowProgressDialog] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     // Replace useCases in formData with useCases array state
     const [useCases, setUseCases] = useState(['']);
@@ -422,10 +423,22 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         setIsSubmitting(true);
         setShowProgressDialog(true);
         setUploadStage('uploading');
+        setUploadProgress(0);
 
         try {
             // Only ZIP file upload allowed
             if (formData.modelFile) {
+                // Simulate upload progress
+                const progressInterval = setInterval(() => {
+                    setUploadProgress(prev => {
+                        if (prev >= 90) {
+                            clearInterval(progressInterval);
+                            return 90; // Stop at 90% until upload completes
+                        }
+                        return prev + Math.random() * 15; // Random increment
+                    });
+                }, 200);
+
                 // Upload ZIP file to Supabase Storage
                 const file = formData.modelFile;
                 const fileName = `${Date.now()}-${file.name}`;
@@ -437,16 +450,25 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         upsert: false,
                         contentType: file.type,
                     });
+
+                clearInterval(progressInterval);
+                setUploadProgress(95); // Upload complete
                 if (error) {
                     console.log('Supabase upload failed', error);
                     toast.error('Supabase upload failed: ' + error.message);
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
+                    setUploadProgress(0);
                     return;
                 } else {
+                    // Update progress and stage
+                    setUploadStage('processing');
+                    setUploadProgress(98);
+
                     // Get public URL from Supabase
                     const { data: urlData } = supabase.storage.from('models').getPublicUrl(filePath);
                     const publicUrl = urlData?.publicUrl || filePath;
+
                     // Prepare metadata for backend
                     const modelMeta = {
                         name: formData.modelName,
@@ -466,7 +488,9 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                             uploadedAt: new Date().toISOString(),
                         }
                     };
+
                     console.log('About to POST to /api/pending-models', modelMeta);
+
                     // Send metadata to backend
                     const response = await fetch('/api/pending-models', {
                         method: 'POST',
@@ -480,13 +504,22 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         toast.error('Submission failed: ' + (data.error || 'Failed to create pending model'));
                         setIsSubmitting(false);
                         setShowProgressDialog(false);
+                        setUploadProgress(0);
                         return;
                     }
-                    toast.success('Model submitted successfully!');
-                    setIsSubmitting(false);
-                    setShowProgressDialog(false);
-                    setFormData(prev => ({ ...prev, modelFile: null }));
-                    onClose && onClose();
+
+                    // Complete the progress
+                    setUploadProgress(100);
+
+                    // Small delay to show 100% completion
+                    setTimeout(() => {
+                        toast.success('Model submitted successfully!');
+                        setIsSubmitting(false);
+                        setShowProgressDialog(false);
+                        setUploadProgress(0);
+                        setFormData(prev => ({ ...prev, modelFile: null }));
+                        onClose && onClose();
+                    }, 500);
                     return;
                 }
             }
@@ -495,6 +528,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
             toast.error('Unexpected error: ' + err.message);
             setIsSubmitting(false);
             setShowProgressDialog(false);
+            setUploadProgress(0);
         }
     };
 
@@ -668,10 +702,12 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     </div>
                 </Dialog>
             </Transition.Root>
-            <UploadProgressDialog 
-                isOpen={showProgressDialog} 
-                stage={uploadStage} 
-                onClose={() => setShowProgressDialog(false)} 
+            <UploadProgressDialog
+                isOpen={showProgressDialog}
+                progress={uploadProgress}
+                stage={uploadStage}
+                fileName={formData.modelFile?.name}
+                onClose={() => setShowProgressDialog(false)}
             />
             <StorageWarningDialog
                 isOpen={storageWarningDialog.isOpen}

@@ -112,21 +112,27 @@ export async function POST(req, context) {
 // This function should be moved to a separate utility file or cron job
 async function deleteExpiredModels() {
   const now = new Date();
-  const expiredModels = await prisma.archivedModel.findMany({
-    where: {
-      scheduledDeletionDate: {
-        lte: now
-      }
-    }
-  });
-  for (const model of expiredModels) {
+  const { data: expiredModels, error } = await dbSupabase
+    .from('archived_models')
+    .select('*')
+    .lte('scheduled_deletion_date', now.toISOString());
+
+  if (error) {
+    console.error('Error fetching expired models:', error);
+    return;
+  }
+
+  for (const model of expiredModels || []) {
     // Delete file from Supabase Storage
-    const supabasePath = model.fileStorage?.supabasePath;
+    const supabasePath = model.file_storage?.supabasePath;
     if (supabasePath) {
       await supabase.storage.from('models').remove([supabasePath]);
     }
-    await prisma.archivedModel.delete({
-      where: { id: model.id }
-    });
+
+    // Delete the archived model record
+    await dbSupabase
+      .from('archived_models')
+      .delete()
+      .eq('id', model.id);
   }
 }

@@ -1,6 +1,36 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import { prisma } from "@/lib/db/prisma";
+import { pendingModelDB, modelDB, notificationDB, userDB } from "@/lib/db/supabase-db";
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client for storage operations
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Helper function to delete file from Supabase storage
+async function deleteFileFromStorage(fileStorage) {
+    if (!fileStorage || fileStorage.type !== 'zip' || !fileStorage.supabasePath) {
+        console.log('🔍 No file to delete or not a zip file:', fileStorage);
+        return;
+    }
+
+    try {
+        console.log('🗑️ Deleting file from storage:', fileStorage.supabasePath);
+        const { error } = await supabase.storage
+            .from('models')
+            .remove([fileStorage.supabasePath]);
+
+        if (error) {
+            console.error('❌ Error deleting file from storage:', error);
+        } else {
+            console.log('✅ File deleted from storage successfully');
+        }
+    } catch (error) {
+        console.error('❌ Exception deleting file from storage:', error);
+    }
+}
 
 export async function PATCH(req, { params }) {
     try {
@@ -10,57 +40,68 @@ export async function PATCH(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id } = params;
+        const { id } = await params; // Await params in Next.js 15
         const { action, rejectionReason } = await req.json();
 
-        const pendingModel = await prisma.pendingModel.findUnique({
-            where: { id }
-        });
+        const pendingModel = await pendingModelDB.getPendingModelById(id);
+
         if (!pendingModel) {
             return NextResponse.json({ error: "Pending model not found" }, { status: 404 });
         }
 
         if (action === 'approve') {
+            console.log('🔄 APPROVE: Starting approval process for model:', pendingModel.name);
+
+            // Parse file storage from img_url (where we temporarily stored it)
+            let fileStorage = null;
+            try {
+                fileStorage = pendingModel.img_url ? JSON.parse(pendingModel.img_url) : null;
+                console.log('📁 APPROVE: Parsed file storage:', fileStorage);
+            } catch (e) {
+                console.error('❌ APPROVE: Error parsing file storage:', e);
+            }
+
             // Create a new model from the pending model
             const modelData = {
                 name: pendingModel.name,
-                authorId: pendingModel.authorId,
-                authorEmail: pendingModel.authorEmail,
+                author_id: pendingModel.author_id, // Required field
+                author_email: pendingModel.author_email,
                 tags: pendingModel.tags,
                 description: pendingModel.description,
                 features: pendingModel.features,
-                useCases: pendingModel.useCases,
+                use_cases: pendingModel.use_cases,
                 setup: pendingModel.setup,
-                imgUrl: pendingModel.imgUrl,
-                fileStorage: pendingModel.fileStorage,
-                price: parseInt(pendingModel.price) || 500, // Ensure price is an integer (cents)
+                img_url: JSON.stringify(fileStorage), // Store file storage as JSON string in img_url
+                price: parseInt(pendingModel.price) || 500,
                 likes: 0,
-                likedBy: [],
                 downloads: 0
             };
 
-            const newModel = await prisma.model.create({
-                data: modelData
-            });
-            
+            console.log('🔄 APPROVE: Creating new model with data:', JSON.stringify(modelData, null, 2));
+            const newModel = await modelDB.createModel(modelData);
+            console.log('✅ APPROVE: New model created successfully with ID:', newModel.id);
+
+            // Get the user to get their ID for notification
+            const authorUser = await userDB.getUserByEmail(pendingModel.author_email);
+            console.log('📧 APPROVE: Creating notification for user:', authorUser.id);
+
             // Create approval notification
-            await prisma.notification.create({
-                data: {
-                    userId: pendingModel.authorId,
-                    userEmail: pendingModel.authorEmail,
-                    type: 'model_approval',
-                    title: 'Model Approved',
-                    message: `Your model "${pendingModel.name}" has been approved and is now live on the platform.`,
-                    relatedModelId: newModel.id
-                }
-            });
+            const notificationData = {
+                user_id: authorUser.id,
+                user_email: pendingModel.author_email,
+                notification_type: 'model_approval',
+                title: 'Model Approved',
+                message: `Your model "${pendingModel.name}" has been approved and is now live on the platform.`
+            };
+            await notificationDB.createNotification(notificationData);
+            console.log('✅ APPROVE: Notification created successfully');
 
             // Delete the pending model after successful approval
-            await prisma.pendingModel.delete({
-                where: { id }
-            });
+            await pendingModelDB.deletePendingModel(id);
+            console.log('✅ APPROVE: Pending model deleted successfully');
 
-            return NextResponse.json({ 
+            console.log('🎉 APPROVE: Process completed successfully');
+            return NextResponse.json({
                 message: "Model approved successfully",
                 model: newModel
             });
@@ -72,24 +113,32 @@ export async function PATCH(req, { params }) {
                 );
             }
 
+            // Get the user to get their ID for notification
+            const authorUser = await userDB.getUserByEmail(pendingModel.author_email);
+
             // Create rejection notification
-            await prisma.notification.create({
-                data: {
-                    userId: pendingModel.authorId,
-                    userEmail: pendingModel.authorEmail,
-                    type: 'model_rejection',
-                    title: 'Model Rejected',
-                    message: `Your model "${pendingModel.name}" has been rejected. Reason: ${rejectionReason}`,
-                    relatedModelId: pendingModel.id
-                }
-            });
+            const notificationData = {
+                user_id: authorUser.id,
+                user_email: pendingModel.author_email,
+                notification_type: 'model_rejection',
+                title: 'Model Rejected',
+                message: `Your model "${pendingModel.name}" has been rejected. Reason: ${rejectionReason}`
+            };
+            await notificationDB.createNotification(notificationData);
+
+            // Parse and delete file from storage if it exists
+            let fileStorage = null;
+            try {
+                fileStorage = pendingModel.img_url ? JSON.parse(pendingModel.img_url) : null;
+                await deleteFileFromStorage(fileStorage);
+            } catch (e) {
+                console.error('Error deleting file storage:', e);
+            }
 
             // Delete the pending model after creating notification
-            await prisma.pendingModel.delete({
-                where: { id }
-            });
+            await pendingModelDB.deletePendingModel(id);
 
-            return NextResponse.json({ 
+            return NextResponse.json({
                 message: "Model rejected successfully"
             });
         } else {

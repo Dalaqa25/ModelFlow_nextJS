@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { prisma } from '../../../../lib/db/prisma';
+import { userDB, withdrawalDB } from '@/lib/db/supabase-db';
 
 export async function POST(request) {
   try {
@@ -14,9 +14,7 @@ export async function POST(request) {
     }
     
     // Get the user from our database
-    const user = await prisma.user.findFirst({
-      where: { email: supabaseUser.email }
-    });
+    const user = await userDB.getUserByEmail(supabaseUser.email);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -53,13 +51,11 @@ export async function POST(request) {
     }
 
     // Create new withdrawal request
-    const withdrawalRequest = await prisma.withdrawalRequest.create({
-      data: {
-        userId: user.id, // Use the actual user's Prisma ID
-        paypalEmail,
-        amount,
-        status: 'pending'
-      }
+    const withdrawalRequest = await withdrawalDB.createWithdrawalRequest({
+      user_email: user.email,
+      paypal_email: paypalEmail,
+      amount,
+      status: 'pending'
     });
 
     return NextResponse.json(

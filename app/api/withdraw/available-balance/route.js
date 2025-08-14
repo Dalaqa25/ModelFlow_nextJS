@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { prisma } from '@/lib/db/prisma';
+import { userDB } from '@/lib/db/supabase-db';
 
 export async function GET() {
   try {
@@ -9,23 +9,21 @@ export async function GET() {
     if (!supabaseUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Get the user from our database
-    const user = await prisma.user.findFirst({
-      where: { email: supabaseUser.email }
-    });
+    const user = await userDB.getUserByEmail(supabaseUser.email);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
+
     // Calculate available balance dynamically
     let availableBalance;
-    if (user.withdrawnAmount === 0 || !user.withdrawnAmount) {
-      availableBalance = user.totalEarnings;
+    if (user.withdrawn_amount === 0 || !user.withdrawn_amount) {
+      availableBalance = user.total_earnings || 0;
     } else {
-      availableBalance = user.totalEarnings - user.withdrawnAmount;
+      availableBalance = (user.total_earnings || 0) - user.withdrawn_amount;
     }
-    
+
     return NextResponse.json({ availableBalance });
   } catch (error) {
     console.error('Error calculating available balance:', error);

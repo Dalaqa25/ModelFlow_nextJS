@@ -72,39 +72,48 @@ export async function POST(req) {
             );
         }
 
+        // First, let's try with just the basic fields to see what works
         const modelData = {
             name: data.name,
             description: data.description,
-            useCases: data.useCases,
-            features: data.features,
-            tags: tags,
             setup: data.setup,
             price: parseFloat(data.price) || 0,
-            authorId: userDoc.id,
-            authorEmail: user.email,
+            author_id: userDoc.id,  // This is required in the actual database
+            author_email: user.email,
             status: 'pending'
         };
+
+        // Add optional fields if they exist in the schema
+        if (data.useCases) {
+            modelData.use_cases = data.useCases;
+        }
+        if (data.features) {
+            modelData.features = data.features;
+        }
+        if (tags && tags.length > 0) {
+            modelData.tags = tags;
+        }
 
         // Handle file storage information
         const uploadType = data.uploadType;
         const fileStorage = data.fileStorage ? (typeof data.fileStorage === 'string' ? JSON.parse(data.fileStorage) : data.fileStorage) : null;
         const driveLink = data.driveLink;
 
+        // Store file storage info in img_url as JSON string since file_storage column doesn't exist
         if (uploadType === 'zip' && fileStorage) {
-            modelData.fileStorage = {
+            modelData.img_url = JSON.stringify({
                 ...fileStorage,
                 type: 'zip',
-                uploadedAt: fileStorage.uploadedAt || new Date()
-            };
-            // Skipping FastAPI validation for now since we don't have the file
+                uploadedAt: fileStorage.uploadedAt || new Date().toISOString()
+            });
         } else if (uploadType === 'drive' && driveLink) {
-            modelData.fileStorage = {
+            modelData.img_url = JSON.stringify({
                 type: 'drive',
                 url: driveLink,
                 fileName: driveLink.split('/').pop() || 'drive-file',
                 folderPath: `pending-models/drive-links/${user.email}`,
-                uploadedAt: new Date()
-            };
+                uploadedAt: new Date().toISOString()
+            });
         } else {
             return NextResponse.json(
                 { error: 'No file or drive link provided' },
@@ -112,10 +121,12 @@ export async function POST(req) {
             );
         }
 
+        console.log('Attempting to create pending model with data:', modelData);
         const pendingModel = await pendingModelDB.createPendingModel(modelData);
         return NextResponse.json(pendingModel, { status: 201 });
     } catch (error) {
         console.error('Error creating pending model:', error);
+        console.error('Full error details:', JSON.stringify(error, null, 2));
         return NextResponse.json(
             { error: error.message || 'Failed to create pending model' },
             { status: 500 }

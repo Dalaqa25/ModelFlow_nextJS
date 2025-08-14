@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { prisma } from '../../../../lib/db/prisma';
+import { withdrawalDB } from '@/lib/db/supabase-db';
 
 export async function GET() {
   try {
