@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
-import { prisma } from "@/lib/db/prisma";
-import { withDatabaseRetry } from "@/lib/db/connection-utils";
+import { pendingModelDB, userDB } from "@/lib/db/supabase-db";
 
 // Get all pending models (admin only)
-export async function GET(req) {
+export async function GET(_req) {
     try {
         const user = await getSupabaseUser();
 
@@ -12,17 +11,7 @@ export async function GET(req) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const pendingModels = await withDatabaseRetry(async () => {
-            return await prisma.pendingModel.findMany({
-                where: { status: 'pending' },
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    author: {
-                        select: { name: true, email: true }
-                    }
-                }
-            });
-        });
+        const pendingModels = await pendingModelDB.getAllPendingModels();
 
         return NextResponse.json(pendingModels);
     } catch (error) {
@@ -41,11 +30,7 @@ export async function POST(req) {
         }
 
         // Find the user document
-        const userDoc = await withDatabaseRetry(async () => {
-            return await prisma.user.findUnique({
-                where: { email: user.email }
-            });
-        });
+        const userDoc = await userDB.getUserByEmail(user.email);
         if (!userDoc) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
@@ -127,11 +112,7 @@ export async function POST(req) {
             );
         }
 
-        const pendingModel = await withDatabaseRetry(async () => {
-            return await prisma.pendingModel.create({
-                data: modelData
-            });
-        });
+        const pendingModel = await pendingModelDB.createPendingModel(modelData);
         return NextResponse.json(pendingModel, { status: 201 });
     } catch (error) {
         console.error('Error creating pending model:', error);

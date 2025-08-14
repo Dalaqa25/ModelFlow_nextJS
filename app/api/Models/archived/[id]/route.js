@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
+import { supabase as dbSupabase } from '@/lib/db/supabase-db';
 import { supabase } from '@/lib/supabase';
 import { sendDeletionWarningEmail } from '@/lib/email/sendDeletionWarning';
 
-export async function DELETE(req, context) {
+export async function DELETE(_req, context) {
   const { params } = await context;
   const { id } = await params;
   try {
-    const archivedModel = await prisma.archivedModel.findUnique({
-      where: { id }
-    });
-    if (!archivedModel) {
+    const { data: archivedModel, error } = await dbSupabase
+      .from('archived_models')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !archivedModel) {
       return NextResponse.json({ error: 'Archived model not found' }, { status: 404 });
     }
 
@@ -41,9 +44,10 @@ export async function DELETE(req, context) {
         }
       }
       // Delete the archived model document
-      await prisma.archivedModel.delete({
-        where: { id }
-      });
+      await dbSupabase
+        .from('archived_models')
+        .delete()
+        .eq('id', id);
       return NextResponse.json({ message: 'Archived model and file deleted successfully' }, { status: 200 });
     }
   } catch (error) {

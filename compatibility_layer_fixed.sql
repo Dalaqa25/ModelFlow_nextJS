@@ -1,4 +1,4 @@
--- Compatibility Layer for Existing Application Code
+-- FIXED Compatibility Layer for Existing Application Code
 -- This script creates views and adjustments to make the new PostgreSQL schema 
 -- compatible with your existing Supabase application code
 
@@ -13,7 +13,8 @@ SELECT
     -- Add model details for convenience
     m.name as model_name,
     m.author_email as model_author_email,
-    m.img_url as model_img_url
+    m.img_url as model_img_url,
+    m.archived
 FROM model_purchases mp
 JOIN models m ON mp.model_id = m.id;
 
@@ -160,55 +161,29 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create the instead-of trigger for the view
+DROP TRIGGER IF EXISTS purchased_models_insert_trigger ON purchased_models;
 CREATE TRIGGER purchased_models_insert_trigger
     INSTEAD OF INSERT ON purchased_models
     FOR EACH ROW
     EXECUTE FUNCTION purchased_models_insert();
 
--- 7. Add missing columns to match your existing schema expectations
--- Note: Removed computed column due to immutability issues
-
--- 8. Create indexes for the new compatibility layer
+-- 7. Create indexes for the new compatibility layer
 CREATE INDEX IF NOT EXISTS idx_model_purchases_user_email ON model_purchases(user_email);
 CREATE INDEX IF NOT EXISTS idx_model_purchases_purchased_at ON model_purchases(purchased_at DESC);
 
--- 9. Grant necessary permissions (adjust as needed for your setup)
--- These might not be needed in Supabase, but good to have
--- GRANT SELECT ON purchased_models TO authenticated;
--- GRANT SELECT ON users_with_subscription TO authenticated;
-
--- 10. Test queries to verify compatibility
--- You can run these to test that everything works:
+-- 8. Test the setup with some sample queries
+-- You can uncomment these to test after running the script
 
 /*
--- Test 1: Insert a user
-INSERT INTO users (name, email, subscription_plan) 
-VALUES ('Test User', 'test@example.com', 'professional');
+-- Test 1: Check if the view exists
+SELECT table_name, table_type 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name = 'purchased_models';
 
--- Test 2: Insert a model
-INSERT INTO models (name, author_id, author_email, setup) 
-VALUES ('Test Model', 
-        (SELECT id FROM users WHERE email = 'test@example.com'),
-        'test@example.com',
-        'Setup instructions');
+-- Test 2: Check if you can query the empty view
+SELECT COUNT(*) FROM purchased_models;
 
--- Test 3: Insert a purchase using the view
-INSERT INTO purchased_models (model_id, user_email, price)
-VALUES (
-    (SELECT id FROM models WHERE name = 'Test Model'),
-    'test@example.com',
-    999
-);
-
--- Test 4: Query purchases (should work with your existing code)
-SELECT * FROM purchased_models WHERE user_email = 'test@example.com';
-
--- Test 5: Query users with subscription (should work with your existing code)
-SELECT * FROM users_with_subscription WHERE email = 'test@example.com';
-
--- Test 6: Update subscription using the compatibility function
-SELECT * FROM update_user_subscription_compatibility(
-    'test@example.com', 
-    '{"plan": "enterprise"}'::jsonb
-);
+-- Test 3: Check users view
+SELECT COUNT(*) FROM users_with_subscription;
 */

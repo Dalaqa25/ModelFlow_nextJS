@@ -1,17 +1,15 @@
-import { prisma } from '@/lib/db/prisma';
+import { userDB } from '@/lib/db/supabase-db';
 
 export async function GET() {
     try {
         // Remove: const { getUser } = getKindeServerSession();
         // Remove: const kindeUser = await getUser();
-        
+
         // Remove: if (!kindeUser || !kindeUser.email || !kindeUser.id) {
         // Remove:     return Response.json({ synced: false, reason: "No Kinde user found" }, { status: 400 });
         // Remove: }
 
-        const postgresUser = await prisma.user.findFirst({
-            where: { email: "test@example.com" } // Placeholder for email
-        });
+        const postgresUser = await userDB.getUserByEmail("test@example.com"); // Placeholder for email
 
         if (postgresUser) {
             // Update existing user with latest data

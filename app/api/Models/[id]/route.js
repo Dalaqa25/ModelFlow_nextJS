@@ -1,32 +1,26 @@
 // /app/api/models/[id]/route.js
-import { prisma } from "@/lib/db/prisma";
+import { modelDB, supabase } from "@/lib/db/supabase-db";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
-export async function GET(req, { params }) {
+export async function GET(_req, { params }) {
     try {
         const { id } = await params;
-        
+
         // Try to find in regular models first
-        let model = await prisma.model.findUnique({
-            where: { id },
-            include: {
-                author: {
-                    select: {
-                        name: true,
-                        profileImageUrl: true
-                    }
-                }
-            }
-        });
-        
-        // If not found in models, try archived models
-        if (!model) {
-            model = await prisma.archivedModel.findUnique({
-                where: { id }
-            });
+        let model;
+        try {
+            model = await modelDB.getModelById(id);
+        } catch (error) {
+            // If not found in models, try archived models
+            const { data: archivedModel } = await supabase
+                .from('archived_models')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            model = archivedModel;
         }
-        
+
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
@@ -37,17 +31,12 @@ export async function GET(req, { params }) {
     }
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(_req, { params }) {
     try {
         const { id } = params;
-        
-        const deleted = await prisma.model.delete({
-            where: { id }
-        });
-        
-        if (!deleted) {
-            return NextResponse.json({ error: 'Model not found' }, { status: 404 });
-        }
+
+        await modelDB.deleteModel(id);
+
         return NextResponse.json({ message: 'Model deleted successfully' }, { status: 200 });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

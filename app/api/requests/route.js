@@ -1,18 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/db/prisma";
+import { requestDB } from '@/lib/db/supabase-db';
 
 
 export async function GET() {
   try {
-    const requests = await prisma.request.findMany({
-      include: {
-        comments: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    
+    const requests = await requestDB.getAllRequests();
     return NextResponse.json(requests);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -22,12 +14,7 @@ export async function GET() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const newRequest = await prisma.request.create({
-      data: body,
-      include: {
-        comments: true
-      }
-    });
+    const newRequest = await requestDB.createRequest(body);
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

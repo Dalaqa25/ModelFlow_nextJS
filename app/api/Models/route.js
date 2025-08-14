@@ -1,5 +1,6 @@
-import { modelDB } from "@/lib/db/supabase-db";
+import { modelDB, userDB } from "@/lib/db/supabase-db";
 import { NextResponse } from "next/server";
+import { getSupabaseUser } from '@/lib/auth-utils';
 
 export async function GET() {
   try {
@@ -23,11 +24,7 @@ export async function POST(req) {
     }
 
     // Find the user document first
-    const userDoc = await withDatabaseRetry(async () => {
-      return await prisma.user.findFirst({
-        where: { email: user.email }
-      });
-    });
+    const userDoc = await userDB.getUserByEmail(user.email);
     if (!userDoc) {
       return NextResponse.json(
         { error: 'User not found in database' },
@@ -115,7 +112,7 @@ export async function POST(req) {
       tags: tags,
       setup: formData.get('setup'),
       price: parseFloat(formData.get('price')) || 0,
-      authorId: userDoc.id, // Use the user's Prisma ID
+      author_id: userDoc.id, // Use the user's ID
       authorEmail: user.email,
       fileStorage: fileStorage
     };
@@ -128,19 +125,7 @@ export async function POST(req) {
       }
     });
 
-    const model = await withDatabaseRetry(async () => {
-      return await prisma.model.create({
-        data: modelData,
-        include: {
-          author: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        }
-      });
-    });
+    const model = await modelDB.createModel(modelData);
     return NextResponse.json(model, { status: 201 });
   } catch (error) {
     console.error('Error creating model:', error);

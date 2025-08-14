@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { modelDB, pendingModelDB } from '@/lib/db/supabase-db';
+import { modelDB, pendingModelDB, userDB } from '@/lib/db/supabase-db';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -12,23 +12,29 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         let email = searchParams.get('email');
+        let authenticatedUser = null;
 
         // If no email parameter, get it from authenticated user
         if (!email) {
-            const user = await getSupabaseUser();
-            if (!user) {
+            authenticatedUser = await getSupabaseUser();
+            if (!authenticatedUser) {
                 return NextResponse.json(
                     { error: 'Unauthorized' },
                     { status: 401 }
                 );
             }
-            email = user.email;
+            email = authenticatedUser.email;
         }
 
-        // Get user data
-        const user = await modelDB.getUserByEmail(email);
-        if (!user) {
-            throw new Error('User not found');
+        // Get user data - create user if doesn't exist
+        let userData = await userDB.getUserByEmail(email);
+        if (!userData) {
+            // Create user if doesn't exist
+            userData = await userDB.upsertUser({
+                email: email,
+                name: email.split('@')[0], // Use email prefix as name
+                subscription_plan: 'basic'
+            });
         }
 
         // Fetch both regular models and pending models
@@ -76,7 +82,7 @@ export async function GET(request) {
         return NextResponse.json({
             models: allModels,
             totalStorageUsedMB,
-            plan: user.subscription?.plan || 'basic',
+            plan: userData.subscription_plan || 'basic',
             storageError
         });
     } catch (error) {

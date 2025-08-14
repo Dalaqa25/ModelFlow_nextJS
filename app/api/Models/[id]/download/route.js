@@ -1,25 +1,45 @@
 import { supabase } from '@/lib/supabase';
-import { prisma } from '@/lib/db/prisma';
+import { modelDB, supabase as dbSupabase } from '@/lib/db/supabase-db';
 import { NextResponse } from 'next/server';
 
-export async function GET(req, context) {
+export async function GET(_request, context) {
   try {
     const { id } = await context.params;
-    // 1. Get model from DB (try Model first, then ArchivedModel)
-    let model = await prisma.model.findUnique({
-      where: { id }
-    });
-    
-    if (!model) {
-      model = await prisma.archivedModel.findUnique({
-        where: { id }
-      });
-    }
-    
-    if (!model) return NextResponse.json({ error: 'Model not found' }, { status: 404 });
 
-    // 2. Get file path from model
-    const filePath = model.fileStorage?.supabasePath;
+    // 1. Get model from DB (try Model first, then ArchivedModel)
+    let model;
+    let filePath;
+
+    try {
+      model = await modelDB.getModelById(id);
+      // Get file storage for regular model
+      const { data: fileStorage } = await dbSupabase
+        .from('model_file_storage')
+        .select('supabase_path')
+        .eq('model_id', id)
+        .maybeSingle();
+      filePath = fileStorage?.supabase_path;
+    } catch (error) {
+      // Try archived models
+      const { data: archivedModel } = await dbSupabase
+        .from('archived_models')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (archivedModel) {
+        model = archivedModel;
+        // Get file storage for archived model
+        const { data: fileStorage } = await dbSupabase
+          .from('archived_model_file_storage')
+          .select('supabase_path')
+          .eq('archived_model_id', id)
+          .maybeSingle();
+        filePath = fileStorage?.supabase_path;
+      }
+    }
+
+    if (!model) return NextResponse.json({ error: 'Model not found' }, { status: 404 });
     if (!filePath) return NextResponse.json({ error: 'No file path found for model' }, { status: 400 });
 
     // 3. Generate signed URL
@@ -35,4 +55,4 @@ export async function GET(req, context) {
     console.error('Download API error:', err);
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
   }
-} 
+}

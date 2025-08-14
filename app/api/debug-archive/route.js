@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase } from '@/lib/db/supabase-db';
 
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const email = searchParams.get('email');
-        
+
         if (!email) {
             return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
         }
 
-        // Get archived models from database using Prisma
-        const models = await prisma.archivedModel.findMany({
-            where: { authorEmail: email },
-            orderBy: { createdAt: 'desc' }
-        });
+        // Get archived models from database using Supabase
+        const { data: models, error: dbError } = await supabase
+            .from('archived_models')
+            .select('*')
+            .eq('author_email', email)
+            .order('created_at', { ascending: false });
+
+        if (dbError) throw dbError;
         
         // Get files from Supabase
         const { data: allFiles, error: storageError } = await supabase

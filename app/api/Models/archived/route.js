@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // Service role key for backend
-);
+import { archivedModelDB, userDB } from '@/lib/db/supabase-db';
 
 export async function GET(request) {
     try {
@@ -14,21 +8,15 @@ export async function GET(request) {
         const email = searchParams.get('email');
         let plan = 'basic';
         if (email) {
-            // Fetch user from Prisma
-            const user = await prisma.user.findUnique({
-                where: { email },
-                select: { subscription: true }
-            });
-            if (user && user.subscription?.plan) {
-                plan = user.subscription.plan;
+            // Fetch user from Supabase
+            const user = await userDB.getUserByEmail(email);
+            if (user && user.subscription_plan) {
+                plan = user.subscription_plan;
             }
         }
-        
+
         const models = email
-            ? await prisma.archivedModel.findMany({
-                where: { authorEmail: email },
-                orderBy: { createdAt: 'desc' }
-            })
+            ? await archivedModelDB.getArchivedModelsByAuthor(email)
             : [];
         
         console.log(`[DEBUG] Found ${models.length} archived models for ${email}`);
