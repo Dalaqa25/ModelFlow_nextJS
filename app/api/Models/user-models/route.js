@@ -43,9 +43,9 @@ export async function GET(request) {
             pendingModelDB.getPendingModelsByAuthor(email)
         ]);
 
-        // Combine both arrays and sort by createdAt
+        // Combine both arrays and sort by created_at
         const allModels = [...models, ...pendingModels].sort((a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
+            new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)
         );
 
         // --- Storage usage calculation ---
@@ -64,7 +64,21 @@ export async function GET(request) {
                 storageError = supabaseError.message;
             } else {
                 for (const model of allModels) {
-                    const supabasePath = model.fileStorage?.supabasePath;
+                    let supabasePath = null;
+
+                    // Try to get supabasePath from different possible locations
+                    if (model.fileStorage?.supabasePath) {
+                        supabasePath = model.fileStorage.supabasePath;
+                    } else if (model.img_url) {
+                        // Parse JSON from img_url field
+                        try {
+                            const fileStorage = JSON.parse(model.img_url);
+                            supabasePath = fileStorage?.supabasePath;
+                        } catch (e) {
+                            // Ignore parsing errors
+                        }
+                    }
+
                     if (!supabasePath) continue;
                     const file = allFiles.find(f => f.name === supabasePath);
                     if (file && file.metadata && file.metadata.size) {

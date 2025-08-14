@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { archivedModelDB, userDB } from '@/lib/db/supabase-db';
+
+// Initialize Supabase client for storage operations
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
     try {

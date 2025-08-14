@@ -1,19 +1,14 @@
 'use client';
-import { FiPlus } from 'react-icons/fi';
-import { useState, useEffect } from 'react';
-import ModelUpload from '../components/model/modelupload/modelUpload';
+import { useState } from 'react';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag, FaTrash, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
+import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import ArchiveConfirm from './archive/ArchiveConfirm';
 import PLANS from '../plans';
 
-export default function UploadedModels({ isRowLayout }) { 
-    const [uploadedModels, setUploadedModels] = useState(false);
+export default function UploadedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
-    const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
-    const [editDialog, setEditDialog] = useState({ isOpen: false, model: null });
     const [archiveDialog, setArchiveDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const router = useRouter();
     const modelsPerPage = 5;
@@ -60,20 +55,7 @@ export default function UploadedModels({ isRowLayout }) {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const handleDeleteClick = (modelId, modelName) => {
-        setDeleteDialog({
-            isOpen: true,
-            modelId,
-            modelName
-        });
-    };
 
-    const handleEditClick = (model) => {
-        setEditDialog({
-            isOpen: true,
-            model
-        });
-    };
 
     const handleViewModel = (modelId) => {
         router.push(`/modelsList/${modelId}`);
@@ -135,12 +117,6 @@ export default function UploadedModels({ isRowLayout }) {
 
     return (
         <>
-            {/* Overlay with transition */}
-            <div
-                className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${uploadedModels || editDialog.isOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => { setUploadedModels(false); setEditDialog({ isOpen: false, model: null }); }}
-                style={{ transitionProperty: 'opacity' }}>
-            </div>
             {/* Archive confirmation dialog */}
             <ArchiveConfirm
                 isOpen={archiveDialog.isOpen}
@@ -160,24 +136,8 @@ export default function UploadedModels({ isRowLayout }) {
                         <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full" style={{ width: `${storagePercent}%` }}></div>
                     </div>
                 </div>
-                <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                    <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white`}>Uploaded Models</h2>
-                    <button
-                        onClick={() => setUploadedModels(true)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm font-medium"
-                    >
-                        <FiPlus size={20} />
-                        <span>Upload Model</span>
-                    </button>
-                </div>
-                <ModelUpload 
-                    isOpen={uploadedModels}
-                    onClose={() => setUploadedModels(false)}
-                    onUploadSuccess={() => {
-                        setUploadedModels(false);
-                        refetch();
-                    }}
-                />
+
+
                 {models.length === 0 ? (
                     <div className="text-center py-10 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                         <div className="max-w-md mx-auto">
@@ -222,7 +182,45 @@ export default function UploadedModels({ isRowLayout }) {
                                 
                                 <div className={`flex flex-col ${isRowLayout ? 'flex-1 justify-center' : 'mt-4'}`}>
                                     <h3 className={`font-semibold text-white ${isRowLayout ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>{model.name}</h3>
-                                    
+
+                                    {/* Model Info */}
+                                    <div className="flex flex-col gap-1 mb-3">
+                                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                                            <FaUser className="text-purple-400" />
+                                            <span>Uploaded by {model.author_email || 'You'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                                            <FaCalendarAlt className="text-purple-400" />
+                                            <span>
+                                                {model.created_at
+                                                    ? new Date(model.created_at).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })
+                                                    : 'Upload date unavailable'
+                                                }
+                                            </span>
+                                        </div>
+                                        {(() => {
+                                            try {
+                                                const fileStorage = model.img_url ? JSON.parse(model.img_url) : null;
+                                                if (fileStorage?.fileSize) {
+                                                    const fileSizeMB = (fileStorage.fileSize / (1024 * 1024)).toFixed(2);
+                                                    return (
+                                                        <div className="flex items-center gap-2 text-sm text-gray-300">
+                                                            <span className="text-purple-400">📁</span>
+                                                            <span>File size: {fileSizeMB} MB</span>
+                                                        </div>
+                                                    );
+                                                }
+                                            } catch (e) {
+                                                // Ignore parsing errors
+                                            }
+                                            return null;
+                                        })()}
+                                    </div>
+
                                     {model.status === 'pending' && (
                                         <div className="mb-3 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                                             <p className="text-yellow-300 text-sm flex items-center gap-2">
@@ -232,16 +230,7 @@ export default function UploadedModels({ isRowLayout }) {
                                         </div>
                                     )}
 
-                                    <div className="space-y-1 text-sm text-gray-300 mb-2">
-                                        <div className="flex items-center">
-                                            <FaUser className="mr-2 text-gray-400" />
-                                            <span>{model.authorEmail}</span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <FaCalendarAlt className="mr-2 text-gray-400" />
-                                            <span>Uploaded {new Date(model.createdAt).toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
+
 
                                     <div className="mb-4">
                                         <div className="flex items-center text-gray-300 mb-1">

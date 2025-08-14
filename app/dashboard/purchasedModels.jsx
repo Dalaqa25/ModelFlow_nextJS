@@ -90,11 +90,11 @@ export default function PurchasedModels({ isRowLayout }) {
 
     return (
         <div className="flex flex-col mt-15 mb-15">
-            <div className="flex flex-col sm:flex-row justify-between w-full gap-2 sm:gap-0 mb-4 sm:mb-8">
-                <h2 className={`${isRowLayout ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-4xl'} font-semibold text-white`}>Purchased Models</h2>
+            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
+                
             </div>
             {models.length === 0 ? (
-                <div className="text-center py-10 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
+                <div className="text-center py-10 bg-gray-400/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                     <div className="max-w-md mx-auto">
                         <div className="text-6xl mb-4">📦</div>
                         <p className="text-white text-lg font-medium">No Purchased Models Yet</p>
