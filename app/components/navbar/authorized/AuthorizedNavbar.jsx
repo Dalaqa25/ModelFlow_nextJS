@@ -7,6 +7,8 @@ import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import Notifications from "../../notifications";
 import ModelUpload from "../../model/modelupload/modelUpload";
+import ArchiveBox from "../../../dashboard/archive/ArchiveBox";
+import PLANS from "../../../plans";
 import {
     MdDashboard,
     MdViewInAr,
@@ -15,14 +17,17 @@ import {
     MdPerson,
     MdMenu,
     MdClose,
-    MdChevronLeft,
-    MdChevronRight,
     MdLogout,
     MdKeyboardArrowDown,
     MdNotifications,
-    MdAdd,
     MdSearch,
-    MdSettings
+    MdPushPin,
+    MdOutlinePushPin,
+    MdArchive,
+    MdLightMode,
+    MdDarkMode,
+    MdCloudUpload,
+    MdStorage
 } from "react-icons/md";
 import { useQuery } from '@tanstack/react-query';
 
@@ -37,6 +42,15 @@ export default function AuthorizedNavbar() {
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+
+    // Storage data state
+    const [storageData, setStorageData] = useState({
+        used: 0,
+        total: 5120, // 5GB in MB
+        percentage: 0
+    });
     const dropdownRef = useRef(null);
 
     // Fetch notifications for unread count
@@ -68,6 +82,44 @@ export default function AuthorizedNavbar() {
         localStorage.setItem('sidebarPinned', JSON.stringify(sidebarPinned));
     }, [sidebarPinned]);
 
+    // Fetch storage data
+    useEffect(() => {
+        const fetchStorageData = async () => {
+            if (!user?.email) return;
+
+            try {
+                const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const usedMB = data.totalStorageUsedMB || 0;
+                    const userPlan = data.plan || 'basic';
+
+                    // Get storage cap from PLANS based on user's actual plan
+                    const storageCapStr = PLANS[userPlan]?.features?.activeStorage || '250 MB';
+                    let totalMB = 250; // Default for basic plan
+
+                    if (storageCapStr.toLowerCase().includes('gb')) {
+                        totalMB = parseInt(storageCapStr.replace(/\D/g, '')) * 1024;
+                    } else if (storageCapStr.toLowerCase().includes('mb')) {
+                        totalMB = parseInt(storageCapStr.replace(/\D/g, ''));
+                    }
+
+                    const percentage = Math.min((usedMB / totalMB) * 100, 100);
+
+                    setStorageData({
+                        used: usedMB,
+                        total: totalMB,
+                        percentage: percentage
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch storage data:', error);
+            }
+        };
+
+        fetchStorageData();
+    }, [user?.email]);
+
     // Handle sidebar hover when not pinned
     const handleMouseEnter = () => {
         if (!sidebarPinned) {
@@ -86,6 +138,13 @@ export default function AuthorizedNavbar() {
         const newPinnedState = !sidebarPinned;
         setSidebarPinned(newPinnedState);
         setSidebarExpanded(newPinnedState);
+    };
+
+    // Handle theme toggle
+    const handleThemeToggle = () => {
+        setIsDarkMode(!isDarkMode);
+        // Here you would implement actual theme switching logic
+        console.log('Theme toggled to:', !isDarkMode ? 'dark' : 'light');
     };
 
     // Handle sign out
@@ -163,15 +222,6 @@ export default function AuthorizedNavbar() {
 
                 {/* Right side - User info */}
                 <div className="ml-auto flex items-center gap-4">
-                    {/* Quick Upload Button */}
-                    <button
-                        onClick={() => setUploadDialogOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
-                        title="Upload New Model"
-                    >
-                        <MdAdd size={20} />
-                        <span className="hidden sm:inline">Upload Model</span>
-                    </button>
 
                     {/* Notifications Bell */}
                     <button
@@ -217,14 +267,33 @@ export default function AuthorizedNavbar() {
                                     <MdPerson size={16} />
                                     View Profile
                                 </NavigationLink>
-                                <NavigationLink
-                                    href="/profile"
-                                    onClick={() => setUserDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-slate-700/50 transition-colors"
+                                <button
+                                    onClick={() => {
+                                        handleThemeToggle();
+                                        setUserDropdownOpen(false);
+                                    }}
+                                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-slate-700/50 transition-all duration-300 w-full text-left group"
                                 >
-                                    <MdSettings size={16} />
-                                    Settings
-                                </NavigationLink>
+                                    <div className="relative w-4 h-4 flex items-center justify-center overflow-hidden">
+                                        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 transform group-hover:rotate-12 ${
+                                            isDarkMode
+                                                ? 'opacity-100 rotate-0 scale-100 translate-y-0'
+                                                : 'opacity-0 rotate-90 scale-75 -translate-y-2'
+                                        }`}>
+                                            <MdLightMode size={16} />
+                                        </div>
+                                        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 transform group-hover:rotate-12 ${
+                                            !isDarkMode
+                                                ? 'opacity-100 rotate-0 scale-100 translate-y-0'
+                                                : 'opacity-0 -rotate-90 scale-75 translate-y-2'
+                                        }`}>
+                                            <MdDarkMode size={16} />
+                                        </div>
+                                    </div>
+                                    <span className="transition-all duration-300 group-hover:translate-x-1">
+                                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                                    </span>
+                                </button>
                                 <hr className="my-1 border-slate-600/50" />
                                 <button
                                     onClick={() => {
@@ -251,6 +320,7 @@ export default function AuthorizedNavbar() {
                 onMouseLeave={handleMouseLeave}
             >
                 <nav className="p-4 space-y-2 flex-1">
+                    {/* Main Navigation Routes */}
                     {navRoutes.map(({ href, title, icon: Icon }) => {
                         const isActive = pathname === href;
                         return (
@@ -264,14 +334,104 @@ export default function AuthorizedNavbar() {
                                 }`}
                             >
                                 <Icon size={20} className="flex-shrink-0" />
-                                <span className={`transition-all duration-300 ${
-                                    sidebarExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
+                                <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
+                                    sidebarExpanded
+                                        ? 'opacity-100 translate-x-0 max-w-xs'
+                                        : 'opacity-0 -translate-x-2 max-w-0'
                                 }`}>
                                     {title}
                                 </span>
                             </NavigationLink>
                         );
                     })}
+
+                    {/* Separator */}
+                    <div className="my-4 border-t border-slate-700/50"></div>
+
+                    {/* Archived Models Section */}
+                    <button
+                        onClick={() => setArchiveDialogOpen(true)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:bg-slate-800/50 hover:text-purple-400 w-full"
+                        title="View Archived Models"
+                    >
+                        <MdArchive size={20} className="flex-shrink-0" />
+                        <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
+                            sidebarExpanded
+                                ? 'opacity-100 translate-x-0 max-w-xs'
+                                : 'opacity-0 -translate-x-2 max-w-0'
+                        }`}>
+                            Archived Models
+                        </span>
+                    </button>
+
+                    {/* Upload Model Section */}
+                    <button
+                        onClick={() => setUploadDialogOpen(true)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:bg-slate-800/50 hover:text-purple-400 w-full"
+                        title="Upload New Model"
+                    >
+                        <MdCloudUpload size={20} className="flex-shrink-0" />
+                        <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
+                            sidebarExpanded
+                                ? 'opacity-100 translate-x-0 max-w-xs'
+                                : 'opacity-0 -translate-x-2 max-w-0'
+                        }`}>
+                            Upload Model
+                        </span>
+                    </button>
+
+                    {/* Another Separator */}
+                    <div className="my-4 border-t border-slate-700/50"></div>
+
+                    {/* Storage Usage Section */}
+                    <div className="flex items-center gap-3 px-3 py-2">
+                        {/* Circular Progress Indicator */}
+                        <div className="relative flex-shrink-0">
+                            <svg className="w-5 h-5 transform -rotate-90" viewBox="0 0 36 36">
+                                {/* Background circle */}
+                                <path
+                                    className="text-slate-700"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    fill="transparent"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                                {/* Progress circle */}
+                                <path
+                                    className={`transition-all duration-500 ${
+                                        storageData.percentage > 80
+                                            ? 'text-red-500'
+                                            : storageData.percentage > 60
+                                            ? 'text-yellow-500'
+                                            : 'text-purple-500'
+                                    }`}
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    fill="transparent"
+                                    strokeDasharray={`${storageData.percentage}, 100`}
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                            </svg>
+                            {/* Storage icon in center */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <MdStorage size={12} className="text-gray-400" />
+                            </div>
+                        </div>
+
+                        {/* Storage details when expanded */}
+                        {sidebarExpanded && (
+                            <div className="transition-all duration-300 opacity-100 translate-x-0 whitespace-nowrap overflow-hidden">
+                                <div className="text-sm font-medium text-gray-300">Storage</div>
+                                <div className="text-xs text-gray-400">
+                                    {storageData.used < 1
+                                        ? `${(storageData.used * 1024).toFixed(0)}KB`
+                                        : `${storageData.used.toFixed(1)}MB`
+                                    } / {(storageData.total / 1024).toFixed(1)}GB
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </nav>
 
                 {/* Sidebar Toggle Button */}
@@ -283,10 +443,10 @@ export default function AuthorizedNavbar() {
                         }`}
                         title={sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar'}
                     >
-                        {sidebarExpanded ? (
-                            <MdChevronLeft size={20} className="flex-shrink-0" />
+                        {sidebarPinned ? (
+                            <MdPushPin size={20} className="flex-shrink-0 rotate-45" />
                         ) : (
-                            <MdChevronRight size={20} className="flex-shrink-0" />
+                            <MdOutlinePushPin size={20} className="flex-shrink-0" />
                         )}
                         <span className={`transition-all duration-300 ${
                             sidebarExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
@@ -326,6 +486,13 @@ export default function AuthorizedNavbar() {
                     setUploadDialogOpen(false);
                     // Optionally refresh data or show success message
                 }}
+            />
+
+            {/* Archive Dialog */}
+            <ArchiveBox
+                isOpen={archiveDialogOpen}
+                onClose={() => setArchiveDialogOpen(false)}
+                userEmail={user?.email}
             />
         </>
     );
