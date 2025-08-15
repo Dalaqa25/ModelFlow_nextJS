@@ -33,10 +33,6 @@ export default function RequestsClient() {
             <div className="pt-20 pb-12 px-6">
                 <div className="w-[92%] sm:w-[85%] mx-auto max-w-6xl">
                     <div className="flex flex-col items-center justify-center text-center mb-12">
-                        <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-8">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-                            Community Requests
-                        </div>
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
                             AI Model
                             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Requests</span>
@@ -58,7 +54,12 @@ export default function RequestsClient() {
                                 'New Request'
                             )}
                         </button>
-                        {isClicked && user && <RequestBox/>}
+                        {isClicked && user && (
+                            <RequestBox
+                                onClose={() => setIsClicked(false)}
+                                onRequestPublished={() => setIsClicked(false)}
+                            />
+                        )}
                     </div>
                     <div className="flex flex-col items-center justify-center mt-12 sm:mt-20 gap-3 sm:gap-5 mb-15">
                         <Request />

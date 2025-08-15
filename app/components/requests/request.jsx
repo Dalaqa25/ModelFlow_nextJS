@@ -67,46 +67,52 @@ export default function Request() {
     return (
         <>
             <div
-                className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${selectedRequestId ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-gray-500/50 z-50 transition-opacity duration-300 ${selectedRequestId ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setSelectedRequestId(null)}
                 style={{ transitionProperty: 'opacity' }}
             ></div>
+
+            {selectedRequestId && (
+                <RequestInfo
+                    request={requests.find(req => req.id === selectedRequestId)}
+                    onClose={() => setSelectedRequestId(null)}
+                />
+            )}
 
             {requests.map((req) => (
                 <div
                     key={req.id}
                     onClick={() => setSelectedRequestId(req.id)}
-                    className="w-[95%] sm:w-[85%] md:w-1/2 max-w-[950px] min-w-[280px] border rounded-2xl border-gray-200 cursor-pointer hover:shadow transition-all duration-300 ease-in-out"
+                    className="w-[95%] sm:w-[85%] md:w-1/2 max-w-[950px] min-w-[280px] bg-slate-800/90 backdrop-blur-md border border-slate-700/50 rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-purple-500/25 hover:border-purple-500/50 transition-all duration-300 ease-in-out"
                 >
-                    {selectedRequestId === req.id && <RequestInfo request={req} onClose={() => setSelectedRequestId(null)} />}
                     <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3">
-                        <h1 className="text-xl sm:text-2xl font-semibold">{req.title}</h1>
-                        <p className="text-sm sm:text-base font-light text-gray-600">
-                            {req.description.length > 150 
-                                ? `${req.description.substring(0, 150)}...` 
+                        <h1 className="text-xl sm:text-2xl font-semibold text-white">{req.title}</h1>
+                        <p className="text-sm sm:text-base font-light text-slate-300">
+                            {req.description.length > 150
+                                ? `${req.description.substring(0, 150)}...`
                                 : req.description}
                         </p>
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <div className="flex flex-wrap gap-2">
                                 {req.tags.map((tag, index) => (
-                                    <p key={index} className="text-sm sm:text-base text-purple-800 rounded-xl font-light px-2 sm:px-3 py-0.5 bg-[rgba(78,96,255,0.14)]">
+                                    <span key={index} className="text-sm sm:text-base text-purple-300 rounded-xl font-medium px-2 sm:px-3 py-0.5 bg-purple-500/20 border border-purple-500/30">
                                         {tag}
-                                    </p>
+                                    </span>
                                 ))}
                             </div>
                             <div className="flex gap-2 items-center">
-                                <FaRegComment className="cursor-pointer text-gray-500 hover:text-blue-500 text-lg sm:text-xl" />
-                                <span className="text-sm sm:text-base text-gray-500">{req.commentsCount}</span>
+                                <FaRegComment className="cursor-pointer text-slate-400 hover:text-purple-400 text-lg sm:text-xl transition-colors" />
+                                <span className="text-sm sm:text-base text-slate-400">{req.commentsCount || 0}</span>
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm gap-2 sm:gap-0">
-                            <div className="flex items-center gap-2 text-gray-500">
+                            <div className="flex items-center gap-2 text-slate-400">
                                 <FaRegUser className="text-sm sm:text-base" />
-                                <p>{req.authorEmail}</p>
+                                <p>{req.author_email}</p>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-500 font-light sm:ml-auto">
+                            <div className="flex items-center gap-2 text-slate-400 font-light sm:ml-auto">
                                 <p>Created on</p>
-                                <p className="text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</p>
+                                <p className="text-slate-300">{new Date(req.created_at).toLocaleDateString()}</p>
                             </div>
                         </div>
                     </div>

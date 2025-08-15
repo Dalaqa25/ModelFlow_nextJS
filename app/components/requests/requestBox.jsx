@@ -1,14 +1,16 @@
 'use client';
 import { useState } from 'react';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/lib/supabase-auth-context';
 
 export default function RequestBox({ onClose, onRequestPublished }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState(['']);
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
 
     const addTag = () => {
         setTags([...tags, '']);
@@ -28,23 +30,48 @@ export default function RequestBox({ onClose, onRequestPublished }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!loading) { // Removed user check as Kinde auth is removed
+        console.log('[RequestBox] Form submitted');
+        console.log('[RequestBox] User:', user);
+        console.log('[RequestBox] User email:', user?.email);
+
+        if (!user) {
+            console.log('[RequestBox] No user found, showing login error');
             toast.error('You must be logged in to publish a request.');
             return;
         }
+
+        console.log('[RequestBox] User authenticated, proceeding with request');
         setLoading(true);
+
+        const requestData = {
+            title: name,
+            description,
+            tags: tags.filter(tag => tag.trim() !== ''),
+            author_email: user.email || 'anonymous@example.com',
+        };
+
+        console.log('[RequestBox] Request data:', requestData);
+
         try {
+            console.log('[RequestBox] Sending POST request to /api/requests');
             const res = await fetch('/api/requests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: name,
-                    description,
-                    tags: tags.filter(tag => tag.trim() !== ''),
-                    authorEmail: 'anonymous@example.com', // Placeholder for authorEmail
-                }),
+                body: JSON.stringify(requestData),
             });
-            if (!res.ok) throw new Error('Failed to publish request');
+
+            console.log('[RequestBox] Response status:', res.status);
+            console.log('[RequestBox] Response ok:', res.ok);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.log('[RequestBox] Error response:', errorText);
+                throw new Error(`Failed to publish request: ${res.status} ${errorText}`);
+            }
+
+            const responseData = await res.json();
+            console.log('[RequestBox] Success response:', responseData);
+
             toast.success('Request published successfully!');
             setName('');
             setDescription('');
@@ -52,6 +79,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
             if (onClose) onClose();
             if (onRequestPublished) onRequestPublished();
         } catch (err) {
+            console.error('[RequestBox] Error:', err);
             toast.error(err.message || 'Failed to publish request');
         } finally {
             setLoading(false);
@@ -61,24 +89,45 @@ export default function RequestBox({ onClose, onRequestPublished }) {
     return (   
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl" onClick={onClose} />
+            <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClose && onClose();
+                }}
+            />
             
             {/* Modal */}
-            <motion.div 
-                className="relative bg-slate-800/90 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl flex flex-col items-center w-full max-w-md p-6"
+            <motion.div
+                className="relative bg-slate-800/90 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl w-full max-w-md p-6"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()}
             >
-                <form className="w-full flex flex-col gap-6" onSubmit={handleSubmit}>
+                {/* Close Button */}
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onClose && onClose();
+                    }}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 z-10"
+                >
+                    <FaTimes size={16} />
+                </button>
+
+                <form className="w-full flex flex-col gap-6 text-left" onSubmit={handleSubmit}>
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h2 className="text-2xl font-bold text-center text-white mb-2">Request a Model</h2>
-                        <p className="text-slate-400 text-center text-sm">Help us understand what you need</p>
+                        <h2 className="text-2xl font-bold text-white mb-2">Request a Model</h2>
+                        <p className="text-slate-400 text-sm">Help us understand what you need</p>
                     </motion.div>
 
                     <motion.div
@@ -86,7 +135,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.1 }}
                     >
-                        <label htmlFor="name" className="text-sm font-medium text-slate-300 mb-2 block">Expected name*</label>
+                        <label htmlFor="name" className="text-sm font-medium text-slate-300 mb-2 block text-left">Expected name*</label>
                         <input
                             type="text"
                             id="name"
@@ -104,7 +153,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.2 }}
                     >
-                        <label htmlFor="description" className="text-sm font-medium text-slate-300">Description*</label>
+                        <label htmlFor="description" className="text-sm font-medium text-slate-300 text-left">Description*</label>
                         <textarea
                             id="description"
                             rows={4}
@@ -122,7 +171,7 @@ export default function RequestBox({ onClose, onRequestPublished }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.3 }}
                     >
-                        <label className="text-sm font-medium text-slate-300">Tags</label>
+                        <label className="text-sm font-medium text-slate-300 text-left">Tags</label>
                         {tags.map((tag, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <input

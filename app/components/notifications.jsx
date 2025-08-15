@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FaBell, FaTimes, FaCheck, FaExclamationTriangle, FaComment, FaShoppingCart } from 'react-icons/fa';
 import { Dialog, Transition } from '@headlessui/react';
 
 export default function Notifications({ isOpen, onClose }) {
     const [selectedNotifications, setSelectedNotifications] = useState([]);
+    const queryClient = useQueryClient();
 
     const { data: notifications = [], isLoading, refetch } = useQuery({
         queryKey: ['notifications'],
@@ -29,8 +30,13 @@ export default function Notifications({ isOpen, onClose }) {
             });
 
             if (!response.ok) throw new Error('Failed to delete notifications');
-            
+
             setSelectedNotifications([]);
+
+            // Invalidate all notification queries to update the red badge
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+
+            // Also refetch this component's data
             refetch();
         } catch (error) {
             console.error('Error deleting notifications:', error);

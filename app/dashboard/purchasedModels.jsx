@@ -94,7 +94,7 @@ export default function PurchasedModels({ isRowLayout }) {
                 
             </div>
             {models.length === 0 ? (
-                <div className="text-center py-10 bg-gray-400/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
+                <div className="text-center py-10 bg-gray-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                     <div className="max-w-md mx-auto">
                         <div className="text-6xl mb-4">📦</div>
                         <p className="text-white text-lg font-medium">No Purchased Models Yet</p>

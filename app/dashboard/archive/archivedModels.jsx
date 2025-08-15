@@ -41,18 +41,36 @@ export default function ArchivedModels({ models = [], onModelDeleted }) {
             <PendingDeletionDialog isOpen={showPending} onClose={() => setShowPending(false)} />
         <div className="space-y-4">
             {models.length === 0 ? (
-                <div className="text-gray-400 text-center">No archived models yet.</div>
+                <div className="text-slate-400 text-center">No archived models yet.</div>
             ) : (
                 models.map((model, idx) => (
-                    <div key={idx} className="bg-purple-50 border border-purple-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-sm">
+                    <div key={idx} className="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between shadow-lg hover:shadow-purple-500/25 transition-all duration-200">
                         <div>
-                            <div className="text-lg font-semibold text-purple-800">{model.name}</div>
-                            <div className="text-sm text-gray-500">By: {model.authorEmail}</div>
+                            <div className="text-lg font-semibold text-white">{model.name}</div>
+                            <div className="text-sm text-slate-300">
+                                Created: {model.created_at
+                                    ? new Date(model.created_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })
+                                    : 'Unknown date'
+                                }
+                            </div>
                         </div>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 sm:mt-0">
-                                <div className="text-sm text-gray-600">Archived on: {new Date(model.createdAt).toLocaleDateString()}</div>
+                                <div className="text-sm text-slate-400">
+                                    Archived: {model.archived_at || model.createdAt
+                                        ? new Date(model.archived_at || model.createdAt).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })
+                                        : 'Unknown date'
+                                    }
+                                </div>
                                 <button
-                                    className="ml-4 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-semibold"
+                                    className="ml-4 px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-xs font-semibold shadow-lg hover:shadow-blue-500/25"
                                     onClick={() => handleNotify(model.id)}
                                     disabled={notifying}
                                 >

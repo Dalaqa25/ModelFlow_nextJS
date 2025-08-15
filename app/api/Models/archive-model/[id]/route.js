@@ -9,7 +9,10 @@ export async function PUT(_req, { params }) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const model = await modelDB.getModelById(params.id);
+        // Await params in Next.js 15
+        const { id } = await params;
+
+        const model = await modelDB.getModelById(id);
         if (!model) {
             return NextResponse.json({ error: 'Model not found' }, { status: 404 });
         }
@@ -18,7 +21,7 @@ export async function PUT(_req, { params }) {
         }
 
         // Archive the model using the archive function
-        await archivedModelDB.archiveModel(params.id);
+        await archivedModelDB.archiveModel(id);
 
         return NextResponse.json({ message: 'Model archived successfully' });
     } catch (error) {

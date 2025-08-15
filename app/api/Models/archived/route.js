@@ -51,14 +51,15 @@ export async function GET(request) {
         console.log(`[DEBUG] Supabase files:`, allFiles.map(f => f.name));
 
         for (const model of models) {
-            const supabasePath = model.fileStorage?.supabasePath;
+            // Get supabase_path from the new table structure
+            const supabasePath = model.supabase_path;
             console.log(`[DEBUG] Model "${model.name}" has supabasePath: ${supabasePath}`);
-            
+
             if (!supabasePath) {
                 console.log(`[DEBUG] No supabasePath for model "${model.name}"`);
                 continue;
             }
-            
+
             const file = allFiles.find(f => f.name === supabasePath);
             if (file && file.metadata && file.metadata.size) {
                 console.log(`[DEBUG] Found file "${supabasePath}" with size: ${file.metadata.size} bytes`);
