@@ -8,16 +8,16 @@ export default function EarningHistory({ earnings = [] }) {
     // Initialize earnings with countdown values
     const initialEarnings = earnings.map(earning => ({
       ...earning,
-      timeLeft: calculateTimeLeft(earning.releaseAt)
+      timeLeft: calculateTimeLeft(earning.release_at)
     }));
     setEarningsWithCountdown(initialEarnings);
 
     // Set up interval to update countdowns
     const interval = setInterval(() => {
-      setEarningsWithCountdown(prev => 
+      setEarningsWithCountdown(prev =>
         prev.map(earning => ({
           ...earning,
-          timeLeft: calculateTimeLeft(earning.releaseAt)
+          timeLeft: calculateTimeLeft(earning.release_at)
         }))
       );
     }, 1000);
@@ -80,10 +80,10 @@ export default function EarningHistory({ earnings = [] }) {
           <tbody className="divide-y divide-gray-200">
             {earningsWithCountdown.map((earning, index) => (
               <tr key={index} className="hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm text-gray-800">{earning.modelName || 'N/A'}</td>
-                <td className="py-3 px-4 text-sm text-gray-600">{earning.buyerEmail}</td>
+                <td className="py-3 px-4 text-sm text-gray-800">{earning.model_name || 'N/A'}</td>
+                <td className="py-3 px-4 text-sm text-gray-600">{earning.buyer_email}</td>
                 <td className="py-3 px-4 text-sm font-medium text-gray-800">{formatCurrency(earning.amount)}</td>
-                <td className="py-3 px-4 text-sm text-gray-600">{formatDate(earning.earnedAt)}</td>
+                <td className="py-3 px-4 text-sm text-gray-600">{formatDate(earning.earned_at)}</td>
                 <td className="py-3 px-4 text-sm">
                   {earning.timeLeft?.released ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

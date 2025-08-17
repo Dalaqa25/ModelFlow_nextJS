@@ -11,10 +11,10 @@ export default function EditProfile({ onClose, onSave, initialData }) {
 
     useEffect(() => {
         if (initialData) {
-            setAbout(initialData.aboutMe || "");
-            setWebsite(initialData.websiteLink || "");
-            setContactEmail(initialData.contactEmail || "");
-            setPreviewUrl(initialData.profileImageUrl || "");
+            setAbout(initialData.about_me || "");
+            setWebsite(initialData.website_link || "");
+            setContactEmail(initialData.contact_email || "");
+            setPreviewUrl(initialData.profile_image_url || "");
         }
     }, [initialData]);
 
@@ -31,7 +31,7 @@ export default function EditProfile({ onClose, onSave, initialData }) {
         setIsUploading(true);
 
         try {
-            let profileImageUrl = initialData?.profileImageUrl || "";
+            let profileImageUrl = initialData?.profile_image_url || "";
 
             // Upload image if a new one was selected
             if (profileImage) {

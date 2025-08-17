@@ -45,14 +45,14 @@ export async function PUT(request) {
         const data = await request.json();
 
         const updateData = {
-            aboutMe: data.aboutMe,
-            websiteLink: data.websiteLink,
-            contactEmail: data.contactEmail,
+            about_me: data.aboutMe,
+            website_link: data.websiteLink,
+            contact_email: data.contactEmail,
         };
 
         // Only update profileImageUrl if it's provided
         if (data.profileImageUrl) {
-            updateData.profileImageUrl = data.profileImageUrl;
+            updateData.profile_image_url = data.profileImageUrl;
         }
 
         const updatedUser = await userDB.upsertUser({
