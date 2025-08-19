@@ -1,15 +1,13 @@
 'use client';
 import { useState } from 'react';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle, FaArchive } from 'react-icons/fa';
+import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import ArchiveConfirm from './archive/ArchiveConfirm';
 import PLANS from '../plans';
 
 export default function UploadedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
-    const [archiveDialog, setArchiveDialog] = useState({ isOpen: false, modelId: null, modelName: '' });
     const router = useRouter();
     const modelsPerPage = 5;
 
@@ -61,31 +59,6 @@ export default function UploadedModels({ isRowLayout }) {
         router.push(`/modelsList/${modelId}`);
     };
 
-    // Replace handleArchiveClick to open confirmation dialog
-    const handleArchiveClick = (modelId, modelName) => {
-        setArchiveDialog({ isOpen: true, modelId, modelName });
-    };
-    // Confirm archive action
-    const confirmArchive = async () => {
-        try {
-            const response = await fetch(`/api/models/archive-model/${archiveDialog.modelId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to archive model');
-            }
-            await response.json();
-            refetch();
-            setArchiveDialog({ isOpen: false, modelId: null, modelName: '' });
-            alert('Model archived successfully!');
-        } catch (error) {
-            alert(`Error archiving model: ${error.message}`);
-        }
-    };
 
     if (isLoading) {
         return ( 
@@ -117,12 +90,6 @@ export default function UploadedModels({ isRowLayout }) {
 
     return (
         <>
-            {/* Archive confirmation dialog */}
-            <ArchiveConfirm
-                isOpen={archiveDialog.isOpen}
-                onConfirm={confirmArchive}
-                onCancel={() => setArchiveDialog({ isOpen: false, modelId: null, modelName: '' })}
-            />
             <div className="flex flex-col mt-6 mb-10">
                 {/* Storage Usage Indicator */}
                 <div className="mb-4">
@@ -258,15 +225,6 @@ export default function UploadedModels({ isRowLayout }) {
                                         >
                                             <FaEye />
                                             <span>View</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => model.status !== 'pending' ? handleArchiveClick(model.id, model.name) : null}
-                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors border
-                                                ${model.status === 'pending' ? 'bg-slate-700/30 text-gray-500 border-slate-600/30 cursor-not-allowed' : 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30'}`}
-                                            disabled={model.status === 'pending'}
-                                        >
-                                            <FaArchive />
-                                            <span>Archive</span>
                                         </button>
                                     </div>
                                 </div>

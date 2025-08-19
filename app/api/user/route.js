@@ -16,13 +16,7 @@ export async function GET() {
       // Create user if doesn't exist
       const newUser = await userDB.upsertUser({
         email: user.email,
-        name: user.user_metadata?.name || user.email,
-        createdAt: new Date().toISOString(),
-        subscription: {
-          plan: 'basic',
-          status: 'active',
-          balance: 0
-        }
+        name: user.user_metadata?.name || user.email
       });
       return NextResponse.json(newUser);
     }
@@ -55,10 +49,7 @@ export async function PUT(request) {
             updateData.profile_image_url = data.profileImageUrl;
         }
 
-        const updatedUser = await userDB.upsertUser({
-            email: user.email,
-            data: updateData
-        });
+        const updatedUser = await userDB.updateUser(user.email, updateData);
 
         if (!updatedUser) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });

@@ -543,14 +543,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-    const handleArchiveClick = () => {
-        setStorageWarningDialog(prev => ({ ...prev, isOpen: false }));
-        // Close upload dialog and open archive dialog
-        onClose();
-        // You can add logic here to open the archive dialog
-        // For now, we'll just show a toast
-        toast.success('Please use the Archive button in your dashboard to free up space');
-    };
 
     const handleDeleteClick = () => {
         setStorageWarningDialog(prev => ({ ...prev, isOpen: false }));
@@ -719,7 +711,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 storageCapMB={storageWarningDialog.storageCapMB}
                 storageCapStr={storageWarningDialog.storageCapStr}
                 planName={storageWarningDialog.planName}
-                onArchiveClick={handleArchiveClick}
                 onDeleteClick={handleDeleteClick}
             />
         </>

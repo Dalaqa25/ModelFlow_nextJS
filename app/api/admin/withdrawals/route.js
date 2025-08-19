@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { withdrawalDB } from '@/lib/db/supabase-db';
+import { withdrawalDB, userDB } from '@/lib/db/supabase-db';
 
 export async function GET() {
   try {
@@ -14,9 +14,7 @@ export async function GET() {
     }
     
     // Get the user from our database to check admin status
-    const user = await prisma.user.findFirst({
-      where: { email: supabaseUser.email }
-    });
+    const user = await userDB.getUserByEmail(supabaseUser.email);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -33,19 +31,7 @@ export async function GET() {
     }
 
     // Fetch all withdrawal requests with user information
-    const withdrawalRequests = await prisma.withdrawalRequest.findMany({
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        submittedAt: 'desc'
-      }
-    });
+    const withdrawalRequests = await withdrawalDB.getAllWithdrawals();
 
     return NextResponse.json(withdrawalRequests);
 
@@ -70,9 +56,7 @@ export async function PUT(request) {
     }
     
     // Get the user from our database to check admin status
-    const user = await prisma.user.findFirst({
-      where: { email: supabaseUser.email }
-    });
+    const user = await userDB.getUserByEmail(supabaseUser.email);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -108,26 +92,7 @@ export async function PUT(request) {
     }
 
     // Update the withdrawal request
-    const updateData = { status };
-    
-    if (status === 'approved') {
-      updateData.approvedAt = new Date();
-    } else if (status === 'rejected' && rejectedReason) {
-      updateData.rejectedReason = rejectedReason;
-    }
-
-    const updatedRequest = await prisma.withdrawalRequest.update({
-      where: { id: requestId },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const updatedRequest = await withdrawalDB.updateWithdrawalStatus(requestId, status);
 
     if (!updatedRequest) {
       return NextResponse.json(

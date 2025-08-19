@@ -34,9 +34,7 @@ export async function DELETE(_, { params }) {
   const { id } = params;
 
   try {
-    const deletedRequest = await prisma.request.delete({
-      where: { id }
-    });
+    const deletedRequest = await requestDB.deleteRequest(id);
     if (!deletedRequest) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }

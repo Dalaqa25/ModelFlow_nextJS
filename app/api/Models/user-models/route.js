@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { modelDB, pendingModelDB, userDB } from '@/lib/db/supabase-db';
+import { modelDB, userDB } from '@/lib/db/supabase-db';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -37,15 +37,12 @@ export async function GET(request) {
             });
         }
 
-        // Fetch both regular models and pending models
-        const [models, pendingModels] = await Promise.all([
-            modelDB.getModelsByAuthor(email),
-            pendingModelDB.getPendingModelsByAuthor(email)
-        ]);
+        // Fetch models from the unified models table
+        const models = await modelDB.getModelsByAuthor(email);
 
-        // Combine both arrays and sort by created_at
-        const allModels = [...models, ...pendingModels].sort((a, b) =>
-            new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)
+        // Sort by created_at
+        const allModels = models.sort((a, b) =>
+            new Date(b.created_at) - new Date(a.created_at)
         );
 
         // --- Storage usage calculation ---

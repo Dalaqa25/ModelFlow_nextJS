@@ -13,7 +13,6 @@ export default function StorageWarningDialog({
     storageCapMB,
     storageCapStr,
     planName,
-    onArchiveClick,
     onDeleteClick
 }) {
     const usagePercent = (totalAfterUploadMB / storageCapMB) * 100;
@@ -141,13 +140,6 @@ export default function StorageWarningDialog({
                                                 Free up space to continue:
                                             </p>
                                             <div className="flex gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={onArchiveClick}
-                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200"
-                                                >
-                                                    Archive
-                                                </button>
                                                 <button
                                                     type="button"
                                                     onClick={onDeleteClick}

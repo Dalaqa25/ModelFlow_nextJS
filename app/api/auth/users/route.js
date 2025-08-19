@@ -13,25 +13,20 @@ export async function GET() {
 
         if (postgresUser) {
             // Update existing user with latest data
-            const updatedUser = await prisma.user.update({
-                where: { email: "test@example.com" }, // Placeholder for email
-                data: {
-                    name: "Test Name", // Placeholder for name
-                    profileImageUrl: "https://via.placeholder.com/150" // Placeholder for profileImageUrl
-                }
+            const updatedUser = await userDB.updateUser("test@example.com", {
+                name: "Test Name", // Placeholder for name
+                profile_image_url: "https://via.placeholder.com/150" // Placeholder for profileImageUrl
             });
             return Response.json({ synced: true, user: updatedUser });
         } else {
             // Create new user
-            const newUser = await prisma.user.create({
-                data: {
-                    name: "Test Name", // Placeholder for name
-                    email: "test@example.com", // Placeholder for email
-                    profileImageUrl: "https://via.placeholder.com/150", // Placeholder for profileImageUrl
-                    aboutMe: "",
-                    websiteLink: "",
-                    contactEmail: "test@example.com" // Placeholder for contactEmail
-                }
+            const newUser = await userDB.upsertUser({
+                name: "Test Name", // Placeholder for name
+                email: "test@example.com", // Placeholder for email
+                profile_image_url: "https://via.placeholder.com/150", // Placeholder for profileImageUrl
+                about_me: "",
+                website_link: "",
+                contact_email: "test@example.com" // Placeholder for contactEmail
             });
             return Response.json({ synced: true, user: newUser, created: true });
         }

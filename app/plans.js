@@ -5,7 +5,6 @@ const PLANS = {
     price: 0,
     features: {
       activeStorage: "250 MB",
-      archiveStorage: "100 MB",
       maxModels: 4,
       maxFileSize: "50 MB",
       buyersPerModel: 10,
@@ -21,7 +20,6 @@ const PLANS = {
     price: 14.5,
     features: {
       activeStorage: "1 GB",
-      archiveStorage: "500 MB",
       maxModels: 12,
       maxFileSize: "150 MB",
       buyersPerModel: 50,
@@ -37,7 +35,6 @@ const PLANS = {
     price: 24.5,
     features: {
       activeStorage: "2 GB",
-      archiveStorage: "1 GB",
       maxModels: "Unlimited",
       maxFileSize: "200 MB",
       buyersPerModel: "Unlimited",

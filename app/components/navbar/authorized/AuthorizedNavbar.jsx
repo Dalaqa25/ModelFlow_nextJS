@@ -7,7 +7,6 @@ import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import Notifications from "../../notifications";
 import ModelUpload from "../../model/modelupload/modelUpload";
-import ArchiveBox from "../../../dashboard/archive/ArchiveBox";
 import PLANS from "../../../plans";
 import { useTheme } from "../../../../lib/theme-context";
 import {
@@ -24,7 +23,6 @@ import {
     MdSearch,
     MdPushPin,
     MdOutlinePushPin,
-    MdArchive,
     MdLightMode,
     MdDarkMode,
     MdCloudUpload,
@@ -43,7 +41,6 @@ export default function AuthorizedNavbar() {
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
     // Use theme context instead of local state
     const { isDarkMode, toggleTheme } = useTheme();
@@ -350,21 +347,6 @@ export default function AuthorizedNavbar() {
                     {/* Separator */}
                     <div className="my-4 border-t border-slate-700/50"></div>
 
-                    {/* Archived Models Section */}
-                    <button
-                        onClick={() => setArchiveDialogOpen(true)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:bg-slate-800/50 hover:text-purple-400 w-full"
-                        title="View Archived Models"
-                    >
-                        <MdArchive size={20} className="flex-shrink-0" />
-                        <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${
-                            sidebarExpanded
-                                ? 'opacity-100 translate-x-0 max-w-xs'
-                                : 'opacity-0 -translate-x-2 max-w-0'
-                        }`}>
-                            Archived Models
-                        </span>
-                    </button>
 
                     {/* Upload Model Section */}
                     <button
@@ -490,12 +472,6 @@ export default function AuthorizedNavbar() {
                 }}
             />
 
-            {/* Archive Dialog */}
-            <ArchiveBox
-                isOpen={archiveDialogOpen}
-                onClose={() => setArchiveDialogOpen(false)}
-                userEmail={user?.email}
-            />
         </>
     );
 }

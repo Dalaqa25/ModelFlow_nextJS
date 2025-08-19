@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaList, FaThLarge, FaArchive } from 'react-icons/fa';
+import { FaList, FaThLarge } from 'react-icons/fa';
 import PurchasedModels from './purchasedModels';
 import UploadedModels from './uploadedModels';
-import ArchiveBox from './archive/ArchiveBox';
 import ModelUpload from '../components/model/modelupload/modelUpload';
 import { useAuth } from '@/lib/supabase-auth-context';
 import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
@@ -15,7 +14,6 @@ export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
     const [isRowLayout, setIsRowLayout] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [showArchived, setShowArchived] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const router = useRouter();
 
@@ -69,13 +67,6 @@ export default function Dashboard() {
                                 {isRowLayout ? <FaList size={20} /> : <FaThLarge size={20} />}
                                 <span className="text-sm font-medium hidden sm:inline">Layout</span>
                             </button>
-                            <button
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-slate-600/50 text-gray-300 rounded-lg shadow hover:bg-slate-700/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-slate-500 font-semibold"
-                                onClick={() => setShowArchived(true)}
-                            >
-                                <FaArchive size={20} />
-                                <span>Archived</span>
-                            </button>
                         </div>
                     </div>
                     {/* Main Content */}
@@ -95,7 +86,6 @@ export default function Dashboard() {
                             <UploadedModels isRowLayout={isRowLayout} />
                         </UnifiedCard>
                     </div>
-                    <ArchiveBox isOpen={showArchived} onClose={() => setShowArchived(false)} userEmail={user?.email} />
                     <ModelUpload
                         isOpen={showUploadModal}
                         onClose={() => setShowUploadModal(false)}

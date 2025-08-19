@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { withdrawalDB } from '@/lib/db/supabase-db';
+import { withdrawalDB, userDB } from '@/lib/db/supabase-db';
 
 export async function POST(request) {
   try {
@@ -18,33 +18,23 @@ export async function POST(request) {
     const { requestId } = await request.json();
 
     // Find the withdrawal request
-    const withdrawal = await prisma.withdrawalRequest.findUnique({
-      where: { id: requestId },
-      include: { user: true }
-    });
+    const withdrawal = await withdrawalDB.getWithdrawalById(requestId);
     if (!withdrawal) {
       return NextResponse.json({ error: 'Withdrawal request not found' }, { status: 404 });
     }
 
-    // Update user's withdrawn amount and available balance
-    const user = withdrawal.user;
-    const newWithdrawnAmount = (user.withdrawnAmount || 0) + withdrawal.amount;
+    // Get the user
+    const user = await userDB.getUserByEmail(withdrawal.user_email);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     // Update user's withdrawn amount
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { withdrawnAmount: newWithdrawnAmount }
-    });
+    const newWithdrawnAmount = (user.withdrawn_amount || 0) + withdrawal.amount;
+    await userDB.updateUser(user.email, { withdrawn_amount: newWithdrawnAmount });
 
-    // Update withdrawal request
-    const updatedWithdrawal = await prisma.withdrawalRequest.update({
-      where: { id: requestId },
-      data: {
-        status: 'approved',
-        approvedAt: new Date()
-      },
-      include: { user: true }
-    });
+    // Update withdrawal request status
+    const updatedWithdrawal = await withdrawalDB.updateWithdrawalStatus(requestId, 'approved');
 
     return NextResponse.json(updatedWithdrawal);
 

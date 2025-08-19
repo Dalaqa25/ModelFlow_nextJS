@@ -139,11 +139,6 @@ export default function PurchasedModels({ isRowLayout }) {
                             
                             <div className={`p-4 ${isRowLayout ? 'flex-1' : ''}`}>
                                 <h3 className="text-xl font-semibold text-white mb-2">{model.name}</h3>
-                                {model.archived && (
-                                  <span className="inline-block bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-semibold px-2 py-1 rounded mb-2">
-                                    Archived
-                                  </span>
-                                )}
                                 <div className="space-y-2 mb-4">
                                     <div className="flex items-center text-gray-300">
                                         <FaUser className="mr-2" />
@@ -155,64 +150,24 @@ export default function PurchasedModels({ isRowLayout }) {
                                     </div>
                                 </div>
 
-                                {/* Actions and warning for archived models */}
-                                {model.archived ? (
-                                  <>
-                                    <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
-                                      {model.fileStorage?.supabasePath ? (
-                                        <button
-                                          onClick={async () => {
-                                            try {
-                                              const res = await fetch(`/api/models/${model.id}/download`);
-                                              const data = await res.json();
-                                              if (data.downloadUrl) {
-                                                window.open(data.downloadUrl, '_blank');
-                                              } else {
-                                                alert('Failed to get download link.');
-                                              }
-                                            } catch (err) {
-                                              alert('Error downloading: ' + err.message);
-                                            }
-                                          }}
-                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/50 text-gray-300 border border-slate-600/50 px-4 py-2 rounded-lg hover:bg-slate-600/50 transition-colors"
-                                        >
-                                          <FaDownload />
-                                          <span>Download</span>
-                                        </button>
-                                      ) : (
-                                        <button
-                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/30 text-gray-500 border border-slate-600/30 px-4 py-2 rounded-lg cursor-not-allowed"
-                                          disabled
-                                          title="This model is not available for download."
-                                        >
-                                          <FaDownload />
-                                          <span>Download</span>
-                                        </button>
-                                      )}
+                                <div className="mb-4">
+                                    <div className="flex items-center text-gray-300 mb-2">
+                                        <FaTag className="mr-2" />
+                                        <span className="font-medium">Tags:</span>
                                     </div>
-                                    <div className="text-xs text-purple-300 mt-2">
-                                      This model has been archived by the author and may be deleted from the publisher at any time. Download now to keep a copy.
+                                    <div className="flex flex-wrap gap-2">
+                                        {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-1 rounded-md text-sm"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
                                     </div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="mb-4">
-                                      <div className="flex items-center text-gray-300 mb-2">
-                                          <FaTag className="mr-2" />
-                                          <span className="font-medium">Tags:</span>
-                                      </div>
-                                      <div className="flex flex-wrap gap-2">
-                                          {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
-                                              <span
-                                                  key={idx}
-                                                  className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-1 rounded-md text-sm"
-                                              >
-                                                  {tag}
-                                              </span>
-                                          ))}
-                                      </div>
-                                    </div>
-                                    <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
+                                </div>
+
+                                <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
                                       <button 
                                         onClick={() => handleViewModel(model.id)}
                                         className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
@@ -251,8 +206,6 @@ export default function PurchasedModels({ isRowLayout }) {
                                         </button>
                                       )}
                                     </div>
-                                  </>
-                                )}
                             </div>
                         </div>
                     ))}

@@ -111,10 +111,9 @@ export async function POST(req) {
       features: formData.get('features'),
       tags: tags,
       setup: formData.get('setup'),
-      price: parseFloat(formData.get('price')) || 0,
-      author_id: userDoc.id, // Use the user's ID
-      authorEmail: user.email,
-      fileStorage: fileStorage
+      price: parseInt(formData.get('price') * 100) || 50000, // Convert to cents, default $500
+      author_email: user.email, // Use author_email as per new schema
+      file_storage: fileStorage // Use file_storage as per new schema
     };
 
     console.log('Creating model with data:', {

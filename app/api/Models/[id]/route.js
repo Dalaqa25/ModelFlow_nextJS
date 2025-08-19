@@ -8,18 +8,7 @@ export async function GET(_req, { params }) {
         const { id } = await params;
 
         // Try to find in regular models first
-        let model;
-        try {
-            model = await modelDB.getModelById(id);
-        } catch (error) {
-            // If not found in models, try archived models
-            const { data: archivedModel } = await supabase
-                .from('archived_models')
-                .select('*')
-                .eq('id', id)
-                .maybeSingle();
-            model = archivedModel;
-        }
+        const model = await modelDB.getModelById(id);
 
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
+import { modelDB } from "@/lib/db/supabase-db";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function POST(req, { params }) {
@@ -10,30 +10,16 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const model = await prisma.model.findUnique({
-            where: { id: params.id }
-        });
+        const model = await modelDB.getModelById(params.id);
 
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
 
-        // Check if user has already liked the model
-        if (model.likedBy.includes(user.email)) {
-            return NextResponse.json({ error: "Already liked" }, { status: 400 });
-        }
-
-        // Add user's email to likedBy array and increment likes count
-        const updatedModel = await prisma.model.update({
-            where: { id: params.id },
-            data: {
-                likedBy: {
-                    push: user.email
-                },
-                likes: {
-                    increment: 1
-                }
-            }
+        // For now, just increment the likes count
+        // In the future, you might want to create a separate likes table to track who liked what
+        const updatedModel = await modelDB.updateModel(params.id, {
+            likes: (model.likes || 0) + 1
         });
 
         return NextResponse.json({ likes: updatedModel.likes });

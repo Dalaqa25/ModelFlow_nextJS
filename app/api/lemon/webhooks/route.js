@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
+import { modelDB, userDB, purchaseDB } from "@/lib/db/supabase-db";
 import crypto from "crypto";
 import {
   updateUserBalance,
@@ -51,46 +51,37 @@ export async function POST(req) {
     const { buyerEmail, modelId, modelName, authorEmail, orderId, totalAmount } = validateWebhookSaleData(body);
 
     // Find the buyer
-    const buyer = await prisma.user.findUnique({
-      where: { email: buyerEmail },
-      include: { purchasedModels: true }
-    });
+    const buyer = await userDB.getUserByEmail(buyerEmail);
     if (!buyer) {
       return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
 
     // Find the model
-    const model = await prisma.model.findUnique({
-      where: { id: modelId }
-    });
+    const model = await modelDB.getModelById(modelId);
     if (!model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
     // Check if already purchased
-    const alreadyPurchased = buyer.purchasedModels.some(p => p.modelId === modelId);
+    const userPurchases = await purchaseDB.getPurchasedModelsByUser(buyerEmail);
+    const alreadyPurchased = userPurchases.some(p => p.model_id === modelId);
     if (alreadyPurchased) {
       return NextResponse.json({ message: "Model already purchased" }, { status: 200 });
     }
 
-    // Add to buyer's purchased models
-    await prisma.purchasedModel.create({
-      data: {
-        modelId: model.id,
-        userId: buyer.id,
-        purchasedAt: new Date(),
-        price: model.price
-      }
+    // Create transaction record
+    await purchaseDB.createPurchase({
+      buyer_email: buyerEmail,
+      seller_email: model.author_email,
+      model_id: model.id,
+      price: model.price,
+      lemon_squeezy_order_id: orderId,
+      status: 'completed'
     });
 
-    // Add buyer's email to model's purchasedBy array
-    await prisma.model.update({
-      where: { id: model.id },
-      data: {
-        purchasedBy: {
-          push: buyerEmail
-        }
-      }
+    // Update model downloads count
+    await modelDB.updateModel(model.id, {
+      downloads: (model.downloads || 0) + 1
     });
 
     // Update seller's earnings using the balance utility
