@@ -11,16 +11,8 @@ const PRICE_TO_VARIANT_MAP = {
 };
 
 export async function getVariantIdForPrice(price: number): Promise<string | null> {
-    // Convert price to cents if it's in dollars
-    const priceInCents = price >= 100 ? price : price * 100;
-    
-    // Find the closest price tier
-    const availablePrices = Object.keys(PRICE_TO_VARIANT_MAP).map(Number).sort((a, b) => a - b);
-    const closestPrice = availablePrices.reduce((prev, curr) => {
-        return Math.abs(curr - priceInCents) < Math.abs(prev - priceInCents) ? curr : prev;
-    });
-    
-    return PRICE_TO_VARIANT_MAP[closestPrice] || null;
+    // Direct lookup - price should already be in cents
+    return PRICE_TO_VARIANT_MAP[price] || null;
 }
 
 export async function confgireLemonSqueezy() {

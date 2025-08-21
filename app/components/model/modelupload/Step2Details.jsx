@@ -2,10 +2,10 @@ import React from 'react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 
 export default function Step2Details({
-  tags, predefinedTags, features, useCases, errors,
+  tags, predefinedTags, features, use_cases, errors,
   handleTagToggle, handleChange, addFeature, removeFeature,
   handleUseCaseChange, addUseCase, removeUseCase,
-  formData, handleInputChange
+  formData, handleInputChange, handleNext, handleBack
 }) {
   return (
     <div className="transition-all duration-300 ease-in-out">
@@ -43,6 +43,7 @@ export default function Step2Details({
             </button>
           ))}
         </div>
+        {errors.tags && <p className="text-red-400 text-sm">{errors.tags}</p>}
       </div>
       
       {/* Features */}
@@ -78,12 +79,13 @@ export default function Step2Details({
         >
           <FaPlus size={16} /> Add Another Feature
         </button>
+        {errors.features && <p className="text-red-400 text-sm">{errors.features}</p>}
       </div>
       
       {/* Use Cases */}
       <div className="flex flex-col gap-3 mb-6">
         <label className="font-semibold text-slate-300">Use Cases</label>
-        {useCases.map((uc, idx) => (
+        {use_cases.map((uc, idx) => (
           <div key={idx} className="flex items-center gap-3 mb-2">
             <input
               type="text"
@@ -91,10 +93,10 @@ export default function Step2Details({
               onChange={e => handleUseCaseChange(idx, e.target.value)}
               placeholder={`Case #${idx + 1}`}
               className={`flex-grow px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder:text-slate-400 transition-all duration-200 hover:border-slate-500 ${
-                errors.useCases && !uc.trim() ? 'border-red-500 focus:ring-red-500' : ''
+                errors.use_cases && !uc.trim() ? 'border-red-500 focus:ring-red-500' : ''
               }`}
             />
-            {useCases.length > 1 && (
+            {use_cases.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeUseCase(idx)}
@@ -112,6 +114,7 @@ export default function Step2Details({
         >
           <FaPlus size={16} /> Add Another Use Case
         </button>
+        {errors.use_cases && <p className="text-red-400 text-sm">{errors.use_cases}</p>}
       </div>
       
       {/* Setup Instructions */}
@@ -128,6 +131,23 @@ export default function Step2Details({
           }`}
         />
         {errors.setup && <p className="text-red-400 text-sm">{errors.setup}</p>}
+      </div>
+
+      <div className="flex justify-between mt-8">
+        <button
+            type="button"
+            onClick={handleBack}
+            className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors"
+        >
+            Back
+        </button>
+        <button
+            type="button"
+            onClick={handleNext}
+            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-500 text-white font-bold hover:from-purple-700 hover:to-violet-600 transition-colors"
+        >
+            Next
+        </button>
       </div>
     </div>
   );

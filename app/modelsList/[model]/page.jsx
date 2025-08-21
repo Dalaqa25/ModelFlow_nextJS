@@ -15,7 +15,6 @@ import { useAuth } from "@/lib/supabase-auth-context";
 import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
-import { createCheckoutUrl } from "@/lib/lemon/server";
 
 export default function Model(props) {
     const params = use(props.params);
@@ -61,16 +60,19 @@ export default function Model(props) {
         const generateCheckoutURL = async () => {
             if (isAuthenticated && !isOwned && !isAuthor && model) {
                 try {
-                    const url = await createCheckoutUrl({
-                        price: model.price,
-                        userEmail: user?.email || null,
-                        userId: user?.id || null,
-                        modelId: model.id,
-                        modelName: model.name,
-                        authorEmail: model.authorEmail,
-                        embed: false
+                    const response = await fetch(`/api/models/${model.id}/purchase`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
                     });
-                    setCheckoutURL(url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCheckoutURL(data.checkoutUrl);
+                    } else {
+                        console.error("Failed to generate checkout URL:", await response.text());
+                    }
                 } catch (error) {
                     console.error("Failed to generate checkout URL:", error);
                 }
@@ -242,7 +244,7 @@ export default function Model(props) {
                             }
                         >
                             <FaShoppingCart className="transition-transform duration-200 group-hover:scale-125 group-hover:text-purple-500" />
-                            {!isAuthenticated ? 'Sign in to Purchase' : checkoutURL ? 'Purchase' : 'Loading...'}
+                            {!isAuthenticated ? 'Sign in to Purchase' : checkoutURL ? `Purchase $${(model.price / 100).toFixed(2)}` : 'Loading...'}
                         </button>
                     )}
                 

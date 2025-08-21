@@ -13,6 +13,15 @@ import Step1BasicInfo from './Step1BasicInfo';
 import Step2Details from './Step2Details';
 import Step3FileUpload from './Step3FileUpload';
 
+const ErrorMessage = ({ error }) => {
+    if (!error) return null;
+    return (
+        <p className="text-red-400 text-sm mt-1">
+            {error}
+        </p>
+    );
+};
+
 export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const router = useRouter();
     const { user } = useAuth();
@@ -54,8 +63,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const [showProgressDialog, setShowProgressDialog] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
-    // Replace useCases in formData with useCases array state
-    const [useCases, setUseCases] = useState(['']);
+    // Replace useCases in formData with use_cases array state
+    const [use_cases, setUse_cases] = useState(['']);
 
     const predefinedTags = [
         "NLP",
@@ -203,17 +212,17 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
     // Handlers for dynamic use cases
     const handleUseCaseChange = (index, value) => {
-        const updated = [...useCases];
+        const updated = [...use_cases];
         updated[index] = value;
-        setUseCases(updated);
-        if (errors.useCases) {
-            setErrors(prev => ({ ...prev, useCases: '' }));
+        setUse_cases(updated);
+        if (errors.use_cases) {
+            setErrors(prev => ({ ...prev, use_cases: '' }));
         }
     };
-    const addUseCase = () => setUseCases([...useCases, '']);
+    const addUseCase = () => setUse_cases([...use_cases, '']);
     const removeUseCase = (index) => {
-        if (useCases.length > 1) {
-            setUseCases(useCases.filter((_, i) => i !== index));
+        if (use_cases.length > 1) {
+            setUse_cases(use_cases.filter((_, i) => i !== index));
         }
     };
 
@@ -230,73 +239,74 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         return { maxFileSizeBytes, maxFileSizeStr };
     };
 
-    // Update handleFileChange function with storage validation
+    const validateFile = (file) => {
+        const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
+        
+        if (!file) return 'File is required';
+        if (file.size > maxFileSizeBytes) {
+            return `File size must be less than ${maxFileSizeStr}`;
+        }
+        if (!file.type.includes('zip')) {
+            return 'Only ZIP files are allowed';
+        }
+        return null;
+    };
+
+    // Update handleFileChange
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
+        if (!file) return;
 
-        if (file) {
-            if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed') {
-                if (file.size > maxFileSizeBytes) {
-                    setErrors(prev => ({
-                        ...prev,
-                        modelFile: `File size must be less than ${maxFileSizeStr}`
-                    }));
-                    e.target.value = '';
-                    return;
-                }
+        const fileError = validateFile(file);
+        if (fileError) {
+            setErrors(prev => ({ ...prev, modelFile: fileError }));
+            e.target.value = '';
+            return;
+        }
 
-                // Check storage validation
-                const storageValidation = calculateStorageValidation(file.size);
-                if (!storageValidation.canUpload) {
-                    setErrors(prev => ({
-                        ...prev,
-                        modelFile: 'File would exceed storage limit'
-                    }));
-                    e.target.value = '';
-                    // Show storage warning dialog
-                    setStorageWarningDialog({
-                        isOpen: true,
-                        warningType: storageValidation.warning,
-                        currentUsageMB: storageValidation.currentUsageMB,
-                        fileSizeMB: storageValidation.fileSizeMB,
-                        totalAfterUploadMB: storageValidation.totalAfterUpload,
-                        storageCapMB: storageValidation.storageCapMB,
-                        storageCapStr: storageValidation.storageCapStr,
-                        planName: storageValidation.planName
-                    });
-                    return;
-                }
+        // Continue with existing storage validation...
+        const storageValidation = calculateStorageValidation(file.size);
+        if (!storageValidation.canUpload) {
+            setErrors(prev => ({
+                ...prev,
+                modelFile: 'File would exceed storage limit'
+            }));
+            e.target.value = '';
+            // Show storage warning dialog
+            setStorageWarningDialog({
+                isOpen: true,
+                warningType: storageValidation.warning,
+                currentUsageMB: storageValidation.currentUsageMB,
+                fileSizeMB: storageValidation.fileSizeMB,
+                totalAfterUploadMB: storageValidation.totalAfterUpload,
+                storageCapMB: storageValidation.storageCapMB,
+                storageCapStr: storageValidation.storageCapStr,
+                planName: storageValidation.planName
+            });
+            return;
+        }
 
-                setFormData(prev => ({
-                    ...prev,
-                    modelFile: file
-                }));
-                setErrors(prev => ({
-                    ...prev,
-                    modelFile: ''
-                }));
+        setFormData(prev => ({
+            ...prev,
+            modelFile: file
+        }));
+        setErrors(prev => ({
+            ...prev,
+            modelFile: ''
+        }));
 
-                // Show warning dialog if near limit
-                if (storageValidation.warning === 'near_limit') {
-                    setStorageWarningDialog({
-                        isOpen: true,
-                        warningType: storageValidation.warning,
-                        currentUsageMB: storageValidation.currentUsageMB,
-                        fileSizeMB: storageValidation.fileSizeMB,
-                        totalAfterUploadMB: storageValidation.totalAfterUpload,
-                        storageCapMB: storageValidation.storageCapMB,
-                        storageCapStr: storageValidation.storageCapStr,
-                        planName: storageValidation.planName
-                    });
-                }
-            } else {
-                setErrors(prev => ({
-                    ...prev,
-                    modelFile: 'Only ZIP files are allowed'
-                }));
-                e.target.value = '';
-            }
+        // Show warning dialog if near limit
+        if (storageValidation.warning === 'near_limit') {
+            setStorageWarningDialog({
+                isOpen: true,
+                warningType: storageValidation.warning,
+                currentUsageMB: storageValidation.currentUsageMB,
+                fileSizeMB: storageValidation.fileSizeMB,
+                totalAfterUploadMB: storageValidation.totalAfterUpload,
+                storageCapMB: storageValidation.storageCapMB,
+                storageCapStr: storageValidation.storageCapStr,
+                planName: storageValidation.planName
+            });
         }
     };
 
@@ -305,7 +315,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
     // Remove handleDriveLinkChange and all references to driveLink
 
-    // Update validateForm to check useCases array
+    // Update validateForm to check use_cases array
     const validateForm = () => {
         const newErrors = {};
         
@@ -318,8 +328,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
         
         // Use cases validation
-        if (useCases.some(uc => !uc.trim())) {
-            newErrors.useCases = 'All use cases must be filled out';
+        if (use_cases.some(uc => !uc.trim())) {
+            newErrors.use_cases = 'All use cases must be filled out';
         }
 
         if (!formData.setup.trim()) {
@@ -360,21 +370,29 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     // Step validation helpers
     const validateStep = () => {
         const newErrors = {};
+        const currentFields = [];
+
         if (step === 1) {
+            currentFields.push('modelName', 'description', 'price');
             if (!formData.modelName.trim()) newErrors.modelName = 'Model name is required';
             if (!formData.description.trim()) newErrors.description = 'Description is required';
             if (!formData.price || formData.price <= 0) newErrors.price = 'Please select a valid price tier';
         }
         if (step === 2) {
+            currentFields.push('tags', 'features', 'use_cases', 'setup');
             if (tags.length === 0) newErrors.tags = 'At least one tag is required';
             if (tags.length > 2) newErrors.tags = 'You can select a maximum of 2 tags';
             if (features.some(feature => !feature.trim())) newErrors.features = 'All features must be filled out';
-            if (useCases.some(uc => !uc.trim())) newErrors.useCases = 'All use cases must be filled out';
+            if (use_cases.some(uc => !uc.trim())) newErrors.use_cases = 'All use cases must be filled out';
+            if (!formData.setup.trim()) newErrors.setup = 'Setup instructions are required';
         }
-        if (step === 3) {
-            if (!formData.modelFile) newErrors.modelFile = 'Model file is required';
-        }
-        setErrors(newErrors);
+
+        setErrors(prev => {
+            const preservedErrors = { ...prev };
+            currentFields.forEach(field => delete preservedErrors[field]);
+            return { ...preservedErrors, ...newErrors };
+        });
+
         return Object.keys(newErrors).length === 0;
     };
 
@@ -425,19 +443,25 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         setUploadStage('uploading');
         setUploadProgress(0);
 
+        // Replace the progress interval in handleSubmit
+        let progressInterval;
+        const startProgressSimulation = () => {
+            progressInterval = setInterval(() => {
+                setUploadProgress(prev => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return 90;
+                    }
+                    return prev + Math.random() * 15;
+                });
+            }, 200);
+        };
+
         try {
             // Only ZIP file upload allowed
             if (formData.modelFile) {
                 // Simulate upload progress
-                const progressInterval = setInterval(() => {
-                    setUploadProgress(prev => {
-                        if (prev >= 90) {
-                            clearInterval(progressInterval);
-                            return 90; // Stop at 90% until upload completes
-                        }
-                        return prev + Math.random() * 15; // Random increment
-                    });
-                }, 200);
+                startProgressSimulation();
 
                 // Upload ZIP file to Supabase Storage
                 const file = formData.modelFile;
@@ -469,33 +493,34 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     const { data: urlData } = supabase.storage.from('models').getPublicUrl(filePath);
                     const publicUrl = urlData?.publicUrl || filePath;
 
-                    // Prepare metadata for backend
-                    const modelMeta = {
-                        name: formData.modelName,
-                        description: formData.description,
-                        useCases: useCases.join('\n'), // Send as joined string
-                        setup: formData.setup,
-                        features: features.join(','),
-                        tags, // send as array
-                        price: formData.price,
-                        uploadType: 'zip',
-                        fileStorage: {
-                            type: 'zip',
-                            fileName: file.name,
-                            fileSize: file.size,
-                            mimeType: file.type,
-                            supabasePath: filePath, // Only store the file path
-                            uploadedAt: new Date().toISOString(),
-                        }
-                    };
+                    // Prepare form data for backend (matching the API structure)
+                    const formDataToSend = new FormData();
+                    formDataToSend.append('name', formData.modelName);
+                    formDataToSend.append('description', formData.description);
+                    formDataToSend.append('use_cases', use_cases.join('\n')); // Send as joined string
+                    formDataToSend.append('setup', formData.setup);
+                    formDataToSend.append('features', features.join('\n')); // Send as joined string
+                    formDataToSend.append('tags', JSON.stringify(tags)); // Send as JSON string
+                    formDataToSend.append('price', formData.price.toString());
+                    formDataToSend.append('uploadType', 'zip');
+                    
+                    // Add file storage info as a JSON string
+                    const fileStorageInfo = JSON.stringify({
+                        type: 'zip',
+                        fileName: file.name,
+                        fileSize: file.size,
+                        mimeType: file.type,
+                        supabasePath: filePath,
+                        uploadedAt: new Date().toISOString(),
+                    });
+                    formDataToSend.append('fileStorage', fileStorageInfo);
 
-                    console.log('About to POST to /api/pending-models', modelMeta);
+                    console.log('About to POST to /api/models');
 
                     // Send metadata to backend
-                    const response = await fetch('/api/pending-models', {
+                    const response = await fetch('/api/models', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(modelMeta),
+                        body: formDataToSend,
                     });
                     console.log('POST response', response);
                     if (!response.ok) {
@@ -551,56 +576,82 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         toast.success('Please delete models from your dashboard to free up space');
     };
 
-    // Display storage info
-    // Remove renderStorageInfo and its usage
+    // Add after the initial state declarations
+    const resetForm = () => {
+        setFormData({
+            modelName: '',
+            description: '',
+            useCases: '',
+            setup: '',
+            modelFile: null,
+            driveLink: '',
+            price: 500,
+        });
+        setFeatures(['']);
+        setTags([]);
+        setErrors({});
+        setStep(1);
+        setUploadProgress(0);
+        setShowProgressDialog(false);
+        setUploadStage(null);
+        setStepDirection('forward');
+    };
 
+    // Update the Dialog onClose handler
     return (
         <>
             <Transition.Root show={isOpen} as={Fragment}>
-                <Dialog as="div" className="relative z-50" onClose={() => {}}>
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
-                    </Transition.Child>
+            <Dialog as="div" className="relative z-50" onClose={() => {
+                if (!isSubmitting) {
+                    resetForm();
+                    onClose();
+                }
+            }}>
+                <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-opacity" />
+                </Transition.Child>
 
-                    <div className="fixed inset-0 z-10 overflow-y-auto">
-                        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                            <Transition.Child
-                                as={Fragment}
-                                enter="transition-all duration-300 ease-in-out"
-                                enterFrom="opacity-0 translate-x-8"
-                                enterTo="opacity-100 translate-x-0"
-                                leave="transition-all duration-200 ease-in-out"
-                                leaveFrom="opacity-100 translate-x-0"
-                                leaveTo="opacity-0 -translate-x-8"
-                            >
-                                <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-700/60 px-8 pb-8 pt-7 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:p-10">
-                                    <div className="absolute right-4 top-4">
-                                        <button
-                                            type="button"
-                                            className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
-                                            onClick={onClose}
-                                        >
-                                            <span className="sr-only">Close</span>
-                                            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                                        </button>
-                                    </div>
-                                    <div className="sm:flex sm:items-start">
-                                        <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                            <Dialog.Title as="h3" className="text-2xl font-bold leading-7 text-white mb-2">
-                                                Upload Your Model
-                                            </Dialog.Title>
-                                            <p className="text-slate-400 mb-6 text-base">Step {step} of {totalSteps}</p>
-                                            <form onSubmit={handleSubmit} className="mt-4 space-y-6">
-                                                <div className="relative min-h-[300px]">
-                                                  <Transition
+                <div className="fixed inset-0 z-10 overflow-y-auto">
+                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <Transition.Child
+                            as={Fragment}
+                            enter="transition-all duration-300 ease-in-out"
+                            enterFrom="opacity-0 translate-x-8"
+                            enterTo="opacity-100 translate-x-0"
+                            leave="transition-all duration-200 ease-in-out"
+                            leaveFrom="opacity-100 translate-x-0"
+                            leaveTo="opacity-0 -translate-x-8"
+                        >
+                            <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-700/60 px-8 pb-8 pt-7 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:p-10">
+                                {/* Dialog content */}
+                                <div className="absolute right-4 top-4">
+                                    <button
+                                        type="button"
+                                        className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                                        onClick={onClose}
+                                    >
+                                        <span className="sr-only">Close</span>
+                                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                    </button>
+                                </div>
+                                <div className="sm:flex sm:items-start">
+                                    <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                        <Dialog.Title as="h3" className="text-2xl font-bold leading-7 text-white mb-2">
+                                            Upload Your Model
+                                        </Dialog.Title>
+                                        <p className="text-slate-400 mb-6 text-base">Step {step} of {totalSteps}</p>
+                                        <form onSubmit={handleSubmit} className="mt-4 space-y-6 relative">
+                                            <LoadingOverlay isVisible={isSubmitting} />
+                                            <div className="relative min-h-[300px]">
+                                                <Transition
                                                     key={step}
                                                     show={true}
                                                     appear
@@ -610,95 +661,72 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                     leave="transition-all duration-200"
                                                     leaveFrom="opacity-100 translate-x-0"
                                                     leaveTo={stepDirection === 'forward' ? 'opacity-0 -translate-x-8' : 'opacity-0 translate-x-8'}
-                                                  >
+                                                >
                                                     <div>
-                                                      {step === 1 && (
-                                                        <Step1BasicInfo
-                                                          formData={formData}
-                                                          errors={errors}
-                                                          handleInputChange={handleInputChange}
-                                                          PRICE_TIERS={PRICE_TIERS}
-                                                        />
-                                                      )}
-                                                      {step === 2 && (
-                                                        <Step2Details
-                                                          tags={tags}
-                                                          predefinedTags={predefinedTags}
-                                                          features={features}
-                                                          useCases={useCases}
-                                                          errors={errors}
-                                                          handleTagToggle={handleTagToggle}
-                                                          handleChange={handleChange}
-                                                          addFeature={addFeature}
-                                                          removeFeature={removeFeature}
-                                                          handleUseCaseChange={handleUseCaseChange}
-                                                          addUseCase={addUseCase}
-                                                          removeUseCase={removeUseCase}
-                                                          formData={formData}
-                                                          handleInputChange={handleInputChange}
-                                                        />
-                                                      )}
-                                                      {step === 3 && (
-                                                        <Step3FileUpload
-                                                          dragActive={dragActive}
-                                                          formData={formData}
-                                                          errors={errors}
-                                                          storageLoading={storageLoading}
-                                                          getMaxFileSize={getMaxFileSize}
-                                                          fileInputRef={fileInputRef}
-                                                          handleDragOver={handleDragOver}
-                                                          handleDragLeave={handleDragLeave}
-                                                          handleDrop={handleDrop}
-                                                          handleBrowseClick={handleBrowseClick}
-                                                          handleFileChange={handleFileChange}
-                                                        />
-                                                      )}
+                                                        {step === 1 && (
+                                                            <Step1BasicInfo
+                                                                formData={formData}
+                                                                errors={errors}
+                                                                handleInputChange={handleInputChange}
+                                                                PRICE_TIERS={PRICE_TIERS}
+                                                                handleNext={handleNext}
+                                                            />
+                                                        )}
+                                                        {step === 2 && (
+                                                            <Step2Details
+                                                                tags={tags}
+                                                                predefinedTags={predefinedTags}
+                                                                features={features}
+                                                                use_cases={use_cases}
+                                                                errors={errors}
+                                                                handleTagToggle={handleTagToggle}
+                                                                handleChange={handleChange}
+                                                                addFeature={addFeature}
+                                                                removeFeature={removeFeature}
+                                                                handleUseCaseChange={handleUseCaseChange}
+                                                                addUseCase={addUseCase}
+                                                                removeUseCase={removeUseCase}
+                                                                formData={formData}
+                                                                handleInputChange={handleInputChange}
+                                                                handleNext={handleNext}
+                                                                handleBack={handleBack}
+                                                            />
+                                                        )}
+                                                        {step === 3 && (
+                                                            <Step3FileUpload
+                                                                dragActive={dragActive}
+                                                                formData={formData}
+                                                                errors={errors}
+                                                                storageLoading={storageLoading}
+                                                                getMaxFileSize={getMaxFileSize}
+                                                                fileInputRef={fileInputRef}
+                                                                handleDragOver={handleDragOver}
+                                                                handleDragLeave={handleDragLeave}
+                                                                handleDrop={handleDrop}
+                                                                handleBrowseClick={handleBrowseClick}
+                                                                handleFileChange={handleFileChange}
+                                                                isSubmitting={isSubmitting}
+                                                                handleBack={handleBack}
+                                                            />
+                                                        )}
                                                     </div>
-                                                  </Transition>
-                                                </div>
-                                                {/* Stepper navigation */}
-                                                <div className="flex justify-between mt-8">
-                                                    {step > 1 ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleBack}
-                                                            className="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors"
-                                                        >
-                                                            Back
-                                                        </button>
-                                                    ) : <div />}
-                                                    {step < totalSteps ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleNext}
-                                                            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-500 text-white font-bold hover:from-purple-700 hover:to-violet-600 transition-colors"
-                                                        >
-                                                            Next
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            type="submit"
-                                                            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-500 text-white font-bold hover:from-purple-700 hover:to-violet-600 transition-colors"
-                                                            disabled={isSubmitting}
-                                                        >
-                                                            {isSubmitting ? 'Uploading...' : 'Upload Model'}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </form>
-                                        </div>
+                                                </Transition>
+                                            </div>
+                                            
+                                        </form>
                                     </div>
-                                </Dialog.Panel>
-                            </Transition.Child>
-                        </div>
+                                </div>
+                            </Dialog.Panel>
+                        </Transition.Child>
                     </div>
-                </Dialog>
-            </Transition.Root>
+                </div>
+            </Dialog>
+        </Transition.Root>
             <UploadProgressDialog
                 isOpen={showProgressDialog}
                 progress={uploadProgress}
                 stage={uploadStage}
-                fileName={formData.modelFile?.name}
+                fileName={formData.modelFile ? formData.modelFile.name : ''}
                 onClose={() => setShowProgressDialog(false)}
             />
             <StorageWarningDialog
@@ -716,3 +744,12 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         </>
     );
 }
+
+const LoadingOverlay = ({ isVisible }) => {
+    if (!isVisible) return null;
+    return (
+        <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+    );
+};

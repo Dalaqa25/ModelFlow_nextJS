@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from "@/lib/auth-utils";
 import { modelDB, userDB, purchaseDB } from "@/lib/db/supabase-db";
+import { createCheckoutUrl } from "@/lib/lemon/server";
 
 export async function POST(request, { params }) {
     try {
@@ -40,23 +41,30 @@ export async function POST(request, { params }) {
             return NextResponse.json({ error: "You have already purchased this model" }, { status: 400 });
         }
 
-        // Create transaction record
-        const transactionData = {
-            buyer_email: user.email,
-            seller_email: model.author_email,
-            model_id: model.id,
-            price: model.price,
-            status: 'completed'
-        };
+        // Create Lemon Squeezy checkout URL
+        const checkoutUrl = await createCheckoutUrl({
+            price: model.price, // Price in cents from database
+            userEmail: user.email,
+            userId: userDoc.id,
+            modelId: model.id,
+            modelName: model.name,
+            authorEmail: model.author_email
+        });
 
-        await purchaseDB.createPurchase(transactionData);
+        if (!checkoutUrl) {
+            return NextResponse.json({
+                error: "Failed to create checkout URL. Please check if the price is supported."
+            }, { status: 500 });
+        }
 
         return NextResponse.json({
-            message: "Model purchased successfully",
+            message: "Checkout URL created successfully",
+            checkoutUrl: checkoutUrl,
             model: {
                 id: model.id,
                 name: model.name,
-                price: model.price
+                price: model.price,
+                priceInDollars: (model.price / 100).toFixed(2) // Convert cents to dollars for display
             }
         });
     } catch (error) {

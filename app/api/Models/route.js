@@ -35,7 +35,7 @@ export async function POST(req) {
     const formData = await req.formData();
     
     // Validate required fields
-    const requiredFields = ['name', 'description', 'useCases', 'features', 'tags', 'uploadType', 'setup', 'price'];
+    const requiredFields = ['name', 'description', 'use_cases', 'features', 'tags', 'setup', 'price', 'fileStorage'];
     const missingFields = requiredFields.filter(field => !formData.get(field));
     
     if (missingFields.length > 0) {
@@ -71,44 +71,33 @@ export async function POST(req) {
       );
     }
 
-    // Handle file storage information
-    const uploadType = formData.get('uploadType');
-    const modelFile = formData.get('modelFile');
-    const driveLink = formData.get('driveLink');
-
+    // Handle file storage information (only ZIP files supported)
     let fileStorage = {};
-    if (uploadType === 'zip' && modelFile) {
-      // For ZIP file upload
-      fileStorage = {
-        type: 'zip',
-        url: modelFile.name, // This will be replaced with actual storage URL
-        fileName: modelFile.name,
-        fileSize: modelFile.size,
-        mimeType: modelFile.type,
-        folderPath: `models/${user.email}/${Date.now()}`,
-        uploadedAt: new Date()
-      };
-    } else if (uploadType === 'drive' && driveLink) {
-      // For Google Drive link
-      fileStorage = {
-        type: 'drive',
-        url: driveLink,
-        fileName: driveLink.split('/').pop() || 'drive-file',
-        folderPath: `drive-links/${user.email}`,
-        uploadedAt: new Date()
-      };
-    } else {
+    try {
+      const fileStorageData = formData.get('fileStorage');
+      if (!fileStorageData) {
+        return NextResponse.json(
+          { error: 'File storage information is required' },
+          { status: 400 }
+        );
+      }
+      fileStorage = JSON.parse(fileStorageData);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'No file or drive link provided' },
+        { error: 'Invalid file storage format' },
         { status: 400 }
       );
     }
 
+    
+    const useCases = formData.get('use_cases').split('\n').map(s => s.trim()).filter(s => s);
+    const features = formData.get('features').split('\n').map(s => s.trim()).filter(s => s);
+
     const modelData = {
       name: formData.get('name'),
       description: formData.get('description'),
-      useCases: formData.get('useCases'),
-      features: formData.get('features'),
+      use_cases: useCases,
+      features: features,
       tags: tags,
       setup: formData.get('setup'),
       price: parseInt(formData.get('price') * 100) || 50000, // Convert to cents, default $500
@@ -118,9 +107,9 @@ export async function POST(req) {
 
     console.log('Creating model with data:', {
       ...modelData,
-      fileStorage: {
-        ...modelData.fileStorage,
-        url: modelData.fileStorage.url.substring(0, 50) + '...' // Truncate long URLs in logs
+      file_storage: {
+        ...modelData.file_storage,
+        fileName: modelData.file_storage.fileName || 'unknown'
       }
     });
 

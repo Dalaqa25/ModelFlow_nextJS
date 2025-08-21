@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Step1BasicInfo({ formData, errors, handleInputChange, PRICE_TIERS }) {
+export default function Step1BasicInfo({ formData, errors, handleInputChange, PRICE_TIERS, handleNext }) {
   return (
     <div className="transition-all duration-300 ease-in-out">
       <div className="flex flex-col gap-3 mb-6">
@@ -51,6 +51,16 @@ export default function Step1BasicInfo({ formData, errors, handleInputChange, PR
         </select>
         <p className="text-slate-400 text-xs">These price tiers are configured to work with our payment system.</p>
         {errors.price && <p className="text-red-400 text-sm">{errors.price}</p>}
+      </div>
+
+      <div className="flex justify-end mt-8">
+        <button
+            type="button"
+            onClick={handleNext}
+            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-violet-500 text-white font-bold hover:from-purple-700 hover:to-violet-600 transition-colors"
+        >
+            Next
+        </button>
       </div>
     </div>
   );
