@@ -31,56 +31,68 @@ export default function Model(props) {
     const [checkoutURL, setCheckoutURL] = useState(null);
 
     useEffect(() => {
-        const fetchModel = async () => {
+        const fetchModelData = async () => {
+            if (!params.model) return;
+
+            setLoading(true);
             try {
                 const res = await fetch(`/api/models/${params.model}`);
+                if (!res.ok) {
+                    throw new Error('Model not found');
+                }
                 const data = await res.json();
                 setModel(data);
                 setLikeCount(data.likes || 0);
-                // Check if user is the author
-                setIsAuthor(isAuthenticated && user?.email === data.authorEmail);
-                // Check if user owns the model (only if authenticated)
+
+                console.log('--- DEBUG INFO ---');
+                console.log('Is Authenticated:', isAuthenticated);
+                console.log('User Email:', user?.email);
+                console.log('Author Email:', data.authorEmail);
+
+                const isCurrentUserAuthor = isAuthenticated && user?.email === data.authorEmail;
+                setIsAuthor(isCurrentUserAuthor);
+                console.log('Is Author:', isCurrentUserAuthor);
+
                 if (isAuthenticated) {
                     const purchasedRes = await fetch('/api/user/purchased-models');
                     if (purchasedRes.ok) {
                         const purchasedModels = await purchasedRes.json();
-                        setIsOwned(purchasedModels.some(m => m.id === data.id));
+                        const isCurrentUserOwned = purchasedModels.some(m => m.id === data.id);
+                        setIsOwned(isCurrentUserOwned);
+
+                        // Now, generate checkout URL if needed
+                        if (!isCurrentUserAuthor && !isCurrentUserOwned) {
+                            console.log('--- ATTEMPTING TO GENERATE CHECKOUT URL ---');
+                            try {
+                                const response = await fetch(`/api/models/${data.id}/purchase`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    }
+                                });
+                                if (response.ok) {
+                                    const checkoutData = await response.json();
+                                    setCheckoutURL(checkoutData.checkoutUrl);
+                                } else {
+                                    const errorData = await response.json();
+                                    console.error("Failed to generate checkout URL:", errorData.error);
+                                }
+                            } catch (error) {
+                                console.error("Error generating checkout URL:", error);
+                            }
+                        }
                     }
                 }
-                setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch model:", error);
+                setModel(null); // Ensure model is null on error
+            } finally {
+                setLoading(false);
             }
         };
-        fetchModel();
-    }, [params.model, isAuthenticated, user]);
 
-    // Generate checkout URL when component mounts and user is authenticated
-    useEffect(() => {
-        const generateCheckoutURL = async () => {
-            if (isAuthenticated && !isOwned && !isAuthor && model) {
-                try {
-                    const response = await fetch(`/api/models/${model.id}/purchase`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        setCheckoutURL(data.checkoutUrl);
-                    } else {
-                        console.error("Failed to generate checkout URL:", await response.text());
-                    }
-                } catch (error) {
-                    console.error("Failed to generate checkout URL:", error);
-                }
-            }
-        };
-        
-        generateCheckoutURL();
-    }, [isOwned, isAuthor, model, isAuthenticated, user]);
+        fetchModelData();
+    }, [params.model, isAuthenticated, user]);
 
     const handleLike = async () => {
         if (!isAuthenticated) {

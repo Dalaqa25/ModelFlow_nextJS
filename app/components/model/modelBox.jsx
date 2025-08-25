@@ -30,7 +30,7 @@ export default function ModelBox({ search = "" }) {
 
     // Add filter state here
     const [selectedTag, setSelectedTag] = useState(null);
-    const [price, setPrice] = useState([0, 2000]); // Updated to match our price tiers (up to $20 = 2000 cents)
+    const [price, setPrice] = useState([0, 5000]); // Price in cents
 
     // Filter models by search, tag, and price
     const filteredModels = models.filter(model => {
@@ -106,7 +106,7 @@ export default function ModelBox({ search = "" }) {
                                 <button
                                     onClick={() => {
                                         setSelectedTag(null);
-                                        setPrice([0, 2000]);
+                                        setPrice([0, 5000]);
                                     }}
                                     className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                                 >

@@ -1,6 +1,9 @@
 import { modelDB, userDB } from "@/lib/db/supabase-db";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth-utils';
+import { getVariantIdForPrice } from "@/lib/lemon/server";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -23,7 +26,6 @@ export async function POST(req) {
       );
     }
 
-    // Find the user document first
     const userDoc = await userDB.getUserByEmail(user.email);
     if (!userDoc) {
       return NextResponse.json(
@@ -34,7 +36,6 @@ export async function POST(req) {
 
     const formData = await req.formData();
     
-    // Validate required fields
     const requiredFields = ['name', 'description', 'use_cases', 'features', 'tags', 'setup', 'price', 'fileStorage'];
     const missingFields = requiredFields.filter(field => !formData.get(field));
     
@@ -45,7 +46,18 @@ export async function POST(req) {
       );
     }
 
-    // Parse and validate tags
+    // Price handling
+    const priceInCents = parseInt(formData.get('price'));
+    if (isNaN(priceInCents) || priceInCents < 0) {
+        return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
+    }
+
+    // Get variant ID from Lemon Squeezy
+    const variantId = await getVariantIdForPrice(priceInCents);
+    if (!variantId) {
+        return NextResponse.json({ error: `No variant ID found for price: ${priceInCents / 100}` }, { status: 400 });
+    }
+
     let tags;
     try {
       const tagsData = formData.get('tags');
@@ -56,7 +68,6 @@ export async function POST(req) {
           { status: 400 }
         );
       }
-      // Ensure all tags are strings and not empty
       tags = tags.map(tag => tag.trim().toUpperCase()).filter(tag => tag.length > 0);
       if (tags.length === 0) {
         return NextResponse.json(
@@ -71,7 +82,6 @@ export async function POST(req) {
       );
     }
 
-    // Handle file storage information (only ZIP files supported)
     let fileStorage = {};
     try {
       const fileStorageData = formData.get('fileStorage');
@@ -89,7 +99,6 @@ export async function POST(req) {
       );
     }
 
-    
     const useCases = formData.get('use_cases').split('\n').map(s => s.trim()).filter(s => s);
     const features = formData.get('features').split('\n').map(s => s.trim()).filter(s => s);
 
@@ -100,18 +109,15 @@ export async function POST(req) {
       features: features,
       tags: tags,
       setup: formData.get('setup'),
-      price: parseInt(formData.get('price') * 100) || 50000, // Convert to cents, default $500
-      author_email: user.email, // Use author_email as per new schema
-      file_storage: fileStorage // Use file_storage as per new schema
+      price: priceInCents, // Save price in cents
+      pricing_data: { // Save Lemon Squeezy data
+        variantId: variantId,
+        price: priceInCents,
+        displayPrice: `${(priceInCents / 100).toFixed(2)}`
+      },
+      author_email: user.email,
+      file_storage: fileStorage
     };
-
-    console.log('Creating model with data:', {
-      ...modelData,
-      file_storage: {
-        ...modelData.file_storage,
-        fileName: modelData.file_storage.fileName || 'unknown'
-      }
-    });
 
     const model = await modelDB.createModel(modelData);
     return NextResponse.json(model, { status: 201 });

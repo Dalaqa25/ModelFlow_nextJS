@@ -3,6 +3,8 @@ import { getSupabaseUser } from "@/lib/auth-utils";
 import { modelDB, userDB, purchaseDB } from "@/lib/db/supabase-db";
 import { createCheckoutUrl } from "@/lib/lemon/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request, { params }) {
     try {
         const user = await getSupabaseUser();
