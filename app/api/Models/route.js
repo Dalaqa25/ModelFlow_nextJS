@@ -8,7 +8,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const models = await modelDB.getAllModels();
-    return NextResponse.json(models);
+    // Transform the data to include camelCase field names for frontend compatibility
+    const transformedModels = models.map(model => ({
+      ...model,
+      authorEmail: model.author_email, // Add camelCase version
+      createdAt: model.created_at // Add camelCase version for consistency
+    }));
+    return NextResponse.json(transformedModels);
   } catch (error) {
     console.error('Error fetching models:', error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

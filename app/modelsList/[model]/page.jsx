@@ -44,14 +44,28 @@ export default function Model(props) {
                 setModel(data);
                 setLikeCount(data.likes || 0);
 
-                console.log('--- DEBUG INFO ---');
+                console.log('--- FRONTEND DEBUG INFO ---');
                 console.log('Is Authenticated:', isAuthenticated);
                 console.log('User Email:', user?.email);
-                console.log('Author Email:', data.authorEmail);
+                console.log('Author Email:', data.author_email || data.authorEmail);
+                console.log('Model data:', {
+                    id: data.id,
+                    name: data.name,
+                    author_email: data.author_email,
+                    authorEmail: data.authorEmail,
+                    price: data.price
+                });
 
-                const isCurrentUserAuthor = isAuthenticated && user?.email === data.authorEmail;
+                // Use author_email from the API response (matches database field)
+                const authorEmail = data.author_email || data.authorEmail;
+                const isCurrentUserAuthor = isAuthenticated && user?.email === authorEmail;
                 setIsAuthor(isCurrentUserAuthor);
                 console.log('Is Author:', isCurrentUserAuthor);
+                console.log('Email comparison details:');
+                console.log('  - User email type:', typeof user?.email);
+                console.log('  - Author email type:', typeof authorEmail);
+                console.log('  - User email value:', JSON.stringify(user?.email));
+                console.log('  - Author email value:', JSON.stringify(authorEmail));
 
                 if (isAuthenticated) {
                     const purchasedRes = await fetch('/api/user/purchased-models');
@@ -61,8 +75,17 @@ export default function Model(props) {
                         setIsOwned(isCurrentUserOwned);
 
                         // Now, generate checkout URL if needed
+                        console.log('--- CHECKOUT URL GENERATION CHECK ---');
+                        console.log('  - Is current user author?', isCurrentUserAuthor);
+                        console.log('  - Is current user owned?', isCurrentUserOwned);
+                        console.log('  - Should generate checkout URL?', !isCurrentUserAuthor && !isCurrentUserOwned);
+                        
                         if (!isCurrentUserAuthor && !isCurrentUserOwned) {
                             console.log('--- ATTEMPTING TO GENERATE CHECKOUT URL ---');
+                            console.log('  - Making POST request to:', `/api/models/${data.id}/purchase`);
+                            console.log('  - User authenticated:', isAuthenticated);
+                            console.log('  - User email:', user?.email);
+                            
                             try {
                                 const response = await fetch(`/api/models/${data.id}/purchase`, {
                                     method: 'POST',
@@ -70,16 +93,25 @@ export default function Model(props) {
                                         'Content-Type': 'application/json',
                                     }
                                 });
+                                
+                                console.log('  - Response status:', response.status);
+                                console.log('  - Response ok:', response.ok);
+                                
                                 if (response.ok) {
                                     const checkoutData = await response.json();
+                                    console.log('  - Checkout data received:', checkoutData);
                                     setCheckoutURL(checkoutData.checkoutUrl);
                                 } else {
                                     const errorData = await response.json();
-                                    console.error("Failed to generate checkout URL:", errorData.error);
+                                    console.error("❌ Failed to generate checkout URL:", errorData.error);
+                                    console.error("❌ Full error response:", errorData);
                                 }
                             } catch (error) {
-                                console.error("Error generating checkout URL:", error);
+                                console.error("❌ Error generating checkout URL:", error);
                             }
+                        } else {
+                            console.log('--- SKIPPING CHECKOUT URL GENERATION ---');
+                            console.log('  - Reason: User is author or already owns the model');
                         }
                     }
                 }

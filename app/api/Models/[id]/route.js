@@ -13,7 +13,15 @@ export async function GET(_req, { params }) {
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
-        return NextResponse.json(model);
+        
+        // Transform the data to include camelCase field names for frontend compatibility
+        const transformedModel = {
+            ...model,
+            authorEmail: model.author_email, // Add camelCase version
+            createdAt: model.created_at // Add camelCase version for consistency
+        };
+        
+        return NextResponse.json(transformedModel);
     } catch (error) {
         console.error("Error fetching model:", error);
         return NextResponse.json({ error: "Error fetching model" }, { status: 500 });
@@ -22,7 +30,7 @@ export async function GET(_req, { params }) {
 
 export async function DELETE(_req, { params }) {
     try {
-        const { id } = params;
+        const { id } = await params;
 
         await modelDB.deleteModel(id);
 

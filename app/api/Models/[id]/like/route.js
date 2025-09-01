@@ -10,15 +10,16 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const model = await modelDB.getModelById(params.id);
-
+        const { id } = await params;
+        const model = await modelDB.getModelById(id);
+        
         if (!model) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
 
         // For now, just increment the likes count
         // In the future, you might want to create a separate likes table to track who liked what
-        const updatedModel = await modelDB.updateModel(params.id, {
+        const updatedModel = await modelDB.updateModel(id, {
             likes: (model.likes || 0) + 1
         });
 

@@ -10,7 +10,7 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id } = params;
+        const { id } = await params;
 
         // Verify request exists
         const request = await requestDB.getRequestById(id);
@@ -40,7 +40,7 @@ export async function POST(req, { params }) {
 
 export async function GET(req, { params }) {
     try {
-        const { id } = params;
+        const { id } = await params;
 
         const comments = await commentDB.getCommentsByRequestId(id);
 

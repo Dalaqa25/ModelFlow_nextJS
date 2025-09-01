@@ -31,7 +31,7 @@ export async function POST(req) {
 }
 
 export async function DELETE(_, { params }) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const deletedRequest = await requestDB.deleteRequest(id);
