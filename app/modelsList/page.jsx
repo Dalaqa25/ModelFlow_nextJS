@@ -13,10 +13,6 @@ export default function ModelsList() {
             <div className="pt-24 pb-12 px-6">
                 <div className="mx-auto w-[90%] max-w-[1500px]">
                     <div className="text-center mb-12">
-                        <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-8">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-                            AI Model Marketplace
-                        </div>
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
                             Explore
                             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Models</span>
