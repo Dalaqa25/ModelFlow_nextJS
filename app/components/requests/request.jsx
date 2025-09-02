@@ -2,9 +2,11 @@ import { FaRegComment, FaRegUser } from 'react-icons/fa';
 import { useState } from 'react';
 import RequestInfo from './requestInfo';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 export default function Request() {
     const [selectedRequestId, setSelectedRequestId] = useState(null);
+    const router = useRouter();
 
     const { data: requests = [], isLoading, error, refetch } = useQuery({
         queryKey: ['requests'],
@@ -108,7 +110,15 @@ export default function Request() {
                         <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm gap-2 sm:gap-0">
                             <div className="flex items-center gap-2 text-slate-400">
                                 <FaRegUser className="text-sm sm:text-base" />
-                                <p>{req.author_email}</p>
+                                <p
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(`/profile/${req.author_email}`);
+                                    }}
+                                    className="hover:underline cursor-pointer text-purple-300 hover:text-purple-200 transition-colors"
+                                >
+                                    {req.author_email}
+                                </p>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400 font-light sm:ml-auto">
                                 <p>Created on</p>

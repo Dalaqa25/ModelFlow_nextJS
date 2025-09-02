@@ -14,6 +14,8 @@ export async function GET(request) {
         let email = searchParams.get('email');
         let authenticatedUser = null;
 
+        console.log('🔍 [API] user-models called with email:', email);
+
         // If no email parameter, get it from authenticated user
         if (!email) {
             authenticatedUser = await getSupabaseUser();
@@ -26,6 +28,8 @@ export async function GET(request) {
             email = authenticatedUser.email;
         }
 
+        console.log('🔍 [API] Final email to search:', email);
+
         // Get user data - create user if doesn't exist
         let userData = await userDB.getUserByEmail(email);
         if (!userData) {
@@ -37,8 +41,12 @@ export async function GET(request) {
             });
         }
 
+        console.log('🔍 [API] User data found:', userData);
+
         // Fetch models from the unified models table
         const models = await modelDB.getModelsByAuthor(email);
+        console.log('🔍 [API] Raw models from DB:', models);
+        console.log('🔍 [API] Models count:', models.length);
 
         // Sort by created_at
         const allModels = models.sort((a, b) =>
@@ -90,12 +98,17 @@ export async function GET(request) {
         
         const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(4));
 
-        return NextResponse.json({
+        const response = {
             models: allModels,
             totalStorageUsedMB,
             plan: userData.subscription_plan || 'basic',
             storageError
-        });
+        };
+        
+        console.log('🔍 [API] Final response:', response);
+        console.log('🔍 [API] Final models count:', allModels.length);
+        
+        return NextResponse.json(response);
     } catch (error) {
         console.error('Error fetching user models:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

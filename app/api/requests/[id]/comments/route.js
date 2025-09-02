@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requestDB, commentDB } from "@/lib/db/supabase-db";
+import { requestDB, requestCommentDB } from "@/lib/db/supabase-db";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function POST(req, { params }) {
@@ -25,7 +25,7 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
         }
 
-        const comment = await commentDB.createComment({
+        const comment = await requestCommentDB.createComment({
             content: content.trim(),
             request_id: id,
             author_email: user.email
@@ -42,7 +42,7 @@ export async function GET(req, { params }) {
     try {
         const { id } = await params;
 
-        const comments = await commentDB.getCommentsByRequestId(id);
+        const comments = await requestCommentDB.getCommentsByRequestId(id);
 
         return NextResponse.json(comments);
     } catch (error) {

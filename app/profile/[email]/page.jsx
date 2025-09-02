@@ -18,8 +18,11 @@ export default function Profile(props) {
                 setError(null);
                 setLoading(true);
 
+                // Decode the email parameter to handle URL encoding
+                const decodedEmail = decodeURIComponent(params.email);
+
                 // Fetch profile data
-                const profileRes = await fetch(`/api/user/profile?email=${params.email}`);
+                const profileRes = await fetch(`/api/user/profile?email=${encodeURIComponent(decodedEmail)}`);
                 if (!profileRes.ok) {
                     const errorData = await profileRes.json();
                     throw new Error(errorData.error || 'Failed to fetch profile data');
@@ -28,13 +31,23 @@ export default function Profile(props) {
                 setProfileData(profileData);
 
                 // Fetch user models
-                const modelsRes = await fetch(`/api/models/user-models?email=${params.email}`);
+                const modelsRes = await fetch(`/api/models/user-models?email=${encodeURIComponent(decodedEmail)}`);
                 if (!modelsRes.ok) {
                     const errorData = await modelsRes.json();
                     throw new Error(errorData.error || 'Failed to fetch user models');
                 }
-                const models = await modelsRes.json();
-                setUserModels(Array.isArray(models) ? models : []);
+                const modelsData = await modelsRes.json();
+                console.log('🔍 [Profile] Raw models API response:', modelsData);
+                console.log('🔍 [Profile] Decoded email:', decodedEmail);
+                console.log('🔍 [Profile] Models data type:', typeof modelsData);
+                console.log('🔍 [Profile] Is array?', Array.isArray(modelsData));
+                console.log('🔍 [Profile] Has models property?', modelsData.models);
+                
+                // Handle both direct array and object with models property
+                const models = Array.isArray(modelsData) ? modelsData : (modelsData.models || []);
+                console.log('🔍 [Profile] Final models array:', models);
+                console.log('🔍 [Profile] Models count:', models.length);
+                setUserModels(models);
             } catch (error) {
                 console.error("Error in fetchProfileData:", error);
                 setError(error.message);
@@ -108,17 +121,22 @@ export default function Profile(props) {
                                     className='w-full h-full object-cover'
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                    <DefaultModelImage size="large" />
+                                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                    <div className="text-center">
+                                        <svg className="w-16 h-16 text-gray-400 mx-auto" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" />
+                                        </svg>
+                                        <p className="text-sm text-gray-500 mt-2">No Profile Image</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
                         <div className='flex-1 flex flex-col gap-4 items-center sm:items-start'>
                             <div className="text-center sm:text-left">
                                 <h1 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-2'>
-                                    {profileData.name || params.email}
+                                    {profileData.name || decodeURIComponent(params.email)}
                                 </h1>
-                                <p className='text-gray-500 text-lg'>{params.email}</p>
+                                <p className='text-gray-500 text-lg'>{decodeURIComponent(params.email)}</p>
                             </div>
                             
                             {/* Contact Information */}
@@ -146,7 +164,7 @@ export default function Profile(props) {
                                 )}
                                 <div className='flex items-center gap-3 text-gray-600 bg-white/50 p-3 rounded-xl border border-gray-100'>
                                     <FaCalendarAlt className="text-purple-500 text-lg" />
-                                    <span>Joined {formatDate(profileData.createdAt)}</span>
+                                    <span>Joined {formatDate(profileData.created_at || profileData.createdAt)}</span>
                                 </div>
                             </div>
 
@@ -183,9 +201,9 @@ export default function Profile(props) {
                             >
                                 <div className='bg-white/50 rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-300 overflow-hidden'>
                                     <div className='relative w-full h-32 overflow-hidden'>
-                                        {model.imgUrl ? (
-                                            <img 
-                                                src={model.imgUrl} 
+                                        {(model.img_url || model.imgUrl) ? (
+                                            <img
+                                                src={model.img_url || model.imgUrl}
                                                 alt={model.name}
                                                 className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
                                             />
@@ -201,8 +219,8 @@ export default function Profile(props) {
                                             {model.description}
                                         </p>
                                         <div className='flex gap-1.5 flex-wrap'>
-                                            {model.tags.slice(0, 3).map((tag, index) => (
-                                                <span 
+                                            {(model.tags || []).slice(0, 3).map((tag, index) => (
+                                                <span
                                                     key={index}
                                                     className='px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium'
                                                 >

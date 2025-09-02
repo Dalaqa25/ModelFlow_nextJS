@@ -1,8 +1,10 @@
 'use client';
 import { IoClose } from "react-icons/io5";
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 export default function OtherComments({ requestId, onClose }) {
+    const router = useRouter();
     const { data: comments = [], isLoading, error, refetch } = useQuery({
         queryKey: ['requestComments', requestId],
         queryFn: async () => {
@@ -65,10 +67,15 @@ export default function OtherComments({ requestId, onClose }) {
                             className={`w-full flex items-center my-2 px-4 mb-3 ${idx % 2 === 0 ? 'justify-start' : 'justify-end'}`}
                         >
                             <div className={`p-3 rounded-2xl bg-white max-w-[60%] ${idx % 2 === 0 ? '' : 'bg-purple-50'} break-words flex flex-col`}>
-                                <span className="text-xs text-gray-500 font-semibold mb-1">{comment.authorEmail}</span>
+                                <span
+                                    onClick={() => router.push(`/profile/${comment.author_email}`)}
+                                    className="text-xs text-gray-500 font-semibold mb-1 hover:underline cursor-pointer text-purple-600 hover:text-purple-800 transition-colors"
+                                >
+                                    {comment.author_email}
+                                </span>
                                 <p className="text-base break-words font-light text-gray-700">{comment.content}</p>
                                 <span className="text-xs text-gray-400 mt-1">
-                                    {new Date(comment.createdAt).toLocaleString()}
+                                    {new Date(comment.created_at).toLocaleString()}
                                 </span>
                             </div>
                         </div>

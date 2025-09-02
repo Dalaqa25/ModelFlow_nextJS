@@ -3,10 +3,12 @@ import { FaRegUser } from 'react-icons/fa';
 import { useState } from 'react';
 import RequestCommnetCreateion from './requestCommnetCreateion';
 import OtherComments from './otherComments';
+import { useRouter } from 'next/navigation';
 
-export default function RequestInfo({ request }) { 
+export default function RequestInfo({ request }) {
     const [showOtherComments, setShowOtherComments] = useState(false);
     const [commentsUpdated, setCommentsUpdated] = useState(0);
+    const router = useRouter();
 
     const handleCommentAdded = () => {
         setCommentsUpdated(prev => prev + 1);
@@ -28,7 +30,12 @@ export default function RequestInfo({ request }) {
                 </div>
                 <div className='flex items-center gap-2 text-slate-400'>
                     <FaRegUser className="text-sm sm:text-base"/>
-                    <p className="text-sm sm:text-base">{request.author_email}</p>
+                    <p
+                        onClick={() => router.push(`/profile/${request.author_email}`)}
+                        className="text-sm sm:text-base hover:underline cursor-pointer text-purple-300 hover:text-purple-200 transition-colors"
+                    >
+                        {request.author_email}
+                    </p>
                 </div>
                 <hr className='border-slate-600/50 mt-2 sm:mt-3'/>
             </div>
