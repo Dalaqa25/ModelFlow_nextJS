@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCloudUploadAlt } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaFile } from 'react-icons/fa';
 
 export default function Step3FileUpload({
   dragActive,
@@ -13,6 +13,7 @@ export default function Step3FileUpload({
   handleDrop,
   handleBrowseClick,
   handleFileChange,
+  removeFile,
   isSubmitting,
   handleBack
 }) {
@@ -59,12 +60,27 @@ export default function Step3FileUpload({
         
         {formData.modelFile && (
           <div className="mt-4 p-3 bg-slate-700/50 border border-slate-600/50 rounded-xl">
-            <p className="text-sm text-slate-300">
-              Selected file: <span className="font-semibold text-white">{formData.modelFile.name}</span>
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              Size: {(formData.modelFile.size / (1024 * 1024)).toFixed(2)} MB
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center flex-1 min-w-0">
+                <FaFile className="h-4 w-4 text-slate-400 mr-2 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate" title={formData.modelFile.name}>
+                    {formData.modelFile.name}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {(formData.modelFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeFile}
+                className="ml-3 p-1 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-800 flex-shrink-0"
+                title="Remove file"
+              >
+                <FaTimes className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
         

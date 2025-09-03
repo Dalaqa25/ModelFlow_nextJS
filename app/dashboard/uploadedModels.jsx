@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
-import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle, FaDownload } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import PLANS from '../plans';
@@ -57,6 +57,81 @@ export default function UploadedModels({ isRowLayout }) {
 
     const handleViewModel = (modelId) => {
         router.push(`/modelsList/${modelId}`);
+    };
+
+    const handleDownloadModel = async (model) => {
+        try {
+            console.log('🔍 Debug: Model object:', model);
+            console.log('🔍 Debug: Model file_storage:', model.file_storage);
+
+            // Extract file information from the model's fileStorage
+            let fileStorage = null;
+            try {
+                if (model.file_storage) {
+                    console.log('🔍 Debug: Attempting to parse file_storage');
+                    fileStorage = typeof model.file_storage === 'string'
+                        ? JSON.parse(model.file_storage)
+                        : model.file_storage;
+                    console.log('🔍 Debug: Parsed fileStorage:', fileStorage);
+                } else {
+                    console.log('🔍 Debug: No file_storage found, checking other fields');
+                    console.log('🔍 Debug: Available model fields:', Object.keys(model));
+                }
+            } catch (e) {
+                console.error('❌ Error parsing file storage info:', e);
+                console.log('🔍 Debug: Raw file_storage value:', model.file_storage);
+                return;
+            }
+
+            if (!fileStorage) {
+                console.error('❌ No fileStorage object found');
+                return;
+            }
+
+            console.log('🔍 Debug: fileStorage.supabasePath:', fileStorage.supabasePath);
+            console.log('🔍 Debug: fileStorage.fileName:', fileStorage.fileName);
+
+            if (!fileStorage?.supabasePath) {
+                console.error('❌ No file path available for download');
+                console.log('🔍 Debug: Complete fileStorage object:', fileStorage);
+                return;
+            }
+
+            // Create download URL using Supabase storage
+            const { supabase } = await import('../../lib/supabase');
+            console.log('🔍 Debug: Using bucket "models" with path:', fileStorage.supabasePath);
+
+            const { data, error } = supabase.storage
+                .from('models')
+                .getPublicUrl(fileStorage.supabasePath);
+
+            if (error) {
+                console.error('❌ Supabase getPublicUrl error:', error);
+                return;
+            }
+
+            if (!data?.publicUrl) {
+                console.error('❌ Could not generate download URL - no publicUrl returned');
+                console.log('🔍 Debug: Supabase response data:', data);
+                return;
+            }
+
+            console.log('🔍 Debug: Generated public URL:', data.publicUrl);
+
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = data.publicUrl;
+            link.download = fileStorage.fileName || `${model.name}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            console.log('✅ Download initiated successfully');
+
+        } catch (error) {
+            console.error('❌ Download failed:', error);
+            // You could add a toast notification here
+        }
     };
 
 
@@ -216,8 +291,8 @@ export default function UploadedModels({ isRowLayout }) {
                                         </div>
                                     </div>
 
-                                    <div className={`flex ${isRowLayout ? 'flex-col gap-2' : 'flex-col gap-3'} sm:flex-row mt-auto`}>
-                                        <button 
+                                    <div className={`flex flex-col ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
+                                        <button
                                             onClick={() => !model.status || model.status !== 'pending' ? handleViewModel(model.id) : null}
                                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors
                                                 ${model.status === 'pending' ? 'bg-slate-700/30 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'}`}
@@ -226,6 +301,15 @@ export default function UploadedModels({ isRowLayout }) {
                                             <FaEye />
                                             <span>View</span>
                                         </button>
+                                        {(!model.status || model.status !== 'pending') && (
+                                            <button
+                                                onClick={() => handleDownloadModel(model)}
+                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600"
+                                            >
+                                                <FaDownload />
+                                                <span>Download</span>
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

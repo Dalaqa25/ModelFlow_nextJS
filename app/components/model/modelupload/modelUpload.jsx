@@ -1,78 +1,30 @@
 'use client';
-import { useState, Fragment, useEffect, useRef } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from '../UploadProgressDialog';
 import StorageWarningDialog from '../StorageWarningDialog';
 import { supabase } from '../../../../lib/supabase';
-import { useAuth } from '../../../../lib/supabase-auth-context';
-import PLANS from '../../../plans';
-import Step1BasicInfo from './Step1BasicInfo';
-import Step2Details from './Step2Details';
-import Step3FileUpload from './Step3FileUpload';
-
-const ErrorMessage = ({ error }) => {
-    if (!error) return null;
-    return (
-        <p className="text-red-400 text-sm mt-1">
-            {error}
-        </p>
-    );
-};
+import Step1BasicInfo from './upload-steps/Step1BasicInfo';
+import Step2Details from './upload-steps/Step2Details';
+import Step3FileUpload from './upload-steps/Step3FileUpload';
+import { PRICE_TIERS, PREDEFINED_TAGS, TOTAL_STEPS } from './shared/constants';
+import { calculateStorageValidation, getMaxFileSize, validateFile, validateForm, validateStep } from './shared/utils';
+import { ErrorMessage, LoadingOverlay } from './shared/components';
+import { useStorageData, useFormState, useStepper } from './shared/hooks';
 
 export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
-    const router = useRouter();
-    const { user } = useAuth();
-    const [features, setFeatures] = useState(['']);
-    const [tags, setTags] = useState([]); // Initialize tags as empty array for multi-selection
-    const [userStorageData, setUserStorageData] = useState(null);
-    const [storageLoading, setStorageLoading] = useState(true);
-    const [storageWarningDialog, setStorageWarningDialog] = useState({
-        isOpen: false,
-        warningType: null,
-        currentUsageMB: 0,
-        fileSizeMB: 0,
-        totalAfterUploadMB: 0,
-        storageCapMB: 0,
-        storageCapStr: '',
-        planName: ''
-    });
-    
-    // Predefined price tiers that match Lemon Squeezy variants
-    const PRICE_TIERS = [
-        { value: 500, label: '$5.00', description: 'Basic ' },
-        { value: 1000, label: '$10.00', description: 'Standard ' },
-        { value: 1500, label: '$15.00', description: 'Premium ' },
-        { value: 2000, label: '$20.00', description: 'Professional ' },
-    ];
-
-    const [formData, setFormData] = useState({
-        modelName: '',
-        description: '',
-        useCases: '',
-        setup: '', // Add setup field
-        modelFile: null,
-        driveLink: '',
-        price: 500, // Default to $5.00
-    });
-    const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [uploadStage, setUploadStage] = useState(null);
-    const [showProgressDialog, setShowProgressDialog] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-
-    // Replace useCases in formData with use_cases array state
-    const [use_cases, setUse_cases] = useState(['']);
-
-    const predefinedTags = [
-        "NLP",
-        "Computer Vision",
-        "Chatbot",
-        "Image Generation",
-        "Translation",
-    ];
+    // Custom hooks for state management
+    const { userStorageData, storageLoading } = useStorageData(isOpen);
+    const {
+        formData, setFormData, errors, setErrors, isSubmitting, setIsSubmitting,
+        uploadStage, setUploadStage, showProgressDialog, setShowProgressDialog,
+        uploadProgress, setUploadProgress, use_cases, setUse_cases,
+        features, setFeatures, tags, setTags, storageWarningDialog,
+        setStorageWarningDialog, resetForm
+    } = useFormState();
+    const { step, stepDirection, handleNext, handleBack } = useStepper();
 
     // Drag-and-drop state for file upload
     const [dragActive, setDragActive] = useState(false);
@@ -104,73 +56,6 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     const fileInputRef = useRef();
     const handleBrowseClick = () => fileInputRef.current && fileInputRef.current.click();
 
-    // Fetch user storage data when component opens
-    useEffect(() => {
-        if (isOpen) {
-            fetchUserStorageData();
-        }
-    }, [isOpen]);
-
-    const fetchUserStorageData = async () => {
-        try {
-            setStorageLoading(true);
-            const response = await fetch(`/api/models/user-models?email=${encodeURIComponent(user.email)}`);
-            if (response.ok) {
-                const data = await response.json();
-                setUserStorageData(data);
-            }
-        } catch (error) {
-            console.error('Error fetching user storage data:', error);
-        } finally {
-            setStorageLoading(false);
-        }
-    };
-
-    // Calculate storage limits and check if upload would exceed limit
-    const calculateStorageValidation = (fileSize) => {
-        if (!userStorageData || !userStorageData.plan) return { canUpload: true, warning: null };
-
-        const currentUsageMB = userStorageData.totalStorageUsedMB || 0;
-        const userPlan = userStorageData.plan;
-        const storageCapStr = PLANS[userPlan]?.features?.activeStorage || '250 MB';
-        
-        // Parse storage cap
-        let storageCapMB = 250;
-        if (storageCapStr.toLowerCase().includes('gb')) {
-            storageCapMB = parseInt(storageCapStr.replace(/\D/g, '')) * 1024;
-        } else if (storageCapStr.toLowerCase().includes('mb')) {
-            storageCapMB = parseInt(storageCapStr.replace(/\D/g, ''));
-        }
-
-        const fileSizeMB = fileSize / (1024 * 1024);
-        const totalAfterUpload = currentUsageMB + fileSizeMB;
-
-        if (totalAfterUpload > storageCapMB) {
-            return {
-                canUpload: false,
-                warning: 'exceeds',
-                currentUsageMB,
-                fileSizeMB,
-                totalAfterUpload,
-                storageCapMB,
-                storageCapStr,
-                planName: PLANS[userPlan]?.name || 'Basic'
-            };
-        } else if (totalAfterUpload > storageCapMB * 0.9) {
-            return {
-                canUpload: true,
-                warning: 'near_limit',
-                currentUsageMB,
-                fileSizeMB,
-                totalAfterUpload,
-                storageCapMB,
-                storageCapStr,
-                planName: PLANS[userPlan]?.name || 'Basic'
-            };
-        }
-
-        return { canUpload: true, warning: null };
-    };
 
     // Tag selection handler
     const handleTagToggle = (tagLabel) => {
@@ -226,38 +111,12 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-    // Get max file size for current plan
-    const getMaxFileSize = () => {
-        const userPlan = userStorageData?.plan || 'basic';
-        const maxFileSizeStr = PLANS[userPlan]?.features?.maxFileSize || '50 MB';
-        let maxFileSizeBytes = 50 * 1024 * 1024; // default 50MB
-        if (maxFileSizeStr.toLowerCase().includes('gb')) {
-            maxFileSizeBytes = parseInt(maxFileSizeStr.replace(/\D/g, '')) * 1024 * 1024 * 1024;
-        } else if (maxFileSizeStr.toLowerCase().includes('mb')) {
-            maxFileSizeBytes = parseInt(maxFileSizeStr.replace(/\D/g, '')) * 1024 * 1024;
-        }
-        return { maxFileSizeBytes, maxFileSizeStr };
-    };
-
-    const validateFile = (file) => {
-        const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
-        
-        if (!file) return 'File is required';
-        if (file.size > maxFileSizeBytes) {
-            return `File size must be less than ${maxFileSizeStr}`;
-        }
-        if (!file.type.includes('zip')) {
-            return 'Only ZIP files are allowed';
-        }
-        return null;
-    };
-
-    // Update handleFileChange
+    // File handling functions
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const fileError = validateFile(file);
+        const fileError = validateFile(file, userStorageData);
         if (fileError) {
             setErrors(prev => ({ ...prev, modelFile: fileError }));
             e.target.value = '';
@@ -265,7 +124,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
 
         // Continue with existing storage validation...
-        const storageValidation = calculateStorageValidation(file.size);
+        const storageValidation = calculateStorageValidation(file.size, userStorageData);
         if (!storageValidation.canUpload) {
             setErrors(prev => ({
                 ...prev,
@@ -310,118 +169,61 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-    // Remove Google Drive upload option, only allow ZIP
-    // Remove uploadType state and all related logic
-
-    // Remove handleDriveLinkChange and all references to driveLink
-
-    // Update validateForm to check use_cases array
-    const validateForm = () => {
-        const newErrors = {};
-        
-        if (!formData.modelName.trim()) {
-            newErrors.modelName = 'Model name is required';
+    // Function to remove selected file
+    const removeFile = () => {
+        setFormData(prev => ({
+            ...prev,
+            modelFile: null
+        }));
+        setErrors(prev => ({
+            ...prev,
+            modelFile: ''
+        }));
+        // Reset the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
-        
-        if (!formData.description.trim()) {
-            newErrors.description = 'Description is required';
-        }
-        
-        // Use cases validation
-        if (use_cases.some(uc => !uc.trim())) {
-            newErrors.use_cases = 'All use cases must be filled out';
-        }
-
-        if (!formData.setup.trim()) {
-            newErrors.setup = 'Setup instructions are required';
-        }
-        
-        // Validate tags
-        if (tags.length === 0) {
-            newErrors.tags = 'At least one tag is required';
-        }
-        if (tags.length > 2) {
-            newErrors.tags = 'You can select a maximum of 2 tags';
-        }
-
-        // Validate price
-        if (!formData.price || formData.price <= 0) {
-            newErrors.price = 'Please select a valid price tier';
-        }
-
-        if (!formData.modelFile) {
-            newErrors.modelFile = 'Model file is required';
-        }
-        
-        if (features.some(feature => !feature.trim())) {
-            newErrors.features = 'All features must be filled out';
-        }
-
-        setErrors(newErrors);
-        console.log('Validation errors:', newErrors); // DEBUG
-        return Object.keys(newErrors).length === 0;
     };
 
-    // Stepper state
-    const [step, setStep] = useState(1);
-    const totalSteps = 3;
-    const [stepDirection, setStepDirection] = useState('forward');
-
     // Step validation helpers
-    const validateStep = () => {
-        const newErrors = {};
-        const currentFields = [];
-
-        if (step === 1) {
-            currentFields.push('modelName', 'description', 'price');
-            if (!formData.modelName.trim()) newErrors.modelName = 'Model name is required';
-            if (!formData.description.trim()) newErrors.description = 'Description is required';
-            if (!formData.price || formData.price <= 0) newErrors.price = 'Please select a valid price tier';
-        }
-        if (step === 2) {
-            currentFields.push('tags', 'features', 'use_cases', 'setup');
-            if (tags.length === 0) newErrors.tags = 'At least one tag is required';
-            if (tags.length > 2) newErrors.tags = 'You can select a maximum of 2 tags';
-            if (features.some(feature => !feature.trim())) newErrors.features = 'All features must be filled out';
-            if (use_cases.some(uc => !uc.trim())) newErrors.use_cases = 'All use cases must be filled out';
-            if (!formData.setup.trim()) newErrors.setup = 'Setup instructions are required';
-        }
-
+    const handleStepValidation = () => {
+        const newErrors = validateStep(step, formData, tags, features, use_cases);
         setErrors(prev => {
             const preservedErrors = { ...prev };
+            const currentFields = step === 1
+                ? ['modelName', 'description', 'price']
+                : ['tags', 'features', 'use_cases', 'setup'];
             currentFields.forEach(field => delete preservedErrors[field]);
             return { ...preservedErrors, ...newErrors };
         });
-
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleNext = () => {
-        setStepDirection('forward');
-        if (validateStep()) setStep(s => Math.min(s + 1, totalSteps));
-    };
-    const handleBack = () => {
-        setStepDirection('backward');
-        setStep(s => Math.max(s - 1, 1));
+    const handleNextWithValidation = () => {
+        if (handleStepValidation()) {
+            handleNext();
+        }
     };
 
     // Update handleSubmit to only submit on last step
     const handleSubmit = async (e) => {
         console.log('submit'); // DEBUG: Check if form submit is triggered
         e.preventDefault();
-        if (step !== totalSteps) {
+        if (step !== TOTAL_STEPS) {
             console.log('Not on last step, moving to next');
-            handleNext();
+            handleNextWithValidation();
             return;
         }
-        if (!validateForm()) {
+        const formErrors = validateForm(formData, use_cases, tags, features);
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
             console.log('Validation failed');
             return;
         }
         console.log('Validation passed');
         // Final storage validation before upload
         if (formData.modelFile) {
-            const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize();
+            const { maxFileSizeBytes, maxFileSizeStr } = getMaxFileSize(userStorageData);
             if (formData.modelFile.size > maxFileSizeBytes) {
                 console.log('File size too large');
                 setErrors(prev => ({
@@ -430,7 +232,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 }));
                 return;
             }
-            const storageValidation = calculateStorageValidation(formData.modelFile.size);
+            const storageValidation = calculateStorageValidation(formData.modelFile.size, userStorageData);
             if (!storageValidation.canUpload) {
                 console.log('Storage validation failed');
                 toast.error('File would exceed storage limit');
@@ -568,33 +370,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         }
     };
 
-
     const handleDeleteClick = () => {
         setStorageWarningDialog(prev => ({ ...prev, isOpen: false }));
         // Close upload dialog and show delete instructions
         onClose();
         toast.success('Please delete models from your dashboard to free up space');
-    };
-
-    // Add after the initial state declarations
-    const resetForm = () => {
-        setFormData({
-            modelName: '',
-            description: '',
-            useCases: '',
-            setup: '',
-            modelFile: null,
-            driveLink: '',
-            price: 500,
-        });
-        setFeatures(['']);
-        setTags([]);
-        setErrors({});
-        setStep(1);
-        setUploadProgress(0);
-        setShowProgressDialog(false);
-        setUploadStage(null);
-        setStepDirection('forward');
     };
 
     // Update the Dialog onClose handler
@@ -647,7 +427,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                         <Dialog.Title as="h3" className="text-2xl font-bold leading-7 text-white mb-2">
                                             Upload Your Model
                                         </Dialog.Title>
-                                        <p className="text-slate-400 mb-6 text-base">Step {step} of {totalSteps}</p>
+                                        <p className="text-slate-400 mb-6 text-base">Step {step} of {TOTAL_STEPS}</p>
                                         <form onSubmit={handleSubmit} className="mt-4 space-y-6 relative">
                                             <LoadingOverlay isVisible={isSubmitting} />
                                             <div className="relative min-h-[300px]">
@@ -669,13 +449,13 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                                 errors={errors}
                                                                 handleInputChange={handleInputChange}
                                                                 PRICE_TIERS={PRICE_TIERS}
-                                                                handleNext={handleNext}
+                                                                handleNext={handleNextWithValidation}
                                                             />
                                                         )}
                                                         {step === 2 && (
                                                             <Step2Details
                                                                 tags={tags}
-                                                                predefinedTags={predefinedTags}
+                                                                predefinedTags={PREDEFINED_TAGS}
                                                                 features={features}
                                                                 use_cases={use_cases}
                                                                 errors={errors}
@@ -688,7 +468,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                                 removeUseCase={removeUseCase}
                                                                 formData={formData}
                                                                 handleInputChange={handleInputChange}
-                                                                handleNext={handleNext}
+                                                                handleNext={handleNextWithValidation}
                                                                 handleBack={handleBack}
                                                             />
                                                         )}
@@ -698,13 +478,14 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                                                 formData={formData}
                                                                 errors={errors}
                                                                 storageLoading={storageLoading}
-                                                                getMaxFileSize={getMaxFileSize}
+                                                                getMaxFileSize={() => getMaxFileSize(userStorageData)}
                                                                 fileInputRef={fileInputRef}
                                                                 handleDragOver={handleDragOver}
                                                                 handleDragLeave={handleDragLeave}
                                                                 handleDrop={handleDrop}
                                                                 handleBrowseClick={handleBrowseClick}
                                                                 handleFileChange={handleFileChange}
+                                                                removeFile={removeFile}
                                                                 isSubmitting={isSubmitting}
                                                                 handleBack={handleBack}
                                                             />
@@ -744,12 +525,3 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         </>
     );
 }
-
-const LoadingOverlay = ({ isVisible }) => {
-    if (!isVisible) return null;
-    return (
-        <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-    );
-};
