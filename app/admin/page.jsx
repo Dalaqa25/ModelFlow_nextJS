@@ -28,18 +28,29 @@ export default function AdminPage() {
                     return;
                 }
 
+                console.log('📡 [ADMIN] Fetching pending models from API...');
                 const response = await fetch('/api/pending-models');
+                console.log('📥 [ADMIN] Pending models response status:', response.status);
+                console.log('📥 [ADMIN] Pending models response ok:', response.ok);
+
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
-                        console.log('Auth/Admin failed');
+                        console.log('❌ [ADMIN] Auth/Admin failed');
                         toast.error('Access denied - Admin privileges required');
                         router.push('/');
                         return;
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('❌ [ADMIN] Failed to fetch pending models:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
+
                 const data = await response.json();
+                console.log('✅ [ADMIN] Pending models data received:', data);
+                console.log('📊 [ADMIN] Number of pending models:', Array.isArray(data) ? data.length : 'Not an array');
+
                 setPendingModels(Array.isArray(data) ? data : []);
+                console.log('💾 [ADMIN] Pending models state updated');
             } catch (error) {
                 console.error('Error:', error);
                 toast.error('Failed to fetch data');
@@ -53,7 +64,12 @@ export default function AdminPage() {
     }, [authLoading, router, user]);
 
     const handleApprove = async (modelId) => {
+        console.log('🔄 [ADMIN] handleApprove called with modelId:', modelId);
+
         try {
+            console.log('📡 [ADMIN] Making API call to:', `/api/pending-models/${modelId}`);
+            console.log('📤 [ADMIN] Request body:', { action: 'approve' });
+
             const response = await fetch(`/api/pending-models/${modelId}`, {
                 method: 'PATCH',
                 headers: {
@@ -62,26 +78,45 @@ export default function AdminPage() {
                 body: JSON.stringify({ action: 'approve' }),
             });
 
+            console.log('📥 [ADMIN] Response status:', response.status);
+            console.log('📥 [ADMIN] Response ok:', response.ok);
+
             if (!response.ok) {
-                throw new Error('Failed to approve model');
+                const errorText = await response.text();
+                console.error('❌ [ADMIN] Response not ok, error:', errorText);
+                throw new Error(`Failed to approve model: ${response.status} ${errorText}`);
             }
+
+            const responseData = await response.json();
+            console.log('✅ [ADMIN] Success response:', responseData);
 
             toast.success('Model approved successfully');
             // Remove the approved model from the list
             setPendingModels(prev => prev.filter(model => model.id !== modelId));
+            console.log('🗑️ [ADMIN] Removed model from list, new count:', setPendingModels.length);
         } catch (error) {
-            console.error('Error approving model:', error);
-            toast.error('Failed to approve model');
+            console.error('❌ [ADMIN] Error in handleApprove:', error);
+            toast.error(`Failed to approve model: ${error.message}`);
         }
     };
 
     const handleReject = async (modelId) => {
+        console.log('🔄 [ADMIN] handleReject called with modelId:', modelId);
+        console.log('📝 [ADMIN] Rejection reason:', rejectionReason.trim());
+
         if (!rejectionReason.trim()) {
+            console.log('⚠️ [ADMIN] No rejection reason provided');
             toast.error('Please provide a rejection reason');
             return;
         }
 
         try {
+            console.log('📡 [ADMIN] Making API call to:', `/api/pending-models/${modelId}`);
+            console.log('📤 [ADMIN] Request body:', {
+                action: 'reject',
+                rejectionReason: rejectionReason.trim(),
+            });
+
             const response = await fetch(`/api/pending-models/${modelId}`, {
                 method: 'PATCH',
                 headers: {
@@ -93,18 +128,27 @@ export default function AdminPage() {
                 }),
             });
 
+            console.log('📥 [ADMIN] Response status:', response.status);
+            console.log('📥 [ADMIN] Response ok:', response.ok);
+
             if (!response.ok) {
-                throw new Error('Failed to reject model');
+                const errorText = await response.text();
+                console.error('❌ [ADMIN] Response not ok, error:', errorText);
+                throw new Error(`Failed to reject model: ${response.status} ${errorText}`);
             }
+
+            const responseData = await response.json();
+            console.log('✅ [ADMIN] Success response:', responseData);
 
             toast.success('Model rejected successfully');
             // Remove the rejected model from the list
             setPendingModels(prev => prev.filter(model => model.id !== modelId));
             setRejectionReason('');
             setSelectedModel(null);
+            console.log('🗑️ [ADMIN] Removed model from list, cleared form');
         } catch (error) {
-            console.error('Error rejecting model:', error);
-            toast.error('Failed to reject model');
+            console.error('❌ [ADMIN] Error in handleReject:', error);
+            toast.error(`Failed to reject model: ${error.message}`);
         }
     };
 
