@@ -8,6 +8,7 @@ import PLANS from '../plans';
 
 export default function UploadedModels({ isRowLayout }) {
     const [currentPage, setCurrentPage] = useState(1);
+    const [downloadingModelId, setDownloadingModelId] = useState(null);
     const router = useRouter();
     const modelsPerPage = 5;
 
@@ -60,6 +61,7 @@ export default function UploadedModels({ isRowLayout }) {
     };
 
     const handleDownloadModel = async (model) => {
+        setDownloadingModelId(model.id);
         try {
             console.log('🔍 Debug: Model object:', model);
             console.log('🔍 Debug: Model file_storage:', model.file_storage);
@@ -97,30 +99,28 @@ export default function UploadedModels({ isRowLayout }) {
                 return;
             }
 
-            // Create download URL using Supabase storage
-            const { supabase } = await import('../../lib/supabase');
-            console.log('🔍 Debug: Using bucket "models" with path:', fileStorage.supabasePath);
+            // Fetch signed download URL from API
+            console.log('🔍 Debug: Fetching download URL for model ID:', model.id);
+            const response = await fetch(`/api/models/${model.id}/download`);
 
-            const { data, error } = supabase.storage
-                .from('models')
-                .getPublicUrl(fileStorage.supabasePath);
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('❌ API error:', errorData);
+                throw new Error(errorData.error || 'Failed to get download URL');
+            }
 
-            if (error) {
-                console.error('❌ Supabase getPublicUrl error:', error);
+            const { downloadUrl } = await response.json();
+
+            if (!downloadUrl) {
+                console.error('❌ No download URL returned from API');
                 return;
             }
 
-            if (!data?.publicUrl) {
-                console.error('❌ Could not generate download URL - no publicUrl returned');
-                console.log('🔍 Debug: Supabase response data:', data);
-                return;
-            }
-
-            console.log('🔍 Debug: Generated public URL:', data.publicUrl);
+            console.log('🔍 Debug: Generated signed URL:', downloadUrl);
 
             // Create a temporary link and trigger download
             const link = document.createElement('a');
-            link.href = data.publicUrl;
+            link.href = downloadUrl;
             link.download = fileStorage.fileName || `${model.name}.zip`;
             document.body.appendChild(link);
             link.click();
@@ -131,6 +131,8 @@ export default function UploadedModels({ isRowLayout }) {
         } catch (error) {
             console.error('❌ Download failed:', error);
             // You could add a toast notification here
+        } finally {
+            setDownloadingModelId(null);
         }
     };
 
@@ -304,10 +306,24 @@ export default function UploadedModels({ isRowLayout }) {
                                         {(!model.status || model.status !== 'pending') && (
                                             <button
                                                 onClick={() => handleDownloadModel(model)}
-                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600"
+                                                disabled={downloadingModelId === model.id}
+                                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm sm:text-base transition-colors ${
+                                                    downloadingModelId === model.id
+                                                        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                                        : 'bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600'
+                                                }`}
                                             >
-                                                <FaDownload />
-                                                <span>Download</span>
+                                                {downloadingModelId === model.id ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                                                        <span>Downloading...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FaDownload />
+                                                        <span>Download</span>
+                                                    </>
+                                                )}
                                             </button>
                                         )}
                                     </div>
