@@ -138,7 +138,7 @@ export default function Notifications({ isOpen, onClose }) {
                                                                 {notification.message}
                                                             </p>
                                                             <p className="text-sm text-slate-400 mt-2">
-                                                                {new Date(notification.createdAt).toLocaleDateString()}
+                                                                {notification.created_at ? new Date(notification.created_at).toLocaleDateString() : 'Date unavailable'}
                                                             </p>
                                                         </div>
                                                     </div>
