@@ -96,7 +96,6 @@ export async function POST(req) {
       earnedAt: new Date()
     });
 
-    console.log('Balance updated for seller:', {
       email: balanceUpdate.email,
       totalEarnings: balanceUpdate.totalEarnings,
       availableBalance: balanceUpdate.availableBalance,

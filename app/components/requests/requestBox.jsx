@@ -30,17 +30,12 @@ export default function RequestBox({ onClose, onRequestPublished }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('[RequestBox] Form submitted');
-        console.log('[RequestBox] User:', user);
-        console.log('[RequestBox] User email:', user?.email);
 
         if (!user) {
-            console.log('[RequestBox] No user found, showing login error');
             toast.error('You must be logged in to publish a request.');
             return;
         }
 
-        console.log('[RequestBox] User authenticated, proceeding with request');
         setLoading(true);
 
         const requestData = {
@@ -50,27 +45,21 @@ export default function RequestBox({ onClose, onRequestPublished }) {
             author_email: user.email || 'anonymous@example.com',
         };
 
-        console.log('[RequestBox] Request data:', requestData);
 
         try {
-            console.log('[RequestBox] Sending POST request to /api/requests');
             const res = await fetch('/api/requests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestData),
             });
 
-            console.log('[RequestBox] Response status:', res.status);
-            console.log('[RequestBox] Response ok:', res.ok);
 
             if (!res.ok) {
                 const errorText = await res.text();
-                console.log('[RequestBox] Error response:', errorText);
                 throw new Error(`Failed to publish request: ${res.status} ${errorText}`);
             }
 
             const responseData = await res.json();
-            console.log('[RequestBox] Success response:', responseData);
 
             toast.success('Request published successfully!');
             setName('');

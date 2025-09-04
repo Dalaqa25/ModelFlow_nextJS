@@ -13,7 +13,6 @@ export default function TestSignupPage() {
   const handleSignUp = async () => {
     setLoading(true);
     try {
-      console.log('Attempting to sign up with:', email);
       const { data, error } = await signUp(email, password, {
         name: 'Test User',
         email: email,
@@ -23,7 +22,6 @@ export default function TestSignupPage() {
         console.error('Sign up error:', error);
         toast.error(error.message);
       } else {
-        console.log('Sign up successful:', data);
         toast.success('Account created successfully! Check your email for confirmation.');
       }
     } catch (error) {
@@ -37,14 +35,12 @@ export default function TestSignupPage() {
   const handleSignIn = async () => {
     setLoading(true);
     try {
-      console.log('Attempting to sign in with:', email);
       const { data, error } = await signIn(email, password);
       
       if (error) {
         console.error('Sign in error:', error);
         toast.error(error.message);
       } else {
-        console.log('Sign in successful:', data);
         toast.success('Logged in successfully!');
       }
     } catch (error) {

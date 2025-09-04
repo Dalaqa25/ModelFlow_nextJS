@@ -21,7 +21,6 @@ export default function LemonSqueezyAdminPage() {
 
     useEffect(() => {
         if (!isLoading && user?.email !== 'g.dalaqishvili01@gmail.com') {
-            console.log('Access denied - not admin:', user?.email);
             toast.error('Access denied - Admin privileges required');
             router.push('/');
         }

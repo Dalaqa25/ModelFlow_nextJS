@@ -14,7 +14,6 @@ export async function GET(request) {
         let email = searchParams.get('email');
         let authenticatedUser = null;
 
-        console.log('🔍 [API] user-models called with email:', email);
 
         // If no email parameter, get it from authenticated user
         if (!email) {
@@ -28,7 +27,6 @@ export async function GET(request) {
             email = authenticatedUser.email;
         }
 
-        console.log('🔍 [API] Final email to search:', email);
 
         // Get user data - create user if doesn't exist
         let userData = await userDB.getUserByEmail(email);
@@ -41,53 +39,65 @@ export async function GET(request) {
             });
         }
 
-        console.log('🔍 [API] User data found:', userData);
 
         // Fetch models from the unified models table
         const models = await modelDB.getModelsByAuthor(email);
-        console.log('🔍 [API] Raw models from DB:', models);
-        console.log('🔍 [API] Models count:', models.length);
 
         // Sort by created_at
         const allModels = models.sort((a, b) =>
             new Date(b.created_at) - new Date(a.created_at)
         );
 
-        // --- Storage usage calculation ---
+        // --- Storage usage calculation from file_storage field ---
         let totalBytes = 0;
         let storageError = null;
-        
+
         try {
-            // List all files in the root of the 'models' bucket
-            const { data: allFiles, error: supabaseError } = await supabase
-                .storage
-                .from('models')
-                .list('', { limit: 1000 });
+            for (const model of allModels) {
+                let fileSize = 0;
 
-            if (supabaseError) {
-                console.error('Error listing files in Supabase Storage:', supabaseError);
-                storageError = supabaseError.message;
-            } else {
-                for (const model of allModels) {
-                    let supabasePath = null;
+                // Try to get fileSize from file_storage field
+                if (model.file_storage) {
+                    try {
+                        let fileStorageData = null;
 
-                    // Try to get supabasePath from different possible locations
-                    if (model.fileStorage?.supabasePath) {
-                        supabasePath = model.fileStorage.supabasePath;
-                    } else if (model.img_url) {
-                        // Parse JSON from img_url field
-                        try {
-                            const fileStorage = JSON.parse(model.img_url);
-                            supabasePath = fileStorage?.supabasePath;
-                        } catch (e) {
-                            // Ignore parsing errors
+                        // Handle both string and object formats
+                        if (typeof model.file_storage === 'string') {
+                            fileStorageData = JSON.parse(model.file_storage);
+                        } else if (typeof model.file_storage === 'object') {
+                            fileStorageData = model.file_storage;
                         }
-                    }
 
-                    if (!supabasePath) continue;
-                    const file = allFiles.find(f => f.name === supabasePath);
-                    if (file && file.metadata && file.metadata.size) {
-                        totalBytes += file.metadata.size;
+                        if (fileStorageData && fileStorageData.fileSize) {
+                            fileSize = parseInt(fileStorageData.fileSize) || 0;
+                        }
+                    } catch (parseError) {
+                        console.warn('Error parsing file_storage for model', model.id, ':', parseError);
+                    }
+                }
+
+                // Determine if fileSize is in bytes or KB
+                // If fileSize is very small (< 1024), it's likely already in bytes
+                // If fileSize is larger, it might be in KB (since 919 bytes would be ~0.9KB)
+                // But 919 could also just be a small file in bytes
+                // We'll use a more conservative approach: if < 1024, assume bytes; if >= 1024, check if it looks like KB
+                if (fileSize > 0) {
+                    if (fileSize < 1024) {
+                        // Likely in bytes (small files)
+                        totalBytes += fileSize;
+                    } else if (fileSize >= 1024 && fileSize < 1024 * 1024) {
+                        // Could be in KB or bytes - check if it makes sense as KB
+                        // If converting from KB to bytes would give a reasonable file size, do it
+                        const asKB = fileSize * 1024;
+                        if (asKB < 1024 * 1024 * 1024) { // Less than 1GB
+                            totalBytes += asKB;
+                        } else {
+                            // Probably already in bytes
+                            totalBytes += fileSize;
+                        }
+                    } else {
+                        // Large number, likely already in bytes
+                        totalBytes += fileSize;
                     }
                 }
             }
@@ -95,7 +105,7 @@ export async function GET(request) {
             console.error('Error calculating storage usage:', storageCalcError);
             storageError = storageCalcError.message;
         }
-        
+
         const totalStorageUsedMB = Number((totalBytes / (1024 * 1024)).toFixed(4));
 
         const response = {
@@ -105,8 +115,6 @@ export async function GET(request) {
             storageError
         };
         
-        console.log('🔍 [API] Final response:', response);
-        console.log('🔍 [API] Final models count:', allModels.length);
         
         return NextResponse.json(response);
     } catch (error) {

@@ -9,7 +9,6 @@ import { FiSend } from "react-icons/fi";
 import { motion } from 'framer-motion';
 
 export default function ModernUnauthorizedNavbar() {
-    console.log("🔓 ModernUnauthorizedNavbar is currently displayed");
     
     const pathname = usePathname() || '/'; 
     const [menuOpen, setMenuOpen] = useState(false);

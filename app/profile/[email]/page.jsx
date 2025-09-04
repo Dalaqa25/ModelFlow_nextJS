@@ -39,16 +39,9 @@ export default function Profile(props) {
                     throw new Error(errorData.error || 'Failed to fetch user models');
                 }
                 const modelsData = await modelsRes.json();
-                console.log('🔍 [Profile] Raw models API response:', modelsData);
-                console.log('🔍 [Profile] Decoded email:', decodedEmail);
-                console.log('🔍 [Profile] Models data type:', typeof modelsData);
-                console.log('🔍 [Profile] Is array?', Array.isArray(modelsData));
-                console.log('🔍 [Profile] Has models property?', modelsData.models);
                 
                 // Handle both direct array and object with models property
                 const models = Array.isArray(modelsData) ? modelsData : (modelsData.models || []);
-                console.log('🔍 [Profile] Final models array:', models);
-                console.log('🔍 [Profile] Models count:', models.length);
                 setUserModels(models);
             } catch (error) {
                 console.error("Error in fetchProfileData:", error);

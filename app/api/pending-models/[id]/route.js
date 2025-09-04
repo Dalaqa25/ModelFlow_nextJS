@@ -11,11 +11,9 @@ const supabase = createClient(
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(req, { params }) {
-  console.log('🚀 [API] PATCH /api/pending-models/[id] called');
 
   try {
     const { id } = params;
-    console.log('📋 [API] Model ID from params:', id);
 
     // For admin operations, we'll skip detailed authentication since
     // the frontend already verifies admin status. The service role key
@@ -24,13 +22,9 @@ export async function PATCH(req, { params }) {
     // Note: In production, you might want to add proper authentication
     // by sending the session token from the client
 
-    console.log('📥 [API] Parsing request body...');
     const body = await req.json();
-    console.log('📦 [API] Request body:', body);
 
     const { action, rejectionReason } = body;
-    console.log('🎯 [API] Action:', action);
-    console.log('📝 [API] Rejection reason:', rejectionReason);
 
     if (!action || !['approve', 'reject'].includes(action)) {
       console.error('❌ [API] Invalid action:', action);
@@ -55,8 +49,6 @@ export async function PATCH(req, { params }) {
         status: 'approved'
       };
 
-      console.log('🔄 [API] Update data (approve):', updateData);
-      console.log('🗄️ [API] Updating model with ID:', id);
 
       const { data: updatedModel, error } = await supabase
         .from('models')
@@ -87,11 +79,9 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      console.log('✅ [API] Model approved successfully:', updatedModel);
       return NextResponse.json(updatedModel);
     } else if (action === 'reject') {
       // For reject, first get the model to extract file info
-      console.log('🔍 [API] Fetching model for rejection:', id);
 
       const { data: modelToDelete, error: fetchError } = await supabase
         .from('models')
@@ -123,7 +113,6 @@ export async function PATCH(req, { params }) {
             : modelToDelete.file_storage;
 
           if (fileStorage.supabasePath) {
-            console.log('🗂️ [API] Deleting file from storage:', fileStorage.supabasePath);
 
             const { error: storageError } = await supabase.storage
               .from('models')
@@ -133,7 +122,6 @@ export async function PATCH(req, { params }) {
               console.error('❌ [API] Failed to delete file from storage:', storageError);
               // Don't fail the whole operation if file deletion fails
             } else {
-              console.log('✅ [API] File deleted from storage successfully');
             }
           }
         } catch (parseError) {
@@ -142,7 +130,6 @@ export async function PATCH(req, { params }) {
       }
 
       // Delete the model record from database
-      console.log('🗑️ [API] Deleting model record from database:', id);
 
       const { error: deleteError } = await supabase
         .from('models')
@@ -157,11 +144,9 @@ export async function PATCH(req, { params }) {
         );
       }
 
-      console.log('✅ [API] Model deleted successfully');
 
       // Create notification for the model author about rejection
       try {
-        console.log('📢 [API] Creating rejection notification for author:', modelToDelete.author_email);
 
         const notificationData = {
           user_email: modelToDelete.author_email,
@@ -176,7 +161,6 @@ export async function PATCH(req, { params }) {
         };
 
         await notificationDB.createNotification(notificationData);
-        console.log('✅ [API] Rejection notification created successfully');
       } catch (notificationError) {
         console.error('❌ [API] Failed to create rejection notification:', notificationError);
         // Don't fail the whole request if notification creation fails

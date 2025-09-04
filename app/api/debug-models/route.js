@@ -9,11 +9,9 @@ const supabase = createClient(
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  console.log('🔧 [DEBUG] GET /api/debug-models called');
 
   try {
     // Test 1: Check if we can connect to Supabase
-    console.log('🔗 [DEBUG] Testing Supabase connection...');
     const { data: connectionTest, error: connectionError } = await supabase
       .from('models')
       .select('count', { count: 'exact', head: true });
@@ -27,10 +25,8 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    console.log('✅ [DEBUG] Database connection successful');
 
     // Test 2: Check table structure
-    console.log('📋 [DEBUG] Checking models table structure...');
     const { data: tableInfo, error: tableError } = await supabase
       .from('models')
       .select('*')
@@ -46,7 +42,6 @@ export async function GET() {
     }
 
     // Test 3: Check for pending models
-    console.log('🔍 [DEBUG] Checking for pending models...');
     const { data: pendingModels, error: pendingError } = await supabase
       .from('models')
       .select('id, name, status, created_at')
@@ -69,7 +64,6 @@ export async function GET() {
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing'
     };
 
-    console.log('✅ [DEBUG] All tests completed successfully');
 
     return NextResponse.json({
       status: 'success',

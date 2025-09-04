@@ -19,14 +19,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('Attempting to sign in with:', email);
       const { data, error } = await signIn(email, password);
       
       if (error) {
         console.error('Sign in error:', error);
         toast.error(error.message);
       } else {
-        console.log('Sign in successful:', data);
         toast.success('Logged in successfully!');
         router.push('/dashboard');
       }
@@ -39,7 +37,6 @@ export default function LoginPage() {
   };
 
   // Debug info
-  console.log('Login page - Current auth state:', {
     isAuthenticated,
     user: user ? { id: user.id, email: user.email } : null
   });

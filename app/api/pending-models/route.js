@@ -10,7 +10,6 @@ const supabase = createClient(
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  console.log('🚀 [API] GET /api/pending-models called');
 
   try {
     // For admin operations, we'll skip detailed authentication since
@@ -20,8 +19,6 @@ export async function GET() {
     // Note: In production, you might want to add proper authentication
     // by sending the session token from the client
 
-    console.log('🗄️ [API] Fetching pending models from database...');
-    console.log('🔍 [API] Query: status IS NULL OR status != approved');
 
     // Get pending models (status is not 'approved' or is null)
     const { data: pendingModels, error } = await supabase
@@ -44,9 +41,6 @@ export async function GET() {
       );
     }
 
-    console.log('✅ [API] Successfully fetched pending models');
-    console.log('📊 [API] Number of pending models:', pendingModels?.length || 0);
-    console.log('📋 [API] Pending models data:', pendingModels);
 
     return NextResponse.json(pendingModels || []);
   } catch (error) {

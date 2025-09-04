@@ -111,7 +111,6 @@ export default function Profile() {
     }));
     
     const handleWithdrawal = (email) => {
-        console.log('Processing withdrawal to:', email);
         setShowWithdrawDialog(false);
     };
 

@@ -63,25 +63,18 @@ export default function UploadedModels({ isRowLayout }) {
     const handleDownloadModel = async (model) => {
         setDownloadingModelId(model.id);
         try {
-            console.log('🔍 Debug: Model object:', model);
-            console.log('🔍 Debug: Model file_storage:', model.file_storage);
 
             // Extract file information from the model's fileStorage
             let fileStorage = null;
             try {
                 if (model.file_storage) {
-                    console.log('🔍 Debug: Attempting to parse file_storage');
                     fileStorage = typeof model.file_storage === 'string'
                         ? JSON.parse(model.file_storage)
                         : model.file_storage;
-                    console.log('🔍 Debug: Parsed fileStorage:', fileStorage);
                 } else {
-                    console.log('🔍 Debug: No file_storage found, checking other fields');
-                    console.log('🔍 Debug: Available model fields:', Object.keys(model));
                 }
             } catch (e) {
                 console.error('❌ Error parsing file storage info:', e);
-                console.log('🔍 Debug: Raw file_storage value:', model.file_storage);
                 return;
             }
 
@@ -90,17 +83,13 @@ export default function UploadedModels({ isRowLayout }) {
                 return;
             }
 
-            console.log('🔍 Debug: fileStorage.supabasePath:', fileStorage.supabasePath);
-            console.log('🔍 Debug: fileStorage.fileName:', fileStorage.fileName);
 
             if (!fileStorage?.supabasePath) {
                 console.error('❌ No file path available for download');
-                console.log('🔍 Debug: Complete fileStorage object:', fileStorage);
                 return;
             }
 
             // Fetch signed download URL from API
-            console.log('🔍 Debug: Fetching download URL for model ID:', model.id);
             const response = await fetch(`/api/models/${model.id}/download`);
 
             if (!response.ok) {
@@ -116,7 +105,6 @@ export default function UploadedModels({ isRowLayout }) {
                 return;
             }
 
-            console.log('🔍 Debug: Generated signed URL:', downloadUrl);
 
             // Create a temporary link and trigger download
             const link = document.createElement('a');
@@ -126,7 +114,6 @@ export default function UploadedModels({ isRowLayout }) {
             link.click();
             document.body.removeChild(link);
 
-            console.log('✅ Download initiated successfully');
 
         } catch (error) {
             console.error('❌ Download failed:', error);

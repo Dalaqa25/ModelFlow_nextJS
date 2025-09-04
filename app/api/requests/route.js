@@ -13,13 +13,9 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    console.log('[API] POST /api/requests - Request received');
     const body = await req.json();
-    console.log('[API] Request body:', body);
 
-    console.log('[API] Calling requestDB.createRequest...');
     const newRequest = await requestDB.createRequest(body);
-    console.log('[API] Request created successfully:', newRequest);
 
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {

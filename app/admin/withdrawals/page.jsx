@@ -18,7 +18,6 @@ export default function WithdrawalsAdminPage() {
             
             // Check if user is admin (email-based check)
             if (!user || user.email !== 'g.dalaqishvili01@gmail.com') {
-                console.log('Access denied - not admin:', user?.email);
                 toast.error('Access denied - Admin privileges required');
                 router.push('/');
                 return;

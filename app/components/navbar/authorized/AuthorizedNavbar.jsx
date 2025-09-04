@@ -31,7 +31,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 export default function AuthorizedNavbar() {
-    console.log("🔒 AuthorizedNavbar is currently displayed");
     
     const { user, signOut } = useAuth();
     const pathname = usePathname() || '/';
@@ -143,7 +142,6 @@ export default function AuthorizedNavbar() {
     // Handle theme toggle
     const handleThemeToggle = () => {
         toggleTheme();
-        console.log('Theme toggled to:', !isDarkMode ? 'light' : 'dark');
     };
 
     // Handle sign out
