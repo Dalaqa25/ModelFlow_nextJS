@@ -31,7 +31,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 export default function AuthorizedNavbar() {
-    
+
     const { user, signOut } = useAuth();
     const pathname = usePathname() || '/';
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -40,9 +40,38 @@ export default function AuthorizedNavbar() {
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+    const [userData, setUserData] = useState({});
+    const [userDataLoading, setUserDataLoading] = useState(true);
 
     // Use theme context instead of local state
     const { isDarkMode, toggleTheme } = useTheme();
+
+    // Fetch user data from database
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (!user?.email) {
+                setUserDataLoading(false);
+                return;
+            }
+
+            setUserDataLoading(true);
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch user data for navbar:', error);
+            } finally {
+                setUserDataLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, [user?.email]);
+
+
 
     // Storage data state
     const [storageData, setStorageData] = useState({
@@ -240,10 +269,10 @@ export default function AuthorizedNavbar() {
                             className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 transition-colors duration-200"
                         >
                             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
+                                {(userDataLoading ? '...' : (userData?.name || user?.user_metadata?.name || user?.email || 'User')[0])}
                             </div>
                             <span className="text-sm text-white">
-                                {user?.user_metadata?.name || user?.email || 'User'}
+                                {userDataLoading ? 'Loading...' : (userData?.name || user?.user_metadata?.name || user?.email || 'User')}
                             </span>
                             <MdKeyboardArrowDown
                                 className={`text-gray-300 transition-transform duration-200 ${

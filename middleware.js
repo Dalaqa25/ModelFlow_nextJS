@@ -27,12 +27,18 @@ export async function middleware(request) {
     }
   );
 
-  // Refresh session if expired - required for Server Components
-  const { data: { user } } = await supabase.auth.getUser();
-
   // Get the current pathname
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
+  
+  // Get user session - only check if needed for protected routes
+  let user = null;
+  
+  // Only check auth for protected routes to avoid unnecessary session checks
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/admin') || pathname === '/') {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    user = authUser;
+  }
 
   // If user is authenticated and trying to access root, redirect to dashboard
   if (user && pathname === '/') {

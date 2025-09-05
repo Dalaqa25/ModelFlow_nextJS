@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
+import { clearAuthAndReload } from '@/lib/clear-auth-data';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, user, isAuthenticated } = useAuth();
+  const { signIn, user, isAuthenticated, clearAuthData } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -36,10 +37,6 @@ export default function LoginPage() {
     }
   };
 
-  // Debug info
-    isAuthenticated,
-    user: user ? { id: user.id, email: user.email } : null
-  });
 
   return (
     <UnifiedBackground variant="auth" className="pt-16">
@@ -112,7 +109,7 @@ export default function LoginPage() {
                 </button>
               </div>
               
-              <div className="text-center">
+              <div className="text-center space-y-4">
                 <p className="text-gray-300">
                   Don't have an account?{' '}
                   <button
@@ -123,6 +120,15 @@ export default function LoginPage() {
                     Sign up
                   </button>
                 </p>
+                
+                {/* Debug button to clear auth data */}
+                <button
+                  type="button"
+                  onClick={clearAuthAndReload}
+                  className="text-xs text-gray-500 hover:text-red-400 transition-colors duration-200 underline"
+                >
+                  Clear Auth Data & Reload
+                </button>
               </div>
             </form>
           </UnifiedCard>

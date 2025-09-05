@@ -77,6 +77,7 @@ export default function Profile() {
     
     const userName = userData.name || user?.user_metadata?.name || user?.email || 'User';
 
+
     const handleSave = async (data) => {
         try {
             const response = await fetch('/api/user', {

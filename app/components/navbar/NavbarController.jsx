@@ -13,7 +13,7 @@ export default function NavbarController() {
 
     // Show loading state while authentication is being determined
     if (isLoading) {
-        return isHomePage ? <ModernUnauthorizedNavbar /> : <AuthorizedNavbar />;
+        return <ModernUnauthorizedNavbar />;
     }
 
     // Return appropriate navbar based on authentication status and page

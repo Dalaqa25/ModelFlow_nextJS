@@ -9,6 +9,7 @@ export async function POST(request, { params }) {
     try {
         const user = await getSupabaseUser();
 
+        console.log(user ? {
             id: user.id,
             email: user.email,
             aud: user.aud,
@@ -23,6 +24,7 @@ export async function POST(request, { params }) {
         const { id } = await params;
         
         const model = await modelDB.getModelById(id);
+        console.log(model ? {
             id: model.id,
             name: model.name,
             author_email: model.author_email,
@@ -42,6 +44,7 @@ export async function POST(request, { params }) {
 
         // Find the user document
         const userDoc = await userDB.getUserByEmail(user.email);
+        console.log(userDoc ? {
             id: userDoc.id,
             email: userDoc.email,
             name: userDoc.name
