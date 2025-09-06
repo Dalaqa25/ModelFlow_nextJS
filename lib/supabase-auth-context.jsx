@@ -75,50 +75,20 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-  const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return { data, error };
-    }
-
-    // Fetch current user to check email confirmation
-    const { data: userData } = await supabase.auth.getUser();
-    const authedUser = userData?.user;
-
-    if (!authedUser?.email_confirmed_at) {
-      // Block access for unverified accounts
-      await supabase.auth.signOut({ scope: 'local' });
-      setUser(null);
-      return { data: null, error: { message: 'Please verify your email before signing in.' } };
-    }
-
-    // Ensure app-level user row exists
-    try {
-      await fetch('/api/user', { method: 'GET' });
-    } catch (e) {
-      console.warn('Failed to ensure user row exists after sign-in:', e);
-    }
-
-    return { data, error: null };
-  };
-
-  const signUp = async (email, password, userData = {}) => {
+  // OTP-based authentication methods
+  const signUpWithOtp = async (email, userData = {}) => {
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, userData }),
+        body: JSON.stringify({ email, userData }),
       });
 
       const json = await response.json();
 
       if (!response.ok) {
         const message = json?.error || 'Signup failed';
-        return { data: null, error: { message, field: json?.field } };
+        return { data: null, error: { message, field: json?.field, validationErrors: json?.validationErrors } };
       }
 
       return { data: json, error: null };
@@ -126,6 +96,60 @@ export const AuthProvider = ({ children }) => {
       return { data: null, error: { message: 'Network error during signup' } };
     }
   };
+
+  const signInWithOtp = async (email) => {
+    try {
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        const message = json?.error || 'Failed to send OTP';
+        return { data: null, error: { message, field: json?.field } };
+      }
+
+      return { data: json, error: null };
+    } catch (err) {
+      return { data: null, error: { message: 'Network error during sign in' } };
+    }
+  };
+
+  const verifyOtp = async (email, token) => {
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        const message = json?.error || 'OTP verification failed';
+        return { data: null, error: { message } };
+      }
+
+      // If we got a session back, set it in the Supabase client
+      if (json.session) {
+        await supabase.auth.setSession(json.session);
+      }
+
+      // Update the user state if verification was successful
+      if (json.user) {
+        setUser(json.user);
+      }
+
+      return { data: json, error: null };
+    } catch (err) {
+      return { data: null, error: { message: 'Network error during OTP verification' } };
+    }
+  };
+
+  // signUp method removed - will be replaced with OTP-based signup
 
   const signOut = async () => {
     try {
@@ -150,27 +174,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const resetPassword = async (email) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-    return { data, error };
-  };
-
-  const updatePassword = async (password) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password,
-    });
-    return { data, error };
-  };
+  // Password reset methods removed - not needed for OTP-based auth
 
   const value = {
     user,
     loading,
-    signIn,
-    signUp,
+    signUpWithOtp,
+    signInWithOtp,
+    verifyOtp,
     signOut,
     clearAuthData,
-    resetPassword,
-    updatePassword,
     isAuthenticated: !!user,
   };
 

@@ -1,23 +1,36 @@
-import { createClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
-import { validateSignupForm } from '@/lib/validation-utils';
-import { userDB, supabase as serviceClient } from '@/lib/db/supabase-db';
+import { validateEmail, validateUsername } from '@/lib/validation-utils';
+import { userDB } from '@/lib/db/supabase-db';
+import { createClient } from '@supabase/supabase-js';
+
+// Create admin client with service role key for auth admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 export async function POST(request) {
   try {
-    const { email, password, userData } = await request.json();
-    const supabase = createClient();
-
-    // Extract username from userData (name field)
+    const { email, userData } = await request.json();
     const username = userData?.name || '';
 
-    // Server-side validation
-    const validation = validateSignupForm({ email, password, username });
+    // Basic validation
+    const emailValidation = validateEmail(email);
+    const usernameValidation = validateUsername(username);
     
-    if (!validation.isValid) {
+    if (!emailValidation.isValid || !usernameValidation.isValid) {
       return NextResponse.json({ 
         error: 'Validation failed',
-        validationErrors: validation.errors 
+        validationErrors: {
+          email: emailValidation.errors,
+          username: usernameValidation.errors
+        }
       }, { status: 400 });
     }
 
@@ -25,8 +38,9 @@ export async function POST(request) {
     const existingUser = await userDB.getUserByEmail(email);
     let authUser;
     try {
-      const { data } = await serviceClient.auth.admin.getUserByEmail(email);
-      authUser = data?.user ?? null;
+      // Use listUsers to find the user since getUserByEmail doesn't exist in newer versions
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      authUser = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase()) ?? null;
     } catch (e) {
       authUser = null;
     }
@@ -42,27 +56,24 @@ export async function POST(request) {
         }, { status: 409 });
       }
 
-      // If not confirmed yet, re-send confirmation and return success
+      // If not confirmed yet, re-send OTP and return success
       try {
-        await serviceClient.auth.resend({ type: 'signup', email });
+        const { error } = await supabaseAdmin.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false
+          }
+        });
+        
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
       } catch (_) {
         // ignore resend errors, still return generic message
       }
 
-      // Ensure app-level users row exists immediately after (idempotent)
-      try {
-        await userDB.upsertUser({
-          email,
-          name: username || authUser.email,
-        });
-      } catch (e) {
-        console.warn('Users upsert failed (resend branch):', e?.message || e);
-      }
-
       return NextResponse.json({
-        user: { id: authUser.id, email: authUser.email },
-        emailSent: true,
-        message: 'We re-sent your confirmation email. Please check your inbox.'
+        message: 'We re-sent your verification code. Please check your inbox.'
       });
     }
 
@@ -87,12 +98,12 @@ export async function POST(request) {
       }
     }
 
-    // Attempt to create user with Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
+    // Send OTP for new user signup
+    const { error } = await supabaseAdmin.auth.signInWithOtp({
       email,
-      password,
       options: {
-        data: userData || {},
+        shouldCreateUser: true, // ✅ create user if not exist
+        data: userData || {}, // Store user metadata
       },
     });
 
@@ -104,9 +115,6 @@ export async function POST(request) {
       if (error.message.includes('already registered')) {
         errorMessage = 'An account with this email already exists. Please use a different email or try signing in.';
         field = 'email';
-      } else if (error.message.includes('password')) {
-        errorMessage = 'Password does not meet requirements.';
-        field = 'password';
       } else if (error.message.includes('email')) {
         errorMessage = 'Please enter a valid email address.';
         field = 'email';
@@ -119,20 +127,22 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Ensure app-level users row exists immediately (idempotent)
+    // Pre-create the user record in our database (will be confirmed after OTP verification)
     try {
-      await userDB.upsertUser({
+      console.log('🔄 Pre-creating user record for signup:', email, username);
+      const userRecord = await userDB.upsertUser({
         email,
         name: username || email,
       });
+      console.log('✅ User record pre-created successfully:', userRecord);
     } catch (e) {
-      console.warn('Users upsert failed (new signup):', e?.message || e);
+      console.error('❌ Failed to pre-create user record during signup:', e?.message || e);
+      // Don't fail the signup if user record creation fails
+      // The OTP verification will try again
     }
 
     return NextResponse.json({ 
-      user: data.user,
-      emailSent: true,
-      message: 'Account created successfully! Please check your email to verify your account.'
+      message: 'OTP sent to email. Please check your inbox for the verification code.'
     });
 
   } catch (error) {
