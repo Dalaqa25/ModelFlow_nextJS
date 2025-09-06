@@ -31,13 +31,23 @@ export async function middleware(request) {
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
   
-  // Get user session - only check if needed for protected routes
+  // Get user session - check for all routes that need auth protection
   let user = null;
   
-  // Only check auth for protected routes to avoid unnecessary session checks
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/admin') || pathname === '/') {
+  // Check auth for protected routes AND auth routes (to redirect authenticated users)
+  if (pathname.startsWith('/dashboard') || 
+      pathname.startsWith('/profile') || 
+      pathname.startsWith('/admin') || 
+      pathname.startsWith('/auth/') || 
+      pathname === '/') {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
+  }
+
+  // If user is authenticated and trying to access auth routes, redirect to dashboard
+  if (user && pathname.startsWith('/auth/')) {
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
   }
 
   // If user is authenticated and trying to access root, redirect to dashboard
