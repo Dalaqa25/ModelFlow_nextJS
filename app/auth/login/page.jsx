@@ -50,7 +50,7 @@ export default function LoginPage() {
 
 
   return (
-    <UnifiedBackground variant="auth" className="pt-8">
+    <UnifiedBackground variant="landing" showParticles={true} className="pt-8">
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-md w-full space-y-8">
           <LoginHeader />

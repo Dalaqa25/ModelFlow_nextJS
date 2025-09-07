@@ -49,7 +49,7 @@ export default function SignupPage() {
   };
 
   return (
-    <UnifiedBackground variant="auth" className="pt-10">
+    <UnifiedBackground variant="landing" showParticles={true} className="pt-10">
       <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md w-full">          
           <UnifiedCard variant="solid" className="mt-8">

@@ -11,20 +11,20 @@ export default function UnifiedCard({
 }) {
   // Different card variants for different contexts
   const cardVariants = {
-    // Default card - semi-transparent with backdrop blur
-    default: "bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 shadow-xl",
+    // Default card - semi-transparent with subtle backdrop blur
+    default: "bg-slate-800/50 backdrop-blur-[2px] border border-slate-700/50 shadow-lg",
     
     // Solid card - for content that needs better readability
-    solid: "bg-slate-800/80 backdrop-blur-md border border-slate-700/60 shadow-2xl",
+    solid: "bg-slate-800/70 backdrop-blur-[4px] border border-slate-700/60 shadow-xl",
     
     // Glass card - more transparent, for overlays
-    glass: "bg-slate-800/20 backdrop-blur-lg border border-slate-600/30 shadow-lg",
+    glass: "bg-slate-800/25 backdrop-blur-[6px] border border-slate-600/30 shadow-md",
     
     // Content card - best for text-heavy content
-    content: "bg-slate-800/90 backdrop-blur-sm border border-slate-600/50 shadow-2xl",
+    content: "bg-slate-800/80 backdrop-blur-[2px] border border-slate-600/50 shadow-xl",
     
     // Feature card - for highlighting important content
-    feature: "bg-gradient-to-br from-slate-800/60 to-purple-900/40 backdrop-blur-md border border-purple-500/30 shadow-2xl"
+    feature: "bg-gradient-to-br from-slate-800/50 to-purple-900/30 backdrop-blur-[4px] border border-purple-500/30 shadow-xl"
   };
 
   const paddingVariants = {
@@ -36,7 +36,7 @@ export default function UnifiedCard({
   };
 
   const baseClasses = "rounded-2xl transition-all duration-300";
-  const hoverClasses = hover ? "hover:shadow-purple-500/20 hover:border-purple-500/40 hover:scale-[1.02]" : "";
+  const hoverClasses = hover ? "hover:shadow-purple-500/10 hover:border-purple-500/30 hover:scale-[1.005] hover:bg-slate-800/60" : "";
   const cardClass = cardVariants[variant] || cardVariants.default;
   const paddingClass = paddingVariants[padding] || paddingVariants.default;
 
