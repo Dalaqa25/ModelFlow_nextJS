@@ -19,8 +19,11 @@ export default function SignupForm({
 
   // Real-time validation
   const validateField = (field, value) => {
-    const emailValidation = validateEmail(email);
-    const usernameValidation = validateUsername(username);
+    const currentEmail = field === 'email' ? value : email;
+    const currentUsername = field === 'username' ? value : username;
+    
+    const emailValidation = validateEmail(currentEmail);
+    const usernameValidation = validateUsername(currentUsername);
     setValidationErrors({
       email: emailValidation.errors,
       username: usernameValidation.errors,
@@ -86,8 +89,8 @@ export default function SignupForm({
   const isFormValid = email && username && usernameAvailable !== false && !hasValidationErrors;
 
   return (
-    <form className="space-y-6" onSubmit={handleSendOtp}>
-      <div className="space-y-4">
+    <form className="space-y-4 sm:space-y-6" onSubmit={handleSendOtp}>
+      <div className="space-y-3 sm:space-y-4">
         <UsernameInput
           value={username}
           onChange={(value) => {
@@ -109,16 +112,16 @@ export default function SignupForm({
         />
       </div>
 
-      <div>
+      <div className="pt-2">
         <button
           type="submit"
           disabled={loading || !isFormValid}
-          className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-2xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-2xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base touch-manipulation"
         >
           {loading ? (
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Sending OTP...
+              <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+              <span className="text-sm sm:text-base">Sending OTP...</span>
             </div>
           ) : (
             'Send OTP Code'

@@ -84,7 +84,7 @@ export default function UsernameInput({
 
   return (
     <div>
-      <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+      <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
         Username
       </label>
       <div className="relative">
@@ -94,20 +94,20 @@ export default function UsernameInput({
           type="text"
           autoComplete="username"
           required
-          className={`w-full px-4 py-3 bg-slate-700/50 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all duration-300 ${getBorderColor()}`}
+          className={`w-full px-3 sm:px-4 py-3 sm:py-3 bg-slate-700/50 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all duration-300 text-sm sm:text-base touch-manipulation ${getBorderColor()}`}
           placeholder="Choose a username (5-20 characters)"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
         {renderStatusIcon() && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <div className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2">
             {renderStatusIcon()}
           </div>
         )}
       </div>
       
       {validationErrors?.length > 0 && (
-        <div className="mt-1 text-sm text-red-400">
+        <div className="mt-1 text-xs sm:text-sm text-red-400">
           {validationErrors.map((error, index) => (
             <div key={index}>{error}</div>
           ))}
@@ -115,11 +115,11 @@ export default function UsernameInput({
       )}
       
       {usernameAvailable === true && !validationErrors?.length && (
-        <div className="mt-1 text-sm text-green-400">Username is available!</div>
+        <div className="mt-1 text-xs sm:text-sm text-green-400">Username is available!</div>
       )}
       
       {usernameAvailable === false && (
-        <div className="mt-1 text-sm text-red-400">Username is already taken</div>
+        <div className="mt-1 text-xs sm:text-sm text-red-400">Username is already taken</div>
       )}
     </div>
   );

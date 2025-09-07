@@ -7,7 +7,7 @@ export default function EmailInput({ value, onChange, validationErrors }) {
 
   return (
     <div>
-      <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+      <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
         Email address
       </label>
       <input
@@ -16,13 +16,13 @@ export default function EmailInput({ value, onChange, validationErrors }) {
         type="email"
         autoComplete="email"
         required
-        className={`w-full px-4 py-3 bg-slate-700/50 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all duration-300 ${getBorderColor()}`}
+        className={`w-full px-3 sm:px-4 py-3 sm:py-3 bg-slate-700/50 border rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm transition-all duration-300 text-sm sm:text-base touch-manipulation ${getBorderColor()}`}
         placeholder="Enter your email"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
       {validationErrors?.length > 0 && (
-        <div className="mt-1 text-sm text-red-400">
+        <div className="mt-1 text-xs sm:text-sm text-red-400">
           {validationErrors.map((error, index) => (
             <div key={index}>{error}</div>
           ))}

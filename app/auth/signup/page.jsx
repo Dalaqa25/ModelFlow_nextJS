@@ -49,10 +49,10 @@ export default function SignupPage() {
   };
 
   return (
-    <UnifiedBackground variant="landing" showParticles={true} className="pt-10">
-      <div className="min-h-screen flex items-center justify-center">
+    <UnifiedBackground variant="landing" showParticles={true} className="pt-4 sm:pt-10">
+      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6">
         <div className="max-w-md w-full">          
-          <UnifiedCard variant="solid" className="mt-8">
+          <UnifiedCard variant="solid" className="mt-4 sm:mt-8 mx-4 sm:mx-0">
             {!otpSent ? (
               // Step 1: Signup form
               <SignupForm
@@ -74,13 +74,13 @@ export default function SignupPage() {
               />
             )}
               
-            <div className="text-center mt-4">
-              <p className="text-gray-300">
+            <div className="text-center mt-4 sm:mt-6">
+              <p className="text-gray-300 text-sm sm:text-base">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={() => router.push('/auth/login')}
-                  className="text-purple-400 hover:text-purple-300 font-medium transition-colors duration-200"
+                  className="text-purple-400 hover:text-purple-300 font-medium transition-colors duration-200 underline"
                 >
                   Sign in
                 </button>
