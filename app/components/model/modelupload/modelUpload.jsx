@@ -335,7 +335,8 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         setShowProgressDialog(false);
                         setUploadProgress(0);
                         setFormData(prev => ({ ...prev, modelFile: null }));
-                        onClose && onClose();
+                        // Call onUploadSuccess to trigger refresh animation and close modal
+                        onUploadSuccess && onUploadSuccess();
                     }, 500);
                     return;
                 }

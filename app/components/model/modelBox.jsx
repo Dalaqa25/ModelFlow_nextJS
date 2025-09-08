@@ -24,8 +24,12 @@ export default function ModelBox({ search = "" }) {
             const data = await res.json();
             return data;
         },
-        staleTime: 0, // Remove stale time to always fetch fresh data
-        cacheTime: 0, // Remove cache time to always fetch fresh data
+        // Balanced cache configuration for public model listings
+        staleTime: 2 * 60 * 1000, // Data considered fresh for 2 minutes (shorter for public data)
+        gcTime: 5 * 60 * 1000, // Cache garbage collected after 5 minutes
+        refetchOnWindowFocus: false, // Don't refetch when tab becomes active
+        refetchOnReconnect: true, // Refetch when reconnecting (good for public data)
+        refetchOnMount: false, // Don't refetch when component remounts if data is still fresh
     });
 
     // Add filter state here

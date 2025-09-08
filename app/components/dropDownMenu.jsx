@@ -35,6 +35,12 @@ export default function DropDownMenu() {
             return response.json();
         },
         enabled: !!user?.email,
+        // Cache configuration for notifications
+        staleTime: 3 * 60 * 1000, // Data considered fresh for 3 minutes
+        gcTime: 10 * 60 * 1000, // Cache garbage collected after 10 minutes
+        refetchOnWindowFocus: false, // Don't refetch when tab becomes active
+        refetchOnReconnect: false, // Don't refetch when reconnecting to internet
+        refetchOnMount: false, // Don't refetch when component remounts if data is still fresh
     });
 
     const unreadCount = notifications.filter(n => !n.read).length;

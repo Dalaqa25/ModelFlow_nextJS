@@ -1,18 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { FaEye, FaCalendarAlt, FaUser, FaTag, FaExclamationTriangle, FaDownload } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import PLANS from '../plans';
 
-export default function UploadedModels({ isRowLayout }) {
+const UploadedModels = forwardRef(function UploadedModels({ isRowLayout }, ref) {
     const [currentPage, setCurrentPage] = useState(1);
     const [downloadingModelId, setDownloadingModelId] = useState(null);
     const router = useRouter();
     const modelsPerPage = 5;
 
-    // Updated useQuery to handle new API response shape
+    // Updated useQuery to handle new API response shape with proper caching
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['userModels'],
         queryFn: async () => {
@@ -26,6 +26,12 @@ export default function UploadedModels({ isRowLayout }) {
             return data;
         },
         enabled: true,
+        // Cache configuration to prevent unnecessary refetches
+        staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+        gcTime: 10 * 60 * 1000, // Cache garbage collected after 10 minutes
+        refetchOnWindowFocus: false, // Don't refetch when tab becomes active
+        refetchOnReconnect: false, // Don't refetch when reconnecting to internet
+        refetchOnMount: false, // Don't refetch when component remounts if data is still fresh
     });
 
     // Extract models and storage used from API response
@@ -53,6 +59,11 @@ export default function UploadedModels({ isRowLayout }) {
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
+
+    // Expose refresh method to parent component
+    useImperativeHandle(ref, () => ({
+        handleRefresh: () => refetch()
+    }));
 
 
 
@@ -371,4 +382,6 @@ export default function UploadedModels({ isRowLayout }) {
             </div>
         </>
     );
-}
+});
+
+export default UploadedModels;

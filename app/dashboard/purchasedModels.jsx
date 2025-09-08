@@ -1,11 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import { useRouter } from "next/navigation";
 import { FaDownload, FaEye, FaCalendarAlt, FaUser, FaTag } from 'react-icons/fa';
 import DefaultModelImage from '@/app/components/model/defaultModelImage';
 import { useQuery } from '@tanstack/react-query';
 
-export default function PurchasedModels({ isRowLayout }) {
+const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref) {
     const [currentPage, setCurrentPage] = useState(1);
     const router = useRouter();
     const modelsPerPage = 5;
@@ -20,7 +20,13 @@ export default function PurchasedModels({ isRowLayout }) {
             const data = await response.json();
             return data;
         },
-        enabled: true, // Removed enabled: !!user
+        enabled: true,
+        // Cache configuration to prevent unnecessary refetches
+        staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+        gcTime: 10 * 60 * 1000, // Cache garbage collected after 10 minutes
+        refetchOnWindowFocus: false, // Don't refetch when tab becomes active
+        refetchOnReconnect: false, // Don't refetch when reconnecting to internet
+        refetchOnMount: false, // Don't refetch when component remounts if data is still fresh
     });
 
     // Pagination logic
@@ -33,6 +39,11 @@ export default function PurchasedModels({ isRowLayout }) {
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
+
+    // Expose refresh method to parent component
+    useImperativeHandle(ref, () => ({
+        handleRefresh: () => refetch()
+    }));
 
     const handleViewModel = (modelId) => {
         router.push(`/modelsList/${modelId}`);
@@ -90,9 +101,6 @@ export default function PurchasedModels({ isRowLayout }) {
 
     return (
         <div className="flex flex-col mt-15 mb-15">
-            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
-                
-            </div>
             {models.length === 0 ? (
                 <div className="text-center py-10 bg-gray-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-lg">
                     <div className="max-w-md mx-auto">
@@ -263,4 +271,6 @@ export default function PurchasedModels({ isRowLayout }) {
             )}
         </div>
     );
-}
+});
+
+export default PurchasedModels;
