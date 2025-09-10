@@ -10,24 +10,36 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * PATCH /api/admin/models/[id]
+ * Approve or reject a specific model by ID
+ */
 export async function PATCH(req, { params }) {
-
   try {
     const { id } = params;
 
-    // For admin operations, we'll skip detailed authentication since
-    // the frontend already verifies admin status. The service role key
-    // provides the necessary permissions for database operations.
+    // Check if user is authenticated
+    const user = await getSupabaseUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    // Note: In production, you might want to add proper authentication
-    // by sending the session token from the client
+    // Check if user is admin (you can modify this check as needed)
+    if (user.email !== 'g.dalaqishvili01@gmail.com') {
+      return NextResponse.json(
+        { error: 'Admin privileges required' },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
-
     const { action, rejectionReason } = body;
 
     if (!action || !['approve', 'reject'].includes(action)) {
-      console.error('❌ [API] Invalid action:', action);
+      console.error('❌ [ADMIN API] Invalid action:', action);
       return NextResponse.json(
         { error: 'Invalid action. Must be "approve" or "reject"' },
         { status: 400 }
@@ -36,7 +48,7 @@ export async function PATCH(req, { params }) {
 
     // For reject action, rejection reason is required
     if (action === 'reject' && !rejectionReason?.trim()) {
-      console.error('❌ [API] Rejection reason required but not provided');
+      console.error('❌ [ADMIN API] Rejection reason required but not provided');
       return NextResponse.json(
         { error: 'Rejection reason is required' },
         { status: 400 }
@@ -45,26 +57,15 @@ export async function PATCH(req, { params }) {
 
     if (action === 'approve') {
       // For approve, just update status
-      const updateData = {
-        status: 'approved'
-      };
-
-
       const { data: updatedModel, error } = await supabase
         .from('models')
-        .update(updateData)
+        .update({ status: 'approved' })
         .eq('id', id)
         .select()
         .single();
 
       if (error) {
-        console.error('❌ [API] Database error:', error);
-        console.error('❌ [API] Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('❌ [ADMIN API] Database error:', error);
         return NextResponse.json(
           { error: 'Failed to update model', details: error.message },
           { status: 500 }
@@ -72,7 +73,7 @@ export async function PATCH(req, { params }) {
       }
 
       if (!updatedModel) {
-        console.error('❌ [API] Model not found after update');
+        console.error('❌ [ADMIN API] Model not found after update');
         return NextResponse.json(
           { error: 'Model not found' },
           { status: 404 }
@@ -82,7 +83,6 @@ export async function PATCH(req, { params }) {
       return NextResponse.json(updatedModel);
     } else if (action === 'reject') {
       // For reject, first get the model to extract file info
-
       const { data: modelToDelete, error: fetchError } = await supabase
         .from('models')
         .select('*')
@@ -90,7 +90,7 @@ export async function PATCH(req, { params }) {
         .single();
 
       if (fetchError) {
-        console.error('❌ [API] Failed to fetch model for deletion:', fetchError);
+        console.error('❌ [ADMIN API] Failed to fetch model for deletion:', fetchError);
         return NextResponse.json(
           { error: 'Failed to fetch model', details: fetchError.message },
           { status: 500 }
@@ -98,7 +98,7 @@ export async function PATCH(req, { params }) {
       }
 
       if (!modelToDelete) {
-        console.error('❌ [API] Model not found for deletion');
+        console.error('❌ [ADMIN API] Model not found for deletion');
         return NextResponse.json(
           { error: 'Model not found' },
           { status: 404 }
@@ -113,41 +113,46 @@ export async function PATCH(req, { params }) {
             : modelToDelete.file_storage;
 
           if (fileStorage.supabasePath) {
-
+            console.log(`🗑️ [ADMIN API] Deleting file from storage: ${fileStorage.supabasePath}`);
+            
             const { error: storageError } = await supabase.storage
               .from('models')
               .remove([fileStorage.supabasePath]);
 
             if (storageError) {
-              console.error('❌ [API] Failed to delete file from storage:', storageError);
+              console.error('❌ [ADMIN API] Failed to delete file from storage:', storageError);
               // Don't fail the whole operation if file deletion fails
             } else {
+              console.log('✅ [ADMIN API] File deleted from storage successfully');
             }
           }
         } catch (parseError) {
-          console.error('❌ [API] Error parsing file storage info:', parseError);
+          console.error('❌ [ADMIN API] Error parsing file storage info:', parseError);
         }
       }
 
       // Delete the model record from database
-
+      console.log(`🗑️ [ADMIN API] Deleting model record: ${id}`);
+      
       const { error: deleteError } = await supabase
         .from('models')
         .delete()
         .eq('id', id);
 
       if (deleteError) {
-        console.error('❌ [API] Failed to delete model:', deleteError);
+        console.error('❌ [ADMIN API] Failed to delete model:', deleteError);
         return NextResponse.json(
           { error: 'Failed to delete model', details: deleteError.message },
           { status: 500 }
         );
       }
 
+      console.log('✅ [ADMIN API] Model deleted from database successfully');
 
       // Create notification for the model author about rejection
       try {
-
+        console.log(`📧 [ADMIN API] Creating rejection notification for: ${modelToDelete.author_email}`);
+        
         const notificationData = {
           user_email: modelToDelete.author_email,
           title: 'Model Rejected',
@@ -161,16 +166,16 @@ export async function PATCH(req, { params }) {
         };
 
         await notificationDB.createNotification(notificationData);
+        console.log('✅ [ADMIN API] Rejection notification created successfully');
       } catch (notificationError) {
-        console.error('❌ [API] Failed to create rejection notification:', notificationError);
+        console.error('❌ [ADMIN API] Failed to create rejection notification:', notificationError);
         // Don't fail the whole request if notification creation fails
       }
 
       return NextResponse.json({ message: 'Model rejected and deleted successfully' });
     }
   } catch (error) {
-    console.error('❌ [API] Exception in PATCH handler:', error);
-    console.error('❌ [API] Stack trace:', error.stack);
+    console.error('❌ [ADMIN API] Exception in PATCH handler:', error);
     return NextResponse.json(
       { error: 'Internal Server Error', details: error.message },
       { status: 500 }

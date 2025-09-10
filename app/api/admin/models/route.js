@@ -9,16 +9,28 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/admin/models
+ * Fetch all pending models (status is null or not 'approved')
+ */
 export async function GET() {
-
   try {
-    // For admin operations, we'll skip detailed authentication since
-    // the frontend already verifies admin status. The service role key
-    // provides the necessary permissions for database operations.
+    // Check if user is authenticated
+    const user = await getSupabaseUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    // Note: In production, you might want to add proper authentication
-    // by sending the session token from the client
-
+    // Check if user is admin (you can modify this check as needed)
+    if (user.email !== 'g.dalaqishvili01@gmail.com') {
+      return NextResponse.json(
+        { error: 'Admin privileges required' },
+        { status: 403 }
+      );
+    }
 
     // Get pending models (status is not 'approved' or is null)
     const { data: pendingModels, error } = await supabase
@@ -28,24 +40,16 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ [API] Database error fetching pending models:', error);
-      console.error('❌ [API] Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('❌ [ADMIN API] Database error fetching pending models:', error);
       return NextResponse.json(
         { error: 'Failed to fetch pending models', details: error.message },
         { status: 500 }
       );
     }
 
-
     return NextResponse.json(pendingModels || []);
   } catch (error) {
-    console.error('❌ [API] Exception in GET handler:', error);
-    console.error('❌ [API] Stack trace:', error.stack);
+    console.error('❌ [ADMIN API] Exception in GET handler:', error);
     return NextResponse.json(
       { error: 'Internal Server Error', details: error.message },
       { status: 500 }

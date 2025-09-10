@@ -27,7 +27,7 @@ export default function AdminPage() {
                     return;
                 }
 
-                const response = await fetch('/api/pending-models');
+                const response = await fetch('/api/admin/models');
 
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
@@ -59,7 +59,7 @@ export default function AdminPage() {
 
         try {
 
-            const response = await fetch(`/api/pending-models/${modelId}`, {
+            const response = await fetch(`/api/admin/models/${modelId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ export default function AdminPage() {
         }
 
         try {
-            const response = await fetch(`/api/pending-models/${modelId}`, {
+            const response = await fetch(`/api/admin/models/${modelId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -161,13 +161,17 @@ export default function AdminPage() {
                 ) : (
                     <div className="grid gap-4">
                         {pendingModels.map((model) => {
-                            // Parse file storage from img_url field (temporary storage location)
+                            // Parse file storage from file_storage field
                             let fileStorage = null;
                             try {
-                                fileStorage = model.img_url ? JSON.parse(model.img_url) : null;
+                                if (model.file_storage) {
+                                    fileStorage = typeof model.file_storage === 'string'
+                                        ? JSON.parse(model.file_storage)
+                                        : model.file_storage;
+                                }
                             } catch (e) {
                                 console.error('Error parsing file storage:', e);
-                                fileStorage = { type: 'unknown', url: model.img_url || 'N/A' };
+                                fileStorage = { type: 'unknown', fileName: 'N/A' };
                             }
 
                             return (
@@ -179,7 +183,7 @@ export default function AdminPage() {
                                             <p className="text-gray-300">Price: ${(model.price / 100).toFixed(2)}</p>
                                             <p className="text-gray-300">Upload Type: {fileStorage?.type || 'Unknown'}</p>
                                             <p className="font-bold text-gray-200 mt-3">Setup: <br/> {model.setup}</p>
-                                            <p className="font-bold text-blue-400 mt-3">Model URL: <br/> {fileStorage?.url || fileStorage?.supabasePath || 'N/A'}</p>
+                                            <p className="font-bold text-blue-400 mt-3">Model File: <br/> {fileStorage?.fileName || fileStorage?.supabasePath || 'N/A'}</p>
                                         </div>
                                         <div className="text-sm text-gray-400">
                                             Submitted: {new Date(model.created_at).toLocaleDateString()}
