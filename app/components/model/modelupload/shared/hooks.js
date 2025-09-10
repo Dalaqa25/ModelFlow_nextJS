@@ -75,11 +75,23 @@ export const useFormState = () => {
             price: 500,
         });
         setFeatures(['']);
+        setUse_cases(['']);
         setTags([]);
         setErrors({});
         setUploadProgress(0);
         setShowProgressDialog(false);
         setUploadStage(null);
+        setIsSubmitting(false);
+        setStorageWarningDialog({
+            isOpen: false,
+            warningType: null,
+            currentUsageMB: 0,
+            fileSizeMB: 0,
+            totalAfterUploadMB: 0,
+            storageCapMB: 0,
+            storageCapStr: '',
+            planName: ''
+        });
     };
 
     return {
@@ -121,5 +133,10 @@ export const useStepper = () => {
         setStep(s => Math.max(s - 1, 1));
     };
 
-    return { step, stepDirection, handleNext, handleBack };
+    const resetStepper = () => {
+        setStep(1);
+        setStepDirection('forward');
+    };
+
+    return { step, stepDirection, handleNext, handleBack, resetStepper };
 };

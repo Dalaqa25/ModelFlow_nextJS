@@ -24,7 +24,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         features, setFeatures, tags, setTags, storageWarningDialog,
         setStorageWarningDialog, resetForm
     } = useFormState();
-    const { step, stepDirection, handleNext, handleBack } = useStepper();
+    const { step, stepDirection, handleNext, handleBack, resetStepper } = useStepper();
 
     // Drag-and-drop state for file upload
     const [dragActive, setDragActive] = useState(false);
@@ -335,6 +335,9 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         setShowProgressDialog(false);
                         setUploadProgress(0);
                         setFormData(prev => ({ ...prev, modelFile: null }));
+                        // Reset all form state so next open starts fresh
+                        resetForm();
+                        resetStepper();
                         // Call onUploadSuccess to trigger refresh animation and close modal
                         onUploadSuccess && onUploadSuccess();
                     }, 500);
@@ -374,6 +377,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
             <Dialog as="div" className="relative z-50" onClose={() => {
                 if (!isSubmitting) {
                     resetForm();
+                    resetStepper();
+                    // Also clear the file input
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
                     onClose();
                 }
             }}>
@@ -406,7 +414,17 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                     <button
                                         type="button"
                                         className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
-                                        onClick={onClose}
+                                        onClick={() => {
+                                            if (!isSubmitting) {
+                                                resetForm();
+                                                resetStepper();
+                                                // Also clear the file input
+                                                if (fileInputRef.current) {
+                                                    fileInputRef.current.value = '';
+                                                }
+                                                onClose();
+                                            }
+                                        }}
                                     >
                                         <span className="sr-only">Close</span>
                                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />

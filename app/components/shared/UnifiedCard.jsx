@@ -12,19 +12,19 @@ export default function UnifiedCard({
   // Different card variants for different contexts
   const cardVariants = {
     // Default card - semi-transparent with subtle backdrop blur
-    default: "bg-slate-800/80 backdrop-blur-[2px] border border-slate-700/80 shadow-lg",
+    default: "bg-slate-800/20 backdrop-blur-[2px] border border-slate-700/20 shadow-sm",
     
     // Solid card - for content that needs better readability
-    solid: "bg-slate-800/80 backdrop-blur-[4px] border border-slate-700/80 shadow-xl",
+    solid: "bg-slate-800/20 backdrop-blur-[4px] border border-slate-700/20 shadow-sm",
     
     // Glass card - more transparent, for overlays
-    glass: "bg-slate-800/80 backdrop-blur-[6px] border border-slate-600/80 shadow-md",
+    glass: "bg-slate-800/20 backdrop-blur-[6px] border border-slate-600/20 shadow-sm",
     
     // Content card - best for text-heavy content
-    content: "bg-slate-800/80 backdrop-blur-[2px] border border-slate-600/80 shadow-xl",
+    content: "bg-slate-800/20 backdrop-blur-[2px] border border-slate-600/20 shadow-sm",
     
     // Feature card - for highlighting important content
-    feature: "bg-gradient-to-br from-slate-800/80 to-purple-900/80 backdrop-blur-[4px] border border-purple-500/80 shadow-xl"
+    feature: "bg-gradient-to-br from-slate-800/20 to-purple-900/30 backdrop-blur-[4px] border border-purple-500/30 shadow-sm"
   };
 
   const paddingVariants = {

@@ -47,18 +47,18 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
 
     return (
         <div className="w-full flex mt-2.5 ml-2.5 items-center">
-            <form onSubmit={handleSubmit} className="p-2 w-1/2 rounded-2xl bg-white">
+            <form onSubmit={handleSubmit} className="p-2 w-1/2 rounded-2xl bg-slate-700/60 border border-slate-600/50">
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="write a comment..."
-                    className="bg-white p-2 w-full text-base focus:outline-none focus:ring-0 focus:border-transparent font-light resize-none overflow-y-auto"
+                    className="bg-transparent text-white placeholder-slate-400 p-2 w-full text-base focus:outline-none focus:ring-0 focus:border-transparent font-light resize-none overflow-y-auto"
                     disabled={isPending}
                 />
                 <button 
                     type="submit"
                     disabled={isPending || !content.trim()}
-                    className="cursor-pointer text-2xl ml-auto hover:text-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cursor-pointer text-2xl text-purple-400 hover:text-purple-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <FiSend />
                 </button>
