@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { modelDB } from "@/lib/db/supabase-db";
+import { modelDB, modelLikeDB } from "@/lib/db/supabase-db";
 import { getSupabaseUser } from "@/lib/auth-utils";
 
 export async function POST(req, { params }) {
@@ -17,15 +17,44 @@ export async function POST(req, { params }) {
             return NextResponse.json({ error: "Model not found" }, { status: 404 });
         }
 
-        // For now, just increment the likes count
-        // In the future, you might want to create a separate likes table to track who liked what
-        const updatedModel = await modelDB.updateModel(id, {
-            likes: (model.likes || 0) + 1
-        });
+        const userEmail = user.email;
+        
+        // Check if user has already liked this model
+        const hasLiked = await modelLikeDB.hasUserLikedModel(id, userEmail);
+        
+        let isLiked, likeCount;
+        
+        if (hasLiked) {
+            // Unlike the model
+            await modelLikeDB.removeLike(id, userEmail);
+            likeCount = await modelLikeDB.getLikeCount(id);
+            
+            // Update the likes count in the models table
+            await modelDB.updateModel(id, {
+                likes: likeCount
+            });
+            
+            isLiked = false;
+        } else {
+            // Like the model
+            await modelLikeDB.addLike(id, userEmail);
+            likeCount = await modelLikeDB.getLikeCount(id);
+            
+            // Update the likes count in the models table
+            await modelDB.updateModel(id, {
+                likes: likeCount
+            });
+            
+            isLiked = true;
+        }
 
-        return NextResponse.json({ likes: updatedModel.likes });
+        return NextResponse.json({ 
+            isLiked,
+            likes: likeCount,
+            message: isLiked ? 'Model liked successfully' : 'Model unliked successfully'
+        });
     } catch (error) {
-        console.error("Error liking model:", error);
-        return NextResponse.json({ error: "Error liking model" }, { status: 500 });
+        console.error("Error toggling model like:", error);
+        return NextResponse.json({ error: "Error toggling model like" }, { status: 500 });
     }
 }

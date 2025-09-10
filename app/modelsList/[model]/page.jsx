@@ -25,6 +25,7 @@ export default function Model(props) {
     const [imageError, setImageError] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [isLiking, setIsLiking] = useState(false);
     const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
     const [isOwned, setIsOwned] = useState(false);
     const [isAuthor, setIsAuthor] = useState(false);
@@ -50,6 +51,17 @@ export default function Model(props) {
                 setIsAuthor(isCurrentUserAuthor);
 
                 if (isAuthenticated) {
+                    // Check if user has liked this model
+                    const likeStatusRes = await fetch(`/api/models/${data.id}/like-status`);
+                    if (likeStatusRes.ok) {
+                        const likeData = await likeStatusRes.json();
+                        setIsLiked(likeData.isLiked);
+                        setLikeCount(likeData.likes);
+                    } else {
+                        // Fallback to model's like count if API fails
+                        setLikeCount(data.likes || 0);
+                    }
+                    
                     const purchasedRes = await fetch('/api/user/purchased-models');
                     if (purchasedRes.ok) {
                         const purchasedModels = await purchasedRes.json();
@@ -83,6 +95,9 @@ export default function Model(props) {
                         } else {
                         }
                     }
+                } else {
+                    // For non-authenticated users, just show the like count
+                    setLikeCount(data.likes || 0);
                 }
             } catch (error) {
                 console.error("Failed to fetch model:", error);
@@ -100,7 +115,34 @@ export default function Model(props) {
             toast.error("Please sign in to like models");
             return;
         }
-        // Add like functionality here if needed
+        
+        if (isLiking) return; // Prevent double-clicks
+        
+        setIsLiking(true);
+        
+        try {
+            const response = await fetch(`/api/models/${model.id}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setIsLiked(data.isLiked);
+                setLikeCount(data.likes);
+                toast.success(data.message);
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Failed to toggle like');
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            toast.error('Failed to toggle like');
+        } finally {
+            setIsLiking(false);
+        }
     };
 
     const handlePurchase = () => {
@@ -185,11 +227,31 @@ export default function Model(props) {
                         <div className='flex items-center gap-2'>
                             <button
                                 onClick={handleLike}
-                                disabled={!isAuthenticated}
-                                className={`flex items-center gap-1.5 ${isAuthenticated ? 'text-gray-300 hover:text-purple-400' : 'text-gray-500 cursor-not-allowed'} transition-colors`}
-                                title={!isAuthenticated ? "Please sign in to like models" : ""}
+                                disabled={!isAuthenticated || isLiking}
+                                className={`flex items-center gap-1.5 transition-colors ${
+                                    !isAuthenticated || isLiking
+                                        ? 'text-gray-500 cursor-not-allowed'
+                                        : isLiked
+                                            ? 'text-purple-400 hover:text-purple-300'
+                                            : 'text-gray-300 hover:text-purple-400'
+                                }`}
+                                title={
+                                    !isAuthenticated
+                                        ? "Please sign in to like models"
+                                        : isLiking
+                                            ? "Processing..."
+                                            : isLiked
+                                                ? "Unlike this model"
+                                                : "Like this model"
+                                }
                             >
-                                <FaRegHeart />
+                                {isLiking ? (
+                                    <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                                ) : isLiked ? (
+                                    <FaHeart className="text-purple-400" />
+                                ) : (
+                                    <FaRegHeart />
+                                )}
                                 <span>{likeCount}</span>
                             </button>
                             <span className='text-gray-400'>•</span>
