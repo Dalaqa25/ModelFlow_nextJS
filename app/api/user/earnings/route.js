@@ -10,9 +10,21 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const earningsHistory = await earningsDB.getEarningsHistoryByUser(user.email);
+        const rawEarningsHistory = await earningsDB.getEarningsHistoryByUser(user.email);
         
-        return NextResponse.json(earningsHistory);
+        // Transform the data to match component expectations
+        const transformedEarnings = rawEarningsHistory.map(transaction => ({
+            id: transaction.id,
+            model_name: transaction.model?.name || 'Unknown Model',
+            buyer_email: transaction.buyer_email,
+            amount: transaction.price, // price is stored in cents
+            earned_at: transaction.created_at,
+            release_at: transaction.release_at,
+            status: transaction.status,
+            lemon_squeezy_order_id: transaction.lemon_squeezy_order_id
+        }));
+        
+        return NextResponse.json(transformedEarnings);
     } catch (error) {
         console.error('Error fetching earnings history:', error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
