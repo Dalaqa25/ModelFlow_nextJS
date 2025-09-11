@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     price INTEGER NOT NULL,
     lemon_squeezy_order_id TEXT UNIQUE,
     status TEXT DEFAULT 'completed',
+    processed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     release_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '5 minutes'
 );
@@ -154,6 +155,8 @@ CREATE INDEX IF NOT EXISTS idx_models_author ON models(author_email);
 CREATE INDEX IF NOT EXISTS idx_models_status ON models(status);
 CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON transactions(buyer_email);
 CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions(seller_email);
+CREATE INDEX IF NOT EXISTS idx_transactions_processed ON transactions(processed);
+CREATE INDEX IF NOT EXISTS idx_transactions_release_processed ON transactions(release_at, processed) WHERE processed = FALSE;
 CREATE INDEX IF NOT EXISTS idx_request_comments_parent ON request_comments(parent_comment_id);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_email);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status);
