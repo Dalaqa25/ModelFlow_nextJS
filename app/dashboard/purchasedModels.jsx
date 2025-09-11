@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref) {
     const [currentPage, setCurrentPage] = useState(1);
+    const [downloadingModelId, setDownloadingModelId] = useState(null);
     const router = useRouter();
     const modelsPerPage = 5;
 
@@ -47,26 +48,6 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
 
     const handleViewModel = (modelId) => {
         router.push(`/modelsList/${modelId}`);
-    };
-
-    const handleDownload = async (modelId) => {
-        try {
-            const response = await fetch(`/api/models/${modelId}/download`);
-            if (!response.ok) {
-                throw new Error('Failed to download model');
-            }
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `model-${modelId}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (error) {
-            console.error('Error downloading model:', error);
-        }
     };
 
     if (isLoading) {
@@ -141,20 +122,20 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
                                     </div>
                                 )}
                                 <div className="absolute top-2 right-2 bg-purple-500 text-white px-2 py-1 rounded-lg text-sm font-medium">
-                                    ${(model.price / 100).toFixed(2)}
+                                    ${((model.model?.price || model.price || 0) / 100).toFixed(2)}
                                 </div>
                             </div>
                             
                             <div className={`p-4 ${isRowLayout ? 'flex-1' : ''}`}>
-                                <h3 className="text-xl font-semibold text-white mb-2">{model.name}</h3>
+                                <h3 className="text-xl font-semibold text-white mb-2">{model.model?.name || "Unknown Model"}</h3>
                                 <div className="space-y-2 mb-4">
                                     <div className="flex items-center text-gray-300">
                                         <FaUser className="mr-2" />
-                                        <span>{model.authorEmail || "Unknown Author"}</span>
+                                        <span>{model.model?.author_email || "Unknown Author"}</span>
                                     </div>
                                     <div className="flex items-center text-gray-300">
                                         <FaCalendarAlt className="mr-2" />
-                                        <span>Purchased {model.purchasedAt ? new Date(model.purchasedAt).toLocaleDateString() : "Unknown date"}</span>
+                                        <span>Purchased {model.created_at ? new Date(model.created_at).toLocaleDateString() : "Unknown date"}</span>
                                     </div>
                                 </div>
 
@@ -164,7 +145,7 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
                                         <span className="font-medium">Tags:</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {(model.tags && model.tags.length > 0 ? model.tags : ["No tags"]).map((tag, idx) => (
+                                        {(model.model?.tags && model.model.tags.length > 0 ? model.model.tags : ["No tags"]).map((tag, idx) => (
                                             <span
                                                 key={idx}
                                                 className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-1 rounded-md text-sm"
@@ -177,17 +158,19 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
 
                                 <div className={`flex ${isRowLayout ? 'gap-2' : 'gap-3'} mt-auto`}>
                                       <button 
-                                        onClick={() => handleViewModel(model.id)}
+                                        onClick={() => handleViewModel(model.model?.id || model.model_id)}
                                         className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
                                       >
                                         <FaEye />
                                         <span>View Details</span>
                                       </button>
-                                      {model.fileStorage?.supabasePath ? (
+                                      {model.model?.file_storage?.supabasePath ? (
                                         <button
                                           onClick={async () => {
+                                            const modelId = model.model?.id || model.model_id;
+                                            setDownloadingModelId(modelId);
                                             try {
-                                              const res = await fetch(`/api/models/${model.id}/download`);
+                                              const res = await fetch(`/api/models/${modelId}/download`);
                                               const data = await res.json();
                                               if (data.downloadUrl) {
                                                 window.open(data.downloadUrl, '_blank');
@@ -196,12 +179,28 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
                                               }
                                             } catch (err) {
                                               alert('Error downloading: ' + err.message);
+                                            } finally {
+                                              setDownloadingModelId(null);
                                             }
                                           }}
-                                          className="flex-1 flex items-center justify-center gap-2 bg-slate-700/50 text-gray-300 border border-slate-600/50 px-4 py-2 rounded-lg hover:bg-slate-600/50 transition-colors"
+                                          disabled={downloadingModelId === (model.model?.id || model.model_id)}
+                                          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                                            downloadingModelId === (model.model?.id || model.model_id)
+                                              ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                              : 'bg-slate-700/50 text-gray-300 border border-slate-600/50 hover:bg-slate-600/50'
+                                          }`}
                                         >
-                                          <FaDownload />
-                                          <span>Download</span>
+                                          {downloadingModelId === (model.model?.id || model.model_id) ? (
+                                            <>
+                                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                                              <span>Downloading...</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <FaDownload />
+                                              <span>Download</span>
+                                            </>
+                                          )}
                                         </button>
                                       ) : (
                                         <button

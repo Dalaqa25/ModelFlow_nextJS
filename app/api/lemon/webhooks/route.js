@@ -3,7 +3,6 @@ import { modelDB, userDB, purchaseDB } from "@/lib/db/supabase-db";
 import crypto from "crypto";
 import {
   updateUserBalance,
-  calculateSellerCut,
   validateWebhookSaleData
 } from "@/lib/lemon/balanceUtils";
 
@@ -84,22 +83,14 @@ export async function POST(req) {
       downloads: (model.downloads || 0) + 1
     });
 
-    // Update seller's earnings using the balance utility
-    const sellerCut = calculateSellerCut(totalAmount); // 80% to seller, 20% platform fee
-    
+    // Update seller's earnings - give 100% to the seller
     const balanceUpdate = await updateUserBalance(authorEmail, {
       modelId: model.id,
       modelName: modelName || model.name,
       buyerEmail: buyerEmail,
-      amount: sellerCut,
+      amount: totalAmount, // Give 100% to seller
       lemonSqueezyOrderId: orderId,
       earnedAt: new Date()
-    });
-
-      email: balanceUpdate.email,
-      totalEarnings: balanceUpdate.totalEarnings,
-      availableBalance: balanceUpdate.availableBalance,
-      newEarningAmount: balanceUpdate.newEarning.amount
     });
 
     return NextResponse.json({ message: "Purchase processed successfully" }, { status: 200 });
