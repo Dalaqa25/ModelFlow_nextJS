@@ -108,21 +108,29 @@ export async function POST(req) {
     const useCases = formData.get('use_cases').split('\n').map(s => s.trim()).filter(s => s);
     const features = formData.get('features').split('\n').map(s => s.trim()).filter(s => s);
 
+    // Get specific validation fields
+    const framework = formData.get('framework');
+    const taskType = formData.get('task_type');
+    const validationReason = formData.get('validation_reason');
+
     const modelData = {
-      name: formData.get('name'),
-      description: formData.get('description'),
-      use_cases: useCases,
-      features: features,
-      tags: tags,
-      setup: formData.get('setup'),
-      price: priceInCents, // Save price in cents
-      pricing_data: { // Save Lemon Squeezy data
-        variantId: variantId,
-        price: priceInCents,
-        displayPrice: `${(priceInCents / 100).toFixed(2)}`
-      },
-      author_email: user.email,
-      file_storage: fileStorage
+        name: formData.get('name'),
+        description: formData.get('description'),
+        use_cases: useCases,
+        features: features,
+        tags: tags,
+        setup: formData.get('setup'),
+        price: priceInCents, // Save price in cents
+        pricing_data: { // Save Lemon Squeezy data
+            variantId: variantId,
+            price: priceInCents,
+            displayPrice: `${(priceInCents / 100).toFixed(2)}`
+        },
+        author_email: user.email,
+        file_storage: fileStorage,
+        framework: framework, // New column
+        task_type: taskType, // New column
+        validation_reason: validationReason // New column
     };
 
     const model = await modelDB.createModel(modelData);

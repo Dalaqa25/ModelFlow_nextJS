@@ -236,7 +236,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
 
         setIsSubmitting(true);
         setShowProgressDialog(true);
-        setUploadStage('uploading');
+        setUploadStage('validating');
         setUploadProgress(0);
 
         // Replace the progress interval in handleSubmit
@@ -244,11 +244,11 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         const startProgressSimulation = () => {
             progressInterval = setInterval(() => {
                 setUploadProgress(prev => {
-                    if (prev >= 90) {
+                    if (prev >= 30) {
                         clearInterval(progressInterval);
-                        return 90;
+                        return 30;
                     }
-                    return prev + Math.random() * 15;
+                    return prev + Math.random() * 10;
                 });
             }, 200);
         };
@@ -256,8 +256,48 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         try {
             // Only ZIP file upload allowed
             if (formData.modelFile) {
-                // Simulate upload progress
+                // Simulate validation progress
                 startProgressSimulation();
+
+                // Validate model with modelValidator service
+                const validationFormData = new FormData();
+                validationFormData.append('file', formData.modelFile);
+                validationFormData.append('model_name', formData.modelName);
+                validationFormData.append('model_setUp', formData.setup);
+                validationFormData.append('description', formData.description);
+
+                const validationResponse = await fetch('http://127.0.0.1:8000/api/models/model-upload', {
+                    method: 'POST',
+                    body: validationFormData,
+                });
+
+                clearInterval(progressInterval);
+                setUploadProgress(35); // Validation complete
+
+                if (!validationResponse.ok) {
+                    const errorData = await validationResponse.json();
+                    toast.error('Model validation failed: ' + (errorData.detail || 'Unknown error'));
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    setUploadProgress(0);
+                    return;
+                }
+
+                const validationResult = await validationResponse.json();
+                setUploadProgress(40); // Processing validation result
+
+                // Check if model is valid
+                if (validationResult.status !== 'VALID') {
+                    toast.error('Model validation failed: ' + (validationResult.reason || 'Model does not meet requirements'));
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    setUploadProgress(0);
+                    return;
+                }
+
+                // Update progress and stage
+                setUploadStage('uploading');
+                setUploadProgress(50);
 
                 // Upload ZIP file to Supabase Storage
                 const file = formData.modelFile;
@@ -271,8 +311,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                         contentType: file.type,
                     });
 
-                clearInterval(progressInterval);
-                setUploadProgress(95); // Upload complete
+                setUploadProgress(75); // Upload complete
                 if (error) {
                     toast.error('Supabase upload failed: ' + error.message);
                     setIsSubmitting(false);
@@ -282,7 +321,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 } else {
                     // Update progress and stage
                     setUploadStage('processing');
-                    setUploadProgress(98);
+                    setUploadProgress(85);
 
                     // Get public URL from Supabase
                     const { data: urlData } = supabase.storage.from('models').getPublicUrl(filePath);
@@ -310,6 +349,18 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     });
                     formDataToSend.append('fileStorage', fileStorageInfo);
 
+                    // Add validation results for specific columns
+                    if (validationResult.framework_used) {
+                        formDataToSend.append('framework', validationResult.framework_used);
+                    }
+                    
+                    if (validationResult.task_detection && validationResult.task_detection !== 'no_task_found') {
+                        formDataToSend.append('task_type', validationResult.task_detection);
+                    }
+                    
+                    if (validationResult.reason) {
+                        formDataToSend.append('validation_reason', validationResult.reason);
+                    }
 
                     // Send metadata to backend
                     const response = await fetch('/api/models', {

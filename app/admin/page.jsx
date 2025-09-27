@@ -233,18 +233,26 @@ export default function AdminPage() {
                                     )}
 
                                     {/* Validation Status */}
-                                    {model.validation_status && (
-                                        <div className="mt-3">
-                                            <h3 className="font-semibold text-white">Validation Status:</h3>
-                                            <div className={`mt-1 p-2 rounded ${
-                                                model.validation_status.isValid
-                                                    ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                                                    : 'bg-red-500/20 text-red-300 border border-red-500/50'
-                                            }`}>
-                                                {model.validation_status.message}
-                                            </div>
+                                    <div className="mt-3">
+                                        <h3 className="font-semibold text-white">Validation Status:</h3>
+                                        <div className={`mt-1 p-2 rounded ${
+                                            model.validation_status?.isValid || model.validation_reason === undefined
+                                                ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                                                : 'bg-red-500/20 text-red-300 border border-red-500/50'
+                                        }`}>
+                                            {model.validation_reason || model.validation_status?.message || 'No validation details available'}
                                         </div>
-                                    )}
+                                        {model.framework && (
+                                            <div className="mt-2 text-sm text-gray-400">
+                                                Detected Framework: {model.framework}
+                                            </div>
+                                        )}
+                                        {model.task_type && model.task_type !== 'no_task_found' && (
+                                            <div className="mt-1 text-sm text-gray-400">
+                                                Task Type: {model.task_type}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <div className="mt-4 flex gap-4">
                                         <button
