@@ -30,6 +30,21 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
 }
 
 function SplashScreen() {
+  // Detect system color scheme preference
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Check for system preference
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches);
+    
+    // Listen for changes
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
   // Add animation using Tailwind and a custom keyframes style
   return (
     <>
@@ -40,7 +55,7 @@ function SplashScreen() {
           100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white backdrop-blur-sm min-h-screen">
+      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="flex-1 flex flex-col justify-center items-center w-full">
           <img
             src="/3dcube.png"
@@ -49,7 +64,7 @@ function SplashScreen() {
           />
         </div>
         <div className="w-full flex justify-center pb-8">
-          <span className="text-gray-400 text-sm tracking-wide">Powered by Dalaqa</span>
+          <span className={`text-sm tracking-wide ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Powered by Dalaqa</span>
         </div>
       </div>
     </>

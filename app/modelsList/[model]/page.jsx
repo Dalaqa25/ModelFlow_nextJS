@@ -77,7 +77,7 @@ export default function Model(props) {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
-                                    }
+                                    },
                                 });
                                 
                                 
@@ -276,7 +276,9 @@ export default function Model(props) {
                                 toast.error("Please sign in to test models");
                                 return;
                             }
-                            // Add test model functionality here
+                            
+                            // Redirect to playground with model ID
+                            router.push(`/playground?modelId=${model.id}`);
                         }}
                         disabled={!isAuthenticated}
                         className={`group w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2 text-sm sm:text-base lg:text-lg rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 active:scale-95 shadow-md ${
