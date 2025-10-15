@@ -5,7 +5,6 @@ import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from '../UploadProgressDialog';
 import StorageWarningDialog from '../StorageWarningDialog';
-import { supabase } from '../../../../lib/supabase';
 import Step1BasicInfo from './upload-steps/Step1BasicInfo';
 import Step2Details from './upload-steps/Step2Details';
 import Step3FileUpload from './upload-steps/Step3FileUpload';
@@ -295,105 +294,45 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                     return;
                 }
 
-                // Update progress and stage
+                // Expect FastAPI to handle storage and return file metadata
                 setUploadStage('uploading');
-                setUploadProgress(50);
+                setUploadProgress(60);
 
-                // Upload ZIP file to Supabase Storage
-                const file = formData.modelFile;
-                const fileName = `${Date.now()}-${file.name}`;
-                const filePath = `${fileName}`;
-                const { data, error } = await supabase.storage
-                    .from('models')
-                    .upload(filePath, file, {
-                        cacheControl: '3600',
-                        upsert: false,
-                        contentType: file.type,
-                    });
-
-                setUploadProgress(75); // Upload complete
-                if (error) {
-                    toast.error('Supabase upload failed: ' + error.message);
+                // Rely on FastAPI for storage + DB insert
+                const fastApiStorage = validationResult.storage || validationResult.file_storage || validationResult.fileStorage;
+                if (!fastApiStorage) {
+                    toast.error('Storage metadata missing from validator response');
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setUploadProgress(0);
                     return;
-                } else {
-                    // Update progress and stage
-                    setUploadStage('processing');
-                    setUploadProgress(85);
+                }
 
-                    // Get public URL from Supabase
-                    const { data: urlData } = supabase.storage.from('models').getPublicUrl(filePath);
-                    const publicUrl = urlData?.publicUrl || filePath;
-
-                    // Prepare form data for backend (matching the API structure)
-                    const formDataToSend = new FormData();
-                    formDataToSend.append('name', formData.modelName);
-                    formDataToSend.append('description', formData.description);
-                    formDataToSend.append('use_cases', use_cases.join('\n')); // Send as joined string
-                    formDataToSend.append('setup', formData.setup);
-                    formDataToSend.append('features', features.join('\n')); // Send as joined string
-                    formDataToSend.append('tags', JSON.stringify(tags)); // Send as JSON string
-                    formDataToSend.append('price', formData.price.toString());
-                    formDataToSend.append('uploadType', 'zip');
-                    
-                    // Add file storage info as a JSON string
-                    const fileStorageInfo = JSON.stringify({
-                        type: 'zip',
-                        fileName: file.name,
-                        fileSize: file.size,
-                        mimeType: file.type,
-                        supabasePath: filePath,
-                        uploadedAt: new Date().toISOString(),
-                    });
-                    formDataToSend.append('fileStorage', fileStorageInfo);
-
-                    // Add validation results for specific columns
-                    if (validationResult.framework_used) {
-                        formDataToSend.append('framework', validationResult.framework_used);
-                    }
-                    
-                    if (validationResult.task_detection && validationResult.task_detection !== 'no_task_found') {
-                        formDataToSend.append('task_type', validationResult.task_detection);
-                    }
-                    
-                    if (validationResult.reason) {
-                        formDataToSend.append('validation_reason', validationResult.reason);
-                    }
-
-                    // Send metadata to backend
-                    const response = await fetch('/api/models', {
-                        method: 'POST',
-                        body: formDataToSend,
-                    });
-                    if (!response.ok) {
-                        const data = await response.json();
-                        toast.error('Submission failed: ' + (data.error || 'Failed to create pending model'));
-                        setIsSubmitting(false);
-                        setShowProgressDialog(false);
-                        setUploadProgress(0);
-                        return;
-                    }
-
-                    // Complete the progress
-                    setUploadProgress(100);
-
-                    // Small delay to show 100% completion
-                    setTimeout(() => {
-                        toast.success('Model submitted successfully!');
-                        setIsSubmitting(false);
-                        setShowProgressDialog(false);
-                        setUploadProgress(0);
-                        setFormData(prev => ({ ...prev, modelFile: null }));
-                        // Reset all form state so next open starts fresh
-                        resetForm();
-                        resetStepper();
-                        // Call onUploadSuccess to trigger refresh animation and close modal
-                        onUploadSuccess && onUploadSuccess();
-                    }, 500);
+                // Validate FastAPI reported outcomes
+                const uploadOk = validationResult.upload_success !== false; // default to true if missing
+                const metadataOk = validationResult.metadata_saved === true; // must be true
+                if (!uploadOk || !metadataOk) {
+                    const message = !uploadOk ? 'External upload failed' : 'Metadata was not saved';
+                    toast.error(message);
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    setUploadProgress(0);
                     return;
                 }
+
+                // Complete the progress locally
+                setUploadProgress(100);
+                setTimeout(() => {
+                    toast.success('Model submitted successfully!');
+                    setIsSubmitting(false);
+                    setShowProgressDialog(false);
+                    setUploadProgress(0);
+                    setFormData(prev => ({ ...prev, modelFile: null }));
+                    resetForm();
+                    resetStepper();
+                    onUploadSuccess && onUploadSuccess();
+                }, 500);
+                return;
             }
         } catch (err) {
             toast.error('Unexpected error: ' + err.message);
