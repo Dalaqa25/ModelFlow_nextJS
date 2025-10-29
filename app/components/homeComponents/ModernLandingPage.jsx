@@ -60,20 +60,10 @@ export default function ModernLandingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-center lg:text-left"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-8"
-            >
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-              AI Model Marketplace
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
               className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight"
             >
               Upload & Sell
@@ -86,7 +76,7 @@ export default function ModernLandingPage() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="text-lg sm:text-xl text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0"
             >
               The next-generation marketplace for pre-trained AI models.
@@ -96,7 +86,7 @@ export default function ModernLandingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <motion.button
@@ -122,7 +112,7 @@ export default function ModernLandingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
+              transition={{ duration: 0.6, delay: 1 }}
               className="flex justify-center lg:justify-start gap-6 sm:gap-8 mt-8 sm:mt-12"
             >
               <div className="text-center">
