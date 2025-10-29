@@ -5,6 +5,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import UploadProgressDialog from '../UploadProgressDialog';
 import StorageWarningDialog from '../StorageWarningDialog';
+import UploadMessageDialogBox from '../UploadMessageDialogBox';
 import Step1BasicInfo from './upload-steps/Step1BasicInfo';
 import Step2Details from './upload-steps/Step2Details';
 import Step3FileUpload from './upload-steps/Step3FileUpload';
@@ -23,6 +24,24 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         features, setFeatures, tags, setTags, storageWarningDialog,
         setStorageWarningDialog, resetForm
     } = useFormState();
+
+    // Message dialog state
+    const [messageDialog, setMessageDialog] = useState({
+        isOpen: false,
+        messageType: 'error',
+        title: '',
+        message: '',
+        details: '',
+        currentStage: '',
+        progressPercentage: 0,
+        fileName: ''
+    });
+
+    // WebSocket state
+    const [wsConnection, setWsConnection] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
+    const [realTimeMessage, setRealTimeMessage] = useState('');
+    const [websocketData, setWebsocketData] = useState(null);
     const { step, stepDirection, handleNext, handleBack, resetStepper } = useStepper();
 
     // Drag-and-drop state for file upload
@@ -54,6 +73,62 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
     };
     const fileInputRef = useRef();
     const handleBrowseClick = () => fileInputRef.current && fileInputRef.current.click();
+
+    // WebSocket connection functions
+    const generateSessionId = () => {
+        return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    };
+
+    const connectWebSocket = (sessionId) => {
+        const ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
+        
+        ws.onopen = () => {
+            console.log('WebSocket connected for session:', sessionId);
+            setWsConnection(ws);
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const update = JSON.parse(event.data);
+                console.log('WebSocket update:', update);
+                
+                if (update.type === 'progress_update') {
+                    // Update progress and stage from WebSocket
+                    setUploadProgress(update.progress);
+                    setUploadStage(update.stage);
+                    setRealTimeMessage(update.message);
+                    setWebsocketData(update); // Store full WebSocket data
+                    
+                    console.log(`Stage: ${update.stage} (${update.progress}%)`);
+                    console.log(`Message: ${update.message}`);
+                    if (update.data) {
+                        console.log('Additional data:', update.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            setWsConnection(null);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            setWsConnection(null);
+        };
+
+        return ws;
+    };
+
+    const disconnectWebSocket = () => {
+        if (wsConnection) {
+            wsConnection.close();
+            setWsConnection(null);
+        }
+    };
 
 
     // Tag selection handler
@@ -238,44 +313,45 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         setUploadStage('validating');
         setUploadProgress(0);
 
-        // Replace the progress interval in handleSubmit
-        let progressInterval;
-        const startProgressSimulation = () => {
-            progressInterval = setInterval(() => {
-                setUploadProgress(prev => {
-                    if (prev >= 30) {
-                        clearInterval(progressInterval);
-                        return 30;
-                    }
-                    return prev + Math.random() * 10;
-                });
-            }, 200);
-        };
+        // Generate session ID and connect WebSocket
+        const newSessionId = generateSessionId();
+        setSessionId(newSessionId);
+        connectWebSocket(newSessionId);
 
         try {
             // Only ZIP file upload allowed
             if (formData.modelFile) {
-                // Simulate validation progress
-                startProgressSimulation();
-
                 // Validate model with modelValidator service
                 const validationFormData = new FormData();
                 validationFormData.append('file', formData.modelFile);
                 validationFormData.append('model_name', formData.modelName);
                 validationFormData.append('model_setUp', formData.setup);
                 validationFormData.append('description', formData.description);
+                validationFormData.append('session_id', newSessionId); // Include session ID for WebSocket
 
                 const validationResponse = await fetch('http://127.0.0.1:8000/api/models/model-upload', {
                     method: 'POST',
                     body: validationFormData,
                 });
 
-                clearInterval(progressInterval);
-                setUploadProgress(35); // Validation complete
-
                 if (!validationResponse.ok) {
                     const errorData = await validationResponse.json();
-                    toast.error('Model validation failed: ' + (errorData.detail || 'Unknown error'));
+                    const errorMessage = errorData.detail || errorData.message || 'Unknown error';
+                    
+                    // Disconnect WebSocket on error
+                    disconnectWebSocket();
+                    
+                    setMessageDialog({
+                        isOpen: true,
+                        messageType: 'error',
+                        title: 'Upload Failed',
+                        message: `Model validation failed: ${errorMessage}`,
+                        details: errorData.details || errorData.error || '',
+                        currentStage: 'validation',
+                        progressPercentage: 0,
+                        fileName: formData.modelFile ? formData.modelFile.name : ''
+                    });
+                    
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setUploadProgress(0);
@@ -283,37 +359,79 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 }
 
                 const validationResult = await validationResponse.json();
-                setUploadProgress(40); // Processing validation result
-
-                // Check if model is valid
-                if (validationResult.status !== 'VALID') {
-                    toast.error('Model validation failed: ' + (validationResult.reason || 'Model does not meet requirements'));
+                
+                // Check for validation failure from FastAPI
+                if (validationResult.validation_status === "INVALID") {
+                    const errorMessage = validationResult.validation_reason || 'Model validation failed';
+                    const currentStage = validationResult.current_stage || 'validation';
+                    const progressPct = validationResult.progress_percentage || 0;
+                    
+                    // Disconnect WebSocket on validation failure
+                    disconnectWebSocket();
+                    
+                    setMessageDialog({
+                        isOpen: true,
+                        messageType: 'error',
+                        title: 'Validation Failed',
+                        message: `Validation failed: ${errorMessage}`,
+                        details: validationResult.error_details || validationResult.details || '',
+                        currentStage: currentStage,
+                        progressPercentage: progressPct,
+                        fileName: formData.modelFile ? formData.modelFile.name : ''
+                    });
+                    
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
-                    setUploadProgress(0);
+                    setUploadProgress(progressPct);
                     return;
                 }
 
-                // Expect FastAPI to handle storage and return file metadata
+                // Reflect server-reported progress if provided
+                if (validationResult.current_stage) {
+                    setUploadStage(validationResult.current_stage);
+                }
+                if (typeof validationResult.progress_percentage === 'number') {
+                    // cap at 99 to leave room for finalization
+                    const pct = Math.max(0, Math.min(99, validationResult.progress_percentage));
+                    setUploadProgress(pct);
+                } else {
+                    setUploadProgress(40); // Processing validation result
+                }
+
+                // FastAPI handles storage + DB insert; we only care about two flags
                 setUploadStage('uploading');
                 setUploadProgress(60);
 
-                // Rely on FastAPI for storage + DB insert
-                const fastApiStorage = validationResult.storage || validationResult.file_storage || validationResult.fileStorage;
-                if (!fastApiStorage) {
-                    toast.error('Storage metadata missing from validator response');
-                    setIsSubmitting(false);
-                    setShowProgressDialog(false);
-                    setUploadProgress(0);
-                    return;
-                }
-
-                // Validate FastAPI reported outcomes
-                const uploadOk = validationResult.upload_success !== false; // default to true if missing
-                const metadataOk = validationResult.metadata_saved === true; // must be true
+                // Validate FastAPI reported outcomes with detailed error messages
+                const uploadOk = validationResult.upload_success === true;
+                const metadataOk = validationResult.metadata_saved === true;
+                
                 if (!uploadOk || !metadataOk) {
-                    const message = !uploadOk ? 'External upload failed' : 'Metadata was not saved';
-                    toast.error(message);
+                    let errorMessage = '';
+                    let errorDetails = '';
+                    let title = '';
+                    
+                    if (!uploadOk) {
+                        title = 'Upload Failed';
+                        errorMessage = 'Upload failed';
+                        errorDetails = validationResult.upload_error || validationResult.error_message || 'External upload failed';
+                    } else if (!metadataOk) {
+                        title = 'Metadata Save Failed';
+                        errorMessage = 'Metadata save failed';
+                        errorDetails = validationResult.metadata_error || 'Failed to save model metadata';
+                    }
+                    
+                    setMessageDialog({
+                        isOpen: true,
+                        messageType: 'error',
+                        title: title,
+                        message: `${errorMessage}: ${errorDetails}`,
+                        details: validationResult.error_details || validationResult.details || '',
+                        currentStage: validationResult.current_stage || 'upload',
+                        progressPercentage: validationResult.progress_percentage || 0,
+                        fileName: formData.modelFile ? formData.modelFile.name : ''
+                    });
+                    
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setUploadProgress(0);
@@ -323,7 +441,20 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 // Complete the progress locally
                 setUploadProgress(100);
                 setTimeout(() => {
-                    toast.success('Model submitted successfully!');
+                    // Disconnect WebSocket on completion
+                    disconnectWebSocket();
+                    
+                    setMessageDialog({
+                        isOpen: true,
+                        messageType: 'success',
+                        title: 'Upload Successful',
+                        message: 'Your model has been uploaded and processed successfully!',
+                        details: 'The model is now available in your dashboard and can be purchased by other users.',
+                        currentStage: 'completed',
+                        progressPercentage: 100,
+                        fileName: formData.modelFile ? formData.modelFile.name : ''
+                    });
+                    
                     setIsSubmitting(false);
                     setShowProgressDialog(false);
                     setUploadProgress(0);
@@ -335,7 +466,20 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 return;
             }
         } catch (err) {
-            toast.error('Unexpected error: ' + err.message);
+            // Disconnect WebSocket on error
+            disconnectWebSocket();
+            
+            setMessageDialog({
+                isOpen: true,
+                messageType: 'error',
+                title: 'Unexpected Error',
+                message: `An unexpected error occurred: ${err.message}`,
+                details: 'Please try again or contact support if the problem persists.',
+                currentStage: 'error',
+                progressPercentage: 0,
+                fileName: formData.modelFile ? formData.modelFile.name : ''
+            });
+            
             setIsSubmitting(false);
             setShowProgressDialog(false);
             setUploadProgress(0);
@@ -360,19 +504,33 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
         toast.success('Please delete models from your dashboard to free up space');
     };
 
+    // Cleanup WebSocket on component unmount or dialog close
+    const cleanup = () => {
+        disconnectWebSocket();
+        setSessionId(null);
+        setRealTimeMessage('');
+        setWebsocketData(null);
+    };
+
+    // Cleanup when dialog closes
+    const handleDialogClose = () => {
+        cleanup();
+        resetForm();
+        resetStepper();
+        // Also clear the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        onClose();
+    };
+
     // Update the Dialog onClose handler
     return (
         <>
             <Transition.Root show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-50" onClose={() => {
                 if (!isSubmitting) {
-                    resetForm();
-                    resetStepper();
-                    // Also clear the file input
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                    onClose();
+                    handleDialogClose();
                 }
             }}>
                 <Transition.Child
@@ -406,13 +564,7 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                                         className="rounded-lg p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
                                         onClick={() => {
                                             if (!isSubmitting) {
-                                                resetForm();
-                                                resetStepper();
-                                                // Also clear the file input
-                                                if (fileInputRef.current) {
-                                                    fileInputRef.current.value = '';
-                                                }
-                                                onClose();
+                                                handleDialogClose();
                                             }
                                         }}
                                     >
@@ -506,6 +658,10 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 progress={uploadProgress}
                 stage={uploadStage}
                 fileName={formData.modelFile ? formData.modelFile.name : ''}
+                errorMessage={errors.modelFile || (uploadStage && uploadStage.includes('Failed at:') ? uploadStage : null)}
+                isError={uploadStage && uploadStage.includes('Failed at:')}
+                realTimeMessage={realTimeMessage}
+                websocketData={websocketData}
                 onClose={() => setShowProgressDialog(false)}
             />
             <StorageWarningDialog
@@ -519,6 +675,17 @@ export default function ModelUpload({ onUploadSuccess, isOpen, onClose }) {
                 storageCapStr={storageWarningDialog.storageCapStr}
                 planName={storageWarningDialog.planName}
                 onDeleteClick={handleDeleteClick}
+            />
+            <UploadMessageDialogBox
+                isOpen={messageDialog.isOpen}
+                onClose={() => setMessageDialog(prev => ({ ...prev, isOpen: false }))}
+                messageType={messageDialog.messageType}
+                title={messageDialog.title}
+                message={messageDialog.message}
+                details={messageDialog.details}
+                currentStage={messageDialog.currentStage}
+                progressPercentage={messageDialog.progressPercentage}
+                fileName={messageDialog.fileName}
             />
         </>
     );
