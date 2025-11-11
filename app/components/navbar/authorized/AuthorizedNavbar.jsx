@@ -97,17 +97,21 @@ export default function AuthorizedNavbar() {
 
     // Load pinned state from localStorage on component mount
     useEffect(() => {
-        const savedPinnedState = localStorage.getItem('sidebarPinned');
-        if (savedPinnedState !== null) {
-            const isPinned = JSON.parse(savedPinnedState);
-            setSidebarPinned(isPinned);
-            setSidebarExpanded(isPinned);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const savedPinnedState = window.localStorage.getItem('sidebarPinned');
+            if (savedPinnedState !== null) {
+                const isPinned = JSON.parse(savedPinnedState);
+                setSidebarPinned(isPinned);
+                setSidebarExpanded(isPinned);
+            }
         }
     }, []);
 
     // Save pinned state to localStorage whenever it changes
     useEffect(() => {
-        localStorage.setItem('sidebarPinned', JSON.stringify(sidebarPinned));
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('sidebarPinned', JSON.stringify(sidebarPinned));
+        }
     }, [sidebarPinned]);
 
     // Fetch storage data

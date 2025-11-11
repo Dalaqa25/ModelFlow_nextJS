@@ -39,17 +39,21 @@ export default function Dashboard() {
 
     // Layout preference from localStorage
     useEffect(() => {
-        const layout = localStorage.getItem('dashboardLayout');
-        if (layout) {
-            setIsRowLayout(layout === 'row');
-        } else {
-            // Default to column layout if no preference is saved
-            setIsRowLayout(false);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const layout = window.localStorage.getItem('dashboardLayout');
+            if (layout) {
+                setIsRowLayout(layout === 'row');
+            } else {
+                // Default to column layout if no preference is saved
+                setIsRowLayout(false);
+            }
         }
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('dashboardLayout', isRowLayout ? 'row' : 'column');
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('dashboardLayout', isRowLayout ? 'row' : 'column');
+        }
     }, [isRowLayout]);
 
     // Cleanup intervals on component unmount

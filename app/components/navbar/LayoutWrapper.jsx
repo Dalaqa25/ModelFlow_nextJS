@@ -9,9 +9,11 @@ export default function LayoutWrapper({ children }) {
     // Listen for sidebar pinned state changes
     useEffect(() => {
         const checkPinnedState = () => {
-            const savedPinnedState = localStorage.getItem('sidebarPinned');
-            if (savedPinnedState !== null) {
-                setSidebarPinned(JSON.parse(savedPinnedState));
+            if (typeof window !== 'undefined' && window.localStorage) {
+                const savedPinnedState = window.localStorage.getItem('sidebarPinned');
+                if (savedPinnedState !== null) {
+                    setSidebarPinned(JSON.parse(savedPinnedState));
+                }
             }
         };
 
