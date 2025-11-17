@@ -26,7 +26,8 @@ import {
     MdLightMode,
     MdDarkMode,
     MdCloudUpload,
-    MdStorage
+    MdStorage,
+    MdSettings
 } from "react-icons/md";
 import { useQuery } from '@tanstack/react-query';
 
@@ -203,9 +204,10 @@ export default function AuthorizedNavbar() {
     // Navigation routes with icons
     const navRoutes = [
         { href: '/dashboard', title: 'Dashboard', icon: MdDashboard },
+        { href: '/automations', title: 'Automations', icon: MdSettings },
         { href: '/modelsList', title: 'Explore Models', icon: MdViewInAr },
-        { href: '/requests', title: 'Community', icon: MdGroup },
         { href: '/plans', title: 'Billing', icon: MdPayment },
+        { href: '/requests', title: 'Community', icon: MdGroup },
         { href: '/profile', title: 'Profile', icon: MdPerson },
     ];
 
