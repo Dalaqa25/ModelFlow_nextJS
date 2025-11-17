@@ -44,6 +44,11 @@ export async function middleware(request) {
     user = authUser;
   }
 
+  // Skip auth logic entirely for API routes to prevent breaking API handlers
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse;
+  }
+
   // If user is authenticated and trying to access auth routes, redirect to dashboard
   if (user && pathname.startsWith('/auth/')) {
     url.pathname = '/dashboard';
