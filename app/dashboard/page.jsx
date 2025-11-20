@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast';
 import PurchasedModels from './purchasedModels';
 import UploadedModels from './uploadedModels';
 import ModelUpload from '../components/model/modelupload/modelUpload';
+import AutomationUpload from '../components/model/modelupload/automation/AutomationUpload';
+import UploadTypeDialog from '../components/model/modelupload/UploadTypeDialog';
 import { useAuth } from '@/lib/supabase-auth-context';
 import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
@@ -15,6 +17,8 @@ export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
     const [isRowLayout, setIsRowLayout] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showUploadTypeDialog, setShowUploadTypeDialog] = useState(false);
+    const [showAutomationDialog, setShowAutomationDialog] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isRefreshingUploaded, setIsRefreshingUploaded] = useState(false);
     const [isRefreshingPurchased, setIsRefreshingPurchased] = useState(false);
@@ -139,6 +143,23 @@ export default function Dashboard() {
         }, 10000);
     };
 
+    const handleUploadButtonClick = () => {
+        setShowUploadTypeDialog(true);
+    };
+
+    const handleUploadTypeSelect = (type) => {
+        setShowUploadTypeDialog(false);
+
+        if (type === 'pretrained') {
+            setShowUploadModal(true);
+            return;
+        }
+
+        if (type === 'automation') {
+            setShowAutomationDialog(true);
+        }
+    };
+
     return (
         <UnifiedBackground variant="content" className="pt-16">
             <div className="pt-10 pb-10 px-6">
@@ -146,7 +167,7 @@ export default function Dashboard() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                         <div className="flex gap-3 justify-center sm:justify-start">
                             <button
-                                onClick={() => setShowUploadModal(true)}
+                                onClick={handleUploadButtonClick}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -232,6 +253,19 @@ export default function Dashboard() {
                         isOpen={showUploadModal}
                         onClose={() => setShowUploadModal(false)}
                         onUploadSuccess={handleUploadSuccess}
+                    />
+                    <AutomationUpload
+                        isOpen={showAutomationDialog}
+                        onClose={() => setShowAutomationDialog(false)}
+                        onUploadSuccess={() => {
+                            setShowAutomationDialog(false);
+                            toast.success('Automation saved');
+                        }}
+                    />
+                    <UploadTypeDialog
+                        isOpen={showUploadTypeDialog}
+                        onClose={() => setShowUploadTypeDialog(false)}
+                        onSelect={handleUploadTypeSelect}
                     />
                 </div>
             </div>

@@ -7,6 +7,8 @@ import ResponsiveAuthNavbar from "./responsive/ResponsiveAuthNavbar";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import Notifications from "../../notifications";
 import ModelUpload from "../../model/modelupload/modelUpload";
+import UploadTypeDialog from "../../model/modelupload/UploadTypeDialog";
+import AutomationUpload from "../../model/modelupload/automation/AutomationUpload";
 import PLANS from "../../../plans";
 import { useTheme } from "../../../../lib/theme-context";
 import {
@@ -41,6 +43,25 @@ export default function AuthorizedNavbar() {
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+    const [uploadTypeDialogOpen, setUploadTypeDialogOpen] = useState(false);
+    const [automationDialogOpen, setAutomationDialogOpen] = useState(false);
+    const openUploadChooser = () => {
+        setUploadTypeDialogOpen(true);
+    };
+
+    const handleUploadTypeSelect = (type) => {
+        setUploadTypeDialogOpen(false);
+
+        if (type === 'pretrained') {
+            setUploadDialogOpen(true);
+            return;
+        }
+
+        if (type === 'automation') {
+            setAutomationDialogOpen(true);
+        }
+    };
+
     const [userData, setUserData] = useState({});
     const [userDataLoading, setUserDataLoading] = useState(true);
 
@@ -383,7 +404,7 @@ export default function AuthorizedNavbar() {
 
                     {/* Upload Model Section */}
                     <button
-                        onClick={() => setUploadDialogOpen(true)}
+                        onClick={openUploadChooser}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:bg-slate-800/50 hover:text-purple-400 w-full"
                         title="Upload New Model"
                     >
@@ -481,7 +502,7 @@ export default function AuthorizedNavbar() {
                 navRoutes={navRoutes}
                 onUploadClick={() => {
                     setMobileMenuOpen(false);
-                    setUploadDialogOpen(true);
+                    openUploadChooser();
                 }}
                 onNotificationsClick={() => {
                     setMobileMenuOpen(false);
@@ -503,6 +524,18 @@ export default function AuthorizedNavbar() {
                     setUploadDialogOpen(false);
                     // Optionally refresh data or show success message
                 }}
+            />
+
+            <UploadTypeDialog
+                isOpen={uploadTypeDialogOpen}
+                onClose={() => setUploadTypeDialogOpen(false)}
+                onSelect={handleUploadTypeSelect}
+            />
+
+            <AutomationUpload
+                isOpen={automationDialogOpen}
+                onClose={() => setAutomationDialogOpen(false)}
+                onUploadSuccess={() => setAutomationDialogOpen(false)}
             />
 
         </>
