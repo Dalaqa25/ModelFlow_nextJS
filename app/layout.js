@@ -3,10 +3,7 @@ import "./globals.css";
 import "./globals-light.css";
 import { AuthProvider } from "@/lib/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
-import NavbarController from "@/app/components/navbar/NavbarController";
-import LayoutWrapper from "@/app/components/navbar/LayoutWrapper";
 import NavigationLoader from "@/app/components/NavigationLoader";
-import { usePathname } from "next/navigation";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
@@ -22,8 +19,6 @@ const inter = Inter({
 const queryClient = new QueryClient();
 
 export default function RootLayout({ children }) {
-  const pathname = usePathname();
-  const isLoginOrSignUp = pathname === '/logIn' || pathname === '/signUp';
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -32,10 +27,7 @@ export default function RootLayout({ children }) {
             <NavigationLoadingProvider>
               <SplashProvider>
                 <AuthProvider>
-                  {!isLoginOrSignUp &&  <NavbarController/>}
-                  <LayoutWrapper>
-                    {children}
-                  </LayoutWrapper>
+                  {children}
                   <NavigationLoader />
                 </AuthProvider>
               </SplashProvider>

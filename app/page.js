@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/supabase-auth-context';
-import LandingPage from './components/homeComponents/LandingPage';
+import ModernLandingPage from './components/homeComponents/ModernLandingPage';
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -29,5 +29,5 @@ export default function Home() {
   }
 
   // Show landing page for unauthenticated users
-  return <LandingPage />;
+  return <ModernLandingPage />;
 }
