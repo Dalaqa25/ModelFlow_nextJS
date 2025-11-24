@@ -10,7 +10,6 @@ export default function BreadcrumbNavigation() {
     // Route mapping for better display names
     const routeMapping = {
         'dashboard': 'Dashboard',
-        'modelsList': 'Models',
         'requests': 'Community',
         'plans': 'Billing',
         'profile': 'Profile',
@@ -34,42 +33,13 @@ export default function BreadcrumbNavigation() {
                 const segment = pathSegments[i];
                 const href = '/' + pathSegments.slice(0, i + 1).join('/');
                 
-                // Check if this is a dynamic route (like model ID)
-                if (i > 0 && pathSegments[i - 1] === 'modelsList' && segment !== 'modelsList') {
-                    // This is a model ID/name, try to fetch the model name
-                    try {
-                        const response = await fetch(`/api/models/${segment}`);
-                        if (response.ok) {
-                            const modelData = await response.json();
-                            crumbs.push({
-                                label: modelData.name || segment,
-                                href: href,
-                                isClickable: true
-                            });
-                        } else {
-                            crumbs.push({
-                                label: segment,
-                                href: href,
-                                isClickable: true
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error fetching model data:', error);
-                        crumbs.push({
-                            label: segment,
-                            href: href,
-                            isClickable: true
-                        });
-                    }
-                } else {
-                    // Regular route segment
-                    const displayName = routeMapping[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
-                    crumbs.push({
-                        label: displayName,
-                        href: href,
-                        isClickable: true
-                    });
-                }
+                // Regular route segment
+                const displayName = routeMapping[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+                crumbs.push({
+                    label: displayName,
+                    href: href,
+                    isClickable: true
+                });
             }
 
             setBreadcrumbs(crumbs);

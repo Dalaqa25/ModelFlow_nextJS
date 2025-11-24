@@ -47,7 +47,8 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
     }));
 
     const handleViewModel = (modelId) => {
-        router.push(`/modelsList/${modelId}`);
+        // Model viewing functionality removed
+        console.log('View model:', modelId);
     };
 
     if (isLoading) {
@@ -87,13 +88,7 @@ const PurchasedModels = forwardRef(function PurchasedModels({ isRowLayout }, ref
                     <div className="max-w-md mx-auto">
                         <div className="text-6xl mb-4">📦</div>
                         <p className="text-white text-lg font-medium">No Purchased Models Yet</p>
-                        <p className="text-gray-300 mt-2">Explore our marketplace to find amazing models!</p>
-                        <button
-                            onClick={() => router.push('/modelsList')}
-                            className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
-                        >
-                            Browse Models
-                        </button>
+                        <p className="text-gray-300 mt-2">Models will be available in your dashboard.</p>
                     </div>
                 </div>
             ) : (

@@ -37,8 +37,7 @@ export default function PublishedModels({ userModels }) {
                 {userModels.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {userModels.map((model, index) => (
-                            <NavigationLink
-                                href={`/modelsList/${model.id}`}
+                            <div
                                 key={model.id}
                                 className="group block animate-fade-in-up"
                                 style={{ animationDelay: `${index * 150}ms` }}
@@ -91,7 +90,7 @@ export default function PublishedModels({ userModels }) {
                                         </div>
                                     </div>
                                 </div>
-                            </NavigationLink>
+                            </div>
                         ))}
                     </div>
                 ) : (

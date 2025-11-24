@@ -123,7 +123,7 @@ export default function ModelBox({ search = "" }) {
                     {!isLoading && !error && currentModels.length > 0 && (
                         <>
                             {currentModels.map(model => (
-                                <NavigationLink key={model.id} href={`/modelsList/${model.id}`} className='bg-slate-800/90 backdrop-blur-md border border-slate-700/50 shadow-2xl p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-purple-500/25 hover:border-purple-500/50 transition-all max-w-[900px]'>
+                                <div key={model.id} className='bg-slate-800/90 backdrop-blur-md border border-slate-700/50 shadow-2xl p-1 rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.015] hover:shadow-purple-500/25 hover:border-purple-500/50 transition-all max-w-[900px]'>
                                     <div className='p-4 flex flex-col gap-5'>
                                         <div className='flex gap-4'>
                                             {model.imgUrl ? (
@@ -166,7 +166,7 @@ export default function ModelBox({ search = "" }) {
                                             Price: <span className='flex'>$<p>{(model.price / 100).toFixed(2)}</p></span>
                                         </span>
                                     </div>
-                                </NavigationLink>
+                                </div>
                             ))}
                             {totalPages > 1 && (
                                 <div className="flex justify-center gap-2 mt-4 mb-10">

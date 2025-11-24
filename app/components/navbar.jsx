@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/supabase-auth-context";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { AiFillHome, AiOutlineRobot, AiOutlinePlus } from 'react-icons/ai';
+import { AiFillHome, AiOutlinePlus } from 'react-icons/ai';
 import { BsClipboardCheck } from 'react-icons/bs';
 import { FiSend } from "react-icons/fi";
 import { FaDollarSign } from "react-icons/fa";
@@ -24,7 +24,6 @@ export default function Navbar() {
             ? [{ href: '/', title: 'Home' }]
             : [{ href: '/dashboard', title: 'Dashboard' }]
         ),
-        { href: '/modelsList', title: 'Models' },
         { href: '/plans', title: 'Plans' },
         { href: '/requests', title: 'Requests' }
     ];
@@ -131,7 +130,6 @@ export default function Navbar() {
                                             <span className="relative z-10 flex items-center gap-3">
                                                 {title === 'Home' && <AiFillHome />}
                                                 {title === 'Dashboard' && <MdDashboard />}
-                                                {title === 'Models' && <AiOutlineRobot />}
                                                 {title === 'Plans' && <BsClipboardCheck />}
                                                 {title === 'Requests' && <FiSend />}
                                                 {title}

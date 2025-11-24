@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import NavigationLink from "../../../NavigationLink";
 import {
     MdDashboard,
-    MdViewInAr,
     MdGroup,
     MdPayment,
     MdPerson,

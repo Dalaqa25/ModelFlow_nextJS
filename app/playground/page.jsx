@@ -29,7 +29,7 @@ export default function Playground() {
 
     if (!modelId) {
       toast.error("No model specified");
-      router.push('/modelsList');
+      router.push('/dashboard');
       return;
     }
 
@@ -51,7 +51,7 @@ export default function Playground() {
       // Check if model has a template_id
       if (!modelData.template_id) {
         toast.error("No template associated with this model");
-        router.push(`/modelsList/${modelId}`);
+        router.push('/dashboard');
         return;
       }
       
@@ -77,7 +77,7 @@ export default function Playground() {
     } catch (error) {
       console.error("Error fetching template data:", error);
       toast.error(error.message || "Failed to fetch template data");
-      router.push('/modelsList');
+      router.push('/dashboard');
     } finally {
       setLoading(false);
     }

@@ -68,7 +68,8 @@ const UploadedModels = forwardRef(function UploadedModels({ isRowLayout }, ref) 
 
 
     const handleViewModel = (modelId) => {
-        router.push(`/modelsList/${modelId}`);
+        // Model viewing functionality removed
+        console.log('View model:', modelId);
     };
 
     const handleDownloadModel = async (model) => {

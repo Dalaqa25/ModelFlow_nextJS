@@ -3,7 +3,7 @@ import NavigationLink from "../../NavigationLink";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { AiFillHome, AiOutlineRobot } from 'react-icons/ai';
+import { AiFillHome } from 'react-icons/ai';
 import { BsClipboardCheck, BsGearWideConnected } from 'react-icons/bs';
 import { FiSend } from "react-icons/fi";
 import { motion } from 'framer-motion';
@@ -17,8 +17,6 @@ export default function ModernUnauthorizedNavbar() {
     // Static nav links for unauthorized users
     const navLinks = [
         { href: '/', title: 'Home' },
-        { href: '/automations', title: 'Automations' },
-        { href: '/modelsList', title: 'Models' },
         { href: '/plans', title: 'Plans' },
         { href: '/requests', title: 'Community' }
     ];
@@ -117,10 +115,8 @@ export default function ModernUnauthorizedNavbar() {
                                         }`}
                                     >
                                         {title === 'Home' && <AiFillHome size={18} />}
-                                        {title === 'Models' && <AiOutlineRobot size={18} />}
                                         {title === 'Plans' && <BsClipboardCheck size={18} />}
                                         {title === 'Requests' && <FiSend size={18} />}
-                                        {title === 'Automations' && <BsGearWideConnected size={18} />}
                                         {title}
                                     </NavigationLink>
                                 );

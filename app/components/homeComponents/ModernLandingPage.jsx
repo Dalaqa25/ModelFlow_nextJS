@@ -98,14 +98,6 @@ export default function ModernLandingPage() {
                 {isAuthenticated ? 'Go to Dashboard' : 'Get Started'}
               </motion.button>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/modelsList')}
-                className="px-8 py-4 border border-purple-500/50 text-purple-300 font-semibold rounded-2xl hover:bg-purple-500/10 transition-all duration-300 text-base"
-              >
-                Explore Models
-              </motion.button>
             </motion.div>
 
             {/* Stats */}

@@ -20,7 +20,6 @@ function getPageName(path) {
     const pathMap = {
         '/': 'Home',
         '/dashboard': 'Dashboard',
-        '/modelsList': 'Models',
         '/plans': 'Plans',
         '/requests': 'Requests',
         '/profile': 'Profile',
