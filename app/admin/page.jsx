@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../lib/supabase-auth-context';
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function AdminPage() {
@@ -126,18 +126,18 @@ export default function AdminPage() {
 
     if (authLoading || loading) {
         return (
-            <UnifiedBackground variant="content" className="pt-16">
+            <AdaptiveBackground variant="content" className="pt-16">
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-400"></div>
                 </div>
-            </UnifiedBackground>
+            </AdaptiveBackground>
         );
     }
 
     // Show admin panel if we have successfully loaded (no redirect occurred)
     if (!authLoading && !loading) {
         return (
-            <UnifiedBackground variant="content" className="pt-16">
+            <AdaptiveBackground variant="content" className="pt-16">
                 <div className="container mx-auto p-4 pt-20">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                         <h1 className="text-2xl font-bold text-white">Admin Dashboard - Pending Models</h1>
@@ -307,7 +307,7 @@ export default function AdminPage() {
                     </div>
                 )}
                 </div>
-            </UnifiedBackground>
+            </AdaptiveBackground>
         );
     }
 

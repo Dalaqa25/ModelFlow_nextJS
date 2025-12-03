@@ -1,9 +1,9 @@
 "use client";
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 
 export default function Privacy() {
     return (
-        <UnifiedBackground variant="content" className="pt-24">
+        <AdaptiveBackground variant="content" className="pt-24">
             <div className="min-h-screen flex flex-col py-12 px-6">
                 <div className="w-[90%] sm:w-[70%] max-w-[1200px] mx-auto">
                     <div className="flex flex-col items-center text-center gap-5 mb-16">
@@ -235,6 +235,6 @@ export default function Privacy() {
                     </div>
                 </div>
             </div>
-        </UnifiedBackground>
+        </AdaptiveBackground>
     );
 }

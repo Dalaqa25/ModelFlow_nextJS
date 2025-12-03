@@ -9,7 +9,7 @@ import BasicTag from "@/app/components/plans/planTags/basicTag";
 import ProTag from "@/app/components/plans/planTags/proTag";
 import EnterpriseTag from "@/app/components/plans/planTags/enterpriseTag";
 import WithdrawConfirm from "./withdrawConfrim";
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function Profile() {
@@ -117,16 +117,16 @@ export default function Profile() {
 
     if (authLoading || loading) {
         return (
-            <UnifiedBackground variant="content" className="pt-16">
+            <AdaptiveBackground variant="content" className="pt-16">
                 <div className="flex items-center justify-center min-h-screen">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-400"></div>
                 </div>
-            </UnifiedBackground>
+            </AdaptiveBackground>
         );
     }
 
     return (
-        <UnifiedBackground variant="content" className="pt-0">
+        <AdaptiveBackground variant="content" className="pt-0">
             <div className="pt-24 pb-12 px-6">
                 {/* Desktop Layout Container */}
                 <div className="max-w-7xl mx-auto">
@@ -400,6 +400,6 @@ export default function Profile() {
                     onConfirm={handleWithdrawal}
                 />
             </div>
-        </UnifiedBackground>
+        </AdaptiveBackground>
     )
 }

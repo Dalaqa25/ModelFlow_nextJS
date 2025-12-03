@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/supabase-auth-context';
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function Playground() {
@@ -261,7 +261,7 @@ export default function Playground() {
 
   if (loading) {
     return (
-      <UnifiedBackground variant="content" className="pt-16">
+      <AdaptiveBackground variant="content" className="pt-16">
         <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
           <svg className="animate-spin h-12 w-12 text-purple-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -269,25 +269,25 @@ export default function Playground() {
           </svg>
           <span className="text-lg text-white font-semibold">Loading playground...</span>
         </div>
-      </UnifiedBackground>
+      </AdaptiveBackground>
     );
   }
 
   if (!template) {
     return (
-      <UnifiedBackground variant="content" className="pt-16">
+      <AdaptiveBackground variant="content" className="pt-16">
         <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
           </svg>
           <span className="text-lg text-red-300 font-semibold">Template not found</span>
         </div>
-      </UnifiedBackground>
+      </AdaptiveBackground>
     );
   }
 
   return (
-    <UnifiedBackground variant="content" className="pt-16">
+    <AdaptiveBackground variant="content" className="pt-16">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white mb-2">Model Playground</h1>
@@ -345,6 +345,6 @@ export default function Playground() {
           </UnifiedCard>
         </div>
       </div>
-    </UnifiedBackground>
+    </AdaptiveBackground>
   );
 }

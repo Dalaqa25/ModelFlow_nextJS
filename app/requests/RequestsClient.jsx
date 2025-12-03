@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/supabase-auth-context";
 import RequestBox from "@/app/components/requests/requestBox";
 import Request from "@/app/components/requests/request";
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 
 export default function RequestsClient() {
     const [isClicked, setIsClicked] = useState(false);
@@ -23,7 +23,7 @@ export default function RequestsClient() {
     };
 
     return (
-        <UnifiedBackground variant="content" className="pt-16">
+        <AdaptiveBackground variant="content" className="pt-16">
             <div
                 className={`fixed inset-0 bg-black z-50 transition-opacity duration-300 ${isClicked ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsClicked(false)}
@@ -66,6 +66,6 @@ export default function RequestsClient() {
                     </div>
                 </div>
             </div>
-        </UnifiedBackground>
+        </AdaptiveBackground>
     );
 }

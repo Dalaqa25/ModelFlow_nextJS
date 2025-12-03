@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useRouter } from 'next/navigation';
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 import LoginHeader from '@/app/components/auth/login/LoginHeader';
 import LoginForm from '@/app/components/auth/login/LoginForm';
@@ -50,7 +50,7 @@ export default function LoginPage() {
 
 
   return (
-    <UnifiedBackground variant="landing" showParticles={true} className="pt-8">
+    <AdaptiveBackground variant="landing" showParticles={true} className="pt-8">
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-md w-full space-y-8">
           <LoginHeader />
@@ -80,6 +80,6 @@ export default function LoginPage() {
           </UnifiedCard>
         </div>
       </div>
-    </UnifiedBackground>
+    </AdaptiveBackground>
   );
 } 

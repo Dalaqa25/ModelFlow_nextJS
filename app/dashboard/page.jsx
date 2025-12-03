@@ -10,7 +10,7 @@ import ModelUpload from '../components/model/modelupload/modelUpload';
 import AutomationUpload from '../components/model/modelupload/automation/AutomationUpload';
 import UploadTypeDialog from '../components/model/modelupload/UploadTypeDialog';
 import { useAuth } from '@/lib/supabase-auth-context';
-import UnifiedBackground from '@/app/components/shared/UnifiedBackground';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 
 export default function Dashboard() {
@@ -161,7 +161,7 @@ export default function Dashboard() {
     };
 
     return (
-        <UnifiedBackground variant="content" className="pt-16">
+        <AdaptiveBackground variant="content" className="pt-16">
             <div className="pt-10 pb-10 px-6">
                 <div className="max-w-5xl mx-auto">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
@@ -269,6 +269,6 @@ export default function Dashboard() {
                     />
                 </div>
             </div>
-        </UnifiedBackground>
+        </AdaptiveBackground>
     );
 }
