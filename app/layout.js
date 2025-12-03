@@ -4,6 +4,7 @@ import "./globals-light.css";
 import { AuthProvider } from "@/lib/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
 import NavigationLoader from "@/app/components/NavigationLoader";
+import Navbar from "@/app/components/Navbar";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
             <NavigationLoadingProvider>
               <SplashProvider>
                 <AuthProvider>
+                  <Navbar />
                   {children}
                   <NavigationLoader />
                 </AuthProvider>
