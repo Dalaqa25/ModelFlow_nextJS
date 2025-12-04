@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FiSend } from 'react-icons/fi';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
-export default function MainInput() {
+export default function MainInput({ onMessageSent }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottom, setIsAtBottom] = useState(false);
     const { isDarkMode, textColors } = useThemeAdaptive();
@@ -14,6 +14,9 @@ export default function MainInput() {
         if (inputValue.trim()) {
             console.log('Submitted:', inputValue);
             setIsAtBottom(true);
+            if (onMessageSent) {
+                onMessageSent();
+            }
             // Handle your submission logic here
         }
     };
