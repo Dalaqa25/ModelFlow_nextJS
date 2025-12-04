@@ -14,6 +14,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Hide navbar completely when auth state is loading or user is authenticated
+  if (loading || isAuthenticated) {
+    return null;
+  }
+
   return (
     <nav className="w-full fixed top-4 z-50">
       <div className="w-full flex justify-center">
