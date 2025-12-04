@@ -6,19 +6,28 @@ import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function MainInput() {
     const [inputValue, setInputValue] = useState('');
+    const [isAtBottom, setIsAtBottom] = useState(false);
     const { isDarkMode, textColors } = useThemeAdaptive();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (inputValue.trim()) {
             console.log('Submitted:', inputValue);
+            setIsAtBottom(true);
             // Handle your submission logic here
         }
     };
 
     return (
-        <div className="w-full max-w-3xl">
-            <form onSubmit={handleSubmit}>
+        <div 
+            className="fixed left-1/2 w-full max-w-3xl px-6 pointer-events-none z-50"
+            style={{
+                top: isAtBottom ? 'calc(100vh - 7rem)' : '58%',
+                transform: isAtBottom ? 'translateX(-50%)' : 'translate(-50%, -50%)',
+                transition: 'top 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+        >
+            <form onSubmit={handleSubmit} className="pointer-events-auto">
                 <div className={`flex items-center gap-3 px-6 py-5 rounded-2xl border-2 backdrop-blur-md shadow-xl transition-all ${
                     isDarkMode 
                         ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/70'

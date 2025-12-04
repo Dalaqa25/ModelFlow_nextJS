@@ -10,9 +10,9 @@ export default function Home() {
             <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
                 <div className="w-full flex flex-col items-center gap-3">
                     <Greetings />
-                    <MainInput />
                 </div>
             </div>
+            <MainInput />
         </AdaptiveBackground>
     );
 }
