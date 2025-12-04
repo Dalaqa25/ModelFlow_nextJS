@@ -25,7 +25,8 @@ export default function Greetings() {
         staleTime: 5 * 60 * 1000,
     });
 
-    const userName = userData?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there';
+    const fullName = userData?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there';
+    const userName = fullName.split(' ')[0]; // Get only first name
 
     const handleUpgrade = () => {
         router.push('/plans');

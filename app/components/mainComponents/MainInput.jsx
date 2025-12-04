@@ -12,11 +12,13 @@ export default function MainInput({ onMessageSent }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (inputValue.trim()) {
-            console.log('Submitted:', inputValue);
+            const message = inputValue.trim();
+            console.log('Submitted:', message);
             setIsAtBottom(true);
             if (onMessageSent) {
-                onMessageSent();
+                onMessageSent(message);
             }
+            setInputValue(''); // Clear input after sending
             // Handle your submission logic here
         }
     };
