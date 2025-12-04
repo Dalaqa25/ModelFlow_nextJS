@@ -10,7 +10,7 @@ export default function Home() {
     const [hasStartedChat, setHasStartedChat] = useState(false);
     const [pendingMessage, setPendingMessage] = useState(null);
     const chatRef = useRef(null);
-
+    const [isScoped, setIsScoped] = useState(false);
     const handleMessageSent = (message) => {
         if (!hasStartedChat) {
             setHasStartedChat(true);
@@ -33,6 +33,18 @@ export default function Home() {
 
     return (
         <AdaptiveBackground variant="content" className="pt-16">
+            {/* Full-page sniper-scope style overlay */}
+            <div
+                className={`
+                    fixed inset-0 z-40 pointer-events-none
+                    transition-opacity duration-300
+                    ${isScoped ? 'opacity-60' : 'opacity-0'}
+                `}
+            >
+                {/* Radial vignette: big clear center, very soft dark corners */}
+                <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_80%,rgba(0,0,0,0.35)_100%)] backdrop-blur-[1px]" />
+            </div>
+
             <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
                 {!hasStartedChat ? (
                     <div className="w-full flex flex-col items-center gap-3 -mt-15">
@@ -46,7 +58,10 @@ export default function Home() {
                     </div>
                 )}
             </div>
-            <MainInput onMessageSent={handleMessageSent} />
+            <MainInput
+                onMessageSent={handleMessageSent}
+                onScopeChange={setIsScoped}
+            />
         </AdaptiveBackground>
     );
 }

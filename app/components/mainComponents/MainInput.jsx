@@ -4,10 +4,18 @@ import { useState } from 'react';
 import { FiSend } from 'react-icons/fi';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
-export default function MainInput({ onMessageSent }) {
+export default function MainInput({ onMessageSent, onScopeChange }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottom, setIsAtBottom] = useState(false);
     const { isDarkMode, textColors } = useThemeAdaptive();
+
+    const handleScopeOn = () => {
+        if (onScopeChange) onScopeChange(true);
+    };
+
+    const handleScopeOff = () => {
+        if (onScopeChange) onScopeChange(false);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -32,7 +40,14 @@ export default function MainInput({ onMessageSent }) {
                 transition: 'top 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
         >
-            <form onSubmit={handleSubmit} className="pointer-events-auto">
+            <form
+                onSubmit={handleSubmit}
+                className="pointer-events-auto"
+                onMouseEnter={handleScopeOn}
+                onMouseLeave={handleScopeOff}
+                onFocus={handleScopeOn}
+                onBlur={handleScopeOff}
+            >
                 <div className={`flex items-center gap-3 px-6 py-5 rounded-2xl border-2 backdrop-blur-md shadow-xl transition-all ${
                     isDarkMode 
                         ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/70'
