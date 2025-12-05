@@ -11,6 +11,7 @@ export default function Home() {
     const [pendingMessage, setPendingMessage] = useState(null);
     const chatRef = useRef(null);
     const [isScoped, setIsScoped] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const handleMessageSent = (message) => {
         if (!hasStartedChat) {
             setHasStartedChat(true);
@@ -30,6 +31,16 @@ export default function Home() {
             setPendingMessage(null);
         }
     }, [hasStartedChat, pendingMessage]);
+
+    const handleLoadingChange = (loading) => {
+        setIsLoading(loading);
+    };
+
+    const handleStopGeneration = () => {
+        if (chatRef.current) {
+            chatRef.current.stopGeneration();
+        }
+    };
 
     return (
         <AdaptiveBackground variant="content" className="pt-16">
@@ -53,7 +64,7 @@ export default function Home() {
                 ) : (
                     <div className="w-full h-full flex items-start justify-center pt-8">
                         <div className="w-full max-w-3xl">
-                            <AiChat ref={chatRef} />
+                            <AiChat ref={chatRef} onLoadingChange={handleLoadingChange} />
                         </div>
                     </div>
                 )}
@@ -61,6 +72,8 @@ export default function Home() {
             <MainInput
                 onMessageSent={handleMessageSent}
                 onScopeChange={setIsScoped}
+                isLoading={isLoading}
+                onStopGeneration={handleStopGeneration}
             />
         </AdaptiveBackground>
     );

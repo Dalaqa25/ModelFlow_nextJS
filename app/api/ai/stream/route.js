@@ -1,130 +1,79 @@
+import OpenAI from "openai";
+import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth-utils';
-import { generateStreamingCompletion } from '@/lib/openrouter';
+
+const client = new OpenAI({
+  baseURL: "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_TOKEN,
+});
 
 export async function POST(request) {
   try {
     // Authenticate user
     const user = await getSupabaseUser();
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }), 
-        { 
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { 
-      prompt, 
-      systemPrompt, 
-      model, 
-      temperature = 0.7, 
-      maxTokens = 1000 
-    } = body;
-
-    if (!prompt) {
-      return new Response(
-        JSON.stringify({ error: 'Prompt is required' }), 
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    const { prompt, messages, temperature = 0.7 } = body;
 
     // Build messages array
-    const messages = [];
-    
-    if (systemPrompt) {
-      messages.push({
-        role: 'system',
-        content: systemPrompt,
-      });
-    }
-
-    messages.push({
-      role: 'user',
-      content: prompt,
-    });
-
-    console.log(`🎥 Starting streaming for user: ${user.email}`);
-
-    // Get streaming response with automatic fallback
-    const result = await generateStreamingCompletion({
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-      preferredModel: model,
-      useFreeModels: true,
-    });
-
-    if (!result.success) {
-      console.error('Streaming failed:', result.error);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to start streaming',
-          message: result.error 
-        }), 
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
+    let chatMessages;
+    if (messages && Array.isArray(messages)) {
+      chatMessages = messages;
+    } else if (prompt) {
+      chatMessages = [
+        { role: "system", content: "You are a helpful AI assistant." },
+        { role: "user", content: prompt }
+      ];
+    } else {
+      return NextResponse.json(
+        { error: "Either 'prompt' or 'messages' is required" },
+        { status: 400 }
       );
     }
 
-    console.log(`✅ Streaming started with model: ${result.model}`);
+    const response = await client.chat.completions.create({
+      messages: chatMessages,
+      model: "gpt-4o",
+      temperature,
+      stream: true,
+    });
 
-    // Create a readable stream
+    // Create streaming response
     const encoder = new TextEncoder();
-    const readable = new ReadableStream({
+    const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of result.stream) {
+          for await (const chunk of response) {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
-              // Send as Server-Sent Events format
-              const data = JSON.stringify({ 
-                content,
-                model: result.model,
-              });
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+              const data = `data: ${JSON.stringify({ content })}\n\n`;
+              controller.enqueue(encoder.encode(data));
             }
           }
-          
-          // Send done signal
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
-          
-          console.log(`✅ Streaming completed for user: ${user.email}`);
         } catch (error) {
-          console.error('Streaming error:', error);
+          console.error('Stream error:', error);
           controller.error(error);
         }
       },
     });
 
-    return new Response(readable, {
+    return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
       },
     });
-
   } catch (error) {
-    console.error('Stream initialization error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        message: error.message 
-      }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+    console.error("AI stream error:", error);
+    return NextResponse.json(
+      { error: "Failed to process chat request", message: error.message },
+      { status: 500 }
     );
   }
 }
-

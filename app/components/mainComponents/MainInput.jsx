@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { FiSend } from 'react-icons/fi';
+import { FiSend, FiSquare } from 'react-icons/fi';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
-export default function MainInput({ onMessageSent, onScopeChange }) {
+export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottom, setIsAtBottom] = useState(false);
     const { isDarkMode, textColors } = useThemeAdaptive();
@@ -62,21 +62,31 @@ export default function MainInput({ onMessageSent, onScopeChange }) {
                             isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                         }`}
                     />
-                    <button
-                        type="submit"
-                        disabled={!inputValue.trim()}
-                        className={`
-                            flex items-center justify-center p-2.5 rounded-2xl transition-all
-                            ${inputValue.trim()
-                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
-                                : isDarkMode 
-                                    ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                    : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
-                            }
-                        `}
-                    >
-                        <FiSend className="w-5 h-5" />
-                    </button>
+                    {isLoading ? (
+                        <button
+                            type="button"
+                            onClick={onStopGeneration}
+                            className="flex items-center justify-center p-2.5 rounded-2xl transition-all bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/30 hover:scale-105"
+                        >
+                            <FiSquare className="w-5 h-5" />
+                        </button>
+                    ) : (
+                        <button
+                            type="submit"
+                            disabled={!inputValue.trim()}
+                            className={`
+                                flex items-center justify-center p-2.5 rounded-2xl transition-all
+                                ${inputValue.trim()
+                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
+                                }
+                            `}
+                        >
+                            <FiSend className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </form>
         </div>
