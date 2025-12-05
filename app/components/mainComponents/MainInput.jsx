@@ -48,7 +48,7 @@ export default function MainInput({ onMessageSent, onScopeChange }) {
                 onFocus={handleScopeOn}
                 onBlur={handleScopeOff}
             >
-                <div className={`flex items-center gap-3 px-6 py-5 rounded-2xl border-2 backdrop-blur-md shadow-xl transition-all ${
+                <div className={`flex items-center gap-3 px-6 py-5 rounded-4xl border-2 backdrop-blur-md shadow-xl transition-all ${
                     isDarkMode 
                         ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/70'
                         : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60 focus-within:border-purple-500/80'
@@ -66,7 +66,7 @@ export default function MainInput({ onMessageSent, onScopeChange }) {
                         type="submit"
                         disabled={!inputValue.trim()}
                         className={`
-                            flex items-center justify-center p-2.5 rounded-xl transition-all
+                            flex items-center justify-center p-2.5 rounded-2xl transition-all
                             ${inputValue.trim()
                                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
                                 : isDarkMode 

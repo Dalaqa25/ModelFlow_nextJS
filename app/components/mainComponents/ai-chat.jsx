@@ -165,7 +165,7 @@ const AiChat = forwardRef((props, ref) => {
                         <div
                             className={`max-w-[70%] ${
                                 message.role === 'user'
-                                    ? `rounded-2xl px-5 py-3 ${
+                                    ? `rounded-4xl px-3 py-2 ${
                                         isDarkMode
                                             ? 'bg-purple-600 text-white'
                                             : 'bg-purple-500 text-white'
