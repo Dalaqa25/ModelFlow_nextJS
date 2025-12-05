@@ -7,6 +7,7 @@ import Image from 'next/image';
 const AiChat = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [currentAiMessageId, setCurrentAiMessageId] = useState(null);
     const messagesEndRef = useRef(null);
     const { isDarkMode, textColors } = useThemeAdaptive();
 
@@ -43,8 +44,8 @@ const AiChat = forwardRef((props, ref) => {
             content: '',
             timestamp: new Date().toISOString(),
         };
-
         setMessages(prev => [...prev, aiMessage]);
+        setCurrentAiMessageId(aiMessageId);
 
         try {
             const response = await fetch('/api/ai/stream', {
@@ -84,6 +85,7 @@ const AiChat = forwardRef((props, ref) => {
                         
                         if (data === '[DONE]') {
                             setIsLoading(false);
+                            setCurrentAiMessageId(null);
                             break;
                         }
 
@@ -116,6 +118,7 @@ const AiChat = forwardRef((props, ref) => {
             );
         } finally {
             setIsLoading(false);
+            setCurrentAiMessageId(null);
         }
     };
 
@@ -136,57 +139,63 @@ const AiChat = forwardRef((props, ref) => {
                     paddingBottom: '2rem'
                 }}
             >
-                {messages.map((message, index) => (
+                {messages.map((message, index) => {
+                    // Don't render empty assistant messages except the one currently streaming
+                    const isCurrentStreamingAssistant =
+                        message.role === 'assistant' &&
+                        isLoading &&
+                        message.id === currentAiMessageId;
+
+                    if (
+                        message.role === 'assistant' &&
+                        !isCurrentStreamingAssistant &&
+                        (!message.content || message.content.trim() === '')
+                    ) {
+                        return null;
+                    }
+
+                    return (
                     <div
                         key={index}
                         className={`flex gap-4 ${
                             message.role === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                     >
-                        {message.role === 'assistant' && (
-                            <div className="flex-shrink-0">
-                                <Image
-                                    src="/logo.png"
-                                    alt="AI"
-                                    width={36}
-                                    height={36}
-                                    className="rounded-lg"
-                                />
-                            </div>
-                        )}
-                        
+                        {/* No avatar for assistant anymore */}
                         <div
-                            className={`max-w-[70%] rounded-2xl px-5 py-3 ${
+                            className={`max-w-[70%] ${
                                 message.role === 'user'
-                                    ? isDarkMode
-                                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
-                                        : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white'
+                                    ? `rounded-2xl px-5 py-3 ${
+                                        isDarkMode
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-purple-500 text-white'
+                                      }`
                                     : isDarkMode
-                                        ? 'bg-slate-800/90 border border-slate-700/50 text-gray-100'
-                                        : 'bg-white/90 border border-gray-200 text-gray-900'
+                                        ? 'text-gray-100'
+                                        : 'text-gray-900'
                             }`}
                         >
                             <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
                                 {message.content}
-                                {message.role === 'assistant' && isLoading && message.content === '' && (
-                                    <span className="inline-flex gap-1">
-                                        <span className="animate-bounce">●</span>
-                                        <span className="animate-bounce" style={{ animationDelay: '0.1s' }}>●</span>
-                                        <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>●</span>
-                                    </span>
-                                )}
+                                {message.role === 'assistant' &&
+                                    isCurrentStreamingAssistant &&
+                                    message.content === '' && (
+                                        <span className="inline-flex items-center justify-center mt-1">
+                                            <Image
+                                                src="/logo.png"
+                                                alt="AI thinking"
+                                                width={28}
+                                                height={28}
+                                                className="animate-spin"
+                                            />
+                                        </span>
+                                    )}
                             </p>
                         </div>
 
-                        {message.role === 'user' && (
-                            <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold ${
-                                isDarkMode ? 'bg-purple-600' : 'bg-purple-500'
-                            }`}>
-                                U
-                            </div>
-                        )}
+                        {/* No avatar for user anymore */}
                     </div>
-                ))}
+                )})}
                 <div ref={messagesEndRef} />
             </div>
         </div>

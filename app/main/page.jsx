@@ -38,11 +38,11 @@ export default function Home() {
                 className={`
                     fixed inset-0 z-40 pointer-events-none
                     transition-opacity duration-300
-                    ${isScoped ? 'opacity-60' : 'opacity-0'}
+                    ${isScoped ? 'opacity-62' : 'opacity-0'}
                 `}
             >
-                {/* Radial vignette: big clear center, very soft dark corners */}
-                <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_80%,rgba(0,0,0,0.35)_100%)] backdrop-blur-[1px]" />
+                {/* Radial vignette: big clear center, extra soft dark corners */}
+                <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_82%,rgba(0,0,0,0.22)_100%)] backdrop-blur-[1px]" />
             </div>
 
             <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
@@ -52,7 +52,7 @@ export default function Home() {
                     </div>
                 ) : (
                     <div className="w-full h-full flex items-start justify-center pt-8">
-                        <div className="w-full max-w-4xl">
+                        <div className="w-full max-w-3xl">
                             <AiChat ref={chatRef} />
                         </div>
                     </div>

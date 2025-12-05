@@ -57,7 +57,7 @@ export default function MainInput({ onMessageSent, onScopeChange }) {
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Type your message..."
+                        placeholder="I want model to..."
                         className={`flex-1 bg-transparent outline-none text-base font-normal ${
                             isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                         }`}
