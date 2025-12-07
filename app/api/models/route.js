@@ -2,6 +2,7 @@ import { modelDB, userDB } from "@/lib/db/supabase-db";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth-utils';
 import { getVariantIdForPrice } from "@/lib/lemon/server";
+import { generateEmbedding } from '@/lib/embeddings';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,6 +114,17 @@ export async function POST(req) {
     const taskType = formData.get('task_type');
     const validationReason = formData.get('validation_reason');
 
+    // Generate embedding from name + description
+    const embeddingText = `${formData.get('name')} ${formData.get('description')}`;
+    let embedding = null;
+    
+    try {
+      embedding = await generateEmbedding(embeddingText);
+    } catch (embeddingError) {
+      console.error('Failed to generate embedding:', embeddingError);
+      // Continue without embedding - it's not critical for upload
+    }
+
     const modelData = {
         name: formData.get('name'),
         description: formData.get('description'),
@@ -130,7 +142,8 @@ export async function POST(req) {
         file_storage: fileStorage,
         framework: framework, // New column
         task_type: taskType, // New column
-        validation_reason: validationReason // New column
+        validation_reason: validationReason, // New column
+        embedding: embedding // Add embedding vector
     };
 
     const model = await modelDB.createModel(modelData);

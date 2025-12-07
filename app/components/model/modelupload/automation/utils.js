@@ -4,9 +4,8 @@ const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const MAX_JSON_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 
 const STEP_FIELD_MAP = {
-    1: ['automationName', 'description', 'videoLink'],
-    2: ['imageFile', 'price'],
-    3: ['jsonFile']
+    1: ['automationName', 'description', 'price'],
+    2: ['jsonFile']
 };
 
 const isValidUrl = (value) => {
@@ -52,21 +51,12 @@ export const validateAutomationStep = (step, formData) => {
         if (!formData.description?.trim()) {
             errors.description = 'Description is required';
         }
-        if (formData.videoLink?.trim() && !isValidUrl(formData.videoLink.trim())) {
-            errors.videoLink = 'Please provide a valid URL';
-        }
-    }
-
-    if (step === 2) {
-        const imageError = validateImageFile(formData.imageFile);
-        if (imageError) errors.imageFile = imageError;
-
         if (!formData.price || Number(formData.price) <= 0) {
             errors.price = 'Please choose a price tier';
         }
     }
 
-    if (step === 3) {
+    if (step === 2) {
         const jsonError = validateJsonFile(formData.jsonFile);
         if (jsonError) errors.jsonFile = jsonError;
     }
@@ -76,7 +66,7 @@ export const validateAutomationStep = (step, formData) => {
 
 export const validateAutomationForm = (formData) => {
     const combinedErrors = {};
-    [1, 2, 3].forEach((step) => {
+    [1, 2].forEach((step) => {
         const stepErrors = validateAutomationStep(step, formData);
         Object.assign(combinedErrors, stepErrors);
     });

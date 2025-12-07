@@ -22,10 +22,7 @@ import {
 const INITIAL_FORM_STATE = {
     automationName: '',
     description: '',
-    videoLink: '',
     price: PRICE_TIERS[0].value,
-    imageFile: null,
-    imagePreview: '',
     jsonFile: null
 };
 
@@ -35,14 +32,12 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { step, stepDirection, handleNext, handleBack, resetStepper } = useStepper();
-    const imageInputRef = useRef(null);
     const jsonInputRef = useRef(null);
 
     const stepTitles = useMemo(
         () => ({
             1: 'Automation Basics',
-            2: 'Media & Pricing',
-            3: 'n8n JSON Upload'
+            2: 'n8n JSON Upload'
         }),
         []
     );
@@ -55,14 +50,10 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     }, [isOpen]);
 
     const resetForm = () => {
-        if (formData.imagePreview) {
-            URL.revokeObjectURL(formData.imagePreview);
-        }
         setFormData(INITIAL_FORM_STATE);
         setErrors({});
         setIsSubmitting(false);
         resetStepper();
-        if (imageInputRef.current) imageInputRef.current.value = '';
         if (jsonInputRef.current) jsonInputRef.current.value = '';
     };
 
@@ -83,34 +74,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const handlePriceChange = (price) => {
         setFormData((prev) => ({ ...prev, price }));
         if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
-    };
-
-    const handleImageSelect = (file) => {
-        const validationMessage = validateImageFile(file);
-        if (validationMessage) {
-            setErrors((prev) => ({ ...prev, imageFile: validationMessage }));
-            return;
-        }
-
-        if (formData.imagePreview) {
-            URL.revokeObjectURL(formData.imagePreview);
-        }
-
-        const preview = URL.createObjectURL(file);
-        setFormData((prev) => ({
-            ...prev,
-            imageFile: file,
-            imagePreview: preview
-        }));
-        setErrors((prev) => ({ ...prev, imageFile: '' }));
-    };
-
-    const handleRemoveImage = () => {
-        if (formData.imagePreview) {
-            URL.revokeObjectURL(formData.imagePreview);
-        }
-        setFormData((prev) => ({ ...prev, imageFile: null, imagePreview: '' }));
-        if (imageInputRef.current) imageInputRef.current.value = '';
     };
 
     const handleJsonSelect = (file) => {
@@ -147,23 +110,25 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
 
         setIsSubmitting(true);
         try {
-            // Placeholder submission logic
             const payload = new FormData();
             payload.append('name', formData.automationName.trim());
             payload.append('description', formData.description.trim());
             payload.append('price', formData.price);
-            payload.append('videoLink', formData.videoLink.trim());
-            if (formData.imageFile) payload.append('image', formData.imageFile);
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
 
-            // TODO: Replace with real endpoint once backend is ready
-            await new Promise((resolve) => setTimeout(resolve, 1200));
-
-            toast.success('Automation upload saved!');
-            onUploadSuccess?.({
-                name: formData.automationName,
-                price: formData.price
+            const response = await fetch('/api/automations', {
+                method: 'POST',
+                body: payload,
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to upload automation');
+            }
+
+            const result = await response.json();
+            toast.success('Automation uploaded successfully!');
+            onUploadSuccess?.(result);
             handleDialogClose();
         } catch (error) {
             console.error('Automation upload failed:', error);
@@ -237,22 +202,10 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 errors={errors}
                                                 handleInputChange={handleInputChange}
                                                 handleNext={handleNextWithValidation}
+                                                onPriceChange={handlePriceChange}
                                             />
                                         )}
                                         {step === 2 && (
-                                            <AutomationStep2MediaPricing
-                                                formData={formData}
-                                                errors={errors}
-                                                handleBack={handleBack}
-                                                handleNext={handleNextWithValidation}
-                                                onPriceChange={handlePriceChange}
-                                                onImageSelect={handleImageSelect}
-                                                onRemoveImage={handleRemoveImage}
-                                                imageInputRef={imageInputRef}
-                                                isSubmitting={isSubmitting}
-                                            />
-                                        )}
-                                        {step === 3 && (
                                             <AutomationStep3JsonUpload
                                                 formData={formData}
                                                 errors={errors}

@@ -1,6 +1,7 @@
 import { ErrorMessage } from '../../shared/components';
+import { PRICE_TIERS } from '../../shared/constants';
 
-export default function AutomationStep1BasicInfo({ formData, errors, handleInputChange, handleNext }) {
+export default function AutomationStep1BasicInfo({ formData, errors, handleInputChange, handleNext, onPriceChange }) {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
@@ -38,20 +39,26 @@ export default function AutomationStep1BasicInfo({ formData, errors, handleInput
             </div>
 
             <div className="flex flex-col gap-2">
-                <label htmlFor="videoLink" className="text-sm font-semibold text-slate-200">
-                    Demo Video URL <span className="text-slate-400 font-normal">(optional)</span>
+                <label className="text-sm font-semibold text-slate-200">
+                    Price
                 </label>
-                <input
-                    id="videoLink"
-                    type="url"
-                    value={formData.videoLink}
-                    onChange={handleInputChange}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    className={`px-4 py-3 rounded-xl bg-slate-800/60 border ${
-                        errors.videoLink ? 'border-red-500 focus:ring-red-500' : 'border-slate-600/60 focus:ring-purple-500'
-                    } text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition`}
-                />
-                <ErrorMessage error={errors.videoLink} />
+                <div className="grid grid-cols-3 gap-3">
+                    {PRICE_TIERS.map((tier) => (
+                        <button
+                            key={tier.value}
+                            type="button"
+                            onClick={() => onPriceChange(tier.value)}
+                            className={`px-4 py-3 rounded-xl border-2 transition ${
+                                formData.price === tier.value
+                                    ? 'border-purple-500 bg-purple-500/20 text-white'
+                                    : 'border-slate-600/60 bg-slate-800/40 text-slate-300 hover:border-slate-500'
+                            }`}
+                        >
+                            <div className="text-lg font-bold">{tier.label}</div>
+                        </button>
+                    ))}
+                </div>
+                <ErrorMessage error={errors.price} />
             </div>
 
             <div className="flex justify-end pt-2">
