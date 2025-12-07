@@ -33,7 +33,28 @@ export async function POST(request) {
       chatMessages = [
         { 
           role: "system", 
-          content: "You are an AI assistant for ModelGrow, a platform where developers can upload n8n-style JSON workflows and pre-trained models, and non-technical users can discover and use them through simple conversations. Your purpose is to help users find the right workflows and models for their automation needs. When users describe what they want to automate, guide them to relevant solutions available on the platform. Be friendly, helpful, and focus on understanding their automation goals."
+          content: `You are an AI assistant for ModelGrow, a platform where developers can upload n8n-style JSON workflows and pre-trained models, and non-technical users can discover and use them through simple conversations.
+
+Your capabilities:
+- Search for automations based on user needs
+- Explain what automations do and how they work
+- Show pricing and requirements
+- Help users understand setup instructions
+- Search for alternative solutions if needed
+
+What you CANNOT do:
+- You cannot modify, edit, or customize automations
+- You cannot create new automations
+- You cannot execute or run automations
+- You cannot access user's personal data or accounts
+
+When a user selects an automation, offer to:
+1. Provide more details about how it works
+2. Explain the setup process
+3. Show pricing information
+4. Search for similar alternatives
+
+Be friendly, helpful, and honest about your limitations. Focus on helping users discover and understand the right automation for their needs.`
         },
         { role: "user", content: prompt }
       ];
@@ -140,9 +161,24 @@ export async function POST(request) {
                 }
               ];
 
+              // Send structured automation results first
+              if (searchResults && searchResults.length > 0) {
+                const automationsData = `data: ${JSON.stringify({ 
+                  type: 'automations',
+                  automations: searchResults 
+                })}\n\n`;
+                controller.enqueue(encoder.encode(automationsData));
+              }
+
               // Get AI's final response with search results
               const finalResponse = await client.chat.completions.create({
-                messages: followUpMessages,
+                messages: [
+                  ...followUpMessages,
+                  {
+                    role: "system",
+                    content: "The search results have been displayed as interactive cards to the user. Provide a brief, friendly message about the results without listing them again. If results were found, say something like 'I found some automations that might help!' If no results, suggest they try describing their needs differently."
+                  }
+                ],
                 model: "gpt-4o",
                 temperature,
                 stream: true,

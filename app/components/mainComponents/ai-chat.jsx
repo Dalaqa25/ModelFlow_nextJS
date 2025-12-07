@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 import Image from 'next/image';
+import AutomationCard from './AutomationCard';
 
 const AiChat = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([]);
@@ -47,6 +48,7 @@ const AiChat = forwardRef((props, ref) => {
             id: aiMessageId,
             role: 'assistant',
             content: '',
+            automations: null,
             timestamp: new Date().toISOString(),
         };
         setMessages(prev => [...prev, aiMessage]);
@@ -179,7 +181,19 @@ const AiChat = forwardRef((props, ref) => {
 
                         try {
                             const parsed = JSON.parse(data);
-                            if (parsed.content) {
+                            
+                            // Handle automation results
+                            if (parsed.type === 'automations' && parsed.automations) {
+                                setMessages(prev => 
+                                    prev.map(msg => 
+                                        msg.id === aiMessageId
+                                            ? { ...msg, automations: parsed.automations }
+                                            : msg
+                                    )
+                                );
+                            }
+                            // Handle regular content
+                            else if (parsed.content) {
                                 setMessages(prev => 
                                     prev.map(msg => 
                                         msg.id === aiMessageId
@@ -238,6 +252,11 @@ const AiChat = forwardRef((props, ref) => {
         setCurrentAiMessageId(null);
     };
 
+    const handleAutomationSelect = (automation) => {
+        const selectionMessage = `I want to use "${automation.name}" (ID: ${automation.id})`;
+        handleSendMessage(selectionMessage);
+    };
+
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
         handleNewMessage: (messageText) => {
@@ -275,45 +294,56 @@ const AiChat = forwardRef((props, ref) => {
                     }
 
                     return (
-                    <div
-                        key={index}
-                        className={`flex gap-4 ${
-                            message.role === 'user' ? 'justify-end' : 'justify-start'
-                        }`}
-                    >
-                        {/* No avatar for assistant anymore */}
+                    <div key={index} className="w-full">
                         <div
-                            className={`max-w-[70%] ${
-                                message.role === 'user'
-                                    ? `rounded-4xl px-3 py-2 ${
-                                        isDarkMode
-                                            ? 'bg-purple-600 text-white'
-                                            : 'bg-purple-500 text-white'
-                                      }`
-                                    : isDarkMode
-                                        ? 'text-gray-100'
-                                        : 'text-gray-900'
+                            className={`flex gap-4 ${
+                                message.role === 'user' ? 'justify-end' : 'justify-start'
                             }`}
                         >
-                            <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-                                {message.content}
-                                {message.role === 'assistant' &&
-                                    isCurrentStreamingAssistant &&
-                                    message.content === '' && (
-                                        <span className="inline-flex items-center justify-center mt-1">
-                                            <Image
-                                                src="/logo.png"
-                                                alt="AI thinking"
-                                                width={28}
-                                                height={28}
-                                                className="animate-spin"
-                                            />
-                                        </span>
-                                    )}
-                            </p>
+                            <div
+                                className={`max-w-[70%] ${
+                                    message.role === 'user'
+                                        ? `rounded-4xl px-3 py-2 ${
+                                            isDarkMode
+                                                ? 'bg-purple-600 text-white'
+                                                : 'bg-purple-500 text-white'
+                                          }`
+                                        : isDarkMode
+                                            ? 'text-gray-100'
+                                            : 'text-gray-900'
+                                }`}
+                            >
+                                <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                                    {message.content}
+                                    {message.role === 'assistant' &&
+                                        isCurrentStreamingAssistant &&
+                                        message.content === '' && (
+                                            <span className="inline-flex items-center justify-center mt-1">
+                                                <Image
+                                                    src="/logo.png"
+                                                    alt="AI thinking"
+                                                    width={28}
+                                                    height={28}
+                                                    className="animate-spin"
+                                                />
+                                            </span>
+                                        )}
+                                </p>
+                            </div>
                         </div>
 
-                        {/* No avatar for user anymore */}
+                        {/* Render automation cards if present */}
+                        {message.automations && message.automations.length > 0 && (
+                            <div className="mt-4 space-y-3 max-w-[85%]">
+                                {message.automations.map((automation) => (
+                                    <AutomationCard
+                                        key={automation.id}
+                                        automation={automation}
+                                        onSelect={handleAutomationSelect}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )})}
                 <div ref={messagesEndRef} />
