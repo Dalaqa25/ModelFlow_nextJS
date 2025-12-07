@@ -1,6 +1,13 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth-utils';
+import { createClient } from '@supabase/supabase-js';
+import { generateEmbedding } from '@/lib/embeddings';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const client = new OpenAI({
   baseURL: "https://models.github.ai/inference",
@@ -37,10 +44,33 @@ export async function POST(request) {
       );
     }
 
+    // Define tools available to AI
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "search_automations",
+          description: "Search for automations and workflows in the database when the user clearly describes what they want to automate. Only call this when you have enough information about their automation needs (e.g., 'email automation', 'social media posting', 'data sync between apps').",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "The user's automation requirement or description of what they want to automate"
+              }
+            },
+            required: ["query"]
+          }
+        }
+      }
+    ];
+
     const response = await client.chat.completions.create({
       messages: chatMessages,
       model: "gpt-4o",
       temperature,
+      tools,
+      tool_choice: "auto",
       stream: true,
     });
 
@@ -49,13 +79,90 @@ export async function POST(request) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          let functionCallData = { name: '', arguments: '' };
+          let isFunctionCall = false;
+
           for await (const chunk of response) {
-            const content = chunk.choices[0]?.delta?.content || '';
+            const delta = chunk.choices[0]?.delta;
+            
+            // Check if AI is calling a function
+            if (delta?.tool_calls) {
+              isFunctionCall = true;
+              const toolCall = delta.tool_calls[0];
+              
+              if (toolCall?.function?.name) {
+                functionCallData.name = toolCall.function.name;
+              }
+              if (toolCall?.function?.arguments) {
+                functionCallData.arguments += toolCall.function.arguments;
+              }
+            }
+            
+            // Regular content streaming
+            const content = delta?.content || '';
             if (content) {
               const data = `data: ${JSON.stringify({ content })}\n\n`;
               controller.enqueue(encoder.encode(data));
             }
           }
+
+          // If AI called a function, execute it
+          if (isFunctionCall && functionCallData.name === 'search_automations') {
+            try {
+              const args = JSON.parse(functionCallData.arguments);
+              
+              // Execute search
+              const queryEmbedding = await generateEmbedding(args.query);
+              const { data: searchResults } = await supabase.rpc('search_automations', {
+                query_embedding: queryEmbedding,
+                match_limit: 5
+              });
+
+              // Send search results back to AI
+              const followUpMessages = [
+                ...chatMessages,
+                {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: [{
+                    id: "call_search",
+                    type: "function",
+                    function: {
+                      name: "search_automations",
+                      arguments: JSON.stringify(args)
+                    }
+                  }]
+                },
+                {
+                  role: "tool",
+                  tool_call_id: "call_search",
+                  content: JSON.stringify(searchResults || [])
+                }
+              ];
+
+              // Get AI's final response with search results
+              const finalResponse = await client.chat.completions.create({
+                messages: followUpMessages,
+                model: "gpt-4o",
+                temperature,
+                stream: true,
+              });
+
+              // Stream the final response
+              for await (const chunk of finalResponse) {
+                const content = chunk.choices[0]?.delta?.content || '';
+                if (content) {
+                  const data = `data: ${JSON.stringify({ content })}\n\n`;
+                  controller.enqueue(encoder.encode(data));
+                }
+              }
+            } catch (searchError) {
+              console.error('Function call error:', searchError);
+              const errorMsg = '\n\nSorry, I encountered an error while searching for automations.';
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
+            }
+          }
+
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {

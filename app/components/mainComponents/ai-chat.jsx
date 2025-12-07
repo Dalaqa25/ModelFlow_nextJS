@@ -6,12 +6,13 @@ import Image from 'next/image';
 
 const AiChat = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([]);
+    const [conversationSummary, setConversationSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [currentAiMessageId, setCurrentAiMessageId] = useState(null);
     const messagesEndRef = useRef(null);
     const abortControllerRef = useRef(null);
     const readerRef = useRef(null);
-    const { isDarkMode, textColors } = useThemeAdaptive();
+    const { isDarkMode } = useThemeAdaptive();
     const { onLoadingChange } = props;
 
     const scrollToBottom = () => {
@@ -56,6 +57,82 @@ const AiChat = forwardRef((props, ref) => {
         abortControllerRef.current = abortController;
 
         try {
+            // Build conversation history (exclude the empty AI message we just added)
+            let conversationHistory = messages
+                .filter(msg => msg.content && msg.content.trim() !== '')
+                .map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                }));
+            
+            // Add current user message
+            conversationHistory.push({
+                role: 'user',
+                content: messageText
+            });
+
+            // Check if we need to summarize (every 10 messages)
+            if (conversationHistory.length >= 10 && conversationHistory.length % 10 === 0) {
+                try {
+                    // Summarize the conversation
+                    const summaryResponse = await fetch('/api/ai/stream', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: 'Summarize this conversation in 2-3 sentences, focusing on what the user is looking for and key points discussed.'
+                                },
+                                ...conversationHistory.slice(0, -5) // Summarize older messages
+                            ],
+                            temperature: 0.3,
+                        }),
+                    });
+
+                    if (summaryResponse.ok) {
+                        const reader = summaryResponse.body.getReader();
+                        const decoder = new TextDecoder();
+                        let summary = '';
+                        
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            
+                            const chunk = decoder.decode(value);
+                            const lines = chunk.split('\n');
+                            
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    const data = line.slice(6);
+                                    if (data !== '[DONE]') {
+                                        try {
+                                            const parsed = JSON.parse(data);
+                                            if (parsed.content) summary += parsed.content;
+                                        } catch (e) {}
+                                    }
+                                }
+                            }
+                        }
+                        
+                        setConversationSummary(summary);
+                    }
+                } catch (e) {
+                    console.error('Summarization error:', e);
+                }
+            }
+
+            // Keep only last 15 messages + summary if exists
+            if (conversationHistory.length > 15) {
+                conversationHistory = conversationSummary 
+                    ? [
+                        { role: 'system', content: `Previous conversation summary: ${conversationSummary}` },
+                        ...conversationHistory.slice(-15)
+                      ]
+                    : conversationHistory.slice(-15);
+            }
+
             const response = await fetch('/api/ai/stream', {
                 method: 'POST',
                 headers: {
@@ -64,7 +141,7 @@ const AiChat = forwardRef((props, ref) => {
                 credentials: 'include',
                 signal: abortController.signal,
                 body: JSON.stringify({
-                    prompt: messageText,
+                    messages: conversationHistory,
                     temperature: 0.7,
                     maxTokens: 2000,
                 }),
