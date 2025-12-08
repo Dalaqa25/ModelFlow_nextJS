@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 're
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 import Image from 'next/image';
 import AutomationCard from './AutomationCard';
+import ConnectButton from './ConnectButton';
 
 const AiChat = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([]);
@@ -49,6 +50,7 @@ const AiChat = forwardRef((props, ref) => {
             role: 'assistant',
             content: '',
             automations: null,
+            connectRequest: null,
             timestamp: new Date().toISOString(),
         };
         setMessages(prev => [...prev, aiMessage]);
@@ -192,6 +194,16 @@ const AiChat = forwardRef((props, ref) => {
                                     )
                                 );
                             }
+                            // Handle connection requests
+                            else if (parsed.type === 'connect_request') {
+                                setMessages(prev => 
+                                    prev.map(msg => 
+                                        msg.id === aiMessageId
+                                            ? { ...msg, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
+                                            : msg
+                                    )
+                                );
+                            }
                             // Handle regular content
                             else if (parsed.content) {
                                 setMessages(prev => 
@@ -255,6 +267,11 @@ const AiChat = forwardRef((props, ref) => {
     const handleAutomationSelect = (automation) => {
         const selectionMessage = `I want to use "${automation.name}" (ID: ${automation.id})`;
         handleSendMessage(selectionMessage);
+    };
+
+    const handleConnectionComplete = (provider) => {
+        const connectionMessage = `I've connected my ${provider} account. What's next?`;
+        handleSendMessage(connectionMessage);
     };
 
     // Expose methods to parent component
@@ -342,6 +359,16 @@ const AiChat = forwardRef((props, ref) => {
                                         onSelect={handleAutomationSelect}
                                     />
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Render connect button if present */}
+                        {message.connectRequest && (
+                            <div className="mt-4">
+                                <ConnectButton
+                                    provider={message.connectRequest.provider}
+                                    onConnect={handleConnectionComplete}
+                                />
                             </div>
                         )}
                     </div>

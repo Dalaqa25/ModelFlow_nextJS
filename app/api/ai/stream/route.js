@@ -83,6 +83,28 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
             required: ["query"]
           }
         }
+      },
+      {
+        type: "function",
+        function: {
+          name: "request_connection",
+          description: "Request the user to connect a service account (like Google, Slack, etc.) when they select an automation that requires it. Call this when the user wants to use an automation that needs external service connections.",
+          parameters: {
+            type: "object",
+            properties: {
+              provider: {
+                type: "string",
+                description: "The service provider to connect (e.g., 'google', 'slack', 'github')",
+                enum: ["google"]
+              },
+              reason: {
+                type: "string",
+                description: "Brief explanation of why this connection is needed"
+              }
+            },
+            required: ["provider", "reason"]
+          }
+        }
       }
     ];
 
@@ -128,7 +150,27 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
           }
 
           // If AI called a function, execute it
-          if (isFunctionCall && functionCallData.name === 'search_automations') {
+          if (isFunctionCall && functionCallData.name === 'request_connection') {
+            try {
+              const args = JSON.parse(functionCallData.arguments);
+              
+              // Send connection request to frontend
+              const connectionData = `data: ${JSON.stringify({ 
+                type: 'connect_request',
+                provider: args.provider,
+                reason: args.reason
+              })}\n\n`;
+              controller.enqueue(encoder.encode(connectionData));
+
+              // AI continues with explanation
+              const explainMessage = `data: ${JSON.stringify({ 
+                content: `\n\nTo use this automation, you'll need to connect your ${args.provider.charAt(0).toUpperCase() + args.provider.slice(1)} account. Click the button above to get started.`
+              })}\n\n`;
+              controller.enqueue(encoder.encode(explainMessage));
+            } catch (error) {
+              console.error('Connection request error:', error);
+            }
+          } else if (isFunctionCall && functionCallData.name === 'search_automations') {
             try {
               const args = JSON.parse(functionCallData.arguments);
               
@@ -172,7 +214,10 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
 
               // Get AI's final response with search results
               const resultsContext = searchResults && searchResults.length > 0
-                ? `The following automations are now displayed as cards to the user:\n${searchResults.map((r, i) => `${i + 1}. "${r.name}" (ID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)}`).join('\n')}\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. You can help them with details, setup, or purchasing.`
+                ? `The following automations are now displayed as cards to the user:\n${searchResults.map((r, i) => {
+                    const connectors = r.required_connectors ? (typeof r.required_connectors === 'string' ? r.required_connectors : JSON.stringify(r.required_connectors)) : 'none';
+                    return `${i + 1}. "${r.name}" (ID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)} - Requires: ${connectors}`;
+                  }).join('\n')}\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation that requires connectors (like googleSheets, gmail, etc.), you should inform them they need to connect those services and offer to help them connect.`
                 : "No results were found.";
 
               const finalResponse = await client.chat.completions.create({
