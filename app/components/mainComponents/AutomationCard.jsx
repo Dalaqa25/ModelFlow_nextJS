@@ -13,6 +13,21 @@ export default function AutomationCard({ automation, onSelect }) {
     ? Math.round(automation.similarity * 100)
     : null;
 
+  // Parse required_connectors - it might be a string or array
+  let requiredConnectors = [];
+  if (automation.required_connectors) {
+    if (Array.isArray(automation.required_connectors)) {
+      requiredConnectors = automation.required_connectors;
+    } else if (typeof automation.required_connectors === 'string') {
+      try {
+        requiredConnectors = JSON.parse(automation.required_connectors);
+      } catch (e) {
+        // If it's just a plain string, split by comma
+        requiredConnectors = automation.required_connectors.split(',').map(s => s.trim());
+      }
+    }
+  }
+
   return (
     <div
       onClick={() => onSelect(automation)}
@@ -38,6 +53,34 @@ export default function AutomationCard({ automation, onSelect }) {
       <p className={`text-sm mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
         {automation.description}
       </p>
+
+      {/* Required Connectors */}
+      {requiredConnectors.length > 0 && (
+        <div className="mb-3">
+          <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Requires:
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {requiredConnectors.slice(0, 3).map((connector, idx) => (
+              <span
+                key={idx}
+                className={`text-xs px-2 py-1 rounded ${
+                  isDarkMode 
+                    ? 'bg-slate-700 text-gray-300' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {connector}
+              </span>
+            ))}
+            {requiredConnectors.length > 3 && (
+              <span className={`text-xs px-2 py-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                +{requiredConnectors.length - 3} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-between items-center">
         {similarityPercent && (

@@ -171,12 +171,16 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
               }
 
               // Get AI's final response with search results
+              const resultsContext = searchResults && searchResults.length > 0
+                ? `The following automations are now displayed as cards to the user:\n${searchResults.map((r, i) => `${i + 1}. "${r.name}" (ID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)}`).join('\n')}\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. You can help them with details, setup, or purchasing.`
+                : "No results were found.";
+
               const finalResponse = await client.chat.completions.create({
                 messages: [
                   ...followUpMessages,
                   {
                     role: "system",
-                    content: "The search results have been displayed as interactive cards to the user. Provide a brief, friendly message about the results without listing them again. If results were found, say something like 'I found some automations that might help!' If no results, suggest they try describing their needs differently."
+                    content: `The search results have been displayed as interactive cards to the user. ${resultsContext}\n\nProvide a brief, friendly message. If results were found, say something like 'I found some automations that might help!' If no results, suggest they try describing their needs differently.`
                   }
                 ],
                 model: "gpt-4o",
