@@ -46,6 +46,7 @@ export async function POST(req) {
     const videoLink = formData.get('videoLink');
     const imageFile = formData.get('image');
     const automationFile = formData.get('automationFile');
+    const developerKeysJson = formData.get('developerKeys');
 
     // Validate required fields
     if (!name || !description || isNaN(price) || !automationFile) {
@@ -99,6 +100,33 @@ export async function POST(req) {
       });
     }
 
+    // Parse developer keys if provided
+    let developerKeys = {};
+    if (developerKeysJson) {
+      try {
+        developerKeys = JSON.parse(developerKeysJson);
+        console.log('🔑 Developer keys provided:', Object.keys(developerKeys));
+      } catch (e) {
+        console.error('Failed to parse developer keys:', e);
+      }
+    }
+
+    // Extract required inputs (placeholders like {{VARIABLE_NAME}})
+    // Exclude developer keys from required inputs
+    const requiredInputs = [];
+    const workflowString = JSON.stringify(workflow);
+    const placeholderRegex = /\{\{([A-Z_]+)\}\}/g;
+    const developerKeyNames = Object.keys(developerKeys);
+    
+    let match;
+    while ((match = placeholderRegex.exec(workflowString)) !== null) {
+      const placeholder = match[1];
+      // Only add if it's not a developer key and not already in the list
+      if (!developerKeyNames.includes(placeholder) && !requiredInputs.includes(placeholder)) {
+        requiredInputs.push(placeholder);
+      }
+    }
+
     // Insert into database
     const { data, error } = await supabase
       .from('automations')
@@ -111,7 +139,8 @@ export async function POST(req) {
         workflow: workflow,
         embedding: embedding,
         required_connectors: requiredConnectors,
-        developer_keys: {},
+        required_inputs: requiredInputs,
+        developer_keys: developerKeys,
         is_active: true
       })
       .select()

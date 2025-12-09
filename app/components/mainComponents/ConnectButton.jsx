@@ -4,7 +4,6 @@ import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 import { useState } from 'react';
 
 export default function ConnectButton({ provider, onConnect }) {
-  const { isDarkMode } = useThemeAdaptive();
   const [isConnecting, setIsConnecting] = useState(false);
 
   const providerConfig = {

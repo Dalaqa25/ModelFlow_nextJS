@@ -97,26 +97,90 @@ export async function GET(request) {
     console.log('⏰ Token Expires At:', expiresAt);
     console.log('===========================================\n');
 
-    // Find or create user by email
-    let user = await userDB.getUserByEmail(email);
+    // Get the currently logged-in user from session
+    const { getSupabaseUser } = await import('@/lib/auth-utils');
+    const currentUser = await getSupabaseUser();
     
-    if (!user) {
-      // Create new user if doesn't exist
-      console.log('👤 Creating new user for:', email);
-      user = await userDB.upsertUser({
-        email: email,
-        name: userInfo.name || email,
-        profile_image_url: userInfo.picture || null,
-      });
-      console.log('✅ User created:', user.id);
-    } else {
-      console.log('👤 Existing user found:', user.id);
+    if (!currentUser) {
+      console.error('❌ No authenticated user found in session');
+      return NextResponse.json({ 
+        error: 'You must be logged in to connect Google account' 
+      }, { status: 401 });
     }
 
-    // Save or update Google OAuth integration
+    console.log('👤 Connecting Google to logged-in user:', currentUser.id, currentUser.email);
+
+    // Ensure user exists in users table (sync from auth.users to users table)
+    // ALWAYS use the current auth user's ID
+    const targetUserId = currentUser.id;
+    
     try {
+      console.log('🔍 Ensuring user exists in users table with ID:', targetUserId);
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      
+      // Check if user with this ID exists
+      const { data: existingById } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', targetUserId)
+        .maybeSingle();
+      
+      if (!existingById) {
+        console.log('👤 User ID not in users table, inserting...');
+        
+        // Check if email exists with different ID
+        const { data: existingByEmail } = await supabase
+          .from('users')
+          .select('id, email')
+          .eq('email', currentUser.email)
+          .maybeSingle();
+        
+        if (existingByEmail) {
+          console.log('⚠️ Email exists with different ID:', existingByEmail.id, '- deleting old record');
+          // Delete the old user record (this will cascade delete integrations too)
+          await supabase
+            .from('users')
+            .delete()
+            .eq('id', existingByEmail.id);
+        }
+        
+        // Insert with the current auth user's ID
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: targetUserId,
+            email: currentUser.email,
+            name: currentUser.user_metadata?.name || currentUser.email,
+            profile_image_url: currentUser.user_metadata?.avatar_url || null,
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('❌ Insert error:', insertError);
+          throw insertError;
+        }
+        console.log('✅ User entry created in users table:', newUser.id);
+      } else {
+        console.log('✅ User already exists in users table with correct ID');
+      }
+    } catch (userError) {
+      console.error('❌ Failed to sync user to users table:', userError);
+      return NextResponse.json({ 
+        error: 'Failed to sync user data',
+        details: userError.message 
+      }, { status: 500 });
+    }
+
+    // Save or update Google OAuth integration for the logged-in user
+    try {
+      console.log('💾 Saving integration for user_id:', targetUserId);
       const integration = await userIntegrationDB.upsertIntegration({
-        user_id: user.id,
+        user_id: targetUserId,
         provider: 'google',
         provider_user_id: google_user_id,
         provider_email: email,
@@ -128,20 +192,21 @@ export async function GET(request) {
       console.log('✅ Google integration saved/updated:', integration.id);
     } catch (integrationError) {
       console.error('❌ Failed to save Google integration:', integrationError);
-      // Don't fail the entire request, but log the error
+      return NextResponse.json({ 
+        error: 'Failed to save Google integration',
+        details: integrationError.message 
+      }, { status: 500 });
     }
 
-    // Return success response (you can modify this later to redirect or return data)
+    // Return success response
     return NextResponse.json({
       success: true,
       message: 'Google authentication successful',
       data: {
         google_email: email,
         google_user_id: google_user_id,
-        google_access_token: access_token,
-        google_refresh_token: refresh_token,
         expires_at: expiresAt,
-        user_id: user.id,
+        user_id: targetUserId,
       }
     });
 

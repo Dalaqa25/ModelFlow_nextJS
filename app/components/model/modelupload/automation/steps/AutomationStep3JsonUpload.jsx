@@ -9,7 +9,8 @@ export default function AutomationStep3JsonUpload({
     onJsonSelect,
     onRemoveJson,
     jsonInputRef,
-    isSubmitting
+    isSubmitting,
+    buttonText = 'Publish Automation'
 }) {
     const handleJsonChange = (event) => {
         const file = event.target.files?.[0];
@@ -90,7 +91,7 @@ export default function AutomationStep3JsonUpload({
                     className="px-6 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:from-green-600 hover:to-emerald-600 transition disabled:opacity-60"
                     disabled={isSubmitting}
                 >
-                    {isSubmitting ? 'Uploading...' : 'Publish Automation'}
+                    {isSubmitting ? 'Uploading...' : buttonText}
                 </button>
             </div>
         </div>

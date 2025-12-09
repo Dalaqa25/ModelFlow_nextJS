@@ -5,6 +5,7 @@ import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 import Image from 'next/image';
 import AutomationCard from './AutomationCard';
 import ConnectButton from './ConnectButton';
+import ConfigForm from './ConfigForm';
 
 const AiChat = forwardRef((props, ref) => {
     const [messages, setMessages] = useState([]);
@@ -51,6 +52,7 @@ const AiChat = forwardRef((props, ref) => {
             content: '',
             automations: null,
             connectRequest: null,
+            configRequest: null,
             timestamp: new Date().toISOString(),
         };
         setMessages(prev => [...prev, aiMessage]);
@@ -204,6 +206,16 @@ const AiChat = forwardRef((props, ref) => {
                                     )
                                 );
                             }
+                            // Handle configuration requests
+                            else if (parsed.type === 'config_request') {
+                                setMessages(prev => 
+                                    prev.map(msg => 
+                                        msg.id === aiMessageId
+                                            ? { ...msg, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
+                                            : msg
+                                    )
+                                );
+                            }
                             // Handle regular content
                             else if (parsed.content) {
                                 setMessages(prev => 
@@ -265,13 +277,43 @@ const AiChat = forwardRef((props, ref) => {
     };
 
     const handleAutomationSelect = (automation) => {
-        const selectionMessage = `I want to use "${automation.name}" (ID: ${automation.id})`;
+        const selectionMessage = `I want to use "${automation.name}" (UUID: ${automation.id})`;
         handleSendMessage(selectionMessage);
     };
 
     const handleConnectionComplete = (provider) => {
         const connectionMessage = `I've connected my ${provider} account. What's next?`;
         handleSendMessage(connectionMessage);
+    };
+
+    const handleConfigSubmit = async (configData, automationId) => {
+        try {
+            // Send to automation runner to execute
+            const response = await fetch('/api/automations/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    automation_id: automationId,
+                    config: configData
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                const errorMessage = `Failed to start automation: ${result.error || 'Unknown error'}`;
+                handleSendMessage(errorMessage);
+                return;
+            }
+
+            // Success - tell AI it's running
+            const successMessage = `Automation executed successfully! ${result.message || ''}`;
+            handleSendMessage(successMessage);
+        } catch (error) {
+            console.error('Execution error:', error);
+            const errorMessage = `Failed to start automation: ${error.message}`;
+            handleSendMessage(errorMessage);
+        }
     };
 
     // Expose methods to parent component
@@ -368,6 +410,17 @@ const AiChat = forwardRef((props, ref) => {
                                 <ConnectButton
                                     provider={message.connectRequest.provider}
                                     onConnect={handleConnectionComplete}
+                                />
+                            </div>
+                        )}
+
+                        {/* Render config form if present */}
+                        {message.configRequest && (
+                            <div className="mt-4">
+                                <ConfigForm
+                                    requiredInputs={message.configRequest.required_inputs}
+                                    automationId={message.configRequest.automation_id}
+                                    onSubmit={handleConfigSubmit}
                                 />
                             </div>
                         )}

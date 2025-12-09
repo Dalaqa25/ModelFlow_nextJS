@@ -11,6 +11,8 @@ import { useStepper } from '../shared/hooks';
 import AutomationStep1BasicInfo from './steps/AutomationStep1BasicInfo';
 import AutomationStep2MediaPricing from './steps/AutomationStep2MediaPricing';
 import AutomationStep3JsonUpload from './steps/AutomationStep3JsonUpload';
+import AutomationStep3DeveloperKeys from './steps/AutomationStep3DeveloperKeys';
+import { detectDeveloperKeys } from './detectKeys';
 import {
     clearStepErrors,
     validateAutomationForm,
@@ -23,13 +25,16 @@ const INITIAL_FORM_STATE = {
     automationName: '',
     description: '',
     price: PRICE_TIERS[0].value,
-    jsonFile: null
+    jsonFile: null,
+    developerKeys: {}
 };
 
 export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const [formData, setFormData] = useState(INITIAL_FORM_STATE);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [detectedKeys, setDetectedKeys] = useState([]);
+    const [showKeysStep, setShowKeysStep] = useState(false);
 
     const { step, stepDirection, handleNext, handleBack, resetStepper } = useStepper();
     const jsonInputRef = useRef(null);
@@ -37,10 +42,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const stepTitles = useMemo(
         () => ({
             1: 'Automation Basics',
-            2: 'n8n JSON Upload'
+            2: 'n8n JSON Upload',
+            3: 'Developer Keys'
         }),
         []
     );
+
+    const totalSteps = showKeysStep ? 3 : 2;
 
     useEffect(() => {
         if (!isOpen) {
@@ -76,19 +84,43 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
     };
 
-    const handleJsonSelect = (file) => {
+    const handleJsonSelect = async (file) => {
         const validationMessage = validateJsonFile(file);
         if (validationMessage) {
             setErrors((prev) => ({ ...prev, jsonFile: validationMessage }));
             return;
         }
+        
+        // Read and parse JSON to detect keys
+        try {
+            const text = await file.text();
+            const workflow = JSON.parse(text);
+            const keys = detectDeveloperKeys(workflow);
+            
+            setDetectedKeys(keys);
+            setShowKeysStep(keys.length > 0);
+            
+            console.log('🔍 Detected developer keys:', keys);
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+        
         setFormData((prev) => ({ ...prev, jsonFile: file }));
         setErrors((prev) => ({ ...prev, jsonFile: '' }));
     };
 
     const handleRemoveJson = () => {
         setFormData((prev) => ({ ...prev, jsonFile: null }));
+        setDetectedKeys([]);
+        setShowKeysStep(false);
         if (jsonInputRef.current) jsonInputRef.current.value = '';
+    };
+
+    const handleKeysChange = (keys) => {
+        setFormData((prev) => ({ ...prev, developerKeys: keys }));
+        if (errors.developerKeys) {
+            setErrors((prev) => ({ ...prev, developerKeys: '' }));
+        }
     };
 
     const handleNextWithValidation = () => {
@@ -98,7 +130,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             return;
         }
         setErrors((prev) => clearStepErrors(prev, step));
-        handleNext();
+        
+        // If on step 2 and no keys detected, skip to submit
+        if (step === 2 && !showKeysStep) {
+            handleSubmit();
+        } else {
+            handleNext();
+        }
     };
 
     const handleSubmit = async () => {
@@ -115,6 +153,11 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             payload.append('description', formData.description.trim());
             payload.append('price', formData.price);
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
+            
+            // Add developer keys if any
+            if (Object.keys(formData.developerKeys).length > 0) {
+                payload.append('developerKeys', JSON.stringify(formData.developerKeys));
+            }
 
             const response = await fetch('/api/automations', {
                 method: 'POST',
@@ -179,7 +222,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                 <div className="mb-6">
                                     <Dialog.Title className="text-2xl font-semibold text-white">Publish Automation</Dialog.Title>
                                     <p className="text-sm text-slate-400 mt-1">
-                                        Step {step} of {TOTAL_STEPS}: {stepTitles[step]}
+                                        Step {step} of {totalSteps}: {stepTitles[step]}
                                     </p>
                                 </div>
 
@@ -210,10 +253,22 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 formData={formData}
                                                 errors={errors}
                                                 handleBack={handleBack}
-                                                handleSubmit={handleSubmit}
+                                                handleSubmit={showKeysStep ? handleNextWithValidation : handleSubmit}
                                                 onJsonSelect={handleJsonSelect}
                                                 onRemoveJson={handleRemoveJson}
                                                 jsonInputRef={jsonInputRef}
+                                                isSubmitting={isSubmitting}
+                                                buttonText={showKeysStep ? 'Next' : 'Publish Automation'}
+                                            />
+                                        )}
+                                        {step === 3 && showKeysStep && (
+                                            <AutomationStep3DeveloperKeys
+                                                detectedKeys={detectedKeys}
+                                                formData={formData}
+                                                errors={errors}
+                                                handleBack={handleBack}
+                                                handleSubmit={handleSubmit}
+                                                onKeysChange={handleKeysChange}
                                                 isSubmitting={isSubmitting}
                                             />
                                         )}

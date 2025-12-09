@@ -38,23 +38,26 @@ export async function POST(request) {
 Your capabilities:
 - Search for automations based on user needs
 - Explain what automations do and how they work
-- Show pricing and requirements
-- Help users understand setup instructions
-- Search for alternative solutions if needed
+- Guide users through the setup process
+- Help connect required services
+- Collect configuration inputs
 
-What you CANNOT do:
-- You cannot modify, edit, or customize automations
-- You cannot create new automations
-- You cannot execute or run automations
-- You cannot access user's personal data or accounts
+CRITICAL RULES:
+1. When calling request_configuration, you MUST use the exact UUID from search results (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+2. NEVER make up automation IDs or use automation names as IDs
+3. The UUID is provided in the search results as the "id" field
+4. After showing a connection button or config form, DO NOT repeat the same request - wait for user response
+5. If user reports an error (like "automation failed" or "not found"), acknowledge it and offer to help troubleshoot or search for alternatives - DO NOT just re-show the same results
 
-When a user selects an automation, offer to:
-1. Provide more details about how it works
-2. Explain the setup process
-3. Show pricing information
-4. Search for similar alternatives
+Setup Flow:
+1. User describes what they want → call search_automations
+2. User selects an automation → check if it needs connectors
+3. If needs connectors → call request_connection (once)
+4. After user connects → call request_configuration with exact UUID (once)
+5. After form is shown → wait for user to submit
+6. If execution fails → acknowledge the error and ask how to help
 
-Be friendly, helpful, and honest about your limitations. Focus on helping users discover and understand the right automation for their needs.`
+Be concise and friendly. Don't repeat yourself.`
         },
         { role: "user", content: prompt }
       ];
@@ -105,12 +108,35 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
             required: ["provider", "reason"]
           }
         }
+      },
+      {
+        type: "function",
+        function: {
+          name: "request_configuration",
+          description: "Request configuration inputs from the user when they select an automation that needs specific values (like Sheet ID, email addresses, etc.). Call this after the user has connected required services. CRITICAL: You must use the exact UUID from the search results (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name.",
+          parameters: {
+            type: "object",
+            properties: {
+              automation_id: {
+                type: "string",
+                description: "The exact UUID of the automation from the search results (e.g., '115c2421-e502-4489-8112-6b1deecc949c'). This MUST be the 'id' field from the search results, NOT the name.",
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              required_inputs: {
+                type: "array",
+                items: { type: "string" },
+                description: "List of input field names needed (e.g., ['GOOGLE_SHEET_ID', 'SHEET_NAME'])"
+              }
+            },
+            required: ["automation_id", "required_inputs"]
+          }
+        }
       }
     ];
 
     const response = await client.chat.completions.create({
       messages: chatMessages,
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature,
       tools,
       tool_choice: "auto",
@@ -152,6 +178,10 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
           // If AI called a function, execute it
           if (isFunctionCall && functionCallData.name === 'request_connection') {
             try {
+              // Ensure we have complete JSON before parsing
+              if (!functionCallData.arguments || functionCallData.arguments.trim() === '') {
+                throw new Error('Empty function arguments');
+              }
               const args = JSON.parse(functionCallData.arguments);
               
               // Send connection request to frontend
@@ -162,13 +192,56 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
               })}\n\n`;
               controller.enqueue(encoder.encode(connectionData));
 
-              // AI continues with explanation
+              // AI continues with brief explanation
               const explainMessage = `data: ${JSON.stringify({ 
-                content: `\n\nTo use this automation, you'll need to connect your ${args.provider.charAt(0).toUpperCase() + args.provider.slice(1)} account. Click the button above to get started.`
+                content: `\n\nClick the button above to connect your ${args.provider.charAt(0).toUpperCase() + args.provider.slice(1)} account.`
               })}\n\n`;
               controller.enqueue(encoder.encode(explainMessage));
             } catch (error) {
               console.error('Connection request error:', error);
+              // Don't show error if JSON is incomplete
+              if (!(error instanceof SyntaxError)) {
+                console.error('Unexpected error:', error);
+              }
+            }
+          } else if (isFunctionCall && functionCallData.name === 'request_configuration') {
+            try {
+              // Validate JSON is complete before parsing
+              if (!functionCallData.arguments || functionCallData.arguments.trim() === '') {
+                throw new Error('Empty function arguments');
+              }
+              
+              const args = JSON.parse(functionCallData.arguments);
+              
+              // Validate automation_id is a UUID
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              if (!uuidRegex.test(args.automation_id)) {
+                console.error('❌ AI used invalid automation_id format:', args.automation_id);
+                console.error('Expected UUID format like: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+                const errorMsg = `\n\n⚠️ Error: Invalid automation ID format. Please select an automation from the search results above.`;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
+              } else {
+                console.log('✅ Valid automation_id received:', args.automation_id);
+                // Send configuration form request to frontend
+                const configData = `data: ${JSON.stringify({ 
+                  type: 'config_request',
+                  automation_id: args.automation_id,
+                  required_inputs: args.required_inputs
+                })}\n\n`;
+                controller.enqueue(encoder.encode(configData));
+
+                // AI continues with brief explanation
+                const explainMessage = `data: ${JSON.stringify({ 
+                  content: `\n\nPlease fill in the form above.`
+                })}\n\n`;
+                controller.enqueue(encoder.encode(explainMessage));
+              }
+            } catch (error) {
+              console.error('Configuration request error:', error);
+              // Don't show error to user if JSON is incomplete - just skip
+              if (error instanceof SyntaxError) {
+                console.log('Incomplete JSON, waiting for more data...');
+              }
             }
           } else if (isFunctionCall && functionCallData.name === 'search_automations') {
             try {
@@ -176,10 +249,17 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
               
               // Execute search
               const queryEmbedding = await generateEmbedding(args.query);
-              const { data: searchResults } = await supabase.rpc('search_automations', {
+              const { data: searchResults, error: searchError } = await supabase.rpc('search_automations', {
                 query_embedding: queryEmbedding,
                 match_limit: 5
               });
+
+              if (searchError) {
+                console.error('❌ Search error:', searchError);
+              }
+
+              console.log(`🔍 Search found ${searchResults?.length || 0} results:`, 
+                searchResults?.map(r => ({ id: r.id, name: r.name })));
 
               // Send search results back to AI
               const followUpMessages = [
@@ -216,8 +296,9 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
               const resultsContext = searchResults && searchResults.length > 0
                 ? `The following automations are now displayed as cards to the user:\n${searchResults.map((r, i) => {
                     const connectors = r.required_connectors ? (typeof r.required_connectors === 'string' ? r.required_connectors : JSON.stringify(r.required_connectors)) : 'none';
-                    return `${i + 1}. "${r.name}" (ID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)} - Requires: ${connectors}`;
-                  }).join('\n')}\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation that requires connectors (like googleSheets, gmail, etc.), you should inform them they need to connect those services and offer to help them connect.`
+                    const inputs = r.required_inputs && r.required_inputs.length > 0 ? r.required_inputs.join(', ') : 'none';
+                    return `${i + 1}. "${r.name}" (UUID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)} - Requires connectors: ${connectors} - Needs inputs: ${inputs}`;
+                  }).join('\n')}\n\n⚠️ CRITICAL: When calling request_configuration, you MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name.\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation:\n1. If it requires connectors (like googleSheets, gmail), call request_connection first\n2. After they connect, call request_configuration with the exact UUID and required_inputs`
                 : "No results were found.";
 
               const finalResponse = await client.chat.completions.create({
@@ -225,10 +306,10 @@ Be friendly, helpful, and honest about your limitations. Focus on helping users 
                   ...followUpMessages,
                   {
                     role: "system",
-                    content: `The search results have been displayed as interactive cards to the user. ${resultsContext}\n\nProvide a brief, friendly message. If results were found, say something like 'I found some automations that might help!' If no results, suggest they try describing their needs differently.`
+                    content: `The search results have been displayed as interactive cards to the user. ${resultsContext}\n\nProvide a brief, friendly message (1-2 sentences max). If results were found, say something like 'I found some automations that might help!' If no results, suggest they try describing their needs differently.`
                   }
                 ],
-                model: "gpt-4o",
+                model: "gpt-4o-mini",
                 temperature,
                 stream: true,
               });
