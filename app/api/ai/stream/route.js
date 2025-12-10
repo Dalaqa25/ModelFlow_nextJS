@@ -44,16 +44,17 @@ Your capabilities:
 
 CRITICAL RULES:
 1. When calling request_configuration, you MUST use the exact UUID from search results (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-2. NEVER make up automation IDs or use automation names as IDs
-3. The UUID is provided in the search results as the "id" field
-4. After showing a connection button or config form, DO NOT repeat the same request - wait for user response
-5. If user reports an error (like "automation failed" or "not found"), acknowledge it and offer to help troubleshoot or search for alternatives - DO NOT just re-show the same results
+2. When calling request_configuration, you MUST use the EXACT required_inputs array from the search results - DO NOT make up your own input names
+3. NEVER make up automation IDs or use automation names as IDs
+4. The UUID and required_inputs are provided in the search results
+5. After showing a connection button or config form, DO NOT repeat the same request - wait for user response
+6. If user reports an error (like "automation failed" or "not found"), acknowledge it and offer to help troubleshoot or search for alternatives - DO NOT just re-show the same results
 
 Setup Flow:
 1. User describes what they want → call search_automations
 2. User selects an automation → check if it needs connectors
 3. If needs connectors → call request_connection (once)
-4. After user connects → call request_configuration with exact UUID (once)
+4. After user connects → call request_configuration with exact UUID and exact required_inputs from search results (once)
 5. After form is shown → wait for user to submit
 6. If execution fails → acknowledge the error and ask how to help
 
@@ -113,7 +114,7 @@ Be concise and friendly. Don't repeat yourself.`
         type: "function",
         function: {
           name: "request_configuration",
-          description: "Request configuration inputs from the user when they select an automation that needs specific values (like Sheet ID, email addresses, etc.). Call this after the user has connected required services. CRITICAL: You must use the exact UUID from the search results (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name.",
+          description: "Request configuration inputs from the user when they select an automation that needs specific values (like Sheet ID, email addresses, etc.). Call this after the user has connected required services. CRITICAL: You must use the exact UUID from the search results (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name. You must also pass the EXACT required_inputs array from the search results without modification.",
           parameters: {
             type: "object",
             properties: {
@@ -124,8 +125,15 @@ Be concise and friendly. Don't repeat yourself.`
               },
               required_inputs: {
                 type: "array",
-                items: { type: "string" },
-                description: "List of input field names needed (e.g., ['GOOGLE_SHEET_ID', 'SHEET_NAME'])"
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    type: { type: "string" }
+                  },
+                  required: ["name", "type"]
+                },
+                description: "The EXACT required_inputs array from the search results. This is an array of objects with {name, type} structure. Copy it EXACTLY as shown in the search results. Example: [{\"name\":\"GOOGLE_SHEET_ID\",\"type\":\"text\"},{\"name\":\"FILE_INPUT\",\"type\":\"file\"}]"
               }
             },
             required: ["automation_id", "required_inputs"]
@@ -222,6 +230,10 @@ Be concise and friendly. Don't repeat yourself.`
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
               } else {
                 console.log('✅ Valid automation_id received:', args.automation_id);
+                console.log('📋 AI is requesting config with required_inputs:', JSON.stringify(args.required_inputs, null, 2));
+                console.log('   Type:', typeof args.required_inputs);
+                console.log('   Is Array:', Array.isArray(args.required_inputs));
+                
                 // Send configuration form request to frontend
                 const configData = `data: ${JSON.stringify({ 
                   type: 'config_request',
@@ -283,22 +295,49 @@ Be concise and friendly. Don't repeat yourself.`
                 }
               ];
 
-              // Send structured automation results first
-              if (searchResults && searchResults.length > 0) {
+              // Filter results by minimum similarity threshold (30%)
+              const MINIMUM_SIMILARITY = 0.30;
+              const filteredResults = searchResults && searchResults.length > 0
+                ? searchResults.filter(r => r.similarity >= MINIMUM_SIMILARITY)
+                : [];
+
+              console.log(`✅ Filtered results: ${filteredResults.length}/${searchResults?.length || 0} above ${MINIMUM_SIMILARITY * 100}% similarity`);
+
+              // Parse required_inputs if they're stored as JSON strings
+              const normalizedResults = filteredResults.map(r => {
+                let parsedInputs = r.required_inputs;
+                
+                // If required_inputs is an array of JSON strings, parse them
+                if (Array.isArray(r.required_inputs) && r.required_inputs.length > 0) {
+                  if (typeof r.required_inputs[0] === 'string' && r.required_inputs[0].startsWith('{')) {
+                    try {
+                      parsedInputs = r.required_inputs.map(input => JSON.parse(input));
+                      console.log(`✅ Parsed required_inputs for ${r.name}:`, parsedInputs);
+                    } catch (e) {
+                      console.error(`❌ Failed to parse required_inputs for ${r.name}:`, e);
+                    }
+                  }
+                }
+                
+                return { ...r, required_inputs: parsedInputs };
+              });
+
+              // Send structured automation results first (use normalized results)
+              if (normalizedResults.length > 0) {
                 const automationsData = `data: ${JSON.stringify({ 
                   type: 'automations',
-                  automations: searchResults 
+                  automations: normalizedResults 
                 })}\n\n`;
                 controller.enqueue(encoder.encode(automationsData));
               }
 
               // Get AI's final response with search results
-              const resultsContext = searchResults && searchResults.length > 0
-                ? `The following automations are now displayed as cards to the user:\n${searchResults.map((r, i) => {
+              const resultsContext = normalizedResults.length > 0
+                ? `The following automations are now displayed as cards to the user:\n${normalizedResults.map((r, i) => {
                     const connectors = r.required_connectors ? (typeof r.required_connectors === 'string' ? r.required_connectors : JSON.stringify(r.required_connectors)) : 'none';
-                    const inputs = r.required_inputs && r.required_inputs.length > 0 ? r.required_inputs.join(', ') : 'none';
+                    const inputs = r.required_inputs && r.required_inputs.length > 0 ? JSON.stringify(r.required_inputs) : '[]';
                     return `${i + 1}. "${r.name}" (UUID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)} - Requires connectors: ${connectors} - Needs inputs: ${inputs}`;
-                  }).join('\n')}\n\n⚠️ CRITICAL: When calling request_configuration, you MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name.\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation:\n1. If it requires connectors (like googleSheets, gmail), call request_connection first\n2. After they connect, call request_configuration with the exact UUID and required_inputs`
+                  }).join('\n')}\n\n⚠️ CRITICAL INSTRUCTIONS FOR request_configuration:\n1. You MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name\n2. You MUST copy the ENTIRE required_inputs array EXACTLY as shown above - do NOT simplify, shorten, or modify it\n3. The required_inputs is an array of objects with {name, type} - pass it AS-IS without any changes\n4. Example: If you see required_inputs: [{"name":"FIELD_A","type":"text"},{"name":"FIELD_B","type":"file"}], you must pass that EXACT array\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation:\n1. If it requires connectors (like googleSheets, gmail), call request_connection first\n2. After they connect, call request_configuration with the exact UUID and the COMPLETE required_inputs array from above`
                 : "No results were found.";
 
               const finalResponse = await client.chat.completions.create({

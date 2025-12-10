@@ -119,13 +119,13 @@ export const useFormState = () => {
     };
 };
 
-export const useStepper = () => {
+export const useStepper = (maxSteps = 4) => {
     const [step, setStep] = useState(1);
     const [stepDirection, setStepDirection] = useState('forward');
 
     const handleNext = () => {
         setStepDirection('forward');
-        setStep(s => Math.min(s + 1, 3));
+        setStep(s => Math.min(s + 1, maxSteps));
     };
 
     const handleBack = () => {

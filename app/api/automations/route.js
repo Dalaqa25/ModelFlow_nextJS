@@ -47,6 +47,7 @@ export async function POST(req) {
     const imageFile = formData.get('image');
     const automationFile = formData.get('automationFile');
     const developerKeysJson = formData.get('developerKeys');
+    const inputTypesJson = formData.get('inputTypes');
 
     // Validate required fields
     if (!name || !description || isNaN(price) || !automationFile) {
@@ -111,19 +112,53 @@ export async function POST(req) {
       }
     }
 
-    // Extract required inputs (placeholders like {{VARIABLE_NAME}})
-    // Exclude developer keys from required inputs
+    // Parse input types if provided
+    let inputTypes = {};
+    if (inputTypesJson) {
+      try {
+        inputTypes = JSON.parse(inputTypesJson);
+        console.log('📝 Input types provided:', inputTypes);
+        console.log('📝 Input types keys:', Object.keys(inputTypes));
+        console.log('📝 Input types entries:', Object.entries(inputTypes));
+      } catch (e) {
+        console.error('Failed to parse input types:', e);
+      }
+    } else {
+      console.log('⚠️ NO inputTypes received from frontend!');
+    }
+
+    // Build required inputs from inputTypes (configured in Step 4)
+    // inputTypes contains ALL detected inputs including FILE_INPUT
     const requiredInputs = [];
-    const workflowString = JSON.stringify(workflow);
-    const placeholderRegex = /\{\{([A-Z_]+)\}\}/g;
     const developerKeyNames = Object.keys(developerKeys);
     
-    let match;
-    while ((match = placeholderRegex.exec(workflowString)) !== null) {
-      const placeholder = match[1];
-      // Only add if it's not a developer key and not already in the list
-      if (!developerKeyNames.includes(placeholder) && !requiredInputs.includes(placeholder)) {
-        requiredInputs.push(placeholder);
+    if (inputTypes && Object.keys(inputTypes).length > 0) {
+      // Use the inputTypes from Step 4 (already has all inputs with correct types)
+      Object.entries(inputTypes).forEach(([inputName, inputType]) => {
+        // Exclude developer keys
+        if (!developerKeyNames.includes(inputName)) {
+          requiredInputs.push({
+            name: inputName,
+            type: inputType
+          });
+        }
+      });
+      console.log('✅ Using input types from Step 4:', requiredInputs);
+    } else {
+      // Fallback: scan workflow for placeholders (old behavior)
+      console.log('⚠️ No inputTypes provided, falling back to placeholder scanning');
+      const workflowString = JSON.stringify(workflow);
+      const placeholderRegex = /\{\{([A-Z_]+)\}\}/g;
+      
+      let match;
+      while ((match = placeholderRegex.exec(workflowString)) !== null) {
+        const placeholder = match[1];
+        if (!developerKeyNames.includes(placeholder) && !requiredInputs.some(i => i.name === placeholder)) {
+          requiredInputs.push({
+            name: placeholder,
+            type: 'text'
+          });
+        }
       }
     }
 

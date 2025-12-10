@@ -8,17 +8,43 @@ export default function ConfigForm({ requiredInputs, automationId, onSubmit }) {
   const [formData, setFormData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Debug: Log what we receive
+  console.log('📋 ConfigForm received requiredInputs:', requiredInputs);
+  console.log('   Type:', typeof requiredInputs);
+  console.log('   Is Array:', Array.isArray(requiredInputs));
+  if (Array.isArray(requiredInputs) && requiredInputs.length > 0) {
+    console.log('   First element:', requiredInputs[0]);
+    console.log('   First element type:', typeof requiredInputs[0]);
+  }
+
   const handleChange = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleFileChange = async (key, file) => {
+    if (!file) return;
+    
+    // Convert file to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result;
+      setFormData(prev => ({ ...prev, [key]: base64 }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate all fields are filled
-    const missingFields = requiredInputs.filter(input => !formData[input]?.trim());
+    const missingFields = requiredInputs.filter(input => {
+      const inputName = typeof input === 'string' ? input : input.name;
+      return !formData[inputName];
+    });
+    
     if (missingFields.length > 0) {
-      alert(`Please fill in: ${missingFields.join(', ')}`);
+      const fieldNames = missingFields.map(f => typeof f === 'string' ? f : f.name);
+      alert(`Please fill in: ${fieldNames.join(', ')}`);
       return;
     }
 
@@ -56,33 +82,56 @@ export default function ConfigForm({ requiredInputs, automationId, onSubmit }) {
       </h3>
 
       <div className="space-y-4">
-        {requiredInputs.map((input) => (
-          <div key={input}>
-            <label
-              htmlFor={input}
-              className={`block text-sm font-medium mb-1 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}
-            >
-              {formatLabel(input)}
-            </label>
-            <input
-              id={input}
-              type="text"
-              value={formData[input] || ''}
-              onChange={(e) => handleChange(input, e.target.value)}
-              placeholder={`Enter ${formatLabel(input).toLowerCase()}`}
-              className={`
-                w-full px-3 py-2 rounded-lg border transition
-                ${isDarkMode
-                  ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-purple-500'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500'
-                }
-                focus:outline-none focus:ring-2 focus:ring-purple-500/20
-              `}
-            />
-          </div>
-        ))}
+        {requiredInputs.map((input) => {
+          // Handle both string format and object format {name, type}
+          const inputName = typeof input === 'string' ? input : input.name;
+          const inputType = typeof input === 'string' ? 'text' : (input.type || 'text');
+          
+          return (
+            <div key={inputName}>
+              <label
+                htmlFor={inputName}
+                className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}
+              >
+                {formatLabel(inputName)}
+              </label>
+              
+              {inputType === 'file' ? (
+                <input
+                  id={inputName}
+                  type="file"
+                  onChange={(e) => handleFileChange(inputName, e.target.files[0])}
+                  className={`
+                    w-full px-3 py-2 rounded-lg border transition
+                    ${isDarkMode
+                      ? 'bg-slate-700 border-slate-600 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700'
+                      : 'bg-white border-gray-300 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700'
+                    }
+                    focus:outline-none focus:ring-2 focus:ring-purple-500/20
+                  `}
+                />
+              ) : (
+                <input
+                  id={inputName}
+                  type={inputType}
+                  value={formData[inputName] || ''}
+                  onChange={(e) => handleChange(inputName, e.target.value)}
+                  placeholder={`Enter ${formatLabel(inputName).toLowerCase()}`}
+                  className={`
+                    w-full px-3 py-2 rounded-lg border transition
+                    ${isDarkMode
+                      ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-purple-500'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500'
+                    }
+                    focus:outline-none focus:ring-2 focus:ring-purple-500/20
+                  `}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <button

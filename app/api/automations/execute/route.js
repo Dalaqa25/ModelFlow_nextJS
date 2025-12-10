@@ -107,13 +107,23 @@ export async function POST(req) {
       );
     }
 
-    // 3. Replace placeholders in workflow with user's config
+    // 3. Replace placeholders in workflow with user's config AND developer keys
     let workflowString = JSON.stringify(automation.workflow);
     
+    // Inject user-provided config (like SHEET_ID, SHEET_NAME)
     Object.entries(config).forEach(([key, value]) => {
       const placeholder = `{{${key}}}`;
       workflowString = workflowString.replaceAll(placeholder, value);
     });
+
+    // Inject developer keys (like OPENAI_API_KEY, OPENROUTER_API_KEY)
+    if (automation.developer_keys && typeof automation.developer_keys === 'object') {
+      console.log('🔑 Injecting developer keys:', Object.keys(automation.developer_keys));
+      Object.entries(automation.developer_keys).forEach(([key, value]) => {
+        const placeholder = `{{${key}}}`;
+        workflowString = workflowString.replaceAll(placeholder, value);
+      });
+    }
 
     const configuredWorkflow = JSON.parse(workflowString);
 
@@ -136,7 +146,9 @@ export async function POST(req) {
         tokenMapping: {
           access_token: "googleAccessToken",
           refresh_token: "googleRefreshToken"
-        }
+        },
+        // Send developer keys to runner (for n8n credentials)
+        developerKeys: automation.developer_keys || {}
       }),
     });
 
