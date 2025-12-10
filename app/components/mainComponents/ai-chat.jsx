@@ -15,6 +15,7 @@ const AiChat = forwardRef((props, ref) => {
     const messagesEndRef = useRef(null);
     const abortControllerRef = useRef(null);
     const readerRef = useRef(null);
+    const animationFrameRef = useRef(null);
     const { isDarkMode } = useThemeAdaptive();
     const { onLoadingChange } = props;
 
@@ -163,13 +164,70 @@ const AiChat = forwardRef((props, ref) => {
             const reader = response.body.getReader();
             readerRef.current = reader;
             const decoder = new TextDecoder();
+            
+            // Queue-based smooth rendering with consistent character-by-character display
+            let textQueue = ''; // Queue of text waiting to be displayed
+            let displayedText = ''; // Text that's already shown
+            let isAnimating = false;
+            let streamEnded = false;
+            const CHARS_PER_SECOND = 120; // Consistent display speed - much faster!
+            
+            const startTypewriterAnimation = () => {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                let lastFrameTime = performance.now();
+                
+                const animate = (currentTime) => {
+                    const deltaTime = currentTime - lastFrameTime;
+                    
+                    // Calculate how many characters to display based on time elapsed
+                    const charsToAdd = Math.floor((deltaTime / 1000) * CHARS_PER_SECOND);
+                    
+                    if (charsToAdd > 0 && textQueue.length > 0) {
+                        // Move characters from queue to displayed text
+                        const newChars = textQueue.slice(0, charsToAdd);
+                        textQueue = textQueue.slice(charsToAdd);
+                        displayedText += newChars;
+                        
+                        // Update UI
+                        setMessages(prev => 
+                            prev.map(msg => 
+                                msg.id === aiMessageId
+                                    ? { ...msg, content: displayedText }
+                                    : msg
+                            )
+                        );
+                        
+                        lastFrameTime = currentTime;
+                    }
+                    
+                    // Continue animating if there's more text or stream is still active
+                    if (textQueue.length > 0 || !streamEnded) {
+                        animationFrameRef.current = requestAnimationFrame(animate);
+                    } else {
+                        // Animation complete - now we can turn off loading
+                        isAnimating = false;
+                        animationFrameRef.current = null;
+                        setIsLoading(false);
+                        if (onLoadingChange) onLoadingChange(false);
+                        setCurrentAiMessageId(null);
+                    }
+                };
+                
+                animationFrameRef.current = requestAnimationFrame(animate);
+            };
 
             while (true) {
                 const { done, value } = await reader.read();
                 
-                if (done) break;
+                if (done) {
+                    // Mark stream as ended - animation will continue until queue is empty
+                    streamEnded = true;
+                    break;
+                }
 
-                const chunk = decoder.decode(value);
+                const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split('\n');
 
                 for (const line of lines) {
@@ -177,9 +235,11 @@ const AiChat = forwardRef((props, ref) => {
                         const data = line.slice(6);
                         
                         if (data === '[DONE]') {
-                            setIsLoading(false);
-                            if (onLoadingChange) onLoadingChange(false);
-                            setCurrentAiMessageId(null);
+                            // Mark stream as ended - animation will continue until queue is empty
+                            // Loading state will be turned off when animation completes
+                            streamEnded = true;
+                            // Make sure animation is running to finish displaying remaining text
+                            startTypewriterAnimation();
                             break;
                         }
 
@@ -188,43 +248,66 @@ const AiChat = forwardRef((props, ref) => {
                             
                             // Handle automation results
                             if (parsed.type === 'automations' && parsed.automations) {
+                                // Stop animation and flush queue immediately before showing automations
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
                                 setMessages(prev => 
                                     prev.map(msg => 
                                         msg.id === aiMessageId
-                                            ? { ...msg, automations: parsed.automations }
+                                            ? { ...msg, content: displayedText, automations: parsed.automations }
                                             : msg
                                     )
                                 );
                             }
                             // Handle connection requests
                             else if (parsed.type === 'connect_request') {
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
                                 setMessages(prev => 
                                     prev.map(msg => 
                                         msg.id === aiMessageId
-                                            ? { ...msg, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
+                                            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
                                             : msg
                                     )
                                 );
                             }
                             // Handle configuration requests
                             else if (parsed.type === 'config_request') {
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
                                 setMessages(prev => 
                                     prev.map(msg => 
                                         msg.id === aiMessageId
-                                            ? { ...msg, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
+                                            ? { ...msg, content: displayedText, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
                                             : msg
                                     )
                                 );
                             }
-                            // Handle regular content
+                            // Handle regular content - add to queue for smooth typewriter display
                             else if (parsed.content) {
-                                setMessages(prev => 
-                                    prev.map(msg => 
-                                        msg.id === aiMessageId
-                                            ? { ...msg, content: msg.content + parsed.content }
-                                            : msg
-                                    )
-                                );
+                                textQueue += parsed.content;
+                                startTypewriterAnimation();
                             }
                         } catch (e) {
                             // Skip invalid JSON
@@ -233,19 +316,27 @@ const AiChat = forwardRef((props, ref) => {
                 }
             }
         } catch (error) {
+            // Mark stream as ended
+            streamEnded = true;
+            
             // Don't show error if it was aborted by user
             if (error.name === 'AbortError') {
                 console.log('Stream aborted by user');
-                // Update message to show it was stopped
-                setMessages(prev => 
-                    prev.map(msg => 
-                        msg.id === aiMessageId && msg.content === ''
-                            ? { ...msg, content: '(Response stopped)' }
-                            : msg
-                    )
-                );
+                // Stop animation and turn off loading immediately
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    animationFrameRef.current = null;
+                }
+                setIsLoading(false);
+                if (onLoadingChange) onLoadingChange(false);
+                setCurrentAiMessageId(null);
             } else {
                 console.error('Error:', error);
+                // Stop animation and show error
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    animationFrameRef.current = null;
+                }
                 const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
                 setMessages(prev => 
                     prev.map(msg => 
@@ -254,11 +345,13 @@ const AiChat = forwardRef((props, ref) => {
                             : msg
                     )
                 );
+                setIsLoading(false);
+                if (onLoadingChange) onLoadingChange(false);
+                setCurrentAiMessageId(null);
             }
         } finally {
-            setIsLoading(false);
-            if (onLoadingChange) onLoadingChange(false);
-            setCurrentAiMessageId(null);
+            // Don't turn off loading here - animation might still be running
+            // Loading will be turned off when animation completes or in error cases
             abortControllerRef.current = null;
             readerRef.current = null;
         }
@@ -270,6 +363,10 @@ const AiChat = forwardRef((props, ref) => {
         }
         if (readerRef.current) {
             readerRef.current.cancel();
+        }
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
         setIsLoading(false);
         if (onLoadingChange) onLoadingChange(false);
