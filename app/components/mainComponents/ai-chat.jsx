@@ -331,7 +331,7 @@ const AiChat = forwardRef((props, ref) => {
         <div className="w-full h-full flex flex-col">
             {/* Chat messages container */}
             <div 
-                className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex-1 overflow-y-auto px-6 py-4 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 style={{ 
                     maxHeight: 'calc(100vh - 12rem)',
                     paddingBottom: '2rem'
