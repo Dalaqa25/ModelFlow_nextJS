@@ -353,19 +353,28 @@ const AiChat = forwardRef((props, ref) => {
                     }
 
                     return (
-                    <div key={index} className="w-full">
+                    <div 
+                        key={`${message.timestamp}-${index}`}
+                        className="w-full"
+                        style={{
+                            animation: message.role === 'user' 
+                                ? 'messageSlideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                                : 'messageSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                            opacity: 0
+                        }}
+                    >
                         <div
                             className={`flex gap-4 ${
                                 message.role === 'user' ? 'justify-end' : 'justify-start'
                             }`}
                         >
                             <div
-                                className={`max-w-[70%] ${
+                                className={`${message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'} ${
                                     message.role === 'user'
                                         ? `rounded-4xl px-3 py-2 ${
                                             isDarkMode
-                                                ? 'bg-purple-600 text-white'
-                                                : 'bg-purple-500 text-white'
+                                                ? 'bg-slate-800/60 text-white'
+                                                : 'bg-slate-700/60 text-white'
                                           }`
                                         : isDarkMode
                                             ? 'text-gray-100'

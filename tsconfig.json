@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -12,10 +16,12 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
-    "baseUrl": ".",                      // ✅ Add this
-    "paths": {                           // ✅ And this
-      "@/*": ["./*"]
+    "jsx": "react-jsx",
+    "baseUrl": ".", // ✅ Add this
+    "paths": { // ✅ And this
+      "@/*": [
+        "./*"
+      ]
     },
     "plugins": [
       {
@@ -27,8 +33,11 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "app/api/auth/Users/route.js"  ],
-  "exclude": ["node_modules"]
+    "**/*.tsx",
+    "app/api/auth/Users/route.js",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
-

@@ -33,7 +33,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
 
     return (
         <div 
-            className="fixed left-1/2 w-full max-w-3xl px-6 pointer-events-none z-50"
+            className="fixed left-1/2 w-full max-w-4xl px-6 pointer-events-none z-50"
             style={{
                 top: isAtBottom ? 'calc(100vh - 7rem)' : '58%',
                 transform: isAtBottom ? 'translateX(-50%)' : 'translate(-50%, -50%)',
@@ -58,7 +58,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         placeholder="I want model to..."
-                        className={`flex-1 bg-transparent outline-none text-base font-normal ${
+                        className={`flex-1 bg-transparent outline-none text-base font-normal transition-opacity duration-300 ${
                             isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                         }`}
                     />

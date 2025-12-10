@@ -52,11 +52,14 @@ CRITICAL RULES:
 
 Setup Flow:
 1. User describes what they want → call search_automations
-2. User selects an automation → check if it needs connectors
-3. If needs connectors → call request_connection (once)
-4. After user connects → call request_configuration with exact UUID and exact required_inputs from search results (once)
+2. User selects an automation → check if it needs EXTERNAL service connectors (like googleSheets, gmail, slack, etc.)
+3. If needs EXTERNAL connectors → call request_connection (once)
+4. After user connects OR if no external connectors needed → call request_configuration with exact UUID and exact required_inputs from search results (once)
 5. After form is shown → wait for user to submit
 6. If execution fails → acknowledge the error and ask how to help
+
+IMPORTANT: Only call request_connection for EXTERNAL services that need OAuth (like googleSheets, gmail, slack, twitter, etc.). 
+DO NOT call request_connection for internal n8n nodes like: set, webhook, extractFromFile, @n8n/n8n-nodes-langchain.*, etc.
 
 Be concise and friendly. Don't repeat yourself.`
         },
@@ -230,23 +233,58 @@ Be concise and friendly. Don't repeat yourself.`
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
               } else {
                 console.log('✅ Valid automation_id received:', args.automation_id);
-                console.log('📋 AI is requesting config with required_inputs:', JSON.stringify(args.required_inputs, null, 2));
-                console.log('   Type:', typeof args.required_inputs);
-                console.log('   Is Array:', Array.isArray(args.required_inputs));
+                console.log('📋 AI sent required_inputs:', JSON.stringify(args.required_inputs, null, 2));
                 
-                // Send configuration form request to frontend
-                const configData = `data: ${JSON.stringify({ 
-                  type: 'config_request',
-                  automation_id: args.automation_id,
-                  required_inputs: args.required_inputs
-                })}\n\n`;
-                controller.enqueue(encoder.encode(configData));
+                // 🔥 FETCH REQUIRED_INPUTS DIRECTLY FROM DATABASE
+                // This ensures we get the correct data regardless of what AI sends
+                try {
+                  const { data: automationData, error: dbError } = await supabase
+                    .from('automations')
+                    .select('required_inputs')
+                    .eq('id', args.automation_id)
+                    .single();
 
-                // AI continues with brief explanation
-                const explainMessage = `data: ${JSON.stringify({ 
-                  content: `\n\nPlease fill in the form above.`
-                })}\n\n`;
-                controller.enqueue(encoder.encode(explainMessage));
+                  if (dbError || !automationData) {
+                    console.error('❌ Failed to fetch automation from database:', dbError);
+                    const errorMsg = `\n\n⚠️ Error: Could not find automation details.`;
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
+                    return;
+                  }
+
+                  let actualRequiredInputs = automationData.required_inputs;
+                  
+                  // Parse if they're JSON strings
+                  if (Array.isArray(actualRequiredInputs) && actualRequiredInputs.length > 0) {
+                    if (typeof actualRequiredInputs[0] === 'string' && actualRequiredInputs[0].startsWith('{')) {
+                      try {
+                        actualRequiredInputs = actualRequiredInputs.map(input => JSON.parse(input));
+                        console.log('✅ Parsed required_inputs from database:', actualRequiredInputs);
+                      } catch (e) {
+                        console.error('❌ Failed to parse required_inputs from database:', e);
+                      }
+                    }
+                  }
+
+                  console.log('🎯 Using ACTUAL required_inputs from database:', actualRequiredInputs);
+                  
+                  // Send configuration form request to frontend with ACTUAL data
+                  const configData = `data: ${JSON.stringify({ 
+                    type: 'config_request',
+                    automation_id: args.automation_id,
+                    required_inputs: actualRequiredInputs
+                  })}\n\n`;
+                  controller.enqueue(encoder.encode(configData));
+
+                  // AI continues with brief explanation
+                  const explainMessage = `data: ${JSON.stringify({ 
+                    content: `\n\nPlease fill in the form above.`
+                  })}\n\n`;
+                  controller.enqueue(encoder.encode(explainMessage));
+                } catch (fetchError) {
+                  console.error('❌ Database fetch error:', fetchError);
+                  const errorMsg = `\n\n⚠️ Error: Could not load automation configuration.`;
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
+                }
               }
             } catch (error) {
               console.error('Configuration request error:', error);
@@ -307,6 +345,8 @@ Be concise and friendly. Don't repeat yourself.`
               const normalizedResults = filteredResults.map(r => {
                 let parsedInputs = r.required_inputs;
                 
+                console.log(`🔍 Processing ${r.name} - Raw required_inputs:`, r.required_inputs);
+                
                 // If required_inputs is an array of JSON strings, parse them
                 if (Array.isArray(r.required_inputs) && r.required_inputs.length > 0) {
                   if (typeof r.required_inputs[0] === 'string' && r.required_inputs[0].startsWith('{')) {
@@ -316,7 +356,11 @@ Be concise and friendly. Don't repeat yourself.`
                     } catch (e) {
                       console.error(`❌ Failed to parse required_inputs for ${r.name}:`, e);
                     }
+                  } else {
+                    console.log(`ℹ️ ${r.name} required_inputs are not JSON strings, using as-is`);
                   }
+                } else {
+                  console.log(`⚠️ ${r.name} has no required_inputs or empty array`);
                 }
                 
                 return { ...r, required_inputs: parsedInputs };
@@ -337,8 +381,10 @@ Be concise and friendly. Don't repeat yourself.`
                     const connectors = r.required_connectors ? (typeof r.required_connectors === 'string' ? r.required_connectors : JSON.stringify(r.required_connectors)) : 'none';
                     const inputs = r.required_inputs && r.required_inputs.length > 0 ? JSON.stringify(r.required_inputs) : '[]';
                     return `${i + 1}. "${r.name}" (UUID: ${r.id}) - ${r.description} - Price: $${(r.price_cents / 100).toFixed(2)} - Requires connectors: ${connectors} - Needs inputs: ${inputs}`;
-                  }).join('\n')}\n\n⚠️ CRITICAL INSTRUCTIONS FOR request_configuration:\n1. You MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name\n2. You MUST copy the ENTIRE required_inputs array EXACTLY as shown above - do NOT simplify, shorten, or modify it\n3. The required_inputs is an array of objects with {name, type} - pass it AS-IS without any changes\n4. Example: If you see required_inputs: [{"name":"FIELD_A","type":"text"},{"name":"FIELD_B","type":"file"}], you must pass that EXACT array\n\nWhen the user refers to "first one", "the Google Sheets one", or similar, they mean one of these automations. When a user selects an automation:\n1. If it requires connectors (like googleSheets, gmail), call request_connection first\n2. After they connect, call request_configuration with the exact UUID and the COMPLETE required_inputs array from above`
+                  }).join('\n')}\n\n⚠️ CRITICAL INSTRUCTIONS FOR request_configuration:\n1. You MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name\n2. You MUST copy the ENTIRE required_inputs array EXACTLY as shown above - do NOT simplify, shorten, or modify it\n3. The required_inputs is an array of objects with {name, type} - pass it AS-IS without any changes\n4. Example: If you see required_inputs: [{"name":"FIELD_A","type":"text"},{"name":"FIELD_B","type":"file"}], you must pass that EXACT array\n\nWhen the user refers to "first one", "the automation", etc., they mean one of these automations. When a user selects an automation:\n1. Only call request_connection for EXTERNAL services (googleSheets, gmail, slack, etc.) - NOT for internal n8n nodes like set, webhook, extractFromFile, @n8n/n8n-nodes-langchain.*, etc.\n2. If no external services needed, go directly to request_configuration with the exact UUID and inputs`
                 : "No results were found.";
+
+              console.log('🤖 Context being sent to AI:', resultsContext);
 
               const finalResponse = await client.chat.completions.create({
                 messages: [

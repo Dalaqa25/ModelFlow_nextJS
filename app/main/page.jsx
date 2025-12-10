@@ -73,7 +73,7 @@ export default function Home() {
                     </div>
                 ) : (
                     <div className="w-full h-full flex items-start justify-center pt-8">
-                        <div className="w-full max-w-3xl">
+                        <div className="w-full max-w-4xl">
                             <AiChat ref={chatRef} onLoadingChange={handleLoadingChange} />
                         </div>
                     </div>
