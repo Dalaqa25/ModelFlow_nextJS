@@ -87,19 +87,36 @@ export async function POST(req) {
       console.log('Image upload not implemented yet');
     }
 
-    // Extract required connectors from workflow nodes
+    // Extract required connectors (OAuth services users must connect)
     const requiredConnectors = [];
-    if (workflow.nodes && Array.isArray(workflow.nodes)) {
-      workflow.nodes.forEach(node => {
-        if (node.type && node.type !== 'n8n-nodes-base.start') {
-          // Extract connector/service name from node type
-          const connector = node.type.replace('n8n-nodes-base.', '');
-          if (!requiredConnectors.includes(connector)) {
-            requiredConnectors.push(connector);
-          }
-        }
-      });
+    const workflowString = JSON.stringify(workflow);
+    
+    // Check for Google OAuth (access_token + Google APIs)
+    if (workflowString.includes('access_token') && 
+        (workflowString.includes('googleapis.com') || 
+         workflowString.includes('youtube') ||
+         workflowString.includes('google'))) {
+      requiredConnectors.push('Google');
     }
+    
+    // Check for Slack OAuth
+    if ((workflowString.includes('slack_token') || workflowString.includes('slackOAuth')) &&
+        workflowString.includes('slack.com')) {
+      if (!requiredConnectors.includes('Slack')) {
+        requiredConnectors.push('Slack');
+      }
+    }
+    
+    // Check for Twitter OAuth
+    if ((workflowString.includes('twitter') || workflowString.includes('oauth_token')) &&
+        workflowString.includes('api.twitter.com')) {
+      if (!requiredConnectors.includes('Twitter')) {
+        requiredConnectors.push('Twitter');
+      }
+    }
+    
+    // Add more OAuth service detection as needed
+    console.log('🔗 Detected required connectors:', requiredConnectors);
 
     // Parse developer keys if provided
     let developerKeys = {};
@@ -132,11 +149,17 @@ export async function POST(req) {
     const requiredInputs = [];
     const developerKeyNames = Object.keys(developerKeys);
     
+    // Credential patterns to exclude from required_inputs
+    const credentialPatterns = /token|key|secret|oauth|bearer|auth|credential/i;
+    
     if (inputTypes && Object.keys(inputTypes).length > 0) {
       // Use the inputTypes from Step 4 (already has all inputs with correct types)
       Object.entries(inputTypes).forEach(([inputName, inputType]) => {
-        // Exclude developer keys
-        if (!developerKeyNames.includes(inputName)) {
+        // Exclude developer keys AND credential parameters
+        const isDeveloperKey = developerKeyNames.includes(inputName);
+        const isCredential = credentialPatterns.test(inputName);
+        
+        if (!isDeveloperKey && !isCredential) {
           requiredInputs.push({
             name: inputName,
             type: inputType
@@ -145,21 +168,43 @@ export async function POST(req) {
       });
       console.log('✅ Using input types from Step 4:', requiredInputs);
     } else {
-      // Fallback: scan workflow for placeholders (old behavior)
-      console.log('⚠️ No inputTypes provided, falling back to placeholder scanning');
-      const workflowString = JSON.stringify(workflow);
-      const placeholderRegex = /\{\{([A-Z_]+)\}\}/g;
+      // Fallback: scan workflow for webhook body parameters and placeholders
+      console.log('⚠️ No inputTypes provided, falling back to workflow scanning');
+      
+      // Method 1: Scan for webhook body parameters like $json["body"]["tiktok_url"]
+      const webhookBodyRegex = /\$json\["body"\]\["([^"]+)"\]/g;
+      const bodyParams = new Set();
       
       let match;
-      while ((match = placeholderRegex.exec(workflowString)) !== null) {
-        const placeholder = match[1];
-        if (!developerKeyNames.includes(placeholder) && !requiredInputs.some(i => i.name === placeholder)) {
-          requiredInputs.push({
-            name: placeholder,
-            type: 'text'
-          });
+      while ((match = webhookBodyRegex.exec(workflowString)) !== null) {
+        const paramName = match[1];
+        // Exclude credential parameters
+        if (!credentialPatterns.test(paramName)) {
+          bodyParams.add(paramName);
         }
       }
+      
+      // Method 2: Also scan for {{PLACEHOLDER}} style parameters
+      const placeholderRegex = /\{\{([A-Z_]+)\}\}/g;
+      while ((match = placeholderRegex.exec(workflowString)) !== null) {
+        const placeholder = match[1];
+        const isDeveloperKey = developerKeyNames.includes(placeholder);
+        const isCredential = credentialPatterns.test(placeholder);
+        
+        if (!isDeveloperKey && !isCredential) {
+          bodyParams.add(placeholder);
+        }
+      }
+      
+      // Convert to required_inputs format
+      bodyParams.forEach(paramName => {
+        requiredInputs.push({
+          name: paramName,
+          type: 'text' // Default to text, can be enhanced later
+        });
+      });
+      
+      console.log('✅ Extracted required_inputs from workflow:', requiredInputs);
     }
 
     // Insert into database

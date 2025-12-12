@@ -397,14 +397,23 @@ const AiChat = forwardRef((props, ref) => {
 
             const result = await response.json();
 
+            console.log('📦 Received result from execute API:', result);
+
             if (!response.ok) {
                 const errorMessage = `Failed to start automation: ${result.error || 'Unknown error'}`;
                 handleSendMessage(errorMessage);
                 return;
             }
 
-            // Success - tell AI it's running
-            const successMessage = `Automation executed successfully! ${result.message || ''}`;
+            // Success - format and display results
+            let successMessage = `Automation executed successfully!\n\n`;
+            
+            // If there are actual results from the runner, include them
+            if (result.result) {
+                console.log('📊 Automation runner returned:', result.result);
+                successMessage += `Results:\n${JSON.stringify(result.result, null, 2)}`;
+            }
+            
             handleSendMessage(successMessage);
         } catch (error) {
             console.error('Execution error:', error);

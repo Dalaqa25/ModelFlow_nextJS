@@ -47,16 +47,27 @@ function detectFileInputs(workflowJson) {
 /**
  * Detects webhook body access patterns
  * Looks for: $json.body.fieldName, $json["body"]["fieldName"], etc.
+ * Filters out credential parameters (tokens, keys, secrets, etc.)
  */
 function detectWebhookInputs(workflowJson) {
   const workflowString = JSON.stringify(workflowJson);
   const webhookInputs = new Set();
+  
+  // Credential patterns to exclude (these are connectors, not user inputs)
+  const credentialPatterns = /token|key|secret|oauth|bearer|auth|credential|password/i;
   
   // Pattern 1: $json.body.fieldName
   const dotPattern = /\$json\.body\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
   let match;
   while ((match = dotPattern.exec(workflowString)) !== null) {
     const fieldName = match[1];
+    
+    // Skip credential parameters
+    if (credentialPatterns.test(fieldName)) {
+      console.log(`🔐 Skipping credential parameter: $json.body.${fieldName} (detected as connector, not input)`);
+      continue;
+    }
+    
     const variableName = fieldName
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()
@@ -69,6 +80,13 @@ function detectWebhookInputs(workflowJson) {
   const bracketPattern = /\$json\["body"\]\["([a-zA-Z_][a-zA-Z0-9_]*)"\]/g;
   while ((match = bracketPattern.exec(workflowString)) !== null) {
     const fieldName = match[1];
+    
+    // Skip credential parameters
+    if (credentialPatterns.test(fieldName)) {
+      console.log(`🔐 Skipping credential parameter: $json["body"]["${fieldName}"] (detected as connector, not input)`);
+      continue;
+    }
+    
     const variableName = fieldName
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()
@@ -81,6 +99,13 @@ function detectWebhookInputs(workflowJson) {
   const webhookCallPattern = /\$\('Webhook'\)\.(?:item|first)\(\)\.json\.body\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
   while ((match = webhookCallPattern.exec(workflowString)) !== null) {
     const fieldName = match[1];
+    
+    // Skip credential parameters
+    if (credentialPatterns.test(fieldName)) {
+      console.log(`🔐 Skipping credential parameter: $('Webhook').*.json.body.${fieldName} (detected as connector, not input)`);
+      continue;
+    }
+    
     const variableName = fieldName
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()

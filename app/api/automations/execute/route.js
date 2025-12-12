@@ -107,25 +107,31 @@ export async function POST(req) {
       );
     }
 
-    // 3. Replace placeholders in workflow with user's config AND developer keys
+    // 3. Replace placeholders in workflow with user's config
     let workflowString = JSON.stringify(automation.workflow);
     
-    // Inject user-provided config (like SHEET_ID, SHEET_NAME)
+    // Inject user-provided config (like SHEET_ID, SHEET_NAME, FILE_INPUT)
     Object.entries(config).forEach(([key, value]) => {
       const placeholder = `{{${key}}}`;
       workflowString = workflowString.replaceAll(placeholder, value);
     });
 
-    // Inject developer keys (like OPENAI_API_KEY, OPENROUTER_API_KEY)
+    const configuredWorkflow = JSON.parse(workflowString);
+
+    // Convert developer keys from SNAKE_CASE to camelCase for the runner
+    // e.g., OPEN_ROUTER_API_KEY -> openRouterApiKey
+    const convertToCamelCase = (str) => {
+      return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    };
+
+    const developerTokens = {};
     if (automation.developer_keys && typeof automation.developer_keys === 'object') {
-      console.log('🔑 Injecting developer keys:', Object.keys(automation.developer_keys));
+      console.log('🔑 Preparing developer keys for tokens:', Object.keys(automation.developer_keys));
       Object.entries(automation.developer_keys).forEach(([key, value]) => {
-        const placeholder = `{{${key}}}`;
-        workflowString = workflowString.replaceAll(placeholder, value);
+        const camelCaseKey = convertToCamelCase(key);
+        developerTokens[camelCaseKey] = value;
       });
     }
-
-    const configuredWorkflow = JSON.parse(workflowString);
 
     // 4. Send to Node.js automation runner
     const runnerResponse = await fetch('http://localhost:3001/execute', {
@@ -139,16 +145,18 @@ export async function POST(req) {
           user_email: user.email
         },
         tokens: {
+          // User OAuth tokens
           access_token: integration.access_token,
           refresh_token: integration.refresh_token,
-          expires_at: integration.expires_at
+          expires_at: integration.expires_at,
+          // Developer API keys (from database) - already in camelCase
+          ...developerTokens
         },
         tokenMapping: {
           access_token: "googleAccessToken",
           refresh_token: "googleRefreshToken"
-        },
-        // Send developer keys to runner (for n8n credentials)
-        developerKeys: automation.developer_keys || {}
+          // Developer tokens already have correct camelCase names
+        }
       }),
     });
 
@@ -161,6 +169,8 @@ export async function POST(req) {
     }
 
     const result = await runnerResponse.json();
+
+    console.log('✅ Automation runner response:', JSON.stringify(result, null, 2));
 
     return NextResponse.json({
       success: true,
