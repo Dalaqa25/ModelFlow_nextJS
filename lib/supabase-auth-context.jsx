@@ -156,6 +156,10 @@ export const AuthProvider = ({ children }) => {
       // Clear all auth data including localStorage
       await supabase.auth.signOut({ scope: 'local' });
       setUser(null);
+      // Clear cached username
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('userName');
+      }
       // Redirect to home page immediately after sign out
       router.push('/');
       return { error: null };
