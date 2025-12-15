@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { FaHome, FaUsers, FaFileContract } from 'react-icons/fa';
 import { MdPrivacyTip } from 'react-icons/md';
+import Image from 'next/image';
 
 export default function Navbar() {
   const { isAuthenticated, loading } = useAuth();
@@ -33,6 +34,13 @@ export default function Navbar() {
               href="/" 
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
+              <Image 
+                src="/logo.png" 
+                alt="ModelGrow Logo" 
+                width={40} 
+                height={40}
+                className="object-contain"
+              />
               <span className={`text-xl md:text-2xl font-bold tracking-tight ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
