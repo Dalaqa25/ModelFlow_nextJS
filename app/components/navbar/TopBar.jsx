@@ -17,7 +17,7 @@ export default function TopBar() {
 
   return (
     <div className={`fixed top-0 right-0 h-14 bg-transparent z-50 flex items-center justify-between px-4 transition-all duration-300 ${
-      isExpanded ? 'left-64' : 'left-16'
+      isExpanded ? 'left-48' : 'left-16'
     }`}>
       {/* Left: Model Selector */}
       <div className="flex items-center gap-2">
