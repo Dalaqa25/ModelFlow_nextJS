@@ -3,10 +3,12 @@
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useRouter } from 'next/navigation';
 import { FaUser } from 'react-icons/fa';
+import { useSidebar } from '@/lib/sidebar-context';
 
 export default function TopBar() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const { isExpanded } = useSidebar();
 
   // Only show for authenticated users
   if (!isAuthenticated) {
@@ -14,7 +16,9 @@ export default function TopBar() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-14 bg-transparent border-none border-purple-500/20 z-50 flex items-center justify-between px-4">
+    <div className={`fixed top-0 right-0 h-14 bg-transparent z-50 flex items-center justify-between px-4 transition-all duration-300 ${
+      isExpanded ? 'left-64' : 'left-16'
+    }`}>
       {/* Left: Model Selector */}
       <div className="flex items-center gap-2">
         <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800/60 transition-colors text-white">
