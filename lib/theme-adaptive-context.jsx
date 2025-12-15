@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useTheme } from './theme-context';
 
 const ThemeAdaptiveContext = createContext({
   isDarkMode: true,
@@ -13,32 +14,15 @@ const ThemeAdaptiveContext = createContext({
 });
 
 export function ThemeAdaptiveProvider({ children }) {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { isDarkMode: themeIsDarkMode } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    
-    const checkSystemTheme = () => {
-      if (typeof window !== 'undefined') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(systemPrefersDark);
-      }
-    };
-
-    checkSystemTheme();
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setIsDarkMode(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   // Theme-aware text colors
-  const textColors = isDarkMode ? {
+  const textColors = themeIsDarkMode ? {
     primary: 'text-white',
     secondary: 'text-gray-300',
     tertiary: 'text-gray-400',
@@ -53,7 +37,7 @@ export function ThemeAdaptiveProvider({ children }) {
   };
 
   const value = {
-    isDarkMode,
+    isDarkMode: themeIsDarkMode,
     mounted,
     textColors,
   };

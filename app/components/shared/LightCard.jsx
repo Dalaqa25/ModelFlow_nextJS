@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function LightCard({ 
   children, 
@@ -10,28 +10,7 @@ export default function LightCard({
   hover = true,
   padding = 'default'
 }) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check system preference
-    const checkSystemTheme = () => {
-      if (typeof window !== 'undefined') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(systemPrefersDark);
-      }
-    };
-
-    checkSystemTheme();
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setIsDarkMode(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const { isDarkMode } = useThemeAdaptive();
 
   // Light mode optimized card variants
   const cardVariants = {

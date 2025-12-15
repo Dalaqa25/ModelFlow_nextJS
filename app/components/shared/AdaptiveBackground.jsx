@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import UnifiedBackground from './UnifiedBackground';
 import LightBackground from './LightBackground';
-import { ThemeAdaptiveProvider } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function AdaptiveBackground({ 
   variant = 'default', 
@@ -12,51 +11,35 @@ export default function AdaptiveBackground({
   showParticles = false,
   showFloatingElements = true 
 }) {
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    
-    // Check system preference
-    const checkSystemTheme = () => {
-      if (typeof window !== 'undefined') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(systemPrefersDark);
-      }
-    };
-
-    checkSystemTheme();
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setIsDarkMode(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const { isDarkMode, mounted } = useThemeAdaptive();
 
   // Prevent flash of wrong theme on initial load
+  // Show dark mode by default while checking
   if (!mounted) {
-    return null;
-  }
-
-  // Switch between backgrounds based on system theme
-  const BackgroundComponent = isDarkMode ? UnifiedBackground : LightBackground;
-
-  return (
-    <ThemeAdaptiveProvider>
-      <BackgroundComponent
+    return (
+      <UnifiedBackground
         variant={variant}
         className={className}
         showParticles={showParticles}
         showFloatingElements={showFloatingElements}
       >
         {children}
-      </BackgroundComponent>
-    </ThemeAdaptiveProvider>
+      </UnifiedBackground>
+    );
+  }
+
+  // Switch between backgrounds based on system theme
+  const BackgroundComponent = isDarkMode ? UnifiedBackground : LightBackground;
+
+  return (
+    <BackgroundComponent
+      variant={variant}
+      className={className}
+      showParticles={showParticles}
+      showFloatingElements={showFloatingElements}
+    >
+      {children}
+    </BackgroundComponent>
   );
 }
 

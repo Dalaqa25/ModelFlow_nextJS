@@ -1,33 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { FiSend } from 'react-icons/fi';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function Input() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode } = useThemeAdaptive();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    // Check system preference
-    const checkSystemTheme = () => {
-      if (typeof window !== 'undefined') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(systemPrefersDark);
-      }
-    };
-
-    checkSystemTheme();
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setIsDarkMode(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();

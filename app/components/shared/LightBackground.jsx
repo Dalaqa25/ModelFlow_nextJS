@@ -1,7 +1,8 @@
 'use client';
 
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function LightBackground({ 
   variant = 'default', 
@@ -13,28 +14,7 @@ export default function LightBackground({
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check system preference
-    const checkSystemTheme = () => {
-      if (typeof window !== 'undefined') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setIsDarkMode(systemPrefersDark);
-      }
-    };
-
-    checkSystemTheme();
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setIsDarkMode(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const { isDarkMode } = useThemeAdaptive();
 
   useEffect(() => {
     const handleMouseMove = (e) => {

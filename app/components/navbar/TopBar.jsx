@@ -1,14 +1,14 @@
 'use client';
 
 import { useAuth } from '@/lib/supabase-auth-context';
-import { useRouter } from 'next/navigation';
-import { FaUser } from 'react-icons/fa';
 import { useSidebar } from '@/lib/sidebar-context';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import ProfileDropdown from './ProfileDropdown';
 
 export default function TopBar() {
   const { isAuthenticated } = useAuth();
-  const router = useRouter();
   const { isExpanded } = useSidebar();
+  const { isDarkMode, textColors } = useThemeAdaptive();
 
   // Only show for authenticated users
   if (!isAuthenticated) {
@@ -21,7 +21,11 @@ export default function TopBar() {
     }`}>
       {/* Left: Model Selector */}
       <div className="flex items-center gap-2">
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800/60 transition-colors text-white">
+        <button className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+          isDarkMode 
+            ? 'hover:bg-slate-800/60 text-white' 
+            : 'hover:bg-white/60 text-gray-900'
+        }`}>
           <span className="text-lg font-medium">ModelGrow</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -30,14 +34,7 @@ export default function TopBar() {
       </div>
 
       {/* Right: User Profile */}
-      <div className="relative">
-        <button
-          onClick={() => router.push('/profile')}
-          className="w-8 h-8 rounded-full bg-slate-700/60 hover:bg-slate-600/60 transition-colors flex items-center justify-center text-white border border-purple-500/30"
-        >
-          <FaUser className="w-4 h-4" />
-        </button>
-      </div>
+      <ProfileDropdown />
     </div>
   );
 }

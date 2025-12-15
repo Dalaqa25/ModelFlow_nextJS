@@ -6,13 +6,13 @@ import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
 import NavigationLoader from "@/app/components/NavigationLoader";
 import Navbar from "@/app/components/Navbar";
-import TopBar from "@/app/components/navbar/TopBar";
-import Sidebar from "@/app/components/navbar/Sidebar";
+import NavigationBar from "@/app/components/NavigationBar";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from "@/lib/theme-context";
+import { ThemeAdaptiveProvider } from "@/lib/theme-adaptive-context";
 
 const inter = Inter({
     subsets: ['latin'],
@@ -28,20 +28,21 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
-            <NavigationLoadingProvider>
-              <SplashProvider>
-                <AuthProvider>
-                  <SidebarProvider>
-                    <Navbar />
-                    <TopBar />
-                    <Sidebar />
-                    {children}
-                    <NavigationLoader />
-                  </SidebarProvider>
-                </AuthProvider>
-              </SplashProvider>
-            </NavigationLoadingProvider>
-            <Toaster position="top-right" />
+            <ThemeAdaptiveProvider>
+              <NavigationLoadingProvider>
+                <SplashProvider>
+                  <AuthProvider>
+                    <SidebarProvider>
+                      <Navbar />
+                      <NavigationBar />
+                      {children}
+                      <NavigationLoader />
+                    </SidebarProvider>
+                  </AuthProvider>
+                </SplashProvider>
+              </NavigationLoadingProvider>
+              <Toaster position="top-right" />
+            </ThemeAdaptiveProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </body>

@@ -2,6 +2,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 const SplashContext = createContext({ loading: false });
 
@@ -30,20 +31,8 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
 }
 
 function SplashScreen() {
-  // Detect system color scheme preference
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check for system preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
-    
-    // Listen for changes
-    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
+  // Use shared theme context
+  const { isDarkMode } = useThemeAdaptive();
 
   // Add animation using Tailwind and a custom keyframes style
   return (
