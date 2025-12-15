@@ -21,7 +21,7 @@ function getPageName(path) {
         '/': 'Home',
         '/dashboard': 'Dashboard',
         '/plans': 'Plans',
-        '/requests': 'Requests',
+        '/community': 'Community',
         '/profile': 'Profile',
         '/auth/login': 'Login',
         '/auth/signup': 'Sign Up'

@@ -56,9 +56,9 @@ export default function Navbar() {
                 Home
               </NavigationLink>
               <NavigationLink
-                href="/requests"
+                href="/community"
                 className={`flex items-center gap-2 text-sm md:text-base font-medium transition-colors ${
-                  pathname === '/requests' 
+                  pathname === '/community' 
                     ? 'text-purple-400' 
                     : isDarkMode 
                       ? 'text-white hover:text-purple-300' 
@@ -187,10 +187,10 @@ export default function Navbar() {
                   Home
                 </NavigationLink>
                 <NavigationLink
-                  href="/requests"
+                  href="/community"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-2 text-base font-medium transition-colors ${
-                    pathname === '/requests' 
+                    pathname === '/community' 
                       ? 'text-purple-400' 
                       : isDarkMode 
                         ? 'text-white hover:text-purple-300' 

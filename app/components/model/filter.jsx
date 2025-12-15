@@ -65,7 +65,7 @@ export default function Filter({ selectedTag, setSelectedTag, price, setPrice })
                         ${(price[0] / 100).toFixed(2)} - ${(price[1] / 100).toFixed(2)}
                     </div>
                 </div>
-                <NavigationLink href="/requests" className="block">
+                <NavigationLink href="/community" className="block">
                     <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2 rounded-xl shadow-md transition-all text-base mt-4">
                         Request a Model
                     </button>
