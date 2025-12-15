@@ -25,7 +25,7 @@ export default function SignupPage() {
 
   // Handle successful verification
   const handleVerificationSuccess = () => {
-    router.push('/dashboard');
+    router.push('/main');
   };
 
   // Resend cooldown timer

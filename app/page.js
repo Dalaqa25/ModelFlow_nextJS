@@ -10,9 +10,9 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // If user is authenticated, redirect to dashboard
+    // If user is authenticated, redirect to main
     if (!loading && isAuthenticated && user) {
-      router.replace('/dashboard');
+      router.replace('/main');
     }
   }, [user, loading, isAuthenticated, router]);
 

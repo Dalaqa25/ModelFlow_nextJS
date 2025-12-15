@@ -22,6 +22,7 @@ export async function POST(req) {
 
     console.log('📥 Received execution request:', { automation_id, config });
 
+    // Validate inputs
     if (!automation_id || !config) {
       return NextResponse.json(
         { error: 'automation_id and config are required' },
@@ -32,132 +33,36 @@ export async function POST(req) {
     // Validate automation_id is a UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(automation_id)) {
-      console.error('❌ Invalid automation_id format:', automation_id);
       return NextResponse.json(
-        { error: `Invalid automation ID format. Expected UUID, got: ${automation_id}` },
+        { error: 'Invalid automation ID format' },
         { status: 400 }
       );
     }
 
-    // 1. Get the automation from database
-    const { data: automation, error: automationError } = await supabase
-      .from('automations')
-      .select('*')
-      .eq('id', automation_id)
-      .single();
-
-    if (automationError || !automation) {
-      console.error('❌ Automation not found:', { automation_id, error: automationError });
-      
-      // Check if any automations exist at all
-      const { data: allAutomations, error: listError } = await supabase
-        .from('automations')
-        .select('id, name')
-        .limit(5);
-      
-      console.log('📋 Available automations:', allAutomations);
-      
-      return NextResponse.json(
-        { 
-          error: 'Automation not found. It may have been deleted or you may need to upload it first.',
-          automation_id,
-          available_count: allAutomations?.length || 0
-        },
-        { status: 404 }
-      );
-    }
-
-    // 2. Get user's Google tokens from user_integrations
-    console.log('🔍 Looking for integration with user_id:', user.id, 'email:', user.email);
+    // Send minimal data to automation runner
+    // Runner will fetch workflow, developer_keys, and user tokens from database
     
-    const { data: integration, error: integrationError } = await supabase
-      .from('user_integrations')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('provider', 'google')
-      .single();
-
-    console.log('📊 Integration query result:', { 
-      found: !!integration, 
-      error: integrationError?.message,
-      integration_user_id: integration?.user_id 
-    });
-
-    if (integrationError || !integration) {
-      // Check if integration exists for a different user with same email
-      const { data: allIntegrations } = await supabase
-        .from('user_integrations')
-        .select('user_id, provider_email')
-        .eq('provider', 'google')
-        .limit(5);
-      
-      console.log('🔍 All Google integrations:', allIntegrations);
-      
-      return NextResponse.json(
-        { 
-          error: 'Google account not connected. Please connect your Google account first.', 
-          debug: { 
-            current_user_id: user.id,
-            current_user_email: user.email,
-            error: integrationError?.message,
-            hint: 'Try disconnecting and reconnecting your Google account'
-          } 
-        },
-        { status: 400 }
-      );
-    }
-
-    // 3. Replace placeholders in workflow with user's config
-    let workflowString = JSON.stringify(automation.workflow);
-    
-    // Inject user-provided config (like SHEET_ID, SHEET_NAME, FILE_INPUT)
+    // Convert config keys to lowercase for webhook body compatibility
+    // (Database stores TIKTOK_URL, but workflow expects tiktok_url)
+    const lowercaseConfig = {};
     Object.entries(config).forEach(([key, value]) => {
-      const placeholder = `{{${key}}}`;
-      workflowString = workflowString.replaceAll(placeholder, value);
+      lowercaseConfig[key.toLowerCase()] = value;
     });
-
-    const configuredWorkflow = JSON.parse(workflowString);
-
-    // Convert developer keys from SNAKE_CASE to camelCase for the runner
-    // e.g., OPEN_ROUTER_API_KEY -> openRouterApiKey
-    const convertToCamelCase = (str) => {
-      return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    
+    const runnerPayload = {
+      automation_id,
+      user_id: user.id,
+      config: lowercaseConfig
     };
 
-    const developerTokens = {};
-    if (automation.developer_keys && typeof automation.developer_keys === 'object') {
-      console.log('🔑 Preparing developer keys for tokens:', Object.keys(automation.developer_keys));
-      Object.entries(automation.developer_keys).forEach(([key, value]) => {
-        const camelCaseKey = convertToCamelCase(key);
-        developerTokens[camelCaseKey] = value;
-      });
-    }
+    console.log('🚀 Sending to automation runner:', runnerPayload);
 
-    // 4. Send to Node.js automation runner
-    const runnerResponse = await fetch('http://localhost:3001/execute', {
+    const runnerResponse = await fetch('http://localhost:3001/api/automations/run', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        workflow: configuredWorkflow,
-        initialData: {
-          user_email: user.email
-        },
-        tokens: {
-          // User OAuth tokens
-          access_token: integration.access_token,
-          refresh_token: integration.refresh_token,
-          expires_at: integration.expires_at,
-          // Developer API keys (from database) - already in camelCase
-          ...developerTokens
-        },
-        tokenMapping: {
-          access_token: "googleAccessToken",
-          refresh_token: "googleRefreshToken"
-          // Developer tokens already have correct camelCase names
-        }
-      }),
+      body: JSON.stringify(runnerPayload),
     });
 
     if (!runnerResponse.ok) {
@@ -170,7 +75,7 @@ export async function POST(req) {
 
     const result = await runnerResponse.json();
 
-    console.log('✅ Automation runner response:', JSON.stringify(result, null, 2));
+    console.log('✅ Automation completed:', result.success ? 'Success' : 'Failed');
 
     return NextResponse.json({
       success: true,

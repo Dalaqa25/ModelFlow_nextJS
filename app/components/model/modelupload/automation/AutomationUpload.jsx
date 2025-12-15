@@ -13,7 +13,7 @@ import AutomationStep2MediaPricing from './steps/AutomationStep2MediaPricing';
 import AutomationStep3JsonUpload from './steps/AutomationStep3JsonUpload';
 import AutomationStep3DeveloperKeys from './steps/AutomationStep3DeveloperKeys';
 import AutomationStep4InputTypes from './steps/AutomationStep4InputTypes';
-import { detectDeveloperKeys, replaceCredentialsWithPlaceholders, replaceN8nPlaceholders } from './detectKeys';
+import { detectDeveloperKeys, detectUserConnectors, replaceCredentialsWithPlaceholders, replaceN8nPlaceholders } from './detectKeys';
 import {
     clearStepErrors,
     validateAutomationForm,
@@ -36,6 +36,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [detectedKeys, setDetectedKeys] = useState([]);
+    const [detectedConnectors, setDetectedConnectors] = useState([]);
     const [detectedInputs, setDetectedInputs] = useState([]);
     const [showKeysStep, setShowKeysStep] = useState(false);
     const [showInputTypesStep, setShowInputTypesStep] = useState(false);
@@ -113,13 +114,16 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             setDetectedInputs(userInputs);
             setShowInputTypesStep(userInputs.length > 0);
             
-            // Step 2: Detect developer keys (API keys, secrets)
-            const keys = detectDeveloperKeys(workflow);
+            // Step 2a: Detect user connectors (OAuth services)
+            const connectors = detectUserConnectors(workflow);
+            setDetectedConnectors(connectors);
+            console.log('🔗 Detected user connectors:', connectors);
             
+            // Step 2b: Detect developer keys (API keys, secrets)
+            const keys = detectDeveloperKeys(workflow);
             setDetectedKeys(keys);
             setShowKeysStep(keys.length > 0);
-            
-            console.log('🔍 Detected developer keys:', keys);
+            console.log('🔑 Detected developer keys:', keys);
             
             // Step 3: Replace credentials with placeholders if keys detected
             if (keys.length > 0) {
@@ -144,6 +148,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const handleRemoveJson = () => {
         setFormData((prev) => ({ ...prev, jsonFile: null }));
         setDetectedKeys([]);
+        setDetectedConnectors([]);
         setDetectedInputs([]);
         setShowKeysStep(false);
         setShowInputTypesStep(false);
@@ -222,6 +227,12 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             payload.append('description', formData.description.trim());
             payload.append('price', formData.price);
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
+            
+            // Add user connectors if any
+            if (detectedConnectors.length > 0) {
+                payload.append('requiredConnectors', JSON.stringify(detectedConnectors));
+                console.log('🔗 Sending connectors to API:', detectedConnectors);
+            }
             
             // Add developer keys if any
             if (Object.keys(formData.developerKeys).length > 0) {

@@ -49,15 +49,15 @@ export async function middleware(request) {
     return supabaseResponse;
   }
 
-  // If user is authenticated and trying to access auth routes, redirect to dashboard
+  // If user is authenticated and trying to access auth routes, redirect to main
   if (user && pathname.startsWith('/auth/')) {
-    url.pathname = '/dashboard';
+    url.pathname = '/main';
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated and trying to access root, redirect to dashboard
+  // If user is authenticated and trying to access root, redirect to main
   if (user && pathname === '/') {
-    url.pathname = '/dashboard';
+    url.pathname = '/main';
     return NextResponse.redirect(url);
   }
 

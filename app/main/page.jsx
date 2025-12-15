@@ -5,7 +5,6 @@ import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
 import AiChat from '@/app/components/mainComponents/ai-chat';
-import AutomationUpload from '@/app/components/model/modelupload/automation/AutomationUpload';
 
 export default function Home() {
     const [hasStartedChat, setHasStartedChat] = useState(false);
@@ -46,14 +45,6 @@ export default function Home() {
 
     return (
         <AdaptiveBackground variant="content" className="pt-16">
-            {/* Test Upload Button */}
-            <button
-                onClick={() => setShowUploadDialog(true)}
-                className="fixed top-20 right-4 z-50 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg transition-colors"
-            >
-                Upload Test
-            </button>
-
             {/* Full-page sniper-scope style overlay */}
             <div
                 className={`
@@ -84,15 +75,6 @@ export default function Home() {
                 onScopeChange={setIsScoped}
                 isLoading={isLoading}
                 onStopGeneration={handleStopGeneration}
-            />
-
-            <AutomationUpload
-                isOpen={showUploadDialog}
-                onClose={() => setShowUploadDialog(false)}
-                onUploadSuccess={(result) => {
-                    setShowUploadDialog(false);
-                    console.log('Automation uploaded:', result);
-                }}
             />
         </AdaptiveBackground>
     );

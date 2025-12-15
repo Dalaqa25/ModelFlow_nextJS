@@ -48,6 +48,7 @@ export async function POST(req) {
     const automationFile = formData.get('automationFile');
     const developerKeysJson = formData.get('developerKeys');
     const inputTypesJson = formData.get('inputTypes');
+    const requiredConnectorsJson = formData.get('requiredConnectors');
 
     // Validate required fields
     if (!name || !description || isNaN(price) || !automationFile) {
@@ -87,36 +88,16 @@ export async function POST(req) {
       console.log('Image upload not implemented yet');
     }
 
-    // Extract required connectors (OAuth services users must connect)
-    const requiredConnectors = [];
-    const workflowString = JSON.stringify(workflow);
-    
-    // Check for Google OAuth (access_token + Google APIs)
-    if (workflowString.includes('access_token') && 
-        (workflowString.includes('googleapis.com') || 
-         workflowString.includes('youtube') ||
-         workflowString.includes('google'))) {
-      requiredConnectors.push('Google');
-    }
-    
-    // Check for Slack OAuth
-    if ((workflowString.includes('slack_token') || workflowString.includes('slackOAuth')) &&
-        workflowString.includes('slack.com')) {
-      if (!requiredConnectors.includes('Slack')) {
-        requiredConnectors.push('Slack');
+    // Parse required connectors from frontend (already detected during upload)
+    let requiredConnectors = [];
+    if (requiredConnectorsJson) {
+      try {
+        requiredConnectors = JSON.parse(requiredConnectorsJson);
+        console.log('🔗 Required connectors from frontend:', requiredConnectors);
+      } catch (e) {
+        console.error('Failed to parse required connectors:', e);
       }
     }
-    
-    // Check for Twitter OAuth
-    if ((workflowString.includes('twitter') || workflowString.includes('oauth_token')) &&
-        workflowString.includes('api.twitter.com')) {
-      if (!requiredConnectors.includes('Twitter')) {
-        requiredConnectors.push('Twitter');
-      }
-    }
-    
-    // Add more OAuth service detection as needed
-    console.log('🔗 Detected required connectors:', requiredConnectors);
 
     // Parse developer keys if provided
     let developerKeys = {};
@@ -172,7 +153,8 @@ export async function POST(req) {
       console.log('⚠️ No inputTypes provided, falling back to workflow scanning');
       
       // Method 1: Scan for webhook body parameters like $json["body"]["tiktok_url"]
-      const webhookBodyRegex = /\$json\["body"\]\["([^"]+)"\]/g;
+      // Handles both escaped and non-escaped quotes: $json["body"]["field"] OR $json[\"body\"][\"field\"]
+      const webhookBodyRegex = /\$json\[\\*"body\\*"\]\[\\*"([^"\\]+)\\*"\]/g;
       const bodyParams = new Set();
       
       let match;

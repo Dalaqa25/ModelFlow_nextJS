@@ -76,8 +76,9 @@ function detectWebhookInputs(workflowJson) {
     webhookInputs.add(variableName);
   }
   
-  // Pattern 2: $json["body"]["fieldName"]
-  const bracketPattern = /\$json\["body"\]\["([a-zA-Z_][a-zA-Z0-9_]*)"\]/g;
+  // Pattern 2: $json["body"]["fieldName"] (handles both escaped and non-escaped quotes)
+  // Matches: $json["body"]["fieldName"] OR $json[\"body\"][\"fieldName\"]
+  const bracketPattern = /\$json\[\\*"body\\*"\]\[\\*"([a-zA-Z_][a-zA-Z0-9_]*)\\*"\]/g;
   while ((match = bracketPattern.exec(workflowString)) !== null) {
     const fieldName = match[1];
     
@@ -96,7 +97,8 @@ function detectWebhookInputs(workflowJson) {
   }
   
   // Pattern 3: $('Webhook').item.json.body.fieldName or $('Webhook').first().json.body.fieldName
-  const webhookCallPattern = /\$\('Webhook'\)\.(?:item|first)\(\)\.json\.body\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
+  // Also handles escaped quotes in 'Webhook'
+  const webhookCallPattern = /\$\(\\*'Webhook\\*'\)\.(?:item|first)\(\)\.json\.body\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
   while ((match = webhookCallPattern.exec(workflowString)) !== null) {
     const fieldName = match[1];
     
@@ -199,7 +201,70 @@ export function replaceCredentialsWithPlaceholders(workflowJson, detectedKeys) {
 }
 
 /**
- * Detects API keys and secrets from workflow JSON
+ * Detects OAuth-based user connectors (services users need to authenticate with)
+ * Returns array of connector names like ['Google', 'Slack', 'Twitter']
+ */
+export function detectUserConnectors(workflowJson) {
+  try {
+    const workflowString = JSON.stringify(workflowJson);
+    const connectors = new Set();
+    
+    console.log('🔍 Scanning workflow for user connectors (OAuth services)...');
+    
+    if (workflowJson.nodes && Array.isArray(workflowJson.nodes)) {
+      workflowJson.nodes.forEach(node => {
+        if (node.credentials) {
+          Object.keys(node.credentials).forEach(credType => {
+            const credLower = credType.toLowerCase();
+            
+            // Google services (Sheets, Gmail, Drive, Calendar, etc.)
+            if (credLower.includes('google') || credLower.includes('gmail') || 
+                credLower.includes('sheets') || credLower.includes('drive') ||
+                credLower.includes('calendar')) {
+              console.log(`🔗 Found Google connector: ${credType}`);
+              connectors.add('Google');
+            }
+            // Slack
+            else if (credLower.includes('slack')) {
+              console.log(`🔗 Found Slack connector: ${credType}`);
+              connectors.add('Slack');
+            }
+            // Twitter
+            else if (credLower.includes('twitter')) {
+              console.log(`🔗 Found Twitter connector: ${credType}`);
+              connectors.add('Twitter');
+            }
+            // GitHub
+            else if (credLower.includes('github')) {
+              console.log(`🔗 Found GitHub connector: ${credType}`);
+              connectors.add('GitHub');
+            }
+            // LinkedIn
+            else if (credLower.includes('linkedin')) {
+              console.log(`🔗 Found LinkedIn connector: ${credType}`);
+              connectors.add('LinkedIn');
+            }
+            // Facebook
+            else if (credLower.includes('facebook')) {
+              console.log(`🔗 Found Facebook connector: ${credType}`);
+              connectors.add('Facebook');
+            }
+            // Add more as needed
+          });
+        }
+      });
+    }
+    
+    console.log('✅ User connectors detected:', Array.from(connectors));
+    return Array.from(connectors).sort();
+  } catch (error) {
+    console.error('Error detecting user connectors:', error);
+    return [];
+  }
+}
+
+/**
+ * Detects API keys and secrets from workflow JSON (developer-provided keys)
  * Returns array of detected key names
  */
 export function detectDeveloperKeys(workflowJson) {
@@ -210,11 +275,38 @@ export function detectDeveloperKeys(workflowJson) {
     
     const detectedKeys = new Set();
     
-    // Method 1: Detect n8n credentials
+    // Method 1: Detect n8n credentials (excluding OAuth-based user connectors)
     if (workflowJson.nodes && Array.isArray(workflowJson.nodes)) {
+      // OAuth/User connector patterns to exclude (these are user-connected services, not developer keys)
+      const userConnectorPatterns = [
+        /oauth/i,           // Any OAuth-based auth (Google, Slack, etc.)
+        /sheets/i,          // Google Sheets
+        /gmail/i,           // Gmail
+        /drive/i,           // Google Drive
+        /calendar/i,        // Google Calendar
+        /slack/i,           // Slack
+        /twitter/i,         // Twitter
+        /facebook/i,        // Facebook
+        /linkedin/i,        // LinkedIn
+        /github/i,          // GitHub OAuth
+        /smtp/i,            // SMTP (user's email)
+        /imap/i,            // IMAP (user's email)
+        /pop3/i,            // POP3 (user's email)
+      ];
+      
       workflowJson.nodes.forEach(node => {
         if (node.credentials) {
           Object.keys(node.credentials).forEach(credType => {
+            // Check if this is a user connector (OAuth-based)
+            const isUserConnector = userConnectorPatterns.some(pattern => 
+              pattern.test(credType)
+            );
+            
+            if (isUserConnector) {
+              console.log(`🔗 Skipping user connector: ${credType} (handled by user authentication)`);
+              return; // Skip this credential
+            }
+            
             // Convert credential type to key name
             // e.g., "openRouterApi" -> "OPENROUTER_API_KEY"
             const keyName = credType
@@ -226,6 +318,76 @@ export function detectDeveloperKeys(workflowJson) {
             console.log(`🔑 Found n8n credential: ${credType} → ${keyName}`);
             detectedKeys.add(keyName);
           });
+        }
+        
+        // Method 1b: Detect hardcoded API keys in HTTP Request nodes
+        if (node.type === 'n8n-nodes-base.httpRequest') {
+          console.log(`🌐 Scanning HTTP Request node: ${node.name}`);
+          
+          // Check URL for API keys
+          if (node.parameters?.url) {
+            const url = node.parameters.url;
+            
+            // Google Search API key pattern: key=...
+            if (url.includes('googleapis.com/customsearch') || url.includes('key=')) {
+              const keyMatch = url.match(/[?&]key=([A-Za-z0-9_-]+)/);
+              if (keyMatch) {
+                console.log(`🔑 Found Google Search API key in URL`);
+                detectedKeys.add('GOOGLE_SEARCH_API_KEY');
+              }
+              
+              // Google Custom Search Engine ID: cx=...
+              const cxMatch = url.match(/[?&]cx=([A-Za-z0-9_-]+)/);
+              if (cxMatch) {
+                console.log(`🔑 Found Google Search CSX in URL`);
+                detectedKeys.add('GOOGLE_SEARCH_CSX');
+              }
+            }
+            
+            // Generic API key patterns in URL
+            const genericKeyPatterns = [
+              /[?&]apikey=([^&\s]+)/i,
+              /[?&]api_key=([^&\s]+)/i,
+              /[?&]token=([^&\s]+)/i,
+            ];
+            
+            genericKeyPatterns.forEach(pattern => {
+              if (pattern.test(url)) {
+                console.log(`🔑 Found generic API key in URL`);
+                detectedKeys.add('API_KEY');
+              }
+            });
+          }
+          
+          // Check headers for API keys
+          if (node.parameters?.headerParameters?.parameters) {
+            node.parameters.headerParameters.parameters.forEach(header => {
+              const headerName = header.name?.toLowerCase() || '';
+              
+              if (headerName.includes('rapidapi')) {
+                console.log(`🔑 Found RapidAPI key in headers`);
+                detectedKeys.add('RAPIDAPI_KEY');
+              } else if (headerName.includes('api-key') || headerName === 'x-api-key') {
+                console.log(`🔑 Found API key in headers`);
+                detectedKeys.add('API_KEY');
+              } else if (headerName === 'authorization' && header.value && !header.value.includes('{{')) {
+                console.log(`🔑 Found Authorization header`);
+                detectedKeys.add('AUTH_TOKEN');
+              }
+            });
+          }
+          
+          // Check query parameters for API keys
+          if (node.parameters?.queryParameters?.parameters) {
+            node.parameters.queryParameters.parameters.forEach(param => {
+              const paramName = param.name?.toLowerCase() || '';
+              
+              if (paramName === 'key' || paramName === 'apikey' || paramName === 'api_key') {
+                console.log(`🔑 Found API key in query parameters: ${param.name}`);
+                detectedKeys.add('API_KEY');
+              }
+            });
+          }
         }
       });
     }

@@ -63,7 +63,7 @@ export async function POST(request) {
       message: 'OTP verified successfully',
       session: data.session, // includes access_token, refresh_token
       user: data.user,
-      redirect: '/dashboard', // Tell frontend to redirect to dashboard
+      redirect: '/main', // Tell frontend to redirect to main
     });
 
   } catch (error) {
