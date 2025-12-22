@@ -3,9 +3,6 @@
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
 import SidebarToggle from './actions/SidebarToggle';
-import NewChatButton from './actions/NewChatButton';
-import ChatHistory from './ChatHistory';
-import SidebarActions from './actions/SidebarActions';
 import SidebarNavIcons from './SidebarNavIcons';
 import SidebarUploadIcon from './SidebarUploadIcon';
 import SidebarExpandButton from './actions/SidebarExpandButton';

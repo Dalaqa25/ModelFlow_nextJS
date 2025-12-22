@@ -37,7 +37,6 @@ export async function middleware(request) {
   // Check auth for protected routes AND auth routes (to redirect authenticated users)
   if (pathname.startsWith('/dashboard') || 
       pathname.startsWith('/profile') || 
-      pathname.startsWith('/admin') || 
       pathname.startsWith('/auth/') || 
       pathname === '/') {
     const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -62,7 +61,7 @@ export async function middleware(request) {
   }
 
   // If user is not authenticated and trying to access dashboard or other protected routes
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/admin'))) {
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile'))) {
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
