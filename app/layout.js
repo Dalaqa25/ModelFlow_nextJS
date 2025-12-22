@@ -5,8 +5,8 @@ import { AuthProvider } from "@/lib/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
 import NavigationLoader from "@/app/components/NavigationLoader";
-import Navbar from "@/app/components/Navbar";
-import NavigationBar from "@/app/components/NavigationBar";
+import PublicNavbar from "@/app/components/PublicNavbar";
+import AppShell from "@/app/components/AppShell";
 import { Inter } from 'next/font/google';
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
@@ -33,8 +33,8 @@ export default function RootLayout({ children }) {
                 <SplashProvider>
                   <AuthProvider>
                     <SidebarProvider>
-                      <Navbar />
-                      <NavigationBar />
+                      <PublicNavbar />
+                      <AppShell />
                       {children}
                       <NavigationLoader />
                     </SidebarProvider>

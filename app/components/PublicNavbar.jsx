@@ -9,7 +9,7 @@ import { FaHome, FaUsers, FaFileContract } from 'react-icons/fa';
 import { MdPrivacyTip } from 'react-icons/md';
 import Image from 'next/image';
 
-export default function Navbar() {
+export default function PublicNavbar() {
   const { isAuthenticated, loading } = useAuth();
   const { isDarkMode } = useTheme();
   const pathname = usePathname();

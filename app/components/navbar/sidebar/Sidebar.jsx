@@ -2,14 +2,14 @@
 
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
-import SidebarToggle from './SidebarToggle';
-import NewChatButton from './NewChatButton';
+import SidebarToggle from './actions/SidebarToggle';
+import NewChatButton from './actions/NewChatButton';
 import ChatHistory from './ChatHistory';
-import SidebarActions from './SidebarActions';
+import SidebarActions from './actions/SidebarActions';
 import SidebarNavIcons from './SidebarNavIcons';
 import SidebarUploadIcon from './SidebarUploadIcon';
-import SidebarExpandButton from './SidebarExpandButton';
-import SidebarCollapseButton from './SidebarCollapseButton';
+import SidebarExpandButton from './actions/SidebarExpandButton';
+import SidebarCollapseButton from './actions/SidebarCollapseButton';
 
 export default function Sidebar() {
   const { isAuthenticated } = useAuth();

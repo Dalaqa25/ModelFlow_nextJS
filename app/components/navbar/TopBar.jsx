@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
-import ProfileDropdown from './ProfileDropdown';
+import ProfileDropdown from './sidebar/actions/ProfileDropdown';
 
 export default function TopBar() {
   const { isAuthenticated } = useAuth();
