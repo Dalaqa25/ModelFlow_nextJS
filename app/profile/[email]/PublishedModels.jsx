@@ -1,8 +1,6 @@
 "use client";
-import { FaCode } from "react-icons/fa";
+import { FaCode, FaCube } from "react-icons/fa";
 import { useTheme } from "@/lib/theme-context";
-import DefaultModelImage from "@/app/components/model/defaultModelImage";
-import NavigationLink from "@/app/components/NavigationLink";
 
 export default function PublishedModels({ userModels }) {
     const { isDarkMode } = useTheme();
@@ -58,7 +56,7 @@ export default function PublishedModels({ userModels }) {
                                             <div className={`w-full h-full ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-600' : 'bg-gradient-to-br from-purple-50 to-blue-50'} flex items-center justify-center relative`}>
                                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-t-3xl"></div>
                                                 <div className="relative z-10">
-                                                    <DefaultModelImage size="medium" />
+                                                    <FaCube className={`text-4xl ${isDarkMode ? 'text-purple-400' : 'text-purple-500'}`} />
                                                 </div>
                                             </div>
                                         )}
