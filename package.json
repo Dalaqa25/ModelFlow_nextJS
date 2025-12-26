@@ -19,7 +19,7 @@
     "dotenv": "^17.2.1",
     "framer-motion": "^12.18.1",
     "lucide-react": "^0.508.0",
-    "next": "^16.0.8",
+    "next": "16.0.10",
     "openai": "^6.10.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
