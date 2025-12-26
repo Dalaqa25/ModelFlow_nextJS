@@ -1,51 +1,50 @@
-"use client";
 import "./globals.css";
 import "./globals-light.css";
-import { AuthProvider } from "@/lib/supabase-auth-context";
-import { NavigationLoadingProvider } from "@/lib/navigation-loading-context";
-import { SidebarProvider } from "@/lib/sidebar-context";
-import NavigationLoader from "@/app/components/NavigationLoader";
-import PublicNavbar from "@/app/components/PublicNavbar";
-import AppShell from "@/app/components/AppShell";
 import { Inter } from 'next/font/google';
-import { SplashProvider } from "./splash-context";
-import { Toaster } from 'react-hot-toast';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from "@/lib/theme-context";
-import { ThemeAdaptiveProvider } from "@/lib/theme-adaptive-context";
+import ClientProviders from "./client-providers";
 
 const inter = Inter({
     subsets: ['latin'],
     display: 'swap'
 });
 
-// Create a client
-const queryClient = new QueryClient();
+export const metadata = {
+    title: "ModelGrow – Automation Marketplace",
+    description: "Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations to streamline your business processes.",
+    keywords: ["ModelGrow", "automation", "n8n", "workflow", "AI automation", "marketplace", "no-code", "business automation"],
+    authors: [{ name: "ModelGrow" }],
+    creator: "ModelGrow",
+    publisher: "ModelGrow",
+    robots: {
+        index: true,
+        follow: true,
+    },
+    openGraph: {
+        type: "website",
+        locale: "en_US",
+        url: "https://modelgrow.com",
+        siteName: "ModelGrow",
+        title: "ModelGrow – Automation Marketplace",
+        description: "Discover and run AI-powered automation workflows built with n8n.",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "ModelGrow – Automation Marketplace",
+        description: "Discover and run AI-powered automation workflows built with n8n.",
+    },
+};
 
 export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <ThemeAdaptiveProvider>
-              <NavigationLoadingProvider>
-                <SplashProvider>
-                  <AuthProvider>
-                    <SidebarProvider>
-                      <PublicNavbar />
-                      <AppShell />
-                      {children}
-                      <NavigationLoader />
-                    </SidebarProvider>
-                  </AuthProvider>
-                </SplashProvider>
-              </NavigationLoadingProvider>
-              <Toaster position="top-right" />
-            </ThemeAdaptiveProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </body>
-    </html>
-  );
+    return (
+        <html lang="en">
+            <head>
+                <link rel="icon" href="/favicon.ico" />
+            </head>
+            <body className={inter.className}>
+                <ClientProviders>
+                    {children}
+                </ClientProviders>
+            </body>
+        </html>
+    );
 }
