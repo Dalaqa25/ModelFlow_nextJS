@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import AutomationUpload from '../components/model/modelupload/automation/AutomationUpload';
+import AutomationUpload from '../components/automationUpload/AutomationUpload';
 import { useAuth } from '@/lib/supabase-auth-context';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';

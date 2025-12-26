@@ -1,4 +1,4 @@
-// Small UI components for Model Upload functionality
+// Small UI components for Automation Upload functionality
 
 export const ErrorMessage = ({ error }) => {
     if (!error) return null;

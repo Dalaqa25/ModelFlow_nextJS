@@ -4,7 +4,7 @@ const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const MAX_JSON_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 
 const STEP_FIELD_MAP = {
-    1: ['automationName', 'description', 'price'],
+    1: ['automationName', 'description'],
     2: ['jsonFile']
 };
 
@@ -51,9 +51,6 @@ export const validateAutomationStep = (step, formData) => {
         if (!formData.description?.trim()) {
             errors.description = 'Description is required';
         }
-        if (!formData.price || Number(formData.price) <= 0) {
-            errors.price = 'Please choose a price tier';
-        }
     }
 
     if (step === 2) {
@@ -80,4 +77,3 @@ export const clearStepErrors = (errors, step) => {
     });
     return updatedErrors;
 };
-

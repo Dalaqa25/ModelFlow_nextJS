@@ -5,11 +5,9 @@ import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
-import { LoadingOverlay } from '../shared/components';
-import { PRICE_TIERS, TOTAL_STEPS } from '../shared/constants';
-import { useStepper } from '../shared/hooks';
+import { LoadingOverlay } from './shared/components';
+import { useStepper } from './shared/hooks';
 import AutomationStep1BasicInfo from './steps/AutomationStep1BasicInfo';
-import AutomationStep2MediaPricing from './steps/AutomationStep2MediaPricing';
 import AutomationStep3JsonUpload from './steps/AutomationStep3JsonUpload';
 import AutomationStep3DeveloperKeys from './steps/AutomationStep3DeveloperKeys';
 import AutomationStep4InputTypes from './steps/AutomationStep4InputTypes';
@@ -18,14 +16,12 @@ import {
     clearStepErrors,
     validateAutomationForm,
     validateAutomationStep,
-    validateImageFile,
     validateJsonFile
 } from './utils';
 
 const INITIAL_FORM_STATE = {
     automationName: '',
     description: '',
-    price: PRICE_TIERS[0].value,
     jsonFile: null,
     developerKeys: {},
     inputTypes: {}
@@ -88,11 +84,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         }
     };
 
-    const handlePriceChange = (price) => {
-        setFormData((prev) => ({ ...prev, price }));
-        if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
-    };
-
     const handleJsonSelect = async (file) => {
         const validationMessage = validateJsonFile(file);
         if (validationMessage) {
@@ -106,7 +97,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             let workflow = JSON.parse(text);
             
             // Step 1: Convert n8n placeholders to standard format
-            const { replaceN8nPlaceholders } = await import('./detectKeys');
             const { workflow: workflowWithStandardPlaceholders, userInputs } = replaceN8nPlaceholders(workflow);
             workflow = workflowWithStandardPlaceholders;
             
@@ -124,7 +114,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             
             // Step 3: Replace credentials with placeholders if keys detected
             if (keys.length > 0) {
-                const { replaceCredentialsWithPlaceholders } = await import('./detectKeys');
                 workflow = replaceCredentialsWithPlaceholders(workflow, keys);
             }
             
@@ -206,7 +195,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             const payload = new FormData();
             payload.append('name', formData.automationName.trim());
             payload.append('description', formData.description.trim());
-            payload.append('price', formData.price);
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
             
             // Add user connectors if any
@@ -309,7 +297,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 errors={errors}
                                                 handleInputChange={handleInputChange}
                                                 handleNext={handleNextWithValidation}
-                                                onPriceChange={handlePriceChange}
                                             />
                                         )}
                                         {step === 2 && (
@@ -368,4 +355,3 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         </Transition.Root>
     );
 }
-

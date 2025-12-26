@@ -1,7 +1,6 @@
-import { ErrorMessage } from '../../shared/components';
-import { PRICE_TIERS } from '../../shared/constants';
+import { ErrorMessage } from '../shared/components';
 
-export default function AutomationStep1BasicInfo({ formData, errors, handleInputChange, handleNext, onPriceChange }) {
+export default function AutomationStep1BasicInfo({ formData, errors, handleInputChange, handleNext }) {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
@@ -38,29 +37,6 @@ export default function AutomationStep1BasicInfo({ formData, errors, handleInput
                 <ErrorMessage error={errors.description} />
             </div>
 
-            <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-200">
-                    Price
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                    {PRICE_TIERS.map((tier) => (
-                        <button
-                            key={tier.value}
-                            type="button"
-                            onClick={() => onPriceChange(tier.value)}
-                            className={`px-4 py-3 rounded-xl border-2 transition ${
-                                formData.price === tier.value
-                                    ? 'border-purple-500 bg-purple-500/20 text-white'
-                                    : 'border-slate-600/60 bg-slate-800/40 text-slate-300 hover:border-slate-500'
-                            }`}
-                        >
-                            <div className="text-lg font-bold">{tier.label}</div>
-                        </button>
-                    ))}
-                </div>
-                <ErrorMessage error={errors.price} />
-            </div>
-
             <div className="flex justify-end pt-2">
                 <button
                     type="button"
@@ -73,4 +49,3 @@ export default function AutomationStep1BasicInfo({ formData, errors, handleInput
         </div>
     );
 }
-

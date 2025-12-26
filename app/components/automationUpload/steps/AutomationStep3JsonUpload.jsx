@@ -1,5 +1,5 @@
 import { ArrowUpTrayIcon, PaperClipIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { ErrorMessage } from '../../shared/components';
+import { ErrorMessage } from '../shared/components';
 
 export default function AutomationStep3JsonUpload({
     formData,
@@ -23,7 +23,6 @@ export default function AutomationStep3JsonUpload({
                 <h3 className="text-white font-semibold mb-2">Automation Summary</h3>
                 <ul className="text-sm text-slate-300 space-y-1">
                     <li><span className="text-slate-400">Name:</span> {formData.automationName || '—'}</li>
-                    <li><span className="text-slate-400">Price:</span> ${(Number(formData.price) / 100).toFixed(2)}</li>
                     <li><span className="text-slate-400">Video:</span> {formData.videoLink ? 'Provided' : 'Not provided'}</li>
                     <li><span className="text-slate-400">Image:</span> {formData.imageFile ? formData.imageFile.name : 'Not uploaded'}</li>
                 </ul>
@@ -97,4 +96,3 @@ export default function AutomationStep3JsonUpload({
         </div>
     );
 }
-
