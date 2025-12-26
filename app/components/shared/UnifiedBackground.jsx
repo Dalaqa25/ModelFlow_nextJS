@@ -67,14 +67,14 @@ export default function UnifiedBackground({
                 x: useTransform(mouseX, [-0.5, 0.5], [-3, 3]),
                 y: useTransform(mouseY, [-0.5, 0.5], [-2, 2]),
               }}
-              className="absolute top-20 left-20 w-72 h-72 bg-purple-500/25 rounded-full blur-3xl animate-pulse"
+              className="absolute top-20 left-20 w-72 h-72 bg-purple-500/25 rounded-full blur-3xl"
             />
             <motion.div
               style={{
                 x: useTransform(mouseX, [-0.5, 0.5], [4, -4]),
                 y: useTransform(mouseY, [-0.5, 0.5], [2, -2]),
               }}
-              className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/25 rounded-full blur-3xl animate-pulse delay-1000"
+              className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/25 rounded-full blur-3xl"
             />
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-purple-500/15 to-transparent rounded-full" />
           </>
@@ -86,14 +86,14 @@ export default function UnifiedBackground({
                 x: useTransform(mouseX, [-0.5, 0.5], [-2, 2]),
                 y: useTransform(mouseY, [-0.5, 0.5], [-1, 1]),
               } : {}}
-              className="absolute top-20 left-20 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl animate-pulse"
+              className="absolute top-20 left-20 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl"
             />
             <motion.div
               style={showFloatingElements ? {
                 x: useTransform(mouseX, [-0.5, 0.5], [2, -2]),
                 y: useTransform(mouseY, [-0.5, 0.5], [1, -1]),
               } : {}}
-              className="absolute bottom-20 right-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl animate-pulse delay-1000"
+              className="absolute bottom-20 right-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"
             />
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-purple-500/8 to-transparent rounded-full" />
           </>

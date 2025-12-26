@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 
 export default function LightBackground({ 
@@ -14,25 +14,31 @@ export default function LightBackground({
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const lastUpdateRef = useRef(0);
   const { isDarkMode } = useThemeAdaptive();
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!containerRef.current) return;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-      const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-      
-      mouseX.set(x);
-      mouseY.set(y);
-    };
+  // Throttled mouse move handler (~30fps)
+  const handleMouseMove = useCallback((e) => {
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 33) return;
+    lastUpdateRef.current = now;
 
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    
+    mouseX.set(x);
+    mouseY.set(y);
+  }, [mouseX, mouseY]);
+
+  useEffect(() => {
     if (showFloatingElements) {
       window.addEventListener('mousemove', handleMouseMove);
       return () => window.removeEventListener('mousemove', handleMouseMove);
     }
-  }, [mouseX, mouseY, showFloatingElements]);
+  }, [handleMouseMove, showFloatingElements]);
 
   // Light mode optimized background variants
   const backgroundVariants = {
@@ -72,14 +78,14 @@ export default function LightBackground({
                 x: useTransform(mouseX, [-0.5, 0.5], [-3, 3]),
                 y: useTransform(mouseY, [-0.5, 0.5], [-2, 2]),
               }}
-              className={`absolute top-20 left-20 w-72 h-72 ${blobColor} rounded-full blur-3xl animate-pulse`}
+              className={`absolute top-20 left-20 w-72 h-72 ${blobColor} rounded-full blur-3xl`}
             />
             <motion.div
               style={{
                 x: useTransform(mouseX, [-0.5, 0.5], [4, -4]),
                 y: useTransform(mouseY, [-0.5, 0.5], [2, -2]),
               }}
-              className={`absolute bottom-20 right-20 w-96 h-96 ${blobColor2} rounded-full blur-3xl animate-pulse delay-1000`}
+              className={`absolute bottom-20 right-20 w-96 h-96 ${blobColor2} rounded-full blur-3xl`}
             />
             <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial ${gradientColor} to-transparent rounded-full`} />
           </>
@@ -90,14 +96,14 @@ export default function LightBackground({
                 x: useTransform(mouseX, [-0.5, 0.5], [-2, 2]),
                 y: useTransform(mouseY, [-0.5, 0.5], [-1, 1]),
               } : {}}
-              className={`absolute top-20 left-20 w-64 h-64 ${blobColor} rounded-full blur-3xl animate-pulse`}
+              className={`absolute top-20 left-20 w-64 h-64 ${blobColor} rounded-full blur-3xl`}
             />
             <motion.div
               style={showFloatingElements ? {
                 x: useTransform(mouseX, [-0.5, 0.5], [2, -2]),
                 y: useTransform(mouseY, [-0.5, 0.5], [1, -1]),
               } : {}}
-              className={`absolute bottom-20 right-20 w-80 h-80 ${blobColor2} rounded-full blur-3xl animate-pulse delay-1000`}
+              className={`absolute bottom-20 right-20 w-80 h-80 ${blobColor2} rounded-full blur-3xl`}
             />
             <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial ${gradientColor} to-transparent rounded-full`} />
           </>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 export default function SpinningCube({ className = '' }) {
   const containerRef = useRef(null);
+  const lastUpdateRef = useRef(0);
   
   // Mouse tracking values
   const mouseX = useMotionValue(0);
@@ -17,24 +18,29 @@ export default function SpinningCube({ className = '' }) {
   const rotateX = useSpring(mouseY, springConfig);
   const rotateY = useSpring(mouseX, springConfig);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      // Get viewport dimensions
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      
-      // Calculate offset from center (-1 to 1 range)
-      const x = (e.clientX - centerX) / centerX;
-      const y = (e.clientY - centerY) / centerY;
-      
-      // Apply subtle rotation (max 8 degrees)
-      mouseX.set(x * 8);
-      mouseY.set(-y * 8);
-    };
+  // Throttled mouse move handler (~30fps)
+  const handleMouseMove = useCallback((e) => {
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 33) return; // ~30fps throttle
+    lastUpdateRef.current = now;
 
+    // Get viewport dimensions
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Calculate offset from center (-1 to 1 range)
+    const x = (e.clientX - centerX) / centerX;
+    const y = (e.clientY - centerY) / centerY;
+    
+    // Apply subtle rotation (max 8 degrees)
+    mouseX.set(x * 8);
+    mouseY.set(-y * 8);
+  }, [mouseX, mouseY]);
+
+  useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mouseX, mouseY]);
+  }, [handleMouseMove]);
 
   return (
     <motion.div
