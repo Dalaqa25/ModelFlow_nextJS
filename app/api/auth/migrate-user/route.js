@@ -7,8 +7,6 @@ export async function POST(request) {
   try {
     const { email } = await request.json();
     
-    console.log('🔧 Migrating user to auth system:', email);
-    
     // Check if user exists in our database
     const dbUser = await userDB.getUserByEmail(email);
     if (!dbUser) {
@@ -43,13 +41,10 @@ export async function POST(request) {
     });
     
     if (error) {
-      console.error('❌ Error creating auth user:', error);
       return NextResponse.json({ 
         error: error.message 
       }, { status: 400 });
     }
-    
-    console.log('✅ User migrated successfully:', data.user.email);
     
     return NextResponse.json({
       message: 'User successfully migrated to auth system',
@@ -57,7 +52,6 @@ export async function POST(request) {
     });
     
   } catch (error) {
-    console.error('💥 Migration error:', error);
     return NextResponse.json({ 
       error: 'Migration failed' 
     }, { status: 500 });

@@ -44,7 +44,7 @@ export default function Home() {
     };
 
     return (
-        <AdaptiveBackground variant="content" className="pt-16">
+        <AdaptiveBackground variant="content" className="pt-16" showFloatingElements={false}>
             {/* Full-page sniper-scope style overlay */}
             <div
                 className={`

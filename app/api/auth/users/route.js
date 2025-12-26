@@ -31,7 +31,6 @@ export async function GET() {
             return Response.json({ synced: true, user: newUser, created: true });
         }
     } catch (error) {
-        console.error("Error in user sync:", error);
         return Response.json({ synced: false, error: error.message }, { status: 500 });
     }
 }

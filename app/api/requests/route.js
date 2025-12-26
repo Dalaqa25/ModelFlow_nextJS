@@ -19,9 +19,6 @@ export async function POST(req) {
 
     return NextResponse.json(newRequest, { status: 201 });
   } catch (error) {
-    console.error('[API] Error creating request:', error);
-    console.error('[API] Error message:', error.message);
-    console.error('[API] Error stack:', error.stack);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

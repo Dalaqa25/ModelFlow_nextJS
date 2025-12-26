@@ -31,7 +31,7 @@ export default function Dashboard() {
                 setAutomations(data);
             }
         } catch (error) {
-            console.error('Error fetching automations:', error);
+            // Error handled silently
         } finally {
             setLoading(false);
         }

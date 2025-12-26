@@ -20,8 +20,6 @@ export async function POST(req) {
 
     const { automation_id, config } = await req.json();
 
-    console.log('📥 Received execution request:', { automation_id, config });
-
     // Validate inputs
     if (!automation_id || !config) {
       return NextResponse.json(
@@ -55,8 +53,6 @@ export async function POST(req) {
       config: lowercaseConfig
     };
 
-    console.log('🚀 Sending to automation runner:', runnerPayload);
-
     const runnerResponse = await fetch('http://localhost:3001/api/automations/run', {
       method: 'POST',
       headers: {
@@ -75,8 +71,6 @@ export async function POST(req) {
 
     const result = await runnerResponse.json();
 
-    console.log('✅ Automation completed:', result.success ? 'Success' : 'Failed');
-
     return NextResponse.json({
       success: true,
       message: 'Automation executed successfully',
@@ -84,7 +78,6 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error('Automation execution error:', error);
     return NextResponse.json(
       { error: 'Failed to execute automation', message: error.message },
       { status: 500 }

@@ -129,14 +129,11 @@ export async function POST(request) {
 
     // Pre-create the user record in our database (will be confirmed after OTP verification)
     try {
-      console.log('🔄 Pre-creating user record for signup:', email, username);
       const userRecord = await userDB.upsertUser({
         email,
         name: username || email,
       });
-      console.log('✅ User record pre-created successfully:', userRecord);
     } catch (e) {
-      console.error('❌ Failed to pre-create user record during signup:', e?.message || e);
       // Don't fail the signup if user record creation fails
       // The OTP verification will try again
     }
@@ -146,7 +143,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
     return NextResponse.json({ 
       error: 'An unexpected error occurred. Please try again.',
       field: 'general'

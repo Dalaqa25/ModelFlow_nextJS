@@ -27,7 +27,7 @@ export default function Profile() {
                     setUserData(data);
                 }
             } catch (error) {
-                console.error("Error fetching user data:", error);
+                // Error handled silently
             } finally {
                 setLoading(false);
             }
@@ -43,7 +43,7 @@ export default function Profile() {
             await fetch('/api/auth/signout', { method: 'POST' });
             router.push('/');
         } catch (error) {
-            console.error("Error signing out:", error);
+            // Error handled silently
         }
     };
     
@@ -67,7 +67,7 @@ export default function Profile() {
             setUserData(updatedData);
             setShowEdit(false);
         } catch (error) {
-            console.error("Error updating profile:", error);
+            // Error handled silently
         }
     };
 

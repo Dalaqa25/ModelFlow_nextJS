@@ -14,7 +14,6 @@ export async function GET(req) {
         const notifications = await notificationDB.getNotificationsByUser(user.email);
         return NextResponse.json(notifications);
     } catch (error) {
-        console.error('Error fetching notifications:', error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
@@ -37,7 +36,6 @@ export async function PATCH(req) {
         await notificationDB.deleteNotifications(notificationIds);
         return NextResponse.json({ message: "Notifications deleted successfully" });
     } catch (error) {
-        console.error('Error deleting notifications:', error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

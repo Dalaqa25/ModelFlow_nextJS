@@ -39,7 +39,7 @@ export default function Notifications({ isOpen, onClose }) {
             // Also refetch this component's data
             refetch();
         } catch (error) {
-            console.error('Error deleting notifications:', error);
+            // Error handled silently
         }
     };
 

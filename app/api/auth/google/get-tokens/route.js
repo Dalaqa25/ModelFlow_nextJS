@@ -26,8 +26,6 @@ export async function GET(request) {
       );
     }
 
-    console.log('✅ User found:', user.id);
-
     // Get Google integration
     const integration = await userIntegrationDB.getIntegrationByUserAndProvider(
       user.id,
@@ -43,8 +41,6 @@ export async function GET(request) {
         { status: 404 }
       );
     }
-
-    console.log('✅ Google integration found:', integration.id);
 
     // Check if token is expired
     const now = new Date();
@@ -77,7 +73,6 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    console.error('❌ Error retrieving tokens:', error);
     return NextResponse.json(
       {
         error: 'Failed to retrieve tokens',

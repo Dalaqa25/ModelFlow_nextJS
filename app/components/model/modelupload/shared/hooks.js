@@ -17,7 +17,7 @@ export const useStorageData = (isOpen) => {
                 setUserStorageData(data);
             }
         } catch (error) {
-            console.error('Error fetching user storage data:', error);
+            // Error handled silently
         } finally {
             setStorageLoading(false);
         }

@@ -33,7 +33,6 @@ export async function POST(req, { params }) {
 
         return NextResponse.json(comment, { status: 201 });
     } catch (error) {
-        console.error("Error creating comment:", error);
         return NextResponse.json({ error: "Error creating comment" }, { status: 500 });
     }
 }
@@ -46,7 +45,6 @@ export async function GET(req, { params }) {
 
         return NextResponse.json(comments);
     } catch (error) {
-        console.error("Error fetching comments:", error);
         return NextResponse.json({ error: "Error fetching comments" }, { status: 500 });
     }
 }

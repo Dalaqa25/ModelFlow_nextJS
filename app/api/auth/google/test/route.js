@@ -78,12 +78,9 @@ export async function GET(request) {
     authUrl.searchParams.set('access_type', 'offline'); // Required to get refresh token
     authUrl.searchParams.set('prompt', 'consent'); // Force consent screen to ensure refresh token
 
-    console.log('🔗 Redirecting to Google OAuth:', authUrl.toString());
-
     // Redirect to Google OAuth
     return NextResponse.redirect(authUrl.toString());
   } catch (error) {
-    console.error('❌ Error initiating Google OAuth:', error);
     return NextResponse.json({ 
       error: 'Failed to initiate Google OAuth',
       details: error.message 

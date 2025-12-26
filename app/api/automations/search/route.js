@@ -31,22 +31,11 @@ export async function POST(request) {
     });
 
     if (error) {
-      console.error('Search error:', error);
       return NextResponse.json({ error: 'Search failed' }, { status: 500 });
     }
 
-    // DEBUG: Log what's coming from database
-    console.log('🔍 SEARCH RESULTS FROM DATABASE:');
-    data?.forEach((automation, index) => {
-      console.log(`\n${index + 1}. ${automation.name} (${automation.id})`);
-      console.log('   required_inputs:', JSON.stringify(automation.required_inputs, null, 2));
-      console.log('   required_inputs type:', typeof automation.required_inputs);
-      console.log('   required_inputs is array:', Array.isArray(automation.required_inputs));
-    });
-
     return NextResponse.json({ results: data || [] });
   } catch (error) {
-    console.error('Automation search error:', error);
     return NextResponse.json(
       { error: 'Failed to search automations', message: error.message },
       { status: 500 }

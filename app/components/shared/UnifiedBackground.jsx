@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 export default function UnifiedBackground({ 
   variant = 'default', 
@@ -13,24 +13,30 @@ export default function UnifiedBackground({
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const lastUpdateRef = useRef(0);
+
+  // Throttled mouse move handler (~30fps)
+  const handleMouseMove = useCallback((e) => {
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 33) return; // ~30fps throttle
+    lastUpdateRef.current = now;
+
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    
+    mouseX.set(x);
+    mouseY.set(y);
+  }, [mouseX, mouseY]);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!containerRef.current) return;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-      const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-      
-      mouseX.set(x);
-      mouseY.set(y);
-    };
-
     if (showFloatingElements) {
       window.addEventListener('mousemove', handleMouseMove);
       return () => window.removeEventListener('mousemove', handleMouseMove);
     }
-  }, [mouseX, mouseY, showFloatingElements]);
+  }, [handleMouseMove, showFloatingElements]);
 
   // Different background variants
   const backgroundVariants = {

@@ -35,7 +35,6 @@ function detectFileInputs(workflowJson) {
   if (workflowJson.nodes && Array.isArray(workflowJson.nodes)) {
     workflowJson.nodes.forEach(node => {
       if (fileProcessingNodes.includes(node.type)) {
-        console.log(`📄 Detected file-processing node: ${node.type} (${node.name})`);
         fileInputs.add('FILE_INPUT');
       }
     });
@@ -64,7 +63,6 @@ function detectWebhookInputs(workflowJson) {
     
     // Skip credential parameters
     if (credentialPatterns.test(fieldName)) {
-      console.log(`🔐 Skipping credential parameter: $json.body.${fieldName} (detected as connector, not input)`);
       continue;
     }
     
@@ -72,7 +70,6 @@ function detectWebhookInputs(workflowJson) {
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()
       .replace(/^_/, '');
-    console.log(`🔗 Detected webhook body access: $json.body.${fieldName} → ${variableName}`);
     webhookInputs.add(variableName);
   }
   
@@ -84,7 +81,6 @@ function detectWebhookInputs(workflowJson) {
     
     // Skip credential parameters
     if (credentialPatterns.test(fieldName)) {
-      console.log(`🔐 Skipping credential parameter: $json["body"]["${fieldName}"] (detected as connector, not input)`);
       continue;
     }
     
@@ -92,7 +88,6 @@ function detectWebhookInputs(workflowJson) {
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()
       .replace(/^_/, '');
-    console.log(`🔗 Detected webhook body access: $json["body"]["${fieldName}"] → ${variableName}`);
     webhookInputs.add(variableName);
   }
   
@@ -104,7 +99,6 @@ function detectWebhookInputs(workflowJson) {
     
     // Skip credential parameters
     if (credentialPatterns.test(fieldName)) {
-      console.log(`🔐 Skipping credential parameter: $('Webhook').*.json.body.${fieldName} (detected as connector, not input)`);
       continue;
     }
     
@@ -112,7 +106,6 @@ function detectWebhookInputs(workflowJson) {
       .replace(/([A-Z])/g, '_$1')
       .toUpperCase()
       .replace(/^_/, '');
-    console.log(`🔗 Detected webhook body access: $('Webhook').*.json.body.${fieldName} → ${variableName}`);
     webhookInputs.add(variableName);
   }
   
@@ -136,7 +129,6 @@ export function replaceN8nPlaceholders(workflowJson) {
     const variableName = convertN8nPlaceholder(fullPlaceholder);
     
     if (variableName) {
-      console.log(`🔄 Converting n8n placeholder: ${fullPlaceholder} → {{${variableName}}}`);
       modifiedString = modifiedString.replaceAll(fullPlaceholder, `{{${variableName}}}`);
       detectedInputs.add(variableName);
     }
@@ -151,8 +143,6 @@ export function replaceN8nPlaceholders(workflowJson) {
   // Detect webhook body access patterns
   const webhookInputs = detectWebhookInputs(modifiedWorkflow);
   webhookInputs.forEach(input => detectedInputs.add(input));
-  
-  console.log('✅ Total user inputs detected:', Array.from(detectedInputs));
   
   return {
     workflow: modifiedWorkflow,
@@ -182,15 +172,12 @@ export function replaceCredentialsWithPlaceholders(workflowJson, detectedKeys) {
     credentialMapping[credType] = keyName;
   });
 
-  console.log('🔄 Credential mapping:', credentialMapping);
-
   // Replace credential IDs with placeholders
   modifiedWorkflow.nodes.forEach(node => {
     if (node.credentials) {
       Object.keys(node.credentials).forEach(credType => {
         const keyName = credentialMapping[credType];
         if (keyName) {
-          console.log(`🔄 Replacing ${credType} credential ID with {{${keyName}}}`);
           node.credentials[credType].id = `{{${keyName}}}`;
         }
       });
@@ -206,10 +193,7 @@ export function replaceCredentialsWithPlaceholders(workflowJson, detectedKeys) {
  */
 export function detectUserConnectors(workflowJson) {
   try {
-    const workflowString = JSON.stringify(workflowJson);
     const connectors = new Set();
-    
-    console.log('🔍 Scanning workflow for user connectors (OAuth services)...');
     
     if (workflowJson.nodes && Array.isArray(workflowJson.nodes)) {
       workflowJson.nodes.forEach(node => {
@@ -221,32 +205,26 @@ export function detectUserConnectors(workflowJson) {
             if (credLower.includes('google') || credLower.includes('gmail') || 
                 credLower.includes('sheets') || credLower.includes('drive') ||
                 credLower.includes('calendar')) {
-              console.log(`🔗 Found Google connector: ${credType}`);
               connectors.add('Google');
             }
             // Slack
             else if (credLower.includes('slack')) {
-              console.log(`🔗 Found Slack connector: ${credType}`);
               connectors.add('Slack');
             }
             // Twitter
             else if (credLower.includes('twitter')) {
-              console.log(`🔗 Found Twitter connector: ${credType}`);
               connectors.add('Twitter');
             }
             // GitHub
             else if (credLower.includes('github')) {
-              console.log(`🔗 Found GitHub connector: ${credType}`);
               connectors.add('GitHub');
             }
             // LinkedIn
             else if (credLower.includes('linkedin')) {
-              console.log(`🔗 Found LinkedIn connector: ${credType}`);
               connectors.add('LinkedIn');
             }
             // Facebook
             else if (credLower.includes('facebook')) {
-              console.log(`🔗 Found Facebook connector: ${credType}`);
               connectors.add('Facebook');
             }
             // Add more as needed
@@ -255,10 +233,8 @@ export function detectUserConnectors(workflowJson) {
       });
     }
     
-    console.log('✅ User connectors detected:', Array.from(connectors));
     return Array.from(connectors).sort();
   } catch (error) {
-    console.error('Error detecting user connectors:', error);
     return [];
   }
 }
@@ -270,8 +246,6 @@ export function detectUserConnectors(workflowJson) {
 export function detectDeveloperKeys(workflowJson) {
   try {
     const workflowString = JSON.stringify(workflowJson);
-    console.log('🔍 Scanning workflow for developer keys...');
-    console.log('📄 Workflow size:', workflowString.length, 'characters');
     
     const detectedKeys = new Set();
     
@@ -303,7 +277,6 @@ export function detectDeveloperKeys(workflowJson) {
             );
             
             if (isUserConnector) {
-              console.log(`🔗 Skipping user connector: ${credType} (handled by user authentication)`);
               return; // Skip this credential
             }
             
@@ -315,15 +288,12 @@ export function detectDeveloperKeys(workflowJson) {
               .toUpperCase()
               .replace(/^_/, '') + '_API_KEY';
             
-            console.log(`🔑 Found n8n credential: ${credType} → ${keyName}`);
             detectedKeys.add(keyName);
           });
         }
         
         // Method 1b: Detect hardcoded API keys in HTTP Request nodes
         if (node.type === 'n8n-nodes-base.httpRequest') {
-          console.log(`🌐 Scanning HTTP Request node: ${node.name}`);
-          
           // Check URL for API keys
           if (node.parameters?.url) {
             const url = node.parameters.url;
@@ -332,14 +302,12 @@ export function detectDeveloperKeys(workflowJson) {
             if (url.includes('googleapis.com/customsearch') || url.includes('key=')) {
               const keyMatch = url.match(/[?&]key=([A-Za-z0-9_-]+)/);
               if (keyMatch) {
-                console.log(`🔑 Found Google Search API key in URL`);
                 detectedKeys.add('GOOGLE_SEARCH_API_KEY');
               }
               
               // Google Custom Search Engine ID: cx=...
               const cxMatch = url.match(/[?&]cx=([A-Za-z0-9_-]+)/);
               if (cxMatch) {
-                console.log(`🔑 Found Google Search CSX in URL`);
                 detectedKeys.add('GOOGLE_SEARCH_CSX');
               }
             }
@@ -353,7 +321,6 @@ export function detectDeveloperKeys(workflowJson) {
             
             genericKeyPatterns.forEach(pattern => {
               if (pattern.test(url)) {
-                console.log(`🔑 Found generic API key in URL`);
                 detectedKeys.add('API_KEY');
               }
             });
@@ -365,13 +332,10 @@ export function detectDeveloperKeys(workflowJson) {
               const headerName = header.name?.toLowerCase() || '';
               
               if (headerName.includes('rapidapi')) {
-                console.log(`🔑 Found RapidAPI key in headers`);
                 detectedKeys.add('RAPIDAPI_KEY');
               } else if (headerName.includes('api-key') || headerName === 'x-api-key') {
-                console.log(`🔑 Found API key in headers`);
                 detectedKeys.add('API_KEY');
               } else if (headerName === 'authorization' && header.value && !header.value.includes('{{')) {
-                console.log(`🔑 Found Authorization header`);
                 detectedKeys.add('AUTH_TOKEN');
               }
             });
@@ -383,7 +347,6 @@ export function detectDeveloperKeys(workflowJson) {
               const paramName = param.name?.toLowerCase() || '';
               
               if (paramName === 'key' || paramName === 'apikey' || paramName === 'api_key') {
-                console.log(`🔑 Found API key in query parameters: ${param.name}`);
                 detectedKeys.add('API_KEY');
               }
             });
@@ -425,14 +388,11 @@ export function detectDeveloperKeys(workflowJson) {
       'CUSTOMER_',
     ];
     
-    const allMatches = [];
-    
     // Search for placeholder patterns
-    keyPatterns.forEach((pattern, index) => {
+    keyPatterns.forEach((pattern) => {
       let match;
       while ((match = pattern.exec(workflowString)) !== null) {
         const keyName = match[1].toUpperCase();
-        allMatches.push(keyName);
         
         // Check if it should be excluded
         const shouldExclude = excludePatterns.some(exclude => 
@@ -445,12 +405,8 @@ export function detectDeveloperKeys(workflowJson) {
       }
     });
     
-    console.log('📋 Placeholder patterns found:', allMatches);
-    console.log('✅ Total developer keys detected:', Array.from(detectedKeys));
-    
     return Array.from(detectedKeys).sort();
   } catch (error) {
-    console.error('Error detecting developer keys:', error);
     return [];
   }
 }

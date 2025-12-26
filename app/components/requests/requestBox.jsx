@@ -68,7 +68,6 @@ export default function RequestBox({ onClose, onRequestPublished }) {
             if (onClose) onClose();
             if (onRequestPublished) onRequestPublished();
         } catch (err) {
-            console.error('[RequestBox] Error:', err);
             toast.error(err.message || 'Failed to publish request');
         } finally {
             setLoading(false);

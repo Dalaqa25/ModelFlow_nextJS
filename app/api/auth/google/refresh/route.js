@@ -46,7 +46,6 @@ export async function POST(request) {
       message: 'Token refreshed successfully',
     });
   } catch (error) {
-    console.error('❌ Token refresh error:', error);
     return NextResponse.json(
       {
         error: 'Failed to refresh token',
@@ -99,7 +98,6 @@ export async function GET(request) {
       message: 'Token refreshed successfully',
     });
   } catch (error) {
-    console.error('❌ Token refresh error:', error);
     return NextResponse.json(
       {
         error: 'Failed to refresh token',

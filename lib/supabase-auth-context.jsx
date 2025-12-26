@@ -28,7 +28,6 @@ export const AuthProvider = ({ children }) => {
         
         // If there's an error getting the session, clear any stale data
         if (error) {
-          console.error('Session error, clearing auth state:', error);
           await supabase.auth.signOut({ scope: 'local' });
           setUser(null);
         } else {
@@ -38,12 +37,11 @@ export const AuthProvider = ({ children }) => {
             try {
               await fetch('/api/user', { method: 'GET' });
             } catch (e) {
-              console.warn('Failed to ensure user row exists:', e);
+              // Error handled silently
             }
           }
         }
       } catch (error) {
-        console.error('Error getting initial session:', error);
         // Clear any stale session data
         await supabase.auth.signOut({ scope: 'local' });
         setUser(null);
@@ -57,8 +55,6 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
-        
         // Handle specific auth events
         if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
           setUser(session?.user ?? null);
@@ -164,7 +160,6 @@ export const AuthProvider = ({ children }) => {
       router.push('/');
       return { error: null };
     } catch (error) {
-      console.error('Sign out error:', error);
       return { error };
     }
   };
@@ -174,7 +169,7 @@ export const AuthProvider = ({ children }) => {
       await supabase.auth.signOut({ scope: 'local' });
       setUser(null);
     } catch (error) {
-      console.error('Error clearing auth data:', error);
+      // Error handled silently
     }
   };
 

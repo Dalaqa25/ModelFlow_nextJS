@@ -23,7 +23,6 @@ export async function GET() {
 
     return NextResponse.json(userData);
   } catch (error) {
-    console.error('Error fetching user data:', error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -57,7 +56,6 @@ export async function PUT(request) {
 
         return NextResponse.json(updatedUser);
     } catch (error) {
-        console.error("Error in PUT /api/user:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

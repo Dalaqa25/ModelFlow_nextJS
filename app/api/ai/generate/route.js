@@ -19,7 +19,6 @@ export async function POST(request) {
     );
 
   } catch (error) {
-    console.error('AI Generation Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -47,7 +46,6 @@ export async function GET(request) {
     }, { status: 503 });
 
   } catch (error) {
-    console.error('Error checking AI service:', error);
     return NextResponse.json(
       { 
         configured: false,

@@ -21,7 +21,6 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
         e.preventDefault();
         if (inputValue.trim()) {
             const message = inputValue.trim();
-            console.log('Submitted:', message);
             setIsAtBottom(true);
             if (onMessageSent) {
                 onMessageSent(message);

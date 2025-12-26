@@ -22,7 +22,6 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching automations:', error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -77,7 +76,6 @@ export async function POST(req) {
     try {
       embedding = await generateEmbedding(embeddingText);
     } catch (embeddingError) {
-      console.error('Failed to generate embedding:', embeddingError);
       // Continue without embedding - it's not critical
     }
 
@@ -85,7 +83,6 @@ export async function POST(req) {
     let imageUrl = null;
     if (imageFile) {
       // For now, skip image upload - you can add Supabase storage later
-      console.log('Image upload not implemented yet');
     }
 
     // Parse required connectors from frontend (already detected during upload)
@@ -93,9 +90,8 @@ export async function POST(req) {
     if (requiredConnectorsJson) {
       try {
         requiredConnectors = JSON.parse(requiredConnectorsJson);
-        console.log('🔗 Required connectors from frontend:', requiredConnectors);
       } catch (e) {
-        console.error('Failed to parse required connectors:', e);
+        // Error handled silently
       }
     }
 
@@ -104,9 +100,8 @@ export async function POST(req) {
     if (developerKeysJson) {
       try {
         developerKeys = JSON.parse(developerKeysJson);
-        console.log('🔑 Developer keys provided:', Object.keys(developerKeys));
       } catch (e) {
-        console.error('Failed to parse developer keys:', e);
+        // Error handled silently
       }
     }
 
@@ -115,14 +110,9 @@ export async function POST(req) {
     if (inputTypesJson) {
       try {
         inputTypes = JSON.parse(inputTypesJson);
-        console.log('📝 Input types provided:', inputTypes);
-        console.log('📝 Input types keys:', Object.keys(inputTypes));
-        console.log('📝 Input types entries:', Object.entries(inputTypes));
       } catch (e) {
-        console.error('Failed to parse input types:', e);
+        // Error handled silently
       }
-    } else {
-      console.log('⚠️ NO inputTypes received from frontend!');
     }
 
     // Build required inputs from inputTypes (configured in Step 4)
@@ -147,10 +137,8 @@ export async function POST(req) {
           });
         }
       });
-      console.log('✅ Using input types from Step 4:', requiredInputs);
     } else {
       // Fallback: scan workflow for webhook body parameters and placeholders
-      console.log('⚠️ No inputTypes provided, falling back to workflow scanning');
       
       // Method 1: Scan for webhook body parameters like $json["body"]["tiktok_url"]
       // Handles both escaped and non-escaped quotes: $json["body"]["field"] OR $json[\"body\"][\"field\"]
@@ -185,8 +173,6 @@ export async function POST(req) {
           type: 'text' // Default to text, can be enhanced later
         });
       });
-      
-      console.log('✅ Extracted required_inputs from workflow:', requiredInputs);
     }
 
     // Insert into database
@@ -209,7 +195,6 @@ export async function POST(req) {
       .single();
 
     if (error) {
-      console.error('Database error:', error);
       return NextResponse.json(
         { error: 'Failed to save automation' },
         { status: 500 }
@@ -218,7 +203,6 @@ export async function POST(req) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error('Error creating automation:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create automation' },
       { status: 500 }

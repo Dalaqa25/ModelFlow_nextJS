@@ -34,7 +34,6 @@ export default function RequestCommnetCreateion({ requestId, onCommentAdded }) {
             toast.success('Comment posted successfully!');
         },
         onError: (error) => {
-            console.error('Error posting comment:', error);
             toast.error('Failed to post comment. Please try again.');
         }
     });

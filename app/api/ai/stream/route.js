@@ -209,10 +209,9 @@ Be concise and friendly. Don't repeat yourself.`
               })}\n\n`;
               controller.enqueue(encoder.encode(explainMessage));
             } catch (error) {
-              console.error('Connection request error:', error);
               // Don't show error if JSON is incomplete
               if (!(error instanceof SyntaxError)) {
-                console.error('Unexpected error:', error);
+                // Error handled silently
               }
             }
           } else if (isFunctionCall && functionCallData.name === 'request_configuration') {
@@ -227,14 +226,9 @@ Be concise and friendly. Don't repeat yourself.`
               // Validate automation_id is a UUID
               const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
               if (!uuidRegex.test(args.automation_id)) {
-                console.error('❌ AI used invalid automation_id format:', args.automation_id);
-                console.error('Expected UUID format like: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
                 const errorMsg = `\n\n⚠️ Error: Invalid automation ID format. Please select an automation from the search results above.`;
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
               } else {
-                console.log('✅ Valid automation_id received:', args.automation_id);
-                console.log('📋 AI sent required_inputs:', JSON.stringify(args.required_inputs, null, 2));
-                
                 // 🔥 FETCH REQUIRED_INPUTS DIRECTLY FROM DATABASE
                 // This ensures we get the correct data regardless of what AI sends
                 try {
@@ -245,7 +239,6 @@ Be concise and friendly. Don't repeat yourself.`
                     .single();
 
                   if (dbError || !automationData) {
-                    console.error('❌ Failed to fetch automation from database:', dbError);
                     const errorMsg = `\n\n⚠️ Error: Could not find automation details.`;
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
                     return;
@@ -258,15 +251,12 @@ Be concise and friendly. Don't repeat yourself.`
                     if (typeof actualRequiredInputs[0] === 'string' && actualRequiredInputs[0].startsWith('{')) {
                       try {
                         actualRequiredInputs = actualRequiredInputs.map(input => JSON.parse(input));
-                        console.log('✅ Parsed required_inputs from database:', actualRequiredInputs);
                       } catch (e) {
-                        console.error('❌ Failed to parse required_inputs from database:', e);
+                        // Error handled silently
                       }
                     }
                   }
 
-                  console.log('🎯 Using ACTUAL required_inputs from database:', actualRequiredInputs);
-                  
                   // Send configuration form request to frontend with ACTUAL data
                   const configData = `data: ${JSON.stringify({ 
                     type: 'config_request',
@@ -281,16 +271,14 @@ Be concise and friendly. Don't repeat yourself.`
                   })}\n\n`;
                   controller.enqueue(encoder.encode(explainMessage));
                 } catch (fetchError) {
-                  console.error('❌ Database fetch error:', fetchError);
                   const errorMsg = `\n\n⚠️ Error: Could not load automation configuration.`;
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
                 }
               }
             } catch (error) {
-              console.error('Configuration request error:', error);
               // Don't show error to user if JSON is incomplete - just skip
               if (error instanceof SyntaxError) {
-                console.log('Incomplete JSON, waiting for more data...');
+                // Incomplete JSON, waiting for more data
               }
             }
           } else if (isFunctionCall && functionCallData.name === 'search_automations') {
@@ -305,11 +293,8 @@ Be concise and friendly. Don't repeat yourself.`
               });
 
               if (searchError) {
-                console.error('❌ Search error:', searchError);
+                // Error handled silently
               }
-
-              console.log(`🔍 Search found ${searchResults?.length || 0} results:`, 
-                searchResults?.map(r => ({ id: r.id, name: r.name })));
 
               // Send search results back to AI
               const followUpMessages = [
@@ -339,28 +324,19 @@ Be concise and friendly. Don't repeat yourself.`
                 ? searchResults.filter(r => r.similarity >= MINIMUM_SIMILARITY)
                 : [];
 
-              console.log(`✅ Filtered results: ${filteredResults.length}/${searchResults?.length || 0} above ${MINIMUM_SIMILARITY * 100}% similarity`);
-
               // Parse required_inputs if they're stored as JSON strings
               const normalizedResults = filteredResults.map(r => {
                 let parsedInputs = r.required_inputs;
-                
-                console.log(`🔍 Processing ${r.name} - Raw required_inputs:`, r.required_inputs);
                 
                 // If required_inputs is an array of JSON strings, parse them
                 if (Array.isArray(r.required_inputs) && r.required_inputs.length > 0) {
                   if (typeof r.required_inputs[0] === 'string' && r.required_inputs[0].startsWith('{')) {
                     try {
                       parsedInputs = r.required_inputs.map(input => JSON.parse(input));
-                      console.log(`✅ Parsed required_inputs for ${r.name}:`, parsedInputs);
                     } catch (e) {
-                      console.error(`❌ Failed to parse required_inputs for ${r.name}:`, e);
+                      // Error handled silently
                     }
-                  } else {
-                    console.log(`ℹ️ ${r.name} required_inputs are not JSON strings, using as-is`);
                   }
-                } else {
-                  console.log(`⚠️ ${r.name} has no required_inputs or empty array`);
                 }
                 
                 return { ...r, required_inputs: parsedInputs };
@@ -384,8 +360,6 @@ Be concise and friendly. Don't repeat yourself.`
                   }).join('\n')}\n\n⚠️ CRITICAL INSTRUCTIONS FOR request_configuration:\n1. You MUST use the exact UUID shown above (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), NOT the automation name\n2. You MUST copy the ENTIRE required_inputs array EXACTLY as shown above - do NOT simplify, shorten, or modify it\n3. The required_inputs is an array of objects with {name, type} - pass it AS-IS without any changes\n4. Example: If you see required_inputs: [{"name":"FIELD_A","type":"text"},{"name":"FIELD_B","type":"file"}], you must pass that EXACT array\n\nWhen the user refers to "first one", "the automation", etc., they mean one of these automations. When a user selects an automation:\n1. Only call request_connection for EXTERNAL services (googleSheets, gmail, slack, etc.) - NOT for internal n8n nodes like set, webhook, extractFromFile, @n8n/n8n-nodes-langchain.*, etc.\n2. If no external services needed, go directly to request_configuration with the exact UUID and inputs`
                 : "No results were found.";
 
-              console.log('🤖 Context being sent to AI:', resultsContext);
-
               const finalResponse = await client.chat.completions.create({
                 messages: [
                   ...followUpMessages,
@@ -408,7 +382,6 @@ Be concise and friendly. Don't repeat yourself.`
                 }
               }
             } catch (searchError) {
-              console.error('Function call error:', searchError);
               const errorMsg = '\n\nSorry, I encountered an error while searching for automations.';
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: errorMsg })}\n\n`));
             }
@@ -417,7 +390,6 @@ Be concise and friendly. Don't repeat yourself.`
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
-          console.error('Stream error:', error);
           controller.error(error);
         }
       },
@@ -431,7 +403,6 @@ Be concise and friendly. Don't repeat yourself.`
       },
     });
   } catch (error) {
-    console.error("AI stream error:", error);
     return NextResponse.json(
       { error: "Failed to process chat request", message: error.message },
       { status: 500 }

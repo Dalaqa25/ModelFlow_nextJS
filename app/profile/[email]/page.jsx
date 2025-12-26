@@ -44,7 +44,6 @@ export default function Profile(props) {
                 const models = Array.isArray(modelsData) ? modelsData : (modelsData.models || []);
                 setUserModels(models);
             } catch (error) {
-                console.error("Error in fetchProfileData:", error);
                 setError(error.message);
                 // Don't clear existing data if we have it
                 if (!profileData) {

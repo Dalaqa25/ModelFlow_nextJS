@@ -30,7 +30,6 @@ const AiChat = forwardRef((props, ref) => {
     const handleSendMessage = async (messageText) => {
         if (!messageText.trim()) return;
         if (isLoading) {
-            console.log('Already processing a message, please wait...');
             return;
         }
 
@@ -126,7 +125,7 @@ const AiChat = forwardRef((props, ref) => {
                         setConversationSummary(summary);
                     }
                 } catch (e) {
-                    console.error('Summarization error:', e);
+                    // Error handled silently
                 }
             }
 
@@ -321,7 +320,6 @@ const AiChat = forwardRef((props, ref) => {
             
             // Don't show error if it was aborted by user
             if (error.name === 'AbortError') {
-                console.log('Stream aborted by user');
                 // Stop animation and turn off loading immediately
                 if (animationFrameRef.current) {
                     cancelAnimationFrame(animationFrameRef.current);
@@ -331,7 +329,6 @@ const AiChat = forwardRef((props, ref) => {
                 if (onLoadingChange) onLoadingChange(false);
                 setCurrentAiMessageId(null);
             } else {
-                console.error('Error:', error);
                 // Stop animation and show error
                 if (animationFrameRef.current) {
                     cancelAnimationFrame(animationFrameRef.current);
@@ -397,8 +394,6 @@ const AiChat = forwardRef((props, ref) => {
 
             const result = await response.json();
 
-            console.log('📦 Received result from execute API:', result);
-
             if (!response.ok) {
                 const errorMessage = `Failed to start automation: ${result.error || 'Unknown error'}`;
                 handleSendMessage(errorMessage);
@@ -410,13 +405,11 @@ const AiChat = forwardRef((props, ref) => {
             
             // If there are actual results from the runner, include them
             if (result.result) {
-                console.log('📊 Automation runner returned:', result.result);
                 successMessage += `Results:\n${JSON.stringify(result.result, null, 2)}`;
             }
             
             handleSendMessage(successMessage);
         } catch (error) {
-            console.error('Execution error:', error);
             const errorMessage = `Failed to start automation: ${error.message}`;
             handleSendMessage(errorMessage);
         }

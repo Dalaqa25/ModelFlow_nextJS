@@ -32,7 +32,6 @@ export async function POST(request) {
     });
 
     if (error) {
-      console.error('OTP verification error:', error);
       return NextResponse.json({ 
         error: error.message 
       }, { status: 400 });
@@ -41,22 +40,14 @@ export async function POST(request) {
     // Ensure app-level user row exists after successful verification
     if (data?.user?.email) {
       try {
-        console.log('🔄 Creating user record for:', data.user.email);
-        console.log('📝 User metadata:', data.user.user_metadata);
-        
         const userRecord = await userDB.upsertUser({
           email: data.user.email,
           name: data.user.user_metadata?.name || data.user.email,
         });
-        
-        console.log('✅ User record created/updated:', userRecord);
       } catch (e) {
-        console.error('❌ Failed to ensure user row exists after OTP verification:', e);
         // Don't fail the entire request if user creation fails
         // The auth session is still valid
       }
-    } else {
-      console.warn('⚠️ No user data received from OTP verification');
     }
 
     return NextResponse.json({
@@ -67,7 +58,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('OTP verification error:', error);
     return NextResponse.json({ 
       error: 'An unexpected error occurred. Please try again.' 
     }, { status: 500 });

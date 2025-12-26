@@ -42,7 +42,6 @@ export default function AutomationStep4InputTypes({
 
   // Notify parent of initial input types on mount
   useEffect(() => {
-    console.log('🔄 Step 4 mounted, notifying parent of initial inputTypes:', inputTypes);
     onInputTypesChange(inputTypes);
   }, []); // Only run once on mount
 

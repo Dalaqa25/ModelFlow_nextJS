@@ -8,15 +8,6 @@ export default function ConfigForm({ requiredInputs, automationId, onSubmit }) {
   const [formData, setFormData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debug: Log what we receive
-  console.log('📋 ConfigForm received requiredInputs:', requiredInputs);
-  console.log('   Type:', typeof requiredInputs);
-  console.log('   Is Array:', Array.isArray(requiredInputs));
-  if (Array.isArray(requiredInputs) && requiredInputs.length > 0) {
-    console.log('   First element:', requiredInputs[0]);
-    console.log('   First element type:', typeof requiredInputs[0]);
-  }
-
   const handleChange = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
@@ -52,7 +43,7 @@ export default function ConfigForm({ requiredInputs, automationId, onSubmit }) {
     try {
       await onSubmit?.(formData, automationId);
     } catch (error) {
-      console.error('Form submission error:', error);
+      // Error handled silently
     } finally {
       setIsSubmitting(false);
     }

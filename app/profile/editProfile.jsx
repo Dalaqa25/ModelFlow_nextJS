@@ -61,7 +61,6 @@ export default function EditProfile({ onClose, onSave, initialData }) {
             }
             if (onClose) onClose();
         } catch (error) {
-            console.error('Error uploading profile:', error);
             alert('Failed to update profile. Please try again.');
         } finally {
             setIsUploading(false);

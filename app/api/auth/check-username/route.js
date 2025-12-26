@@ -31,7 +31,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Username check error:', error);
     return NextResponse.json({ 
       error: 'An unexpected error occurred' 
     }, { status: 500 });

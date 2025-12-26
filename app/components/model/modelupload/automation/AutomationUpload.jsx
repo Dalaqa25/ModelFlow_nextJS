@@ -110,20 +110,17 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             const { workflow: workflowWithStandardPlaceholders, userInputs } = replaceN8nPlaceholders(workflow);
             workflow = workflowWithStandardPlaceholders;
             
-            console.log('📝 Detected user inputs:', userInputs);
             setDetectedInputs(userInputs);
             setShowInputTypesStep(userInputs.length > 0);
             
             // Step 2a: Detect user connectors (OAuth services)
             const connectors = detectUserConnectors(workflow);
             setDetectedConnectors(connectors);
-            console.log('🔗 Detected user connectors:', connectors);
             
             // Step 2b: Detect developer keys (API keys, secrets)
             const keys = detectDeveloperKeys(workflow);
             setDetectedKeys(keys);
             setShowKeysStep(keys.length > 0);
-            console.log('🔑 Detected developer keys:', keys);
             
             // Step 3: Replace credentials with placeholders if keys detected
             if (keys.length > 0) {
@@ -135,10 +132,8 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             const modifiedJson = JSON.stringify(workflow, null, 2);
             const modifiedFile = new File([modifiedJson], file.name, { type: 'application/json' });
             
-            console.log('✅ Workflow fully processed and ready for upload');
             setFormData((prev) => ({ ...prev, jsonFile: modifiedFile }));
         } catch (error) {
-            console.error('Error parsing JSON:', error);
             setFormData((prev) => ({ ...prev, jsonFile: file }));
         }
         
@@ -170,16 +165,8 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     };
 
     const handleNextWithValidation = () => {
-        console.log('🔍 handleNextWithValidation called', { 
-            step, 
-            showKeysStep, 
-            showInputTypesStep,
-            totalSteps 
-        });
-        
         const stepErrors = validateAutomationStep(step, formData);
         if (Object.keys(stepErrors).length > 0) {
-            console.log('❌ Validation errors:', stepErrors);
             setErrors((prev) => ({ ...clearStepErrors(prev, step), ...stepErrors }));
             return;
         }
@@ -189,26 +176,20 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         if (step === 2) {
             // After JSON upload
             if (showKeysStep) {
-                console.log('➡️ Going to step 3 (keys)');
                 handleNext(); // Go to step 3 (keys)
             } else if (showInputTypesStep) {
-                console.log('➡️ Going to step 3 (input types)');
                 handleNext(); // Go to step 3 (input types)
             } else {
-                console.log('✅ Submitting (no more steps)');
                 handleSubmit(); // No more steps, submit
             }
         } else if (step === 3) {
             // After keys or input types
             if (showKeysStep && showInputTypesStep) {
-                console.log('➡️ Going to step 4 (input types)');
                 handleNext(); // Go to step 4 (input types)
             } else {
-                console.log('✅ Submitting (no more steps)');
                 handleSubmit(); // No more steps, submit
             }
         } else {
-            console.log('➡️ Going to next step');
             handleNext();
         }
     };
@@ -231,7 +212,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             // Add user connectors if any
             if (detectedConnectors.length > 0) {
                 payload.append('requiredConnectors', JSON.stringify(detectedConnectors));
-                console.log('🔗 Sending connectors to API:', detectedConnectors);
             }
             
             // Add developer keys if any
@@ -240,15 +220,8 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             }
             
             // Add input types if any
-            console.log('🔍 DEBUG: formData.inputTypes:', formData.inputTypes);
-            console.log('🔍 DEBUG: inputTypes keys:', Object.keys(formData.inputTypes));
-            console.log('🔍 DEBUG: inputTypes stringified:', JSON.stringify(formData.inputTypes));
-            
             if (Object.keys(formData.inputTypes).length > 0) {
                 payload.append('inputTypes', JSON.stringify(formData.inputTypes));
-                console.log('✅ Appended inputTypes to payload');
-            } else {
-                console.log('⚠️ No inputTypes to append (empty object)');
             }
 
             const response = await fetch('/api/automations', {
@@ -266,7 +239,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             onUploadSuccess?.(result);
             handleDialogClose();
         } catch (error) {
-            console.error('Automation upload failed:', error);
             toast.error(error.message || 'Failed to upload automation.');
         } finally {
             setIsSubmitting(false);

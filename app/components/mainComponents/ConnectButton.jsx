@@ -42,7 +42,6 @@ export default function ConnectButton({ provider, onConnect }) {
         }
       }, 500);
     } catch (error) {
-      console.error('Connection error:', error);
       setIsConnecting(false);
     }
   };

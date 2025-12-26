@@ -59,7 +59,6 @@ export async function POST(request) {
       filePath: `/uploads/${filename}`
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
     return NextResponse.json(
       { error: 'Error uploading file: ' + error.message },
       { status: 500 }
