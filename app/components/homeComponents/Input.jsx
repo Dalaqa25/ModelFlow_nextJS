@@ -33,8 +33,8 @@ export default function Input() {
 
   return (
     <div className="w-full">
-      {/* Hero Text */}
-      <div className="mb-10 space-y-4 text-center lg:text-left">
+      {/* Hero Text - Using semantic HTML for SEO */}
+      <header className="mb-10 space-y-4 text-center lg:text-left">
         <p className={`text-sm uppercase tracking-[0.25em] ${isDarkMode ? 'text-gray-400' : 'text-purple-700/70'}`}>
           Intelligent automation
         </p>
@@ -49,7 +49,10 @@ export default function Input() {
             today
           </span>
         </h1>
-      </div>
+        <p className={`text-base max-w-md mx-auto lg:mx-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Discover and run AI-powered automation workflows. Your marketplace for ready-made n8n automations.
+        </p>
+      </header>
       
       {/* Custom Input Field */}
       <div className="w-full max-w-xl lg:max-w-lg mx-auto lg:mx-0">
