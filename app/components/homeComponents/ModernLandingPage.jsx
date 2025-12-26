@@ -40,17 +40,15 @@ export default function ModernLandingPage() {
     <LightBackground variant="landing" showParticles={true} className="pt-0">
       <div
         ref={containerRef}
-        className="min-h-screen flex items-center justify-center px-4 sm:px-6"
+        className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-6xl w-full mx-auto">
-          <div className="flex flex-col-reverse gap-12 items-center lg:flex-row">
+        <div className="max-w-7xl 2xl:max-w-[1600px] w-full mx-auto">
+          <div className="flex flex-col-reverse gap-12 items-center lg:flex-row lg:gap-8 xl:gap-12 2xl:gap-16">
             <div className="w-full lg:w-1/2">
               <Input />
             </div>
             
             <SpinningCube
-              rotateX={rotateX}
-              rotateY={rotateY}
               className="w-full lg:w-1/2 lg:justify-end"
             />
           </div>
