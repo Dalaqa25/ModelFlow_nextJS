@@ -37,7 +37,7 @@ export default function PublicNavbar() {
     { href: '/', label: 'Home', protected: false },
     { href: '/dashboard', label: 'Automations', protected: true },
     { href: '/main', label: 'Models', protected: true },
-    { href: '/Community', label: 'Community', protected: true },
+    { href: '/community', label: 'Community', protected: true },
     { href: '/privacy', label: 'Privacy', protected: false },
     { href: '/terms', label: 'Terms', protected: false },
   ];

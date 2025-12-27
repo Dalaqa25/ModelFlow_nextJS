@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding } from '@/lib/embeddings';
+import { encryptKeys } from '@/lib/encryption';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -41,7 +42,7 @@ export async function POST(req) {
     
     const name = formData.get('name');
     const description = formData.get('description');
-    const price = parseInt(formData.get('price'));
+    const estimatedPrice = formData.get('estimatedPrice');
     const videoLink = formData.get('videoLink');
     const imageFile = formData.get('image');
     const automationFile = formData.get('automationFile');
@@ -50,9 +51,9 @@ export async function POST(req) {
     const requiredConnectorsJson = formData.get('requiredConnectors');
 
     // Validate required fields
-    if (!name || !description || isNaN(price) || !automationFile) {
+    if (!name || !description || !automationFile) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, description, price, and automation file are required' },
+        { error: 'Missing required fields: name, description, and automation file are required' },
         { status: 400 }
       );
     }
@@ -95,11 +96,12 @@ export async function POST(req) {
       }
     }
 
-    // Parse developer keys if provided
+    // Parse developer keys if provided and encrypt them
     let developerKeys = {};
     if (developerKeysJson) {
       try {
-        developerKeys = JSON.parse(developerKeysJson);
+        const rawKeys = JSON.parse(developerKeysJson);
+        developerKeys = encryptKeys(rawKeys);
       } catch (e) {
         // Error handled silently
       }
@@ -139,6 +141,7 @@ export async function POST(req) {
       });
     } else {
       // Fallback: scan workflow for webhook body parameters and placeholders
+      const workflowString = JSON.stringify(workflow);
       
       // Method 1: Scan for webhook body parameters like $json["body"]["tiktok_url"]
       // Handles both escaped and non-escaped quotes: $json["body"]["field"] OR $json[\"body\"][\"field\"]
@@ -182,8 +185,7 @@ export async function POST(req) {
         name: name.trim(),
         description: description.trim(),
         author_email: user.email,
-        price_cents: price,
-        currency_code: 'USD',
+        price_per_run: estimatedPrice ? parseFloat(estimatedPrice) : null,
         workflow: workflow,
         embedding: embedding,
         required_connectors: requiredConnectors,
