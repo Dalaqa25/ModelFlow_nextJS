@@ -8,6 +8,7 @@ export default function AutomationStep3JsonUpload({
     handleSubmit,
     onJsonSelect,
     onRemoveJson,
+    onEstimatedPriceChange,
     jsonInputRef,
     isSubmitting,
     buttonText = 'Publish Automation'
@@ -17,17 +18,16 @@ export default function AutomationStep3JsonUpload({
         if (file) onJsonSelect(file);
     };
 
+    const handlePriceChange = (event) => {
+        const value = event.target.value;
+        // Allow empty, or valid decimal numbers
+        if (value === '' || /^\d*\.?\d{0,4}$/.test(value)) {
+            onEstimatedPriceChange(value);
+        }
+    };
+
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-700/60 bg-slate-800/50 p-5">
-                <h3 className="text-white font-semibold mb-2">Automation Summary</h3>
-                <ul className="text-sm text-slate-300 space-y-1">
-                    <li><span className="text-slate-400">Name:</span> {formData.automationName || '—'}</li>
-                    <li><span className="text-slate-400">Video:</span> {formData.videoLink ? 'Provided' : 'Not provided'}</li>
-                    <li><span className="text-slate-400">Image:</span> {formData.imageFile ? formData.imageFile.name : 'Not uploaded'}</li>
-                </ul>
-            </div>
-
             <div className="flex flex-col gap-3">
                 <label className="text-sm font-semibold text-slate-200">n8n JSON Export</label>
                 <div
@@ -73,6 +73,28 @@ export default function AutomationStep3JsonUpload({
                     />
                 </div>
                 <ErrorMessage error={errors.jsonFile} />
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-200">
+                    Estimated Price per Execution
+                </label>
+                <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.estimatedPrice || ''}
+                        onChange={handlePriceChange}
+                        placeholder="0.00"
+                        className={`w-full pl-8 pr-4 py-3 rounded-xl bg-slate-800/60 border ${
+                            errors.estimatedPrice ? 'border-red-500 focus:ring-red-500' : 'border-slate-600/60 focus:ring-purple-500'
+                        } text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition`}
+                        disabled={isSubmitting}
+                    />
+                </div>
+                <p className="text-xs text-slate-500">Estimated API/service costs per run (optional)</p>
+                <ErrorMessage error={errors.estimatedPrice} />
             </div>
 
             <div className="flex justify-between pt-2">

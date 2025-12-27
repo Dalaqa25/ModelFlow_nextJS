@@ -115,7 +115,7 @@ export default function AutomationStep3DeveloperKeys({
 
       <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-4">
         <p className="text-xs text-yellow-300">
-          ⚠️ <strong>Security Note:</strong> These keys will be stored securely and only used when your automation runs. Never share keys publicly.
+          ⚠️ <strong>Note:</strong> Our AI auto-detects required keys from your workflow, but it may not be 100% accurate. Please review and edit the detected keys if needed.
         </p>
       </div>
 

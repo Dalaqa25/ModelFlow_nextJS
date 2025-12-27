@@ -22,6 +22,7 @@ import {
 const INITIAL_FORM_STATE = {
     automationName: '',
     description: '',
+    estimatedPrice: '',
     jsonFile: null,
     developerKeys: {},
     inputTypes: {}
@@ -153,6 +154,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         }
     };
 
+    const handleEstimatedPriceChange = (value) => {
+        setFormData((prev) => ({ ...prev, estimatedPrice: value }));
+        if (errors.estimatedPrice) {
+            setErrors((prev) => ({ ...prev, estimatedPrice: '' }));
+        }
+    };
+
     const handleNextWithValidation = () => {
         const stepErrors = validateAutomationStep(step, formData);
         if (Object.keys(stepErrors).length > 0) {
@@ -195,6 +203,9 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             const payload = new FormData();
             payload.append('name', formData.automationName.trim());
             payload.append('description', formData.description.trim());
+            if (formData.estimatedPrice) {
+                payload.append('estimatedPrice', parseFloat(formData.estimatedPrice));
+            }
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
             
             // Add user connectors if any
@@ -307,6 +318,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 handleSubmit={showKeysStep ? handleNextWithValidation : handleSubmit}
                                                 onJsonSelect={handleJsonSelect}
                                                 onRemoveJson={handleRemoveJson}
+                                                onEstimatedPriceChange={handleEstimatedPriceChange}
                                                 jsonInputRef={jsonInputRef}
                                                 isSubmitting={isSubmitting}
                                                 buttonText={showKeysStep ? 'Next' : 'Publish Automation'}

@@ -49,9 +49,6 @@ export default function Input() {
             today
           </span>
         </h1>
-        <p className={`text-base max-w-md mx-auto lg:mx-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Discover and run AI-powered automation workflows. Your marketplace for ready-made n8n automations.
-        </p>
       </header>
       
       {/* Custom Input Field */}
