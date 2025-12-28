@@ -11,13 +11,27 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const mineOnly = searchParams.get('mine') === 'true';
+    
+    let query = supabase
       .from('automations')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
+
+    // If requesting only user's automations, filter by author_email
+    if (mineOnly) {
+      const user = await getSupabaseUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      query = query.eq('author_email', user.email);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

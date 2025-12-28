@@ -25,7 +25,7 @@ export default function Dashboard() {
     const fetchAutomations = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/automations');
+            const response = await fetch('/api/automations?mine=true');
             if (response.ok) {
                 const data = await response.json();
                 setAutomations(data);

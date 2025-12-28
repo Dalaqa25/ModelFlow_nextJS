@@ -49,9 +49,10 @@ export default function Greetings() {
     return (
         <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
             {/* Greeting Section */}
-            <div className="flex items-center justify-center gap-3 mb-6">
-                <Image src="/logo.png" alt="Cube" width={60} height={60} />
-                <h1 className={`text-4xl sm:text-5xl lg:text-6xl ${textColors.primary} font-light`} style={{ fontFamily: 'Georgia, serif' }}>
+            {/* Mobile: stacked vertically, Desktop: horizontal */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-6">
+                <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px]" />
+                <h1 className={`text-3xl sm:text-5xl lg:text-6xl ${textColors.primary} font-light text-center`} style={{ fontFamily: 'Georgia, serif' }}>
                     Hey there, <span className="font-normal">{displayName}</span>.
                 </h1>
             </div>

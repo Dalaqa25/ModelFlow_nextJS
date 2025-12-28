@@ -44,13 +44,13 @@ export default function UnifiedBackground({
     landing: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-800 to-slate-800 overflow-hidden relative",
     
     // Default lighter theme for most pages
-    default: "min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-purple-800 overflow-hidden relative",
+    default: "min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-indigo-900 overflow-hidden relative",
     
     // Auth pages - lighter and more inviting
     auth: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-700 to-slate-800 overflow-hidden relative",
     
-    // Content pages - lighter for better visibility
-    content: "min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-purple-800 overflow-hidden relative"
+    // Content pages - more balanced purple/blue, less pink
+    content: "min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-indigo-900 overflow-hidden relative"
   };
 
   const backgroundClass = backgroundVariants[variant] || backgroundVariants.default;
