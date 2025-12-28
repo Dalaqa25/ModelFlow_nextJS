@@ -77,7 +77,7 @@ export default function AutomationStep3JsonUpload({
 
             <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-slate-200">
-                    Estimated Price per Execution
+                    Estimated Price per Execution <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
@@ -93,7 +93,7 @@ export default function AutomationStep3JsonUpload({
                         disabled={isSubmitting}
                     />
                 </div>
-                <p className="text-xs text-slate-500">Estimated API/service costs per run (optional)</p>
+                <p className="text-xs text-slate-500">Estimated API/service costs per run</p>
                 <ErrorMessage error={errors.estimatedPrice} />
             </div>
 

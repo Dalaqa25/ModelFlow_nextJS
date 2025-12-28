@@ -5,7 +5,7 @@ const MAX_JSON_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 
 const STEP_FIELD_MAP = {
     1: ['automationName', 'description'],
-    2: ['jsonFile']
+    2: ['jsonFile', 'estimatedPrice']
 };
 
 const isValidUrl = (value) => {
@@ -56,6 +56,13 @@ export const validateAutomationStep = (step, formData) => {
     if (step === 2) {
         const jsonError = validateJsonFile(formData.jsonFile);
         if (jsonError) errors.jsonFile = jsonError;
+        
+        // Estimated price is required
+        if (!formData.estimatedPrice || formData.estimatedPrice.trim() === '') {
+            errors.estimatedPrice = 'Estimated price is required';
+        } else if (isNaN(parseFloat(formData.estimatedPrice)) || parseFloat(formData.estimatedPrice) < 0) {
+            errors.estimatedPrice = 'Please enter a valid price';
+        }
     }
 
     return errors;
