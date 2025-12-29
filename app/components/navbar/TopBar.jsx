@@ -1,15 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/supabase-auth-context';
 import { useSidebar } from '@/lib/sidebar-context';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 import ProfileDropdown from './sidebar/actions/ProfileDropdown';
 import { FaBars } from 'react-icons/fa';
 
+const UPLOAD_SEEN_KEY = 'upload_button_seen';
+
 export default function TopBar() {
   const { isAuthenticated } = useAuth();
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
   const { isDarkMode, textColors } = useThemeAdaptive();
+  const [showAttention, setShowAttention] = useState(false);
+
+  useEffect(() => {
+    const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
+    if (!hasSeen) {
+      setShowAttention(true);
+    }
+    
+    // Listen for storage changes to sync with SidebarUploadIcon
+    const handleStorage = () => {
+      const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
+      if (hasSeen) {
+        setShowAttention(false);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Only show for authenticated users
   if (!isAuthenticated) {
@@ -26,9 +47,11 @@ export default function TopBar() {
           <button
             onClick={() => setIsMobileOpen(true)}
             className={`p-2 rounded-lg transition-colors ${
-              isDarkMode 
-                ? 'hover:bg-slate-800/60 text-white' 
-                : 'hover:bg-white/60 text-gray-900'
+              showAttention 
+                ? 'upload-attention text-purple-400' 
+                : isDarkMode 
+                  ? 'hover:bg-slate-800/60 text-white' 
+                  : 'hover:bg-white/60 text-gray-900'
             }`}
             aria-label="Open menu"
           >
