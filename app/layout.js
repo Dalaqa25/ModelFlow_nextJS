@@ -15,9 +15,20 @@ export const metadata = {
     authors: [{ name: "ModelGrow" }],
     creator: "ModelGrow",
     publisher: "ModelGrow",
+    metadataBase: new URL('https://modelgrow.com'),
+    alternates: {
+        canonical: '/',
+    },
     robots: {
         index: true,
         follow: true,
+    },
+    icons: {
+        icon: [
+            { url: '/favicon.ico', sizes: 'any' },
+            { url: '/logo.png', type: 'image/png' },
+        ],
+        apple: '/logo.png',
     },
     openGraph: {
         type: "website",
@@ -26,11 +37,35 @@ export const metadata = {
         siteName: "ModelGrow",
         title: "ModelGrow – Automation Marketplace",
         description: "Discover and run AI-powered automation workflows built with n8n.",
+        images: [
+            {
+                url: '/logo.png',
+                width: 512,
+                height: 512,
+                alt: 'ModelGrow Logo',
+            },
+        ],
     },
     twitter: {
         card: "summary_large_image",
         title: "ModelGrow – Automation Marketplace",
         description: "Discover and run AI-powered automation workflows built with n8n.",
+        images: ['/logo.png'],
+    },
+};
+
+// JSON-LD structured data for Google Search
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'ModelGrow',
+    alternateName: 'ModelGrow Automation Marketplace',
+    url: 'https://modelgrow.com',
+    description: 'Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations.',
+    potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://modelgrow.com/community?search={search_term_string}',
+        'query-input': 'required name=search_term_string',
     },
 };
 
@@ -38,7 +73,10 @@ export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <head>
-                <link rel="icon" href="/favicon.ico" />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
             </head>
             <body className={inter.className}>
                 <ClientProviders>
