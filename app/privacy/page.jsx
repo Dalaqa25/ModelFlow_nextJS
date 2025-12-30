@@ -22,7 +22,7 @@ export default function Privacy() {
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li><strong>Account Information:</strong> When you create an account, we collect your email address, name or username, and profile information (including profile images, "About Me" descriptions, website links, and contact email addresses).</li>
                                         <li><strong>Model Information:</strong> When you upload AI models to our marketplace, we collect model names, descriptions, use cases, setup instructions, features, tags, pricing information, and associated files.</li>
-                                        <li><strong>Payment Information:</strong> When you make purchases or subscribe to our services, payment information is processed through our third-party payment processor, Lemon Squeezy. We do not store your full payment card details on our servers.</li>
+                                        <li><strong>Payment Information:</strong> When you make purchases or subscribe to our services, payment information is processed through our third-party payment processor, Paddle. We do not store your full payment card details on our servers.</li>
                                         <li><strong>Communication Data:</strong> When you participate in community requests, comments, or contact us, we collect the content of your communications.</li>
                                         <li><strong>Withdrawal Information:</strong> When you request withdrawals, we collect payment method details and related information necessary to process your withdrawal.</li>
                                     </ul>
@@ -67,7 +67,7 @@ export default function Privacy() {
                                     <p className="mb-2">We share information with third-party service providers who perform services on our behalf:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li><strong>Supabase:</strong> We use Supabase for authentication, database storage, and user management. Supabase processes your authentication data and stores your account information.</li>
-                                        <li><strong>Lemon Squeezy:</strong> We use Lemon Squeezy as our payment processor for subscriptions and model purchases. Lemon Squeezy processes payment information in accordance with their privacy policy.</li>
+                                        <li><strong>Paddle:</strong> We use Paddle as our payment processor for subscriptions and credit purchases. Paddle processes payment information in accordance with their privacy policy.</li>
                                         <li><strong>Resend:</strong> We use Resend to send transactional and notification emails. Resend processes your email address for email delivery purposes.</li>
                                     </ul>
                                 </div>

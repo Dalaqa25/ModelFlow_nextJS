@@ -35,11 +35,11 @@ export default function PublicNavbar() {
 
   const navLinks = [
     { href: '/', label: 'Home', protected: false },
-    { href: '/dashboard', label: 'Automations', protected: true },
-    { href: '/main', label: 'Models', protected: true },
+    { href: '/pricing', label: 'Pricing', protected: false },
     { href: '/community', label: 'Community', protected: true },
-    { href: '/privacy', label: 'Privacy', protected: false },
     { href: '/terms', label: 'Terms', protected: false },
+    { href: '/privacy', label: 'Privacy', protected: false },
+    { href: '/refund', label: 'Refund', protected: false },
   ];
 
   // Handle nav link click - show sign in for protected routes

@@ -13,6 +13,14 @@ export default function Terms() {
                     </div>   
                     
                     <div className="flex flex-col gap-12 text-gray-300">
+                        {/* Company Information */}
+                        <section>
+                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">Company Information</h2>
+                            <div className="space-y-4 text-lg">
+                                <p>ModelGrow is operated by <strong>შპს ModelGrow</strong> (Limited Liability Company), registered in Georgia.</p>
+                            </div>
+                        </section>
+
                         {/* 1. Acceptance of Terms */}
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">1. Acceptance of Terms</h2>
@@ -135,7 +143,7 @@ export default function Terms() {
                                         <li>You receive a license to use the model according to the terms specified by the seller</li>
                                         <li>All sales are final unless otherwise specified or required by law</li>
                                         <li>Prices are displayed in the currency specified on the Platform</li>
-                                        <li>Payment is processed through our third-party payment processor, Lemon Squeezy</li>
+                                        <li>Payment is processed through our third-party payment processor, Paddle</li>
                                     </ul>
                                 </div>
                                 <div>
