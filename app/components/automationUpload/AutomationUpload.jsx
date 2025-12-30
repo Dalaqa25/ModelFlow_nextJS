@@ -315,13 +315,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 formData={formData}
                                                 errors={errors}
                                                 handleBack={handleBack}
-                                                handleSubmit={showKeysStep ? handleNextWithValidation : handleSubmit}
+                                                handleSubmit={(showKeysStep || showInputTypesStep) ? handleNextWithValidation : handleSubmit}
                                                 onJsonSelect={handleJsonSelect}
                                                 onRemoveJson={handleRemoveJson}
                                                 onEstimatedPriceChange={handleEstimatedPriceChange}
                                                 jsonInputRef={jsonInputRef}
                                                 isSubmitting={isSubmitting}
-                                                buttonText={showKeysStep ? 'Next' : 'Publish Automation'}
+                                                buttonText={(showKeysStep || showInputTypesStep) ? 'Next' : 'Publish Automation'}
                                             />
                                         )}
                                         {step === 3 && showKeysStep && (
@@ -333,6 +333,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 handleSubmit={showInputTypesStep ? handleNextWithValidation : handleSubmit}
                                                 onKeysChange={handleKeysChange}
                                                 isSubmitting={isSubmitting}
+                                                buttonText={showInputTypesStep ? 'Next' : 'Publish Automation'}
                                             />
                                         )}
                                         {step === 3 && !showKeysStep && showInputTypesStep && (

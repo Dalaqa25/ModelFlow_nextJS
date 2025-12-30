@@ -10,7 +10,8 @@ export default function AutomationStep3DeveloperKeys({
   handleBack,
   handleSubmit,
   onKeysChange,
-  isSubmitting
+  isSubmitting,
+  buttonText = 'Publish Automation'
 }) {
   const [keys, setKeys] = useState(
     detectedKeys.length > 0
@@ -134,7 +135,7 @@ export default function AutomationStep3DeveloperKeys({
           disabled={isSubmitting}
           className="flex-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-medium text-white hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          {isSubmitting ? 'Publishing...' : 'Publish Automation'}
+          {isSubmitting ? 'Publishing...' : buttonText}
         </button>
       </div>
     </div>
