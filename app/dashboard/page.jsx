@@ -64,6 +64,28 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-4 border-b border-purple-500/30 pb-2">
                             <h2 className="text-xl font-semibold text-white">Your Automations</h2>
                         </div>
+
+                        {/* Stats Summary */}
+                        {!loading && automations.length > 0 && (
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-white">{automations.length}</p>
+                                    <p className="text-xs text-gray-400">Total Automations</p>
+                                </div>
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-green-400">
+                                        {automations.filter(a => a.is_active).length}
+                                    </p>
+                                    <p className="text-xs text-gray-400">Active</p>
+                                </div>
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-purple-400">
+                                        {automations.reduce((sum, a) => sum + (a.total_runs || 0), 0)}
+                                    </p>
+                                    <p className="text-xs text-gray-400">Total Runs</p>
+                                </div>
+                            </div>
+                        )}
                         
                         {loading ? (
                             <div className="flex justify-center py-8">
@@ -76,9 +98,31 @@ export default function Dashboard() {
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {automations.map((automation) => (
-                                    <div key={automation.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                        <h3 className="font-semibold text-white mb-2">{automation.name}</h3>
-                                        <p className="text-sm text-gray-400 line-clamp-2">{automation.description}</p>
+                                    <div key={automation.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-colors">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <h3 className="font-semibold text-white">{automation.name}</h3>
+                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                                automation.is_active 
+                                                    ? 'bg-green-500/20 text-green-400' 
+                                                    : 'bg-yellow-500/20 text-yellow-400'
+                                            }`}>
+                                                {automation.is_active ? 'Active' : 'Pending'}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">{automation.description}</p>
+                                        <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-1 text-gray-500">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                                </svg>
+                                                <span>{automation.total_runs || 0} runs</span>
+                                            </div>
+                                            {(automation.total_runs || 0) === 0 ? (
+                                                <span className="text-yellow-500">Never used</span>
+                                            ) : (
+                                                <span className="text-purple-400">Used</span>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

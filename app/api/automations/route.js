@@ -16,25 +16,32 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const mineOnly = searchParams.get('mine') === 'true';
     
-    let query = supabase
-      .from('automations')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    // If requesting only user's automations, filter by author_email
+    // If requesting user's own automations, show ALL (including inactive/pending)
+    // Otherwise, only show active automations to the public
     if (mineOnly) {
       const user = await getSupabaseUser();
       if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      query = query.eq('author_email', user.email);
+      
+      const { data, error } = await supabase
+        .from('automations')
+        .select('*')
+        .eq('author_email', user.email)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return NextResponse.json(data);
     }
 
-    const { data, error } = await query;
+    // Public query - only active automations
+    const { data, error } = await supabase
+      .from('automations')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

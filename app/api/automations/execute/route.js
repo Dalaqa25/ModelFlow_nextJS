@@ -53,6 +53,8 @@ export async function POST(req) {
       config: lowercaseConfig
     };
 
+    const startTime = Date.now();
+    
     const runnerResponse = await fetch('http://localhost:3001/api/automations/run', {
       method: 'POST',
       headers: {
@@ -61,8 +63,24 @@ export async function POST(req) {
       body: JSON.stringify(runnerPayload),
     });
 
+    const endTime = Date.now();
+    const durationMs = endTime - startTime;
+
     if (!runnerResponse.ok) {
       const errorData = await runnerResponse.json().catch(() => ({}));
+      
+      // Log failed execution
+      await supabase.from('automation_executions').insert({
+        automation_id,
+        executed_by: user.email,
+        status: 'failed',
+        credits_used: 0,
+        started_at: new Date(startTime).toISOString(),
+        completed_at: new Date(endTime).toISOString(),
+        duration_ms: durationMs,
+        error_message: errorData.error || 'Automation runner failed'
+      });
+      
       return NextResponse.json(
         { error: 'Automation runner failed', details: errorData },
         { status: 500 }
@@ -70,6 +88,21 @@ export async function POST(req) {
     }
 
     const result = await runnerResponse.json();
+
+    // Log successful execution and increment total_runs
+    await supabase.from('automation_executions').insert({
+      automation_id,
+      executed_by: user.email,
+      status: 'success',
+      credits_used: result.credits_used || 0,
+      started_at: new Date(startTime).toISOString(),
+      completed_at: new Date(endTime).toISOString(),
+      duration_ms: durationMs,
+      error_message: null
+    });
+
+    // Increment total_runs on the automation
+    await supabase.rpc('increment_total_runs', { automation_uuid: automation_id });
 
     return NextResponse.json({
       success: true,
