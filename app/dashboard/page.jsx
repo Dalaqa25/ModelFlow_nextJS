@@ -7,11 +7,13 @@ import AutomationUpload from '../components/automationUpload/AutomationUpload';
 import { useAuth } from '@/lib/supabase-auth-context';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
+import RunsChart from '@/app/components/charts/RunsChart';
 
 export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
     const [showAutomationDialog, setShowAutomationDialog] = useState(false);
     const [automations, setAutomations] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -20,6 +22,7 @@ export default function Dashboard() {
             return;
         }
         fetchAutomations();
+        fetchStats();
     }, [user, isAuthenticated]);
 
     const fetchAutomations = async () => {
@@ -34,6 +37,18 @@ export default function Dashboard() {
             // Error handled silently
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const response = await fetch('/api/automations/stats?days=7');
+            if (response.ok) {
+                const data = await response.json();
+                setStats(data);
+            }
+        } catch (error) {
+            // Error handled silently
         }
     };
 
@@ -59,6 +74,21 @@ export default function Dashboard() {
                             <span>Upload Automation</span>
                         </button>
                     </div>
+
+                    {/* Analytics Chart */}
+                    {!loading && automations.length > 0 && stats && (
+                        <UnifiedCard variant="solid" className="mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-white">Runs (Last 7 Days)</h2>
+                                <div className="flex items-center gap-4 text-sm">
+                                    <div className="text-gray-400">
+                                        Success Rate: <span className="text-green-400 font-medium">{stats.successRate}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <RunsChart data={stats.dailyRuns} />
+                        </UnifiedCard>
+                    )}
 
                     <UnifiedCard variant="solid" className="flex-1">
                         <div className="flex items-center justify-between mb-4 border-b border-purple-500/30 pb-2">

@@ -5,11 +5,13 @@ import { useAuth } from "@/lib/supabase-auth-context";
 import EditProfile from "./editProfile";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
+import EarningsChart from '@/app/components/charts/EarningsChart';
 
 export default function Profile() {
     const router = useRouter();
     const { user, loading: authLoading, isAuthenticated } = useAuth();
     const [userData, setUserData] = useState({});
+    const [stats, setStats] = useState(null);
     const [showEdit, setShowEdit] = useState(false);
     const [loading, setLoading] = useState(true);
     
@@ -25,6 +27,13 @@ export default function Profile() {
                 if (response.ok) {
                     const data = await response.json();
                     setUserData(data);
+                }
+
+                // Fetch automation stats
+                const statsResponse = await fetch('/api/automations/stats?days=30');
+                if (statsResponse.ok) {
+                    const statsData = await statsResponse.json();
+                    setStats(statsData);
                 }
             } catch (error) {
                 // Error handled silently
@@ -113,6 +122,43 @@ export default function Profile() {
                             </div>
                         </div>
                     </UnifiedCard>
+
+                    {/* Earnings Section */}
+                    {stats && (
+                        <UnifiedCard variant="content" className="mb-8" padding="lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-xl font-semibold text-white">Earnings</h4>
+                                <button 
+                                    className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm font-medium"
+                                    onClick={() => {/* Withdrawal functionality - coming soon */}}
+                                >
+                                    Withdraw
+                                </button>
+                            </div>
+                            
+                            {/* Earnings Stats */}
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-green-400">${stats.totalEarnings.toFixed(2)}</p>
+                                    <p className="text-xs text-gray-400">Total Earnings</p>
+                                </div>
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-purple-400">{stats.totalRuns}</p>
+                                    <p className="text-xs text-gray-400">Total Runs</p>
+                                </div>
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-blue-400">{stats.successRate}%</p>
+                                    <p className="text-xs text-gray-400">Success Rate</p>
+                                </div>
+                            </div>
+
+                            {/* Earnings Chart */}
+                            <div>
+                                <p className="text-sm text-gray-400 mb-2">Earnings (Last 30 Days)</p>
+                                <EarningsChart data={stats.dailyRuns} />
+                            </div>
+                        </UnifiedCard>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* About Me Section */}
