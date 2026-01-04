@@ -9,7 +9,7 @@ export default function Privacy() {
                     <div className="flex flex-col items-center text-center gap-5 mb-16">
                         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-white">Privacy Policy</h1>
                         <p className="text-xl sm:text-2xl text-gray-300 font-light">Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                        <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Your privacy is important to us. This Privacy Policy explains how ModelGrow ("we," "our," or "us") collects, uses, discloses, and protects your personal information when you use our AI model marketplace platform.</p>   
+                                <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Your privacy is important to us. This Privacy Policy explains how ModelGrow ("we," "our," or "us") collects, uses, discloses, and protects your personal information when you use our AI automation platform.</p>   
                     </div>   
                     
                     <div className="flex flex-col gap-12 text-gray-300">
@@ -21,7 +21,7 @@ export default function Privacy() {
                                     <h3 className="text-xl font-semibold text-white mb-2">1.1 Information You Provide to Us</h3>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li><strong>Account Information:</strong> When you create an account, we collect your email address, name or username, and profile information (including profile images, "About Me" descriptions, website links, and contact email addresses).</li>
-                                        <li><strong>Model Information:</strong> When you upload AI models to our marketplace, we collect model names, descriptions, use cases, setup instructions, features, tags, pricing information, and associated files.</li>
+                                        <li><strong>Automation Information:</strong> When automations are added to our platform, we collect automation names, descriptions, use cases, setup instructions, features, tags, and associated files.</li>
                                         <li><strong>Payment Information:</strong> When you make purchases or subscribe to our services, payment information is processed through our third-party payment processor, Paddle. We do not store your full payment card details on our servers.</li>
                                         <li><strong>Communication Data:</strong> When you participate in community requests, comments, or contact us, we collect the content of your communications.</li>
                                         <li><strong>Withdrawal Information:</strong> When you request withdrawals, we collect payment method details and related information necessary to process your withdrawal.</li>
@@ -45,7 +45,7 @@ export default function Privacy() {
                             <div className="space-y-4 text-lg">
                                 <p>We use the information we collect for the following purposes:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>Service Provision:</strong> To provide, maintain, and improve our AI model marketplace, including processing transactions, managing subscriptions, and facilitating model uploads and downloads.</li>
+                                    <li><strong>Service Provision:</strong> To provide, maintain, and improve our AI automation platform, including processing transactions, managing subscriptions, and delivering automation services.</li>
                                     <li><strong>User Authentication:</strong> To authenticate your identity and secure your account using OTP-based email verification.</li>
                                     <li><strong>Payment Processing:</strong> To process payments, manage subscriptions, calculate earnings, and facilitate withdrawals through our payment processor.</li>
                                     <li><strong>Communication:</strong> To send you notifications about model approvals, rejections, purchases, comments, and other platform activities. We may also send you service-related emails and updates.</li>

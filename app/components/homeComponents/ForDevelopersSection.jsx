@@ -3,25 +3,25 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
-import { FaDollarSign, FaUsers, FaUpload } from 'react-icons/fa';
+import { FaHandshake, FaRocket, FaCode } from 'react-icons/fa';
 import SignUpDialog from '../auth/signup/SignUpDialog';
 import SignInDialog from '../auth/login/SignInDialog';
 
 const benefits = [
     {
-        icon: FaDollarSign,
-        title: 'Earn Passive Income',
-        description: 'Get paid every time someone runs your automation.'
+        icon: FaHandshake,
+        title: 'Join Our Team',
+        description: 'Work with us as a contractor building automations for our platform.'
     },
     {
-        icon: FaUsers,
-        title: 'Reach Thousands',
-        description: 'Your automations get discovered by users who need them.'
+        icon: FaRocket,
+        title: 'Impact Thousands',
+        description: 'Your work helps businesses automate and scale their operations.'
     },
     {
-        icon: FaUpload,
-        title: 'Simple Upload',
-        description: 'Just export from n8n and upload. We handle the rest.'
+        icon: FaCode,
+        title: 'Use Your Skills',
+        description: 'Leverage your n8n expertise to build powerful automations.'
     }
 ];
 
@@ -52,10 +52,10 @@ export default function ForDevelopersSection() {
                     <h2 className={`text-3xl sm:text-4xl font-bold mb-4 ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
-                        Built an Automation? Get Paid.
+                        Build With Us
                     </h2>
                     <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Turn your n8n workflows into a source of income
+                        We're looking for talented n8n developers to join our team
                     </p>
                 </motion.div>
 
@@ -102,7 +102,7 @@ export default function ForDevelopersSection() {
                         onClick={() => setIsSignUpOpen(true)}
                         className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
                     >
-                        Start Earning
+                        Apply Now
                     </button>
                 </motion.div>
             </div>

@@ -6,10 +6,10 @@ export default function Home() {
     <>
       {/* SEO-friendly content that Google can crawl */}
       <div className="sr-only">
-        <h1>ModelGrow - Automation Marketplace</h1>
+        <h1>ModelGrow - AI Automation Platform</h1>
         <p>
           Discover and run AI-powered automation workflows built with n8n. 
-          ModelGrow is your marketplace for ready-made business automations.
+          ModelGrow is your platform for ready-made business automations.
           Let's automate your workflow today with intelligent automation solutions.
         </p>
         <h2>Features</h2>

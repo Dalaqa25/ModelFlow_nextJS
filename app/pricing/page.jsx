@@ -112,7 +112,7 @@ export default function Pricing() {
                         <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-8 text-center">What You Get</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                             {[
-                                "Access to all marketplace automations",
+                                "Access to all platform automations",
                                 "Credits never expire",
                                 "Run automations instantly",
                                 "No subscription required",
@@ -133,14 +133,14 @@ export default function Pricing() {
                     <div className="bg-slate-800/50 rounded-xl p-8 mb-16">
                         <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-4 text-center">For Developers</h2>
                         <p className="text-gray-300 text-center max-w-2xl mx-auto mb-6">
-                            Create and sell your automations on ModelGrow. Earn 80% of every sale while we handle payments, hosting, and customer support.
+                            Join our team of automation builders. We work with talented developers who create automations for our platform.
                         </p>
                         <div className="flex justify-center">
                             <Link 
                                 href="/auth" 
                                 className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white py-3 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
                             >
-                                Start Selling
+                                Apply Now
                             </Link>
                         </div>
                     </div>

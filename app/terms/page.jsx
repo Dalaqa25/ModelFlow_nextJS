@@ -34,10 +34,10 @@ export default function Terms() {
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">2. Description of Service</h2>
                             <div className="space-y-4 text-lg">
-                                <p>ModelGrow is an AI model marketplace platform that enables users to:</p>
+                                <p>ModelGrow is an AI automation platform that enables users to:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Upload, publish, and sell AI models</li>
-                                    <li>Browse, purchase, and download AI models created by other users</li>
+                                    <li>Purchase credits to run AI automations</li>
+                                    <li>Browse and use automations available on the platform</li>
                                     <li>Participate in community features, including requests and comments</li>
                                     <li>Manage subscriptions and earnings</li>
                                     <li>Interact with other users through the platform</li>
@@ -83,13 +83,13 @@ export default function Terms() {
                             </div>
                         </section>
 
-                        {/* 4. User Content and Model Uploads */}
+                        {/* 4. User Content */}
                         <section>
-                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">4. User Content and Model Uploads</h2>
+                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">4. User Content</h2>
                             <div className="space-y-4 text-lg">
                                 <div>
                                     <h3 className="text-xl font-semibold text-white mb-2">4.1 Ownership and Rights</h3>
-                                    <p>You retain ownership of all content you upload to the Platform, including AI models, descriptions, images, and other materials ("User Content"). By uploading User Content, you grant ModelGrow:</p>
+                                    <p>You retain ownership of all content you submit to the Platform, including feedback, suggestions, and other materials ("User Content"). By submitting User Content, you grant ModelGrow:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li>A worldwide, non-exclusive, royalty-free license to host, display, distribute, and promote your User Content on the Platform</li>
                                         <li>The right to use your User Content for marketing and promotional purposes</li>
@@ -108,8 +108,8 @@ export default function Terms() {
                                     </ul>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">4.3 Model Approval</h3>
-                                    <p>All uploaded models are subject to review and approval by ModelGrow. We reserve the right to:</p>
+                                    <h3 className="text-xl font-semibold text-white mb-2">4.3 Automation Quality</h3>
+                                    <p>All automations on the platform are reviewed and maintained by ModelGrow. We reserve the right to:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li>Reject or remove any model that violates these Terms or our policies</li>
                                         <li>Require modifications before approval</li>
@@ -119,7 +119,7 @@ export default function Terms() {
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-semibold text-white mb-2">4.4 Prohibited Content</h3>
-                                    <p>You may not upload content that:</p>
+                                    <p>You may not submit content that:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li>Violates intellectual property rights</li>
                                         <li>Contains illegal or harmful material</li>
@@ -138,9 +138,9 @@ export default function Terms() {
                             <div className="space-y-4 text-lg">
                                 <div>
                                     <h3 className="text-xl font-semibold text-white mb-2">5.1 Model Purchases</h3>
-                                    <p>When you purchase a model on the Platform:</p>
+                                    <p>When you purchase credits on the Platform:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
-                                        <li>You receive a license to use the model according to the terms specified by the seller</li>
+                                        <li>You receive credits to use automations according to the terms specified on the Platform</li>
                                         <li>All sales are final unless otherwise specified or required by law</li>
                                         <li>Prices are displayed in the currency specified on the Platform</li>
                                         <li>Payment is processed through our third-party payment processor, Paddle</li>
@@ -168,10 +168,10 @@ export default function Terms() {
                                     </ul>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">5.4 Seller Earnings</h3>
-                                    <p>If you sell models on the Platform:</p>
+                                    <h3 className="text-xl font-semibold text-white mb-2">5.4 Contractor Payments</h3>
+                                    <p>For contractors who build automations for the Platform:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
-                                        <li>You will receive earnings based on the sale price, minus any applicable fees</li>
+                                        <li>You will receive payments based on your contract terms</li>
                                         <li>Earnings are calculated and credited to your account balance</li>
                                         <li>Withdrawals are subject to approval and processing time</li>
                                         <li>You are responsible for any taxes on your earnings</li>
@@ -211,7 +211,7 @@ export default function Terms() {
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-semibold text-white mb-2">7.2 User Content Ownership</h3>
-                                    <p>You retain ownership of your User Content. However, by uploading content, you grant us the licenses described in Section 4.1. You are responsible for ensuring you have the right to grant such licenses.</p>
+                                    <p>You retain ownership of your User Content. However, by submitting content, you grant us the licenses described in Section 4.1. You are responsible for ensuring you have the right to grant such licenses.</p>
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-semibold text-white mb-2">7.3 Copyright Infringement</h3>

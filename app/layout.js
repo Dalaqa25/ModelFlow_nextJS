@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-    title: "ModelGrow – Automation Marketplace",
+    title: "ModelGrow – AI Automation Platform",
     description: "Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations to streamline your business processes.",
-    keywords: ["ModelGrow", "automation", "n8n", "workflow", "AI automation", "marketplace", "no-code", "business automation"],
+    keywords: ["ModelGrow", "automation", "n8n", "workflow", "AI automation", "platform", "no-code", "business automation", "SaaS"],
     authors: [{ name: "ModelGrow" }],
     creator: "ModelGrow",
     publisher: "ModelGrow",
@@ -35,7 +35,7 @@ export const metadata = {
         locale: "en_US",
         url: "https://modelgrow.com",
         siteName: "ModelGrow",
-        title: "ModelGrow – Automation Marketplace",
+        title: "ModelGrow – AI Automation Platform",
         description: "Discover and run AI-powered automation workflows built with n8n.",
         images: [
             {
@@ -48,7 +48,7 @@ export const metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "ModelGrow – Automation Marketplace",
+        title: "ModelGrow – AI Automation Platform",
         description: "Discover and run AI-powered automation workflows built with n8n.",
         images: ['/logo.png'],
     },
@@ -59,7 +59,7 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'ModelGrow',
-    alternateName: 'ModelGrow Automation Marketplace',
+    alternateName: 'ModelGrow AI Automation Platform',
     url: 'https://modelgrow.com',
     description: 'Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations.',
     potentialAction: {

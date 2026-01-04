@@ -114,15 +114,15 @@ export default function Refund() {
                             </div>
                         </section>
 
-                        {/* 8. Developer Earnings */}
+                        {/* 8. Contractor Payments */}
                         <section>
-                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">8. Developer Earnings</h2>
+                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">8. Contractor Payments</h2>
                             <div className="space-y-4 text-lg">
-                                <p>For developers selling automations on ModelGrow:</p>
+                                <p>For contractors who build automations for ModelGrow:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Earnings from automation sales are subject to a holding period before withdrawal</li>
-                                    <li>If a refund is issued for an automation you sold, the corresponding earnings will be deducted from your balance</li>
-                                    <li>Withdrawal requests are processed according to our payout schedule</li>
+                                    <li>Contractor payments are subject to a holding period before processing</li>
+                                    <li>If a refund is issued for an automation, the corresponding payment may be adjusted</li>
+                                    <li>Payment requests are processed according to our payout schedule</li>
                                 </ul>
                             </div>
                         </section>

@@ -236,7 +236,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                 Create your account
               </h2>
               <p className="text-gray-400">
-                Join the AI model marketplace
+                Join the AI automation platform
               </p>
             </div>
 

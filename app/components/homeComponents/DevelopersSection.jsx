@@ -60,12 +60,12 @@ export default function DevelopersSection() {
                     <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
-                        Developers Got Your Back
+                        Ready-Made Automations
                     </h2>
                     <p className={`text-base sm:text-lg max-w-2xl mx-auto ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-600'
                     }`}>
-                        They build the automations. Our AI finds the right one for you.
+                        Our team builds the automations. Our AI finds the right one for you.
                     </p>
                 </motion.div>
 
@@ -127,7 +127,7 @@ export default function DevelopersSection() {
                         isDarkMode ? 'text-gray-500' : 'text-gray-500'
                     }`}
                 >
-                    And many more being added by developers every day
+                    And many more being added to the platform regularly
                 </motion.p>
             </div>
         </section>

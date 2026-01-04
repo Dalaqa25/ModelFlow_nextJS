@@ -161,7 +161,7 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp }) {
                 Sign in to your account
               </h2>
               <p className="text-gray-400">
-                Access your AI model marketplace
+                Access your AI automation platform
               </p>
             </div>
 
