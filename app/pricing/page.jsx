@@ -1,23 +1,53 @@
 "use client";
+import { useState } from 'react';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import Link from 'next/link';
 
 export default function Pricing() {
+    const [loading, setLoading] = useState(null);
+
+    const handleBuyCredits = async (credits) => {
+        setLoading(credits);
+        try {
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credits }),
+            });
+            
+            const data = await res.json();
+            
+            if (data.error) {
+                alert(data.error === 'Unauthorized' ? 'Please sign in to purchase credits' : data.error);
+                return;
+            }
+            
+            if (data.checkout_url) {
+                window.location.href = data.checkout_url;
+            }
+        } catch (error) {
+            console.error('Checkout error:', error);
+            alert('Failed to start checkout. Please try again.');
+        } finally {
+            setLoading(null);
+        }
+    };
+
     const creditPacks = [
         {
-            credits: 100,
+            credits: 1000,
             price: 10,
             popular: false,
             description: "Perfect for trying out automations"
         },
         {
-            credits: 300,
+            credits: 3000,
             price: 25,
             popular: true,
             description: "Most popular choice for regular users"
         },
         {
-            credits: 600,
+            credits: 6000,
             price: 45,
             popular: false,
             description: "Best value for power users"
@@ -94,13 +124,15 @@ export default function Pricing() {
                                         ${(pack.price / pack.credits).toFixed(3)} per credit
                                     </div>
                                     <button 
+                                        onClick={() => handleBuyCredits(pack.credits)}
+                                        disabled={loading === pack.credits}
                                         className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
                                             pack.popular 
                                                 ? 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg' 
                                                 : 'bg-slate-700 hover:bg-slate-600 text-white'
-                                        }`}
+                                        } ${loading === pack.credits ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        Buy Credits
+                                        {loading === pack.credits ? 'Loading...' : 'Buy Credits'}
                                     </button>
                                 </div>
                             ))}

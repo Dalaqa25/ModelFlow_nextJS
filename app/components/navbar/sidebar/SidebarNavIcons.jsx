@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FaUsers, FaThLarge, FaUser } from 'react-icons/fa';
+import { FaUsers, FaThLarge, FaUser, FaCoins } from 'react-icons/fa';
 import { useSidebar } from '@/lib/sidebar-context';
 
 export default function SidebarNavIcons() {
@@ -11,6 +11,7 @@ export default function SidebarNavIcons() {
   const navItems = [
     { icon: FaUsers, path: '/community', label: 'Community' },
     { icon: FaThLarge, path: '/dashboard', label: 'Dashboard' },
+    { icon: FaCoins, path: '/pricing', label: 'Buy Credits' },
     { icon: FaUser, path: '/profile', label: 'Profile' },
   ];
 
