@@ -37,15 +37,13 @@ export async function POST(request) {
                 email: user.email,
                 name: user.user_metadata?.name || user.email,
             },
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/main?payment=success`,
+            return_url: process.env.DODO_PAYMENTS_RETURN_URL || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/main`,
             metadata: {
                 user_id: user.id,
                 user_email: user.email,
                 credits: credits.toString(),
             },
         });
-
-        console.log("Dodo session response:", JSON.stringify(session, null, 2));
 
         return NextResponse.json({ 
             checkout_url: session.url || session.checkout_url || session.payment_link,
