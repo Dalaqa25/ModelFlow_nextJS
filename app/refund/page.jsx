@@ -20,7 +20,8 @@ export default function Refund() {
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">1. Credit Purchases</h2>
                             <div className="space-y-4 text-lg">
-                                <p>Credit purchases on ModelGrow are generally non-refundable once the transaction is complete. However, we may consider refund requests in the following circumstances:</p>
+                                <p>We offer a <strong>14-day refund window</strong> for all credit purchases. If you are not satisfied with your purchase for any reason, you may request a full refund within 14 days of the transaction date.</p>
+                                <p>Additionally, we will consider refund requests in the following circumstances:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
                                     <li><strong>Duplicate Charges:</strong> If you were charged multiple times for the same purchase due to a technical error.</li>
                                     <li><strong>Unauthorized Transactions:</strong> If a purchase was made without your authorization (subject to verification).</li>
@@ -33,8 +34,8 @@ export default function Refund() {
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">2. Unused Credits</h2>
                             <div className="space-y-4 text-lg">
-                                <p>Unused credits are non-refundable. Credits do not expire and can be used at any time. We encourage you to purchase only the credits you expect to use.</p>
-                                <p>If you have unused credits and wish to close your account, please note that remaining credits will be forfeited and cannot be refunded or transferred.</p>
+                                <p>Unused credits are eligible for a full refund within 14 days of purchase. After the 14-day refund window, unused credits are non-refundable but do not expire and can be used at any time.</p>
+                                <p>If you have unused credits and wish to close your account after the 14-day window, please note that remaining credits will be forfeited and cannot be refunded or transferred.</p>
                             </div>
                         </section>
 
@@ -48,7 +49,7 @@ export default function Refund() {
                                     <li>Check the credit cost before confirming</li>
                                     <li>Ensure you understand what the automation does</li>
                                 </ul>
-                                <p className="mt-4">If an automation fails to work as described due to a defect or misrepresentation by the developer, you may request a credit refund within 7 days of the transaction.</p>
+                                <p className="mt-4">If an automation fails to work as described due to a defect or misrepresentation, you may request a credit refund within 14 days of the transaction.</p>
                             </div>
                         </section>
 
@@ -90,12 +91,13 @@ export default function Refund() {
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">6. Refund Request Timeframe</h2>
                             <div className="space-y-4 text-lg">
-                                <p>Refund requests must be submitted within:</p>
+                                <p>All refund requests must be submitted within <strong>14 days</strong> of the original purchase date. This applies to:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>7 days</strong> for credit purchase issues (duplicate charges, technical errors)</li>
-                                    <li><strong>7 days</strong> for automation-related issues (defective or misrepresented automations)</li>
+                                    <li>Credit pack purchases</li>
+                                    <li>Credit purchase issues (duplicate charges, technical errors)</li>
+                                    <li>Automation-related issues</li>
                                 </ul>
-                                <p className="mt-4">Requests submitted after these timeframes may not be eligible for a refund.</p>
+                                <p className="mt-4">Requests submitted after the 14-day window may not be eligible for a refund.</p>
                             </div>
                         </section>
 
@@ -103,13 +105,11 @@ export default function Refund() {
                         <section>
                             <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">7. Exceptions</h2>
                             <div className="space-y-4 text-lg">
-                                <p>Refunds will NOT be provided in the following cases:</p>
+                                <p>Refunds may not be provided in the following cases:</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Change of mind after purchasing credits</li>
-                                    <li>Failure to read automation descriptions before use</li>
-                                    <li>User error in running automations</li>
+                                    <li>Requests made after the 14-day refund window has expired</li>
                                     <li>Account suspension or termination due to Terms of Service violations</li>
-                                    <li>Requests made after the refund timeframe has expired</li>
+                                    <li>Fraudulent refund requests</li>
                                 </ul>
                             </div>
                         </section>
