@@ -32,13 +32,27 @@ export default function ConnectButton({ provider, onConnect }) {
         `width=${width},height=${height},left=${left},top=${top}`
       );
 
-      // Listen for OAuth completion
+      // Listen for OAuth completion message from popup
+      const handleMessage = (event) => {
+        if (event.data?.type === 'google_connected') {
+          window.removeEventListener('message', handleMessage);
+          setIsConnecting(false);
+          if (event.data.success) {
+            onConnect?.(provider);
+          }
+        }
+      };
+      window.addEventListener('message', handleMessage);
+
+      // Also check if popup was closed manually (fallback)
       const checkPopup = setInterval(() => {
         if (popup && popup.closed) {
           clearInterval(checkPopup);
-          setIsConnecting(false);
-          // Check if connection was successful
-          onConnect?.(provider);
+          // Give a moment for message to arrive
+          setTimeout(() => {
+            window.removeEventListener('message', handleMessage);
+            setIsConnecting(false);
+          }, 500);
         }
       }, 500);
     } catch (error) {

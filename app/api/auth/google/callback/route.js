@@ -9,17 +9,14 @@ export async function GET(request) {
 
     // Handle OAuth errors
     if (error) {
-      return NextResponse.json({ 
-        error: 'Google OAuth authorization failed',
-        details: error 
-      }, { status: 400 });
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      return NextResponse.redirect(`${baseUrl}/main?google_error=${encodeURIComponent(error)}`);
     }
 
     // Check if authorization code is present
     if (!code) {
-      return NextResponse.json({ 
-        error: 'Authorization code is missing' 
-      }, { status: 400 });
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      return NextResponse.redirect(`${baseUrl}/main?google_error=missing_code`);
     }
 
     // Exchange authorization code for tokens
@@ -162,22 +159,52 @@ export async function GET(request) {
       }, { status: 500 });
     }
 
-    // Return success response
-    return NextResponse.json({
-      success: true,
-      message: 'Google authentication successful',
-      data: {
-        google_email: email,
-        google_user_id: google_user_id,
-        expires_at: expiresAt,
-        user_id: targetUserId,
-      }
+    // Return success - close popup and notify parent window
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Google Connected</title>
+        </head>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'google_connected', success: true }, '*');
+              window.close();
+            } else {
+              window.location.href = '/main?google_connected=true';
+            }
+          </script>
+          <p>Google connected successfully! This window should close automatically...</p>
+        </body>
+      </html>
+    `;
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html' },
     });
 
   } catch (error) {
-    return NextResponse.json({ 
-      error: 'Internal server error during Google authentication',
-      details: error.message 
-    }, { status: 500 });
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Connection Failed</title>
+        </head>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'google_connected', success: false, error: '${error.message.replace(/'/g, "\\'")}' }, '*');
+              window.close();
+            } else {
+              window.location.href = '/main?google_error=${encodeURIComponent(error.message)}';
+            }
+          </script>
+          <p>Connection failed. This window should close automatically...</p>
+        </body>
+      </html>
+    `;
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html' },
+    });
   }
 }

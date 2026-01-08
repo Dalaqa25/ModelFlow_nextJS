@@ -12,6 +12,8 @@ const AiChat = forwardRef((props, ref) => {
     const [conversationSummary, setConversationSummary] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [currentAiMessageId, setCurrentAiMessageId] = useState(null);
+    const [selectedAutomation, setSelectedAutomation] = useState(null); // Track selected automation
+    const [automationContext, setAutomationContext] = useState(null); // Track automation UUIDs for AI reference
     const messagesEndRef = useRef(null);
     const abortControllerRef = useRef(null);
     const readerRef = useRef(null);
@@ -62,6 +64,9 @@ const AiChat = forwardRef((props, ref) => {
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
 
+        // Declare streamEnded outside try block so it's accessible in catch
+        let streamEnded = false;
+
         try {
             // Build conversation history (exclude the empty AI message we just added)
             let conversationHistory = messages
@@ -70,11 +75,14 @@ const AiChat = forwardRef((props, ref) => {
                     role: msg.role,
                     content: msg.content
                 }));
-            
-            // Add current user message
+
+            // Add current user message with automation context if available
+            const userMessageContent = automationContext
+                ? `${messageText}\n\n[Context: Previously shown automations:\n${automationContext}]`
+                : messageText;
             conversationHistory.push({
                 role: 'user',
-                content: messageText
+                content: userMessageContent
             });
 
             // Check if we need to summarize (every 10 messages)
@@ -101,14 +109,14 @@ const AiChat = forwardRef((props, ref) => {
                         const reader = summaryResponse.body.getReader();
                         const decoder = new TextDecoder();
                         let summary = '';
-                        
+
                         while (true) {
                             const { done, value } = await reader.read();
                             if (done) break;
-                            
+
                             const chunk = decoder.decode(value);
                             const lines = chunk.split('\n');
-                            
+
                             for (const line of lines) {
                                 if (line.startsWith('data: ')) {
                                     const data = line.slice(6);
@@ -116,12 +124,12 @@ const AiChat = forwardRef((props, ref) => {
                                         try {
                                             const parsed = JSON.parse(data);
                                             if (parsed.content) summary += parsed.content;
-                                        } catch (e) {}
+                                        } catch (e) { }
                                     }
                                 }
                             }
                         }
-                        
+
                         setConversationSummary(summary);
                     }
                 } catch (e) {
@@ -131,11 +139,11 @@ const AiChat = forwardRef((props, ref) => {
 
             // Keep only last 15 messages + summary if exists
             if (conversationHistory.length > 15) {
-                conversationHistory = conversationSummary 
+                conversationHistory = conversationSummary
                     ? [
                         { role: 'system', content: `Previous conversation summary: ${conversationSummary}` },
                         ...conversationHistory.slice(-15)
-                      ]
+                    ]
                     : conversationHistory.slice(-15);
             }
 
@@ -163,44 +171,43 @@ const AiChat = forwardRef((props, ref) => {
             const reader = response.body.getReader();
             readerRef.current = reader;
             const decoder = new TextDecoder();
-            
+
             // Queue-based smooth rendering with consistent character-by-character display
             let textQueue = ''; // Queue of text waiting to be displayed
             let displayedText = ''; // Text that's already shown
             let isAnimating = false;
-            let streamEnded = false;
             const CHARS_PER_SECOND = 120; // Consistent display speed - much faster!
-            
+
             const startTypewriterAnimation = () => {
                 if (isAnimating) return;
                 isAnimating = true;
-                
+
                 let lastFrameTime = performance.now();
-                
+
                 const animate = (currentTime) => {
                     const deltaTime = currentTime - lastFrameTime;
-                    
+
                     // Calculate how many characters to display based on time elapsed
                     const charsToAdd = Math.floor((deltaTime / 1000) * CHARS_PER_SECOND);
-                    
+
                     if (charsToAdd > 0 && textQueue.length > 0) {
                         // Move characters from queue to displayed text
                         const newChars = textQueue.slice(0, charsToAdd);
                         textQueue = textQueue.slice(charsToAdd);
                         displayedText += newChars;
-                        
+
                         // Update UI
-                        setMessages(prev => 
-                            prev.map(msg => 
+                        setMessages(prev =>
+                            prev.map(msg =>
                                 msg.id === aiMessageId
                                     ? { ...msg, content: displayedText }
                                     : msg
                             )
                         );
-                        
+
                         lastFrameTime = currentTime;
                     }
-                    
+
                     // Continue animating if there's more text or stream is still active
                     if (textQueue.length > 0 || !streamEnded) {
                         animationFrameRef.current = requestAnimationFrame(animate);
@@ -213,13 +220,13 @@ const AiChat = forwardRef((props, ref) => {
                         setCurrentAiMessageId(null);
                     }
                 };
-                
+
                 animationFrameRef.current = requestAnimationFrame(animate);
             };
 
             while (true) {
                 const { done, value } = await reader.read();
-                
+
                 if (done) {
                     // Mark stream as ended - animation will continue until queue is empty
                     streamEnded = true;
@@ -232,7 +239,7 @@ const AiChat = forwardRef((props, ref) => {
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
-                        
+
                         if (data === '[DONE]') {
                             // Mark stream as ended - animation will continue until queue is empty
                             // Loading state will be turned off when animation completes
@@ -244,9 +251,12 @@ const AiChat = forwardRef((props, ref) => {
 
                         try {
                             const parsed = JSON.parse(data);
-                            
+
                             // Handle automation results
                             if (parsed.type === 'automations' && parsed.automations) {
+                                // Clear old automation context - new search means fresh context
+                                setAutomationContext(null);
+
                                 // Stop animation and flush queue immediately before showing automations
                                 if (animationFrameRef.current) {
                                     cancelAnimationFrame(animationFrameRef.current);
@@ -257,8 +267,8 @@ const AiChat = forwardRef((props, ref) => {
                                     displayedText += textQueue;
                                     textQueue = '';
                                 }
-                                setMessages(prev => 
-                                    prev.map(msg => 
+                                setMessages(prev =>
+                                    prev.map(msg =>
                                         msg.id === aiMessageId
                                             ? { ...msg, content: displayedText, automations: parsed.automations }
                                             : msg
@@ -276,8 +286,8 @@ const AiChat = forwardRef((props, ref) => {
                                     displayedText += textQueue;
                                     textQueue = '';
                                 }
-                                setMessages(prev => 
-                                    prev.map(msg => 
+                                setMessages(prev =>
+                                    prev.map(msg =>
                                         msg.id === aiMessageId
                                             ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
                                             : msg
@@ -295,13 +305,17 @@ const AiChat = forwardRef((props, ref) => {
                                     displayedText += textQueue;
                                     textQueue = '';
                                 }
-                                setMessages(prev => 
-                                    prev.map(msg => 
+                                setMessages(prev =>
+                                    prev.map(msg =>
                                         msg.id === aiMessageId
                                             ? { ...msg, content: displayedText, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
                                             : msg
                                     )
                                 );
+                            }
+                            // Handle automation context (store for AI reference, don't display)
+                            else if (parsed.type === 'automation_context' && parsed.context) {
+                                setAutomationContext(parsed.context);
                             }
                             // Handle regular content - add to queue for smooth typewriter display
                             else if (parsed.content) {
@@ -317,7 +331,7 @@ const AiChat = forwardRef((props, ref) => {
         } catch (error) {
             // Mark stream as ended
             streamEnded = true;
-            
+
             // Don't show error if it was aborted by user
             if (error.name === 'AbortError') {
                 // Stop animation and turn off loading immediately
@@ -335,8 +349,8 @@ const AiChat = forwardRef((props, ref) => {
                     animationFrameRef.current = null;
                 }
                 const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
-                setMessages(prev => 
-                    prev.map(msg => 
+                setMessages(prev =>
+                    prev.map(msg =>
                         msg.id === aiMessageId
                             ? { ...msg, content: `❌ ${errorMessage}` }
                             : msg
@@ -371,13 +385,265 @@ const AiChat = forwardRef((props, ref) => {
     };
 
     const handleAutomationSelect = (automation) => {
-        const selectionMessage = `I want to use "${automation.name}" (UUID: ${automation.id})`;
-        handleSendMessage(selectionMessage);
+        // Save selected automation for later use (e.g., after OAuth)
+        setSelectedAutomation(automation);
+
+        // Show clean message to user, but include ID in a hidden way for the AI
+        const selectionMessage = `I want to use "${automation.name}"`;
+
+        // Send both - the visible message and context
+        handleSendMessageWithContext(selectionMessage, automation.id);
+    };
+
+    const handleSendMessageWithContext = async (messageText, automationId) => {
+        if (!messageText.trim()) return;
+        if (isLoading) return;
+
+        // Add user message (visible)
+        const userMessage = {
+            role: 'user',
+            content: messageText,
+            timestamp: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, userMessage]);
+        setIsLoading(true);
+        if (onLoadingChange) onLoadingChange(true);
+
+        // Create placeholder for AI response
+        const aiMessageId = Date.now();
+        const aiMessage = {
+            id: aiMessageId,
+            role: 'assistant',
+            content: '',
+            automations: null,
+            connectRequest: null,
+            configRequest: null,
+            timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setCurrentAiMessageId(aiMessageId);
+
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        try {
+            // Build conversation with hidden context for AI
+            let conversationHistory = messages
+                .filter(msg => msg.content && msg.content.trim() !== '')
+                .map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                }));
+
+            // Add the visible user message + hidden UUID context for AI
+            conversationHistory.push({
+                role: 'user',
+                content: `${messageText}\n\n[Selected automation UUID: ${automationId}]`
+            });
+
+            const response = await fetch('/api/ai/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                signal: abortController.signal,
+                body: JSON.stringify({
+                    messages: conversationHistory,
+                    temperature: 0.7,
+                    maxTokens: 2000,
+                }),
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Please sign in to use the AI chat feature.');
+                }
+                throw new Error('Failed to get response from AI.');
+            }
+
+            const reader = response.body.getReader();
+            readerRef.current = reader;
+            const decoder = new TextDecoder();
+
+            let textQueue = '';
+            let displayedText = '';
+            let isAnimating = false;
+            let streamEnded = false;
+            const CHARS_PER_SECOND = 120;
+
+            const startTypewriterAnimation = () => {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                let lastFrameTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const deltaTime = currentTime - lastFrameTime;
+                    const charsToAdd = Math.floor((deltaTime / 1000) * CHARS_PER_SECOND);
+
+                    if (charsToAdd > 0 && textQueue.length > 0) {
+                        const newChars = textQueue.slice(0, charsToAdd);
+                        textQueue = textQueue.slice(charsToAdd);
+                        displayedText += newChars;
+
+                        setMessages(prev =>
+                            prev.map(msg =>
+                                msg.id === aiMessageId
+                                    ? { ...msg, content: displayedText }
+                                    : msg
+                            )
+                        );
+
+                        lastFrameTime = currentTime;
+                    }
+
+                    if (textQueue.length > 0 || !streamEnded) {
+                        animationFrameRef.current = requestAnimationFrame(animate);
+                    } else {
+                        isAnimating = false;
+                        animationFrameRef.current = null;
+                        setIsLoading(false);
+                        if (onLoadingChange) onLoadingChange(false);
+                        setCurrentAiMessageId(null);
+                    }
+                };
+
+                animationFrameRef.current = requestAnimationFrame(animate);
+            };
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    streamEnded = true;
+                    break;
+                }
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+
+                        if (data === '[DONE]') {
+                            streamEnded = true;
+                            startTypewriterAnimation();
+                            break;
+                        }
+
+                        try {
+                            const parsed = JSON.parse(data);
+
+                            if (parsed.type === 'automations' && parsed.automations) {
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
+                                setMessages(prev =>
+                                    prev.map(msg =>
+                                        msg.id === aiMessageId
+                                            ? { ...msg, content: displayedText, automations: parsed.automations }
+                                            : msg
+                                    )
+                                );
+                            }
+                            else if (parsed.type === 'connect_request') {
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
+                                setMessages(prev =>
+                                    prev.map(msg =>
+                                        msg.id === aiMessageId
+                                            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
+                                            : msg
+                                    )
+                                );
+                            }
+                            else if (parsed.type === 'config_request') {
+                                if (animationFrameRef.current) {
+                                    cancelAnimationFrame(animationFrameRef.current);
+                                    animationFrameRef.current = null;
+                                    isAnimating = false;
+                                }
+                                if (textQueue) {
+                                    displayedText += textQueue;
+                                    textQueue = '';
+                                }
+                                setMessages(prev =>
+                                    prev.map(msg =>
+                                        msg.id === aiMessageId
+                                            ? { ...msg, content: displayedText, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
+                                            : msg
+                                    )
+                                );
+                            }
+                            // Handle automation context (store for AI reference, don't display)
+                            else if (parsed.type === 'automation_context' && parsed.context) {
+                                setAutomationContext(parsed.context);
+                            }
+                            else if (parsed.content) {
+                                textQueue += parsed.content;
+                                startTypewriterAnimation();
+                            }
+                        } catch (e) { }
+                    }
+                }
+            }
+        } catch (error) {
+            streamEnded = true;
+
+            if (error.name === 'AbortError') {
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    animationFrameRef.current = null;
+                }
+                setIsLoading(false);
+                if (onLoadingChange) onLoadingChange(false);
+                setCurrentAiMessageId(null);
+            } else {
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    animationFrameRef.current = null;
+                }
+                const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === aiMessageId
+                            ? { ...msg, content: `❌ ${errorMessage}` }
+                            : msg
+                    )
+                );
+                setIsLoading(false);
+                if (onLoadingChange) onLoadingChange(false);
+                setCurrentAiMessageId(null);
+            }
+        } finally {
+            abortControllerRef.current = null;
+            readerRef.current = null;
+        }
     };
 
     const handleConnectionComplete = (provider) => {
-        const connectionMessage = `I've connected my ${provider} account. What's next?`;
-        handleSendMessage(connectionMessage);
+        // Include automation context if we have a selected automation
+        if (selectedAutomation) {
+            const connectionMessage = `I've connected my ${provider} account for "${selectedAutomation.name}". What's next?`;
+            handleSendMessageWithContext(connectionMessage, selectedAutomation.id);
+        } else {
+            const connectionMessage = `I've connected my ${provider} account. What's next?`;
+            handleSendMessage(connectionMessage);
+        }
     };
 
     const handleConfigSubmit = async (configData, automationId) => {
@@ -402,12 +668,12 @@ const AiChat = forwardRef((props, ref) => {
 
             // Success - format and display results
             let successMessage = `Automation executed successfully!\n\n`;
-            
+
             // If there are actual results from the runner, include them
             if (result.result) {
                 successMessage += `Results:\n${JSON.stringify(result.result, null, 2)}`;
             }
-            
+
             handleSendMessage(successMessage);
         } catch (error) {
             const errorMessage = `Failed to start automation: ${error.message}`;
@@ -429,9 +695,9 @@ const AiChat = forwardRef((props, ref) => {
     return (
         <div className="w-full h-full flex flex-col">
             {/* Chat messages container */}
-            <div 
+            <div
                 className="flex-1 overflow-y-auto px-6 py-4 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                style={{ 
+                style={{
                     maxHeight: 'calc(100vh - 12rem)',
                     paddingBottom: '2rem'
                 }}
@@ -452,88 +718,86 @@ const AiChat = forwardRef((props, ref) => {
                     }
 
                     return (
-                    <div 
-                        key={`${message.timestamp}-${index}`}
-                        className="w-full"
-                        style={{
-                            animation: message.role === 'user' 
-                                ? 'messageSlideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
-                                : 'messageSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-                            opacity: 0
-                        }}
-                    >
                         <div
-                            className={`flex gap-4 ${
-                                message.role === 'user' ? 'justify-end' : 'justify-start'
-                            }`}
+                            key={`${message.timestamp}-${index}`}
+                            className="w-full"
+                            style={{
+                                animation: message.role === 'user'
+                                    ? 'messageSlideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                                    : 'messageSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                                opacity: 0
+                            }}
                         >
                             <div
-                                className={`${message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'} ${
-                                    message.role === 'user'
-                                        ? `rounded-4xl px-3 py-2 ${
-                                            isDarkMode
-                                                ? 'bg-slate-800/60 text-white'
-                                                : 'bg-slate-700/60 text-white'
-                                          }`
+                                className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                                    }`}
+                            >
+                                <div
+                                    className={`${message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'} ${message.role === 'user'
+                                        ? `rounded-4xl px-3 py-2 ${isDarkMode
+                                            ? 'bg-slate-800/60 text-white'
+                                            : 'bg-slate-700/60 text-white'
+                                        }`
                                         : isDarkMode
                                             ? 'text-gray-100'
                                             : 'text-gray-900'
-                                }`}
-                            >
-                                <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-                                    {message.content}
-                                    {message.role === 'assistant' &&
-                                        isCurrentStreamingAssistant &&
-                                        message.content === '' && (
-                                            <span className="inline-flex items-center justify-center mt-1">
-                                                <Image
-                                                    src="/logo.png"
-                                                    alt="AI thinking"
-                                                    width={28}
-                                                    height={28}
-                                                    className="animate-spin"
-                                                />
-                                            </span>
-                                        )}
-                                </p>
+                                        }`}
+                                >
+                                    <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                                        {message.content}
+                                        {message.role === 'assistant' &&
+                                            isCurrentStreamingAssistant &&
+                                            message.content === '' && (
+                                                <span className="inline-flex items-center justify-center mt-1">
+                                                    <Image
+                                                        src="/logo.png"
+                                                        alt="AI thinking"
+                                                        width={28}
+                                                        height={28}
+                                                        className="animate-spin"
+                                                    />
+                                                </span>
+                                            )}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Render automation cards if present */}
-                        {message.automations && message.automations.length > 0 && (
-                            <div className="mt-4 space-y-3 max-w-[85%]">
-                                {message.automations.map((automation) => (
-                                    <AutomationCard
-                                        key={automation.id}
-                                        automation={automation}
-                                        onSelect={handleAutomationSelect}
+                            {/* Render automation cards if present */}
+                            {message.automations && message.automations.length > 0 && (
+                                <div className="mt-4 space-y-3 max-w-[85%]">
+                                    {message.automations.map((automation) => (
+                                        <AutomationCard
+                                            key={automation.id}
+                                            automation={automation}
+                                            onSelect={handleAutomationSelect}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Render connect button if present */}
+                            {message.connectRequest && (
+                                <div className="mt-4">
+                                    <ConnectButton
+                                        provider={message.connectRequest.provider}
+                                        onConnect={handleConnectionComplete}
                                     />
-                                ))}
-                            </div>
-                        )}
+                                </div>
+                            )}
 
-                        {/* Render connect button if present */}
-                        {message.connectRequest && (
-                            <div className="mt-4">
-                                <ConnectButton
-                                    provider={message.connectRequest.provider}
-                                    onConnect={handleConnectionComplete}
-                                />
-                            </div>
-                        )}
-
-                        {/* Render config form if present */}
-                        {message.configRequest && (
-                            <div className="mt-4">
-                                <ConfigForm
-                                    requiredInputs={message.configRequest.required_inputs}
-                                    automationId={message.configRequest.automation_id}
-                                    onSubmit={handleConfigSubmit}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )})}
+                            {/* Render config form if present */}
+                            {message.configRequest && (
+                                <div className="mt-4">
+                                    <ConfigForm
+                                        requiredInputs={message.configRequest.required_inputs}
+                                        automationId={message.configRequest.automation_id}
+                                        onSubmit={handleConfigSubmit}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
                 <div ref={messagesEndRef} />
             </div>
         </div>

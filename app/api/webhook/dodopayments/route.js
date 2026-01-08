@@ -5,18 +5,14 @@ export async function POST(request) {
     try {
         const payload = await request.text();
         const event = JSON.parse(payload);
-        
-        console.log("Dodo webhook event:", event.type || event.event_type, JSON.stringify(event, null, 2));
 
-        // Handle payment success - check various possible event names
+        // Handle payment success
         const eventType = event.type || event.event_type || "";
         if (eventType.includes("payment") && (eventType.includes("succeeded") || eventType.includes("completed") || eventType.includes("success"))) {
             const metadata = event.data?.metadata || event.metadata || {};
             
             if (!metadata?.user_email || !metadata?.credits) {
-                console.error("Missing metadata in webhook:", metadata);
-                // Try to extract from other fields
-                console.log("Full event data:", JSON.stringify(event, null, 2));
+                console.error("Missing metadata in webhook");
                 return NextResponse.json({ received: true, warning: "Missing metadata" });
             }
 
@@ -48,8 +44,6 @@ export async function POST(request) {
                 console.error("Error updating credits:", updateError);
                 return NextResponse.json({ error: "Failed to update credits" }, { status: 500 });
             }
-
-            console.log(`✅ Added ${creditsToAdd} credits to ${userEmail}. New balance: ${newCredits}`);
 
             // Create a notification
             await supabase.from("notifications").insert({
