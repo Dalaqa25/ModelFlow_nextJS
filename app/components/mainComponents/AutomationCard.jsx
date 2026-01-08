@@ -5,8 +5,8 @@ import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
 export default function AutomationCard({ automation, onSelect }) {
   const { isDarkMode } = useThemeAdaptive();
 
-  const priceDisplay = automation.price_cents 
-    ? `$${(automation.price_cents / 100).toFixed(2)}`
+  const priceDisplay = automation.price_per_run 
+    ? `$${automation.price_per_run.toFixed(2)}`
     : 'Free';
 
   const similarityPercent = automation.similarity 
