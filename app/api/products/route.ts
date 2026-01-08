@@ -1,7 +1,7 @@
-import { dodopayments } from "@/lib/dodo-payments"
+import { getDodoPayments } from "@/lib/dodo-payments"
 import { NextResponse } from "next/server"
 
-export const GET = async() => {
-    const products = await dodopayments.products.list()
+export const GET = async () => {
+    const products = await getDodoPayments().products.list()
     return NextResponse.json(products.items)
 }

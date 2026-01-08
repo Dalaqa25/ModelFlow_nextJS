@@ -1,4 +1,4 @@
-import { dodopayments } from "@/lib/dodo-payments";
+import { getDodoPayments } from "@/lib/dodo-payments";
 import { NextResponse } from "next/server";
 import { createServerComponentClient } from "@/lib/supabase-server";
 
@@ -26,7 +26,7 @@ export async function POST(request) {
         }
 
         // Create checkout session
-        const session = await dodopayments.checkoutSessions.create({
+        const session = await getDodoPayments().checkoutSessions.create({
             product_cart: [
                 {
                     product_id: productId,
@@ -45,7 +45,7 @@ export async function POST(request) {
             },
         });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             checkout_url: session.url || session.checkout_url || session.payment_link,
             session_id: session.id || session.session_id
         });
