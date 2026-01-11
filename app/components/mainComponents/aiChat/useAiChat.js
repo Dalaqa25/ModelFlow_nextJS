@@ -23,10 +23,17 @@ export function useAiChat({ onLoadingChange }) {
     }
     if (setupState) {
       const remaining = setupState.requiredFields.filter(f => !setupState.collectedFields[f.name || f]);
-      contextInfo += `\n\n[Setup State: Setting up "${setupState.automationName}"
-Required fields: ${setupState.requiredFields.map(f => f.name || f).join(', ')}
-Collected: ${JSON.stringify(setupState.collectedFields)}
-Remaining: ${remaining.map(f => f.name || f).join(', ') || 'NONE - ready to execute'}]`;
+      const collectedEntries = Object.entries(setupState.collectedFields);
+      const collectedStr = collectedEntries.length > 0 
+        ? collectedEntries.map(([k, v]) => `${k}="${v}"`).join(', ')
+        : 'none yet';
+      const remainingStr = remaining.length > 0 
+        ? remaining.map(f => f.name || f).join(', ')
+        : 'NONE - all fields collected, ready to execute';
+      
+      contextInfo += `\n\n[Setup State: Setting up "${setupState.automationName}" (ID: ${setupState.automationId})
+Collected: ${collectedStr}
+Remaining: ${remainingStr}]`;
     }
     return contextInfo;
   }, [automationContext, setupState]);

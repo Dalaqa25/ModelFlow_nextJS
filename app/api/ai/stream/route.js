@@ -13,10 +13,23 @@ import {
   handleExecuteAutomation
 } from '@/lib/ai/tool-handlers';
 
+// Use Groq for chat
 const client = new OpenAI({
-  baseURL: "https://models.github.ai/inference",
-  apiKey: process.env.GITHUB_TOKEN,
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY,
 });
+
+// Model to use - llama-3.3-70b-versatile supports tool calling
+const CHAT_MODEL = "llama-3.3-70b-versatile";
+
+// Parse Llama's native function format: <function=name{args}</function>
+function parseLlamaFunctionCall(text) {
+  const match = text.match(/<function=(\w+)(\{.*?\})><\/function>/s);
+  if (match) {
+    return { name: match[1], arguments: match[2] };
+  }
+  return null;
+}
 
 export async function POST(request) {
   try {
@@ -36,39 +49,67 @@ export async function POST(request) {
 
     console.log('[AI Stream] Starting request, messages count:', chatMessages.length);
 
-    // Create streaming response
-    const response = await client.chat.completions.create({
-      messages: chatMessages,
-      model: "gpt-4o",
-      temperature,
-      tools: AI_TOOLS,
-      tool_choice: "auto",
-      stream: true,
-    });
-
-    console.log('[AI Stream] Got response from OpenAI');
-
     const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const { functionCallData, isFunctionCall } = await streamResponse(response, controller, encoder);
+    
+    try {
+      // Create streaming response
+      const response = await client.chat.completions.create({
+        messages: chatMessages,
+        model: CHAT_MODEL,
+        temperature,
+        tools: AI_TOOLS,
+        tool_choice: "auto",
+        stream: true,
+      });
 
-          if (isFunctionCall) {
-            await handleToolCall(functionCallData, user, controller, encoder);
+      console.log('[AI Stream] Got response from OpenAI');
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const { functionCallData, isFunctionCall } = await streamResponse(response, controller, encoder);
+
+            if (isFunctionCall) {
+              await handleToolCall(functionCallData, user, controller, encoder);
+            }
+
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            controller.error(error);
           }
+        },
+      });
 
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
-        } catch (error) {
-          controller.error(error);
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      });
+    } catch (apiError) {
+      // Handle tool_use_failed by parsing native Llama format
+      if (apiError.code === 'tool_use_failed' && apiError.error?.failed_generation) {
+        console.log('[AI Stream] Tool use failed, parsing native format');
+        const nativeCall = parseLlamaFunctionCall(apiError.error.failed_generation);
+        
+        if (nativeCall) {
+          console.log('[AI Stream] Parsed native call:', nativeCall.name);
+          const stream = new ReadableStream({
+            async start(controller) {
+              try {
+                await handleToolCall(nativeCall, user, controller, encoder);
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                controller.close();
+              } catch (error) {
+                controller.error(error);
+              }
+            },
+          });
+          return new Response(stream, {
+            headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+          });
         }
-      },
-    });
-
-    return new Response(stream, {
-      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
-    });
+      }
+      throw apiError;
+    }
   } catch (error) {
     console.error('[AI Stream] Error:', error.message, error.status, error.code);
     return NextResponse.json({ error: "Failed to process chat request", message: error.message }, { status: 500 });
@@ -92,6 +133,7 @@ function buildChatMessages(messages, prompt) {
 async function streamResponse(response, controller, encoder) {
   let functionCallData = { name: '', arguments: '' };
   let isFunctionCall = false;
+  let fullContent = '';
 
   for await (const chunk of response) {
     const delta = chunk.choices[0]?.delta;
@@ -105,7 +147,21 @@ async function streamResponse(response, controller, encoder) {
     
     const content = delta?.content || '';
     if (content) {
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+      fullContent += content;
+      // Don't stream if it looks like a native function call
+      if (!content.includes('<function=')) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+      }
+    }
+  }
+
+  // Check if content contains native Llama function format
+  if (!isFunctionCall && fullContent.includes('<function=')) {
+    const nativeCall = parseLlamaFunctionCall(fullContent);
+    if (nativeCall) {
+      console.log('[AI Stream] Found native function call in content:', nativeCall.name);
+      functionCallData = nativeCall;
+      isFunctionCall = true;
     }
   }
 
@@ -137,7 +193,6 @@ async function handleToolCall(functionCallData, user, controller, encoder) {
       
       case 'create_google_file':
         await handleCreateGoogleFile(args, user, controller, encoder);
-        break;
         break;
       
       case 'confirm_file_selection':
