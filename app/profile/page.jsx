@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/supabase-auth-context";
+import { useAuth } from "@/lib/auth/supabase-auth-context";
 import EditProfile from "./editProfile";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';

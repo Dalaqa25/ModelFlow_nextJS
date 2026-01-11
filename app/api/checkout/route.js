@@ -1,6 +1,6 @@
 import { getDodoPayments } from "@/lib/payments/dodo-payments";
 import { NextResponse } from "next/server";
-import { createServerComponentClient } from "@/lib/supabase-server";
+import { createServerComponentClient } from "@/lib/db/supabase-server";
 
 // Product IDs from Dodo Dashboard
 const CREDIT_PRODUCTS = {
