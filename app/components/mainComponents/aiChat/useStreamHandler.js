@@ -5,6 +5,7 @@ export function createStreamHandler({
   setAutomationContext,
   setSetupState,
   setSelectedAutomation,
+  setLastFileSearchResults,
   animationFrameRef,
   onLoadingChange,
   setIsLoading,
@@ -139,6 +140,8 @@ export function createStreamHandler({
             : msg
         )
       );
+      // Store for context - include field_name so AI knows what field this is for
+      setLastFileSearchResults({ files: parsed.files, field_name: parsed.field_name });
     }
     // Handle field collected
     else if (parsed.type === 'field_collected') {
@@ -146,6 +149,8 @@ export function createStreamHandler({
         ...prev,
         collectedFields: { ...prev.collectedFields, [parsed.field_name]: parsed.value }
       } : null);
+      // Clear file search results after field is collected
+      setLastFileSearchResults(null);
     }
     // Handle automation complete
     else if (parsed.type === 'automation_complete') {

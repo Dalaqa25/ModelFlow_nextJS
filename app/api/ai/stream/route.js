@@ -5,9 +5,9 @@ import { AI_TOOLS, SYSTEM_PROMPT } from '@/lib/ai/tools';
 import {
   handleSearchAutomations,
   handleStartSetup,
+  handleAutoSetup,
   handleSearchUserFiles,
   handleListUserFiles,
-  handleCreateGoogleFile,
   handleConfirmFileSelection,
   handleCollectTextInput,
   handleExecuteAutomation
@@ -76,7 +76,15 @@ export async function POST(request) {
             controller.enqueue(encoder.encode('data: [DONE]\n\n'));
             controller.close();
           } catch (error) {
-            controller.error(error);
+            console.error('[Stream] Error in stream:', error.message, error.code);
+            // Try to send error message before closing
+            try {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "Sorry, I had trouble processing that. Please try again." })}\n\n`));
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+            } catch (e) {
+              controller.error(error);
+            }
           }
         },
       });
@@ -135,24 +143,37 @@ async function streamResponse(response, controller, encoder) {
   let isFunctionCall = false;
   let fullContent = '';
 
-  for await (const chunk of response) {
-    const delta = chunk.choices[0]?.delta;
-    
-    if (delta?.tool_calls) {
-      isFunctionCall = true;
-      const toolCall = delta.tool_calls[0];
-      if (toolCall?.function?.name) functionCallData.name = toolCall.function.name;
-      if (toolCall?.function?.arguments) functionCallData.arguments += toolCall.function.arguments;
-    }
-    
-    const content = delta?.content || '';
-    if (content) {
-      fullContent += content;
-      // Don't stream if it looks like a native function call
-      if (!content.includes('<function=')) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+  try {
+    for await (const chunk of response) {
+      const delta = chunk.choices[0]?.delta;
+      
+      if (delta?.tool_calls) {
+        isFunctionCall = true;
+        const toolCall = delta.tool_calls[0];
+        if (toolCall?.function?.name) functionCallData.name = toolCall.function.name;
+        if (toolCall?.function?.arguments) functionCallData.arguments += toolCall.function.arguments;
+      }
+      
+      const content = delta?.content || '';
+      if (content) {
+        fullContent += content;
+        // Don't stream if it looks like a native function call
+        if (!content.includes('<function=')) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+        }
       }
     }
+  } catch (streamError) {
+    // Handle tool_use_failed error during streaming
+    if (streamError.code === 'tool_use_failed' && streamError.error?.failed_generation) {
+      console.log('[AI Stream] Tool use failed during stream, parsing native format');
+      const nativeCall = parseLlamaFunctionCall(streamError.error.failed_generation);
+      if (nativeCall) {
+        console.log('[AI Stream] Parsed native call:', nativeCall.name);
+        return { functionCallData: nativeCall, isFunctionCall: true };
+      }
+    }
+    throw streamError;
   }
 
   // Check if content contains native Llama function format
@@ -171,7 +192,22 @@ async function streamResponse(response, controller, encoder) {
 // Route tool calls to appropriate handlers
 async function handleToolCall(functionCallData, user, controller, encoder) {
   try {
-    const args = JSON.parse(functionCallData.arguments);
+    console.log('[handleToolCall] Processing:', functionCallData.name, functionCallData.arguments);
+    
+    // Handle malformed JSON (multiple objects concatenated)
+    let args;
+    try {
+      args = JSON.parse(functionCallData.arguments);
+    } catch (parseError) {
+      // Try to extract first valid JSON object
+      const match = functionCallData.arguments.match(/^\{[^}]+\}/);
+      if (match) {
+        args = JSON.parse(match[0]);
+        console.log('[handleToolCall] Extracted first JSON object:', args);
+      } else {
+        throw parseError;
+      }
+    }
 
     switch (functionCallData.name) {
       case 'search_automations':
@@ -183,6 +219,10 @@ async function handleToolCall(functionCallData, user, controller, encoder) {
         if (shouldClose) return;
         break;
       
+      case 'auto_setup':
+        await handleAutoSetup(args, user, controller, encoder);
+        break;
+      
       case 'search_user_files':
         await handleSearchUserFiles(args, user, controller, encoder);
         break;
@@ -191,12 +231,16 @@ async function handleToolCall(functionCallData, user, controller, encoder) {
         await handleListUserFiles(args, user, controller, encoder);
         break;
       
-      case 'create_google_file':
-        await handleCreateGoogleFile(args, user, controller, encoder);
-        break;
-      
       case 'confirm_file_selection':
-        handleConfirmFileSelection(args, controller, encoder);
+        // If file_id is "unknown", search for the file instead
+        if (args.file_id === 'unknown' && args.file_name) {
+          console.log('[handleToolCall] File ID unknown, searching for:', args.file_name);
+          const fileType = args.field_name?.toLowerCase().includes('folder') ? 'folder' : 
+                          args.field_name?.toLowerCase().includes('spreadsheet') ? 'spreadsheet' : 'any';
+          await handleSearchUserFiles({ query: args.file_name, file_type: fileType, field_name: args.field_name }, user, controller, encoder);
+        } else {
+          handleConfirmFileSelection(args, controller, encoder);
+        }
         break;
       
       case 'collect_text_input':
@@ -206,8 +250,14 @@ async function handleToolCall(functionCallData, user, controller, encoder) {
       case 'execute_automation':
         await handleExecuteAutomation(args, user, controller, encoder);
         break;
+      
+      default:
+        console.log('[handleToolCall] Unknown tool:', functionCallData.name);
     }
   } catch (e) {
-    // JSON parse error or handler error - silently ignore incomplete calls
+    console.error('[handleToolCall] Error:', e.message);
+    // Send error message to user
+    const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+    sendSSE({ content: "Sorry, something went wrong. Please try again." });
   }
 }

@@ -11,6 +11,7 @@ export function useAiChat({ onLoadingChange }) {
   const [selectedAutomation, setSelectedAutomation] = useState(null);
   const [automationContext, setAutomationContext] = useState(null);
   const [setupState, setSetupState] = useState(null);
+  const [lastFileSearchResults, setLastFileSearchResults] = useState(null);
 
   const abortControllerRef = useRef(null);
   const readerRef = useRef(null);
@@ -35,8 +36,15 @@ export function useAiChat({ onLoadingChange }) {
 Collected: ${collectedStr}
 Remaining: ${remainingStr}]`;
     }
+    // Include last file search results so AI knows what files were found
+    if (lastFileSearchResults) {
+      const fileList = lastFileSearchResults.files.map((f, i) => 
+        `${i + 1}. "${f.name}" (ID: ${f.id})`
+      ).join(', ');
+      contextInfo += `\n\n[Last file search for "${lastFileSearchResults.field_name || 'unknown field'}": ${fileList}]`;
+    }
     return contextInfo;
-  }, [automationContext, setupState]);
+  }, [automationContext, setupState, lastFileSearchResults]);
 
   const processStream = async (response, aiMessageId) => {
     const reader = response.body.getReader();
@@ -49,6 +57,7 @@ Remaining: ${remainingStr}]`;
       setAutomationContext,
       setSetupState,
       setSelectedAutomation,
+      setLastFileSearchResults,
       animationFrameRef,
       onLoadingChange,
       setIsLoading,
