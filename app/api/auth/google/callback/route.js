@@ -75,7 +75,7 @@ export async function GET(request) {
     const { email, id: google_user_id } = userInfo;
 
     // Get the currently logged-in user from session
-    const { getSupabaseUser } = await import('@/lib/auth-utils');
+    const { getSupabaseUser } = await import('@/lib/auth/auth-utils');
     const currentUser = await getSupabaseUser();
     
     if (!currentUser) {

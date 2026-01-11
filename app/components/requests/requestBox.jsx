@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FaPlus, FaTrash, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/lib/supabase-auth-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 
 export default function RequestBox({ onClose, onRequestPublished }) {
     const [name, setName] = useState('');

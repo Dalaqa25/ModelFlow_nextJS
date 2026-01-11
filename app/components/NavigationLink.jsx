@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useNavigationLoading } from '@/lib/navigation-loading-context';
+import { useNavigationLoading } from '@/lib/contexts/navigation-loading-context';
 import { usePathname } from 'next/navigation';
 
 export default function NavigationLink({ 

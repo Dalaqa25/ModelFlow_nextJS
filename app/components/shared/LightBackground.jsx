@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
 export default function LightBackground({ 
   variant = 'default', 

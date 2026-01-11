@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { FaUsers, FaThLarge, FaUser, FaCoins } from 'react-icons/fa';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function SidebarNavIcons() {
   const router = useRouter();

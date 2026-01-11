@@ -1,4 +1,4 @@
-import { getDodoPayments } from "@/lib/dodo-payments";
+import { getDodoPayments } from "@/lib/payments/dodo-payments";
 import { NextResponse } from "next/server";
 import { createServerComponentClient } from "@/lib/supabase-server";
 

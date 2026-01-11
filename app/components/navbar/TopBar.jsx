@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/supabase-auth-context';
-import { useSidebar } from '@/lib/sidebar-context';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import ProfileDropdown from './sidebar/actions/ProfileDropdown';
 import { FaBars } from 'react-icons/fa';
 

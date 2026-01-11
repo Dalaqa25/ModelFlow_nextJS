@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FiSend, FiSquare } from 'react-icons/fi';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 const PLACEHOLDER_HINTS = [
     "I want to automate my YouTube uploads...",

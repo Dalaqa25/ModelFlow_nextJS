@@ -1,6 +1,6 @@
 'use client';
 
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
 export default function AutomationCard({ automation, onSelect }) {
   const { isDarkMode } = useThemeAdaptive();

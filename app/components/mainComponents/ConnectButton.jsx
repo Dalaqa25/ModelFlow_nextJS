@@ -1,6 +1,6 @@
 'use client';
 
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState } from 'react';
 
 export default function ConnectButton({ provider, onConnect }) {

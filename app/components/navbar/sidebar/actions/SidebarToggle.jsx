@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function SidebarToggle() {
   const { isExpanded, setIsExpanded } = useSidebar();

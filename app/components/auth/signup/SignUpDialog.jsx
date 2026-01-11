@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/lib/supabase-auth-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from 'framer-motion';
-import { validateEmail, validateUsername } from '@/lib/validation-utils';
+import { validateEmail, validateUsername } from '@/lib/auth/validation-utils';
 
 export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const [email, setEmail] = useState('');

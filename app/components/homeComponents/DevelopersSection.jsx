@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { FaFileInvoice, FaEnvelope, FaRobot, FaChartLine, FaCalendarAlt, FaDatabase } from 'react-icons/fa';
 
 const popularAutomations = [

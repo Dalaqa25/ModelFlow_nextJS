@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/lib/supabase-auth-context';
-import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useTheme } from '@/lib/contexts/theme-context';
 import { FaUser, FaSignOutAlt, FaMoon, FaSun, FaDesktop, FaCheck } from 'react-icons/fa';
 
 export default function ProfileDropdown() {

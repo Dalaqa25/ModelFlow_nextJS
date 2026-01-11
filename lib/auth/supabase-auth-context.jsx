@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createBrowserSupabaseClient } from './supabase';
+import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({});
@@ -21,28 +21,20 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        // If there's an error getting the session, clear any stale data
         if (error) {
           await supabase.auth.signOut({ scope: 'local' });
           setUser(null);
         } else {
           setUser(session?.user ?? null);
-          // Ensure app-level user row exists when session is present
           if (session?.user?.email) {
-            try {
-              await fetch('/api/user', { method: 'GET' });
-            } catch (e) {
-              // Error handled silently
-            }
+            try { await fetch('/api/user', { method: 'GET' }); } catch (e) { }
           }
         }
       } catch (error) {
-        // Clear any stale session data
         await supabase.auth.signOut({ scope: 'local' });
         setUser(null);
       } finally {
@@ -52,18 +44,9 @@ export const AuthProvider = ({ children }) => {
 
     getInitialSession();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Handle specific auth events
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          setUser(session?.user ?? null);
-        } else if (event === 'SIGNED_IN') {
-          setUser(session?.user ?? null);
-        } else {
-          setUser(session?.user ?? null);
-        }
-        
+        setUser(session?.user ?? null);
         setLoading(false);
       }
     );
@@ -71,7 +54,6 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-  // OTP-based authentication methods
   const signUpWithOtp = async (email, userData = {}) => {
     try {
       const response = await fetch('/api/auth/signup', {
@@ -79,14 +61,10 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, userData }),
       });
-
       const json = await response.json();
-
       if (!response.ok) {
-        const message = json?.error || 'Signup failed';
-        return { data: null, error: { message, field: json?.field, validationErrors: json?.validationErrors } };
+        return { data: null, error: { message: json?.error || 'Signup failed', field: json?.field, validationErrors: json?.validationErrors } };
       }
-
       return { data: json, error: null };
     } catch (err) {
       return { data: null, error: { message: 'Network error during signup' } };
@@ -100,14 +78,10 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
       const json = await response.json();
-
       if (!response.ok) {
-        const message = json?.error || 'Failed to send OTP';
-        return { data: null, error: { message, field: json?.field } };
+        return { data: null, error: { message: json?.error || 'Failed to send OTP', field: json?.field } };
       }
-
       return { data: json, error: null };
     } catch (err) {
       return { data: null, error: { message: 'Network error during sign in' } };
@@ -121,42 +95,23 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, token }),
       });
-
       const json = await response.json();
-
       if (!response.ok) {
-        const message = json?.error || 'OTP verification failed';
-        return { data: null, error: { message } };
+        return { data: null, error: { message: json?.error || 'OTP verification failed' } };
       }
-
-      // If we got a session back, set it in the Supabase client
-      if (json.session) {
-        await supabase.auth.setSession(json.session);
-      }
-
-      // Update the user state if verification was successful
-      if (json.user) {
-        setUser(json.user);
-      }
-
+      if (json.session) await supabase.auth.setSession(json.session);
+      if (json.user) setUser(json.user);
       return { data: json, error: null };
     } catch (err) {
       return { data: null, error: { message: 'Network error during OTP verification' } };
     }
   };
 
-  // signUp method removed - will be replaced with OTP-based signup
-
   const signOut = async () => {
     try {
-      // Clear all auth data including localStorage
       await supabase.auth.signOut({ scope: 'local' });
       setUser(null);
-      // Clear cached username
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('userName');
-      }
-      // Redirect to home page immediately after sign out
+      if (typeof window !== 'undefined') localStorage.removeItem('userName');
       router.push('/');
       return { error: null };
     } catch (error) {
@@ -168,12 +123,8 @@ export const AuthProvider = ({ children }) => {
     try {
       await supabase.auth.signOut({ scope: 'local' });
       setUser(null);
-    } catch (error) {
-      // Error handled silently
-    }
+    } catch (error) { }
   };
-
-  // Password reset methods removed - not needed for OTP-based auth
 
   const value = {
     user,
@@ -186,9 +137,5 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}; 
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

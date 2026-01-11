@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { validateUsername } from '@/lib/validation-utils';
+import { validateUsername } from '@/lib/auth/validation-utils';
 import { userDB } from '@/lib/db/supabase-db';
 
 export async function POST(request) {

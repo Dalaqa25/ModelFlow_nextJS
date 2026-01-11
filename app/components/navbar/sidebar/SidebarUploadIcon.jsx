@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FaUpload } from 'react-icons/fa';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 import AutomationUpload from '@/app/components/automationUpload/AutomationUpload';
 import { toast } from 'react-hot-toast';
 

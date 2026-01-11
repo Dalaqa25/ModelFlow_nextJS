@@ -1,5 +1,5 @@
 'use client';
-import { useNavigationLoading } from '@/lib/navigation-loading-context';
+import { useNavigationLoading } from '@/lib/contexts/navigation-loading-context';
 
 export default function NavigationLoader() {
     const { isNavigating, targetPath } = useNavigationLoading();

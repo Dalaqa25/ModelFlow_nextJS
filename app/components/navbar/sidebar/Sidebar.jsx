@@ -1,7 +1,7 @@
 'use client';
 
-import { useAuth } from '@/lib/supabase-auth-context';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 import SidebarToggle from './actions/SidebarToggle';
 import SidebarNavIcons from './SidebarNavIcons';
 import SidebarUploadIcon from './SidebarUploadIcon';

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseUser } from "@/lib/auth-utils";
+import { getSupabaseUser } from "@/lib/auth/auth-utils";
 import { notificationDB } from "@/lib/db/supabase-db";
 
 // Get user's notifications

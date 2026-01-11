@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseUser } from '@/lib/auth-utils';
+import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(

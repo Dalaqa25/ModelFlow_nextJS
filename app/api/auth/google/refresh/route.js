@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getValidGoogleAccessToken } from '@/lib/google-oauth';
+import { getValidGoogleAccessToken } from '@/lib/auth/google-oauth';
 import { userDB } from '@/lib/db/supabase-db';
 
 /**

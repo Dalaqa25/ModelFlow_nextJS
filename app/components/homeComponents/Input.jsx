@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import SignInDialog from '../auth/login/SignInDialog';
 import SignUpDialog from '../auth/signup/SignUpDialog';
 

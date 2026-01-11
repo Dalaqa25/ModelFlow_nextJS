@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
-import AiChat from '@/app/components/mainComponents/ai-chat';
+import AiChat from '@/app/components/mainComponents/aiChat';
 import WelcomeModal from '@/app/components/WelcomeModal';
 
 export default function Home() {

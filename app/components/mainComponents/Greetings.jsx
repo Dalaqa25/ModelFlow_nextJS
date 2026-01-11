@@ -1,9 +1,9 @@
 'use client';
 
-import { useAuth } from '@/lib/supabase-auth-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState, useEffect } from 'react';
 
 export default function Greetings() {

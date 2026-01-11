@@ -1,6 +1,6 @@
 "use client";
 import { FaCode, FaCube } from "react-icons/fa";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme } from "@/lib/contexts/theme-context";
 
 export default function PublishedModels({ userModels }) {
     const { isDarkMode } = useTheme();

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/supabase-auth-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 import ModernLandingPage from './ModernLandingPage';
 
 export default function LandingPageClient() {

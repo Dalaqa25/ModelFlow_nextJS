@@ -1,6 +1,6 @@
 "use client";
 import { FaEdit } from "react-icons/fa";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme } from "@/lib/contexts/theme-context";
 
 export default function AboutSection({ profileData }) {
     const { isDarkMode } = useTheme();

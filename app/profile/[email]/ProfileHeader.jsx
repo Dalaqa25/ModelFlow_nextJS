@@ -1,6 +1,6 @@
 "use client";
 import { FaGlobe, FaEnvelope, FaCalendarAlt, FaEdit, FaCode, FaDollarSign } from "react-icons/fa";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme } from "@/lib/contexts/theme-context";
 
 export default function ProfileHeader({ profileData, params }) {
     const { isDarkMode } = useTheme();

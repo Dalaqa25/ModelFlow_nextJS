@@ -1,8 +1,8 @@
 'use client';
 
 import NavigationLink from './NavigationLink';
-import { useAuth } from '@/lib/supabase-auth-context';
-import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useTheme } from '@/lib/contexts/theme-context';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';

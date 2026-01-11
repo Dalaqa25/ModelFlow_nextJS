@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/supabase-auth-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { IoClose } from 'react-icons/io5';

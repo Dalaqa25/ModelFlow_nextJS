@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import SignUpDialog from '../auth/signup/SignUpDialog';
 import SignInDialog from '../auth/login/SignInDialog';
 

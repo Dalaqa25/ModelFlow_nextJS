@@ -17,11 +17,8 @@ export function ThemeAdaptiveProvider({ children }) {
   const { isDarkMode: themeIsDarkMode } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  // Theme-aware text colors
   const textColors = themeIsDarkMode ? {
     primary: 'text-white',
     secondary: 'text-gray-300',
@@ -36,14 +33,8 @@ export function ThemeAdaptiveProvider({ children }) {
     gradient: 'bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent',
   };
 
-  const value = {
-    isDarkMode: themeIsDarkMode,
-    mounted,
-    textColors,
-  };
-
   return (
-    <ThemeAdaptiveContext.Provider value={value}>
+    <ThemeAdaptiveContext.Provider value={{ isDarkMode: themeIsDarkMode, mounted, textColors }}>
       {children}
     </ThemeAdaptiveContext.Provider>
   );
@@ -51,9 +42,6 @@ export function ThemeAdaptiveProvider({ children }) {
 
 export function useThemeAdaptive() {
   const context = useContext(ThemeAdaptiveContext);
-  if (!context) {
-    throw new Error('useThemeAdaptive must be used within ThemeAdaptiveProvider');
-  }
+  if (!context) throw new Error('useThemeAdaptive must be used within ThemeAdaptiveProvider');
   return context;
 }
-

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { use } from "react";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme } from "@/lib/contexts/theme-context";
 import ProfileHeader from "./ProfileHeader";
 import AboutSection from "./AboutSection";
 import PublishedModels from "./PublishedModels";

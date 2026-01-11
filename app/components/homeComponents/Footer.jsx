@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useThemeAdaptive } from '@/lib/theme-adaptive-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
 export default function Footer() {
     const { isDarkMode } = useThemeAdaptive();

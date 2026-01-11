@@ -1,7 +1,7 @@
 'use client';
 
 import { FaChevronLeft } from 'react-icons/fa';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function SidebarCollapseButton() {
   const { setIsExpanded } = useSidebar();

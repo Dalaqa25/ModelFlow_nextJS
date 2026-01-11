@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { validateEmail } from '@/lib/validation-utils';
+import { validateEmail } from '@/lib/auth/validation-utils';
 import { userDB } from '@/lib/db/supabase-db';
 import { createClient } from '@supabase/supabase-js';
 

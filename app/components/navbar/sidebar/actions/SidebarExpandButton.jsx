@@ -1,7 +1,7 @@
 'use client';
 
 import { FaChevronRight } from 'react-icons/fa';
-import { useSidebar } from '@/lib/sidebar-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function SidebarExpandButton() {
   const { setIsExpanded } = useSidebar();

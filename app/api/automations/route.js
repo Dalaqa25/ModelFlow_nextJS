@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSupabaseUser } from '@/lib/auth-utils';
+import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
-import { generateEmbedding } from '@/lib/embeddings';
-import { encryptKeys } from '@/lib/encryption';
+import { generateEmbedding } from '@/lib/ai/embeddings';
+import { encryptKeys } from '@/lib/auth/encryption';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
