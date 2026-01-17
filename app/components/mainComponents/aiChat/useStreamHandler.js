@@ -140,8 +140,13 @@ export function createStreamHandler({
             : msg
         )
       );
-      // Store for context - include field_name so AI knows what field this is for
-      setLastFileSearchResults({ files: parsed.files, field_name: parsed.field_name });
+      // Store for context - include field_name and automation context so selection can continue
+      setLastFileSearchResults({ 
+        files: parsed.files, 
+        field_name: parsed.field_name,
+        automation_id: parsed.automation_id,
+        automation_name: parsed.automation_name
+      });
     }
     // Handle field collected
     else if (parsed.type === 'field_collected') {
@@ -156,6 +161,28 @@ export function createStreamHandler({
     else if (parsed.type === 'automation_complete') {
       setSelectedAutomation(null);
       setSetupState(null);
+    }
+    // Handle ready to execute - store config for confirmation
+    else if (parsed.type === 'ready_to_execute') {
+      setSetupState(prev => ({
+        ...prev,
+        automationId: parsed.automation_id,
+        automationName: parsed.automation_name,
+        readyConfig: parsed.config,
+        isReadyToExecute: true
+      }));
+    }
+    // Handle awaiting input - preserve automation context AND collected config for next AI call
+    else if (parsed.type === 'awaiting_input') {
+      setSetupState(prev => ({
+        automationId: parsed.automation_id,
+        automationName: parsed.automation_name,
+        requiredFields: prev?.requiredFields || parsed.missing_fields.map(f => ({ name: f })),
+        collectedFields: prev?.collectedFields || {},
+        collectedConfig: parsed.collected_config || prev?.collectedConfig || {},  // Store the actual config values!
+        missingFields: parsed.missing_fields,
+        isAwaitingInput: true
+      }));
     }
     // Handle regular content
     else if (parsed.content) {

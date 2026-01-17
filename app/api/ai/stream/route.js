@@ -1,7 +1,10 @@
+// Multi-model AI stream endpoint
+// Llama (Groq) as orchestrator/brain, GPT-4o-mini (GitHub) as tool executor
+
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
-import { AI_TOOLS, SYSTEM_PROMPT } from '@/lib/ai/tools';
+import { AI_TOOLS, ORCHESTRATOR_PROMPT, TOOL_EXECUTOR_PROMPT } from '@/lib/ai/tools';
 import {
   handleSearchAutomations,
   handleStartSetup,
@@ -10,26 +13,23 @@ import {
   handleListUserFiles,
   handleConfirmFileSelection,
   handleCollectTextInput,
-  handleExecuteAutomation
+  handleExecuteAutomation,
 } from '@/lib/ai/tool-handlers';
 
-// Use Groq for chat
-const client = new OpenAI({
+// Llama client (Groq) - the brain/orchestrator
+const orchestratorClient = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// Model to use - llama-3.3-70b-versatile supports tool calling
-const CHAT_MODEL = "llama-3.3-70b-versatile";
+// GPT-4o-mini client (GitHub Models) - tool executor
+const toolExecutorClient = new OpenAI({
+  baseURL: "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_TOKEN,
+});
 
-// Parse Llama's native function format: <function=name{args}</function>
-function parseLlamaFunctionCall(text) {
-  const match = text.match(/<function=(\w+)(\{.*?\})><\/function>/s);
-  if (match) {
-    return { name: match[1], arguments: match[2] };
-  }
-  return null;
-}
+const ORCHESTRATOR_MODEL = "llama-3.3-70b-versatile";
+const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
 
 export async function POST(request) {
   try {
@@ -41,223 +41,219 @@ export async function POST(request) {
     const body = await request.json();
     const { prompt, messages, temperature = 0.7 } = body;
 
-    // Build messages array with system prompt
     const chatMessages = buildChatMessages(messages, prompt);
     if (!chatMessages) {
       return NextResponse.json({ error: "Either 'prompt' or 'messages' is required" }, { status: 400 });
     }
 
-    console.log('[AI Stream] Starting request, messages count:', chatMessages.length);
-
     const encoder = new TextEncoder();
+    const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
     
+    // STEP 1: Ask Llama (the brain) to understand and decide
+    
+    const orchestratorMessages = [
+      { role: "system", content: ORCHESTRATOR_PROMPT },
+      ...chatMessages.filter(m => m.role !== 'system')
+    ];
+
+    const orchestratorResponse = await orchestratorClient.chat.completions.create({
+      messages: orchestratorMessages,
+      model: ORCHESTRATOR_MODEL,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const llamaOutput = orchestratorResponse.choices[0].message.content;
+
+    let decision;
     try {
-      // Create streaming response
-      const response = await client.chat.completions.create({
-        messages: chatMessages,
-        model: CHAT_MODEL,
-        temperature,
-        tools: AI_TOOLS,
-        tool_choice: "auto",
-        stream: true,
-      });
+      decision = JSON.parse(llamaOutput);
+    } catch (e) {
+      decision = { response: llamaOutput, action: null };
+    }
 
-      console.log('[AI Stream] Got response from OpenAI');
+    const conversationalResponse = decision.response || '';
+    const actionNeeded = decision.action;
 
-      const stream = new ReadableStream({
-        async start(controller) {
-          try {
-            const { functionCallData, isFunctionCall } = await streamResponse(response, controller, encoder);
-
-            if (isFunctionCall) {
-              await handleToolCall(functionCallData, user, controller, encoder);
-            }
-
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-            controller.close();
-          } catch (error) {
-            console.error('[Stream] Error in stream:', error.message, error.code);
-            // Try to send error message before closing
-            try {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "Sorry, I had trouble processing that. Please try again." })}\n\n`));
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-              controller.close();
-            } catch (e) {
-              controller.error(error);
+    // STEP 2: Stream response to user
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // First, stream Llama's conversational response
+          if (conversationalResponse) {
+            // Stream character by character for typewriter effect (or in chunks)
+            const chunks = conversationalResponse.match(/.{1,10}/g) || [];
+            for (const chunk of chunks) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
+              // Small delay for natural feel (optional, can remove for speed)
             }
           }
-        },
-      });
 
-      return new Response(stream, {
-        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
-      });
-    } catch (apiError) {
-      // Handle tool_use_failed by parsing native Llama format
-      if (apiError.code === 'tool_use_failed' && apiError.error?.failed_generation) {
-        console.log('[AI Stream] Tool use failed, parsing native format');
-        const nativeCall = parseLlamaFunctionCall(apiError.error.failed_generation);
-        
-        if (nativeCall) {
-          console.log('[AI Stream] Parsed native call:', nativeCall.name);
-          const stream = new ReadableStream({
-            async start(controller) {
-              try {
-                await handleToolCall(nativeCall, user, controller, encoder);
-                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-                controller.close();
-              } catch (error) {
-                controller.error(error);
-              }
-            },
-          });
-          return new Response(stream, {
-            headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
-          });
+          // STEP 3: If action needed, execute it
+          if (actionNeeded && actionNeeded.tool) {
+            const setupContext = extractSetupContext(chatMessages);
+            
+            // Use GPT-4o-mini to generate proper tool arguments
+            const toolArgs = await generateToolArguments(
+              actionNeeded.tool,
+              actionNeeded.hint || '',
+              lastUserMessage,
+              chatMessages,
+              setupContext
+            );
+
+            if (toolArgs) {
+              // Execute the tool
+              await executeToolAction(
+                actionNeeded.tool,
+                toolArgs,
+                user,
+                controller,
+                encoder,
+                setupContext
+              );
+            }
+          }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (error) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "Sorry, something went wrong. Please try again." })}\n\n`));
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
         }
-      }
-      throw apiError;
-    }
+      },
+    });
+
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+    });
+
   } catch (error) {
-    console.error('[AI Stream] Error:', error.message, error.status, error.code);
     return NextResponse.json({ error: "Failed to process chat request", message: error.message }, { status: 500 });
   }
 }
 
-// Build chat messages with system prompt
-function buildChatMessages(messages, prompt) {
-  const systemMessage = { role: "system", content: SYSTEM_PROMPT };
+// Use GPT-4o-mini to generate proper tool arguments
+async function generateToolArguments(toolName, hint, userMessage, chatMessages, setupContext) {
+  try {
+    // Build context for tool executor
+    const contextParts = [
+      `Tool to call: ${toolName}`,
+      `Hint: ${hint}`,
+      `User message: ${userMessage}`,
+    ];
 
+    if (setupContext) {
+      contextParts.push(`Setup context: automation_id="${setupContext.automationId}", automation_name="${setupContext.automationName}"`);
+      if (setupContext.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
+        contextParts.push(`CRITICAL - Already collected config (MUST include as existing_config): ${JSON.stringify(setupContext.collectedConfig)}`);
+      }
+    }
+
+    // Extract relevant context from chat history
+    const recentContext = chatMessages.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n');
+    contextParts.push(`Recent conversation:\n${recentContext}`);
+
+    const toolExecutorMessages = [
+      { role: "system", content: TOOL_EXECUTOR_PROMPT },
+      { role: "user", content: contextParts.join('\n\n') }
+    ];
+
+    const response = await toolExecutorClient.chat.completions.create({
+      messages: toolExecutorMessages,
+      model: TOOL_EXECUTOR_MODEL,
+      temperature: 0.1,
+      tools: AI_TOOLS,
+      tool_choice: { type: "function", function: { name: toolName } },
+    });
+
+    const toolCall = response.choices[0].message.tool_calls?.[0];
+    if (toolCall) {
+      return JSON.parse(toolCall.function.arguments);
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Execute the tool action
+async function executeToolAction(toolName, args, user, controller, encoder, setupContext) {
+  const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+
+  try {
+    switch (toolName) {
+      case 'search_automations':
+        await handleSearchAutomations(args, controller, encoder);
+        break;
+      case 'start_setup':
+        await handleStartSetup(args, user, controller, encoder);
+        break;
+      case 'auto_setup':
+        await handleAutoSetup(args, user, controller, encoder);
+        break;
+      case 'search_user_files':
+        await handleSearchUserFiles(args, user, controller, encoder, setupContext);
+        break;
+      case 'list_user_files':
+        await handleListUserFiles(args, user, controller, encoder, setupContext);
+        break;
+      case 'confirm_file_selection':
+        await handleConfirmFileSelection(args, user, controller, encoder);
+        break;
+      case 'collect_text_input':
+        await handleCollectTextInput(args, user, controller, encoder, setupContext);
+        break;
+      case 'execute_automation':
+        await handleExecuteAutomation(args, user, controller, encoder);
+        break;
+      default:
+        sendSSE({ content: "\n\nI'm not sure how to do that. Could you try again?" });
+    }
+  } catch (e) {
+    sendSSE({ content: "\n\nSorry, something went wrong with that action." });
+  }
+}
+
+// Build chat messages with system context (but not ORCHESTRATOR_PROMPT - that's added separately)
+function buildChatMessages(messages, prompt) {
   if (messages && Array.isArray(messages)) {
-    const hasSystemMessage = messages.some(msg => msg.role === 'system' && msg.content.includes('ModelGrow'));
-    return hasSystemMessage ? messages : [systemMessage, ...messages];
+    // Keep user's context but we'll add our own system prompt
+    return messages;
   } else if (prompt) {
-    return [systemMessage, { role: "user", content: prompt }];
+    return [{ role: "user", content: prompt }];
   }
   return null;
 }
 
-// Stream the AI response and collect function call data
-async function streamResponse(response, controller, encoder) {
-  let functionCallData = { name: '', arguments: '' };
-  let isFunctionCall = false;
-  let fullContent = '';
-
-  try {
-    for await (const chunk of response) {
-      const delta = chunk.choices[0]?.delta;
-      
-      if (delta?.tool_calls) {
-        isFunctionCall = true;
-        const toolCall = delta.tool_calls[0];
-        if (toolCall?.function?.name) functionCallData.name = toolCall.function.name;
-        if (toolCall?.function?.arguments) functionCallData.arguments += toolCall.function.arguments;
-      }
-      
-      const content = delta?.content || '';
-      if (content) {
-        fullContent += content;
-        // Don't stream if it looks like a native function call
-        if (!content.includes('<function=')) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
-        }
-      }
-    }
-  } catch (streamError) {
-    // Handle tool_use_failed error during streaming
-    if (streamError.code === 'tool_use_failed' && streamError.error?.failed_generation) {
-      console.log('[AI Stream] Tool use failed during stream, parsing native format');
-      const nativeCall = parseLlamaFunctionCall(streamError.error.failed_generation);
-      if (nativeCall) {
-        console.log('[AI Stream] Parsed native call:', nativeCall.name);
-        return { functionCallData: nativeCall, isFunctionCall: true };
-      }
-    }
-    throw streamError;
-  }
-
-  // Check if content contains native Llama function format
-  if (!isFunctionCall && fullContent.includes('<function=')) {
-    const nativeCall = parseLlamaFunctionCall(fullContent);
-    if (nativeCall) {
-      console.log('[AI Stream] Found native function call in content:', nativeCall.name);
-      functionCallData = nativeCall;
-      isFunctionCall = true;
-    }
-  }
-
-  return { functionCallData, isFunctionCall };
-}
-
-// Route tool calls to appropriate handlers
-async function handleToolCall(functionCallData, user, controller, encoder) {
-  try {
-    console.log('[handleToolCall] Processing:', functionCallData.name, functionCallData.arguments);
-    
-    // Handle malformed JSON (multiple objects concatenated)
-    let args;
+// Extract setup context from conversation
+function extractSetupContext(messages) {
+  const allContent = messages.map(m => m.content || '').join('\n');
+  
+  // Look for automation context
+  const automationIdMatch = allContent.match(/automation_id[=:]\s*"?([a-f0-9-]+)"?/i);
+  const automationNameMatch = allContent.match(/(?:Setting up |automation_name[=:]\s*)"([^"]+)"/i);
+  
+  // Better regex to capture JSON config (handles nested braces)
+  const configMatch = allContent.match(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/);
+  
+  const automationId = automationIdMatch?.[1];
+  
+  let collectedConfig = {};
+  if (configMatch) {
     try {
-      args = JSON.parse(functionCallData.arguments);
-    } catch (parseError) {
-      // Try to extract first valid JSON object
-      const match = functionCallData.arguments.match(/^\{[^}]+\}/);
-      if (match) {
-        args = JSON.parse(match[0]);
-        console.log('[handleToolCall] Extracted first JSON object:', args);
-      } else {
-        throw parseError;
-      }
-    }
-
-    switch (functionCallData.name) {
-      case 'search_automations':
-        await handleSearchAutomations(args, controller, encoder);
-        break;
-      
-      case 'start_setup':
-        const shouldClose = await handleStartSetup(args, user, controller, encoder);
-        if (shouldClose) return;
-        break;
-      
-      case 'auto_setup':
-        await handleAutoSetup(args, user, controller, encoder);
-        break;
-      
-      case 'search_user_files':
-        await handleSearchUserFiles(args, user, controller, encoder);
-        break;
-      
-      case 'list_user_files':
-        await handleListUserFiles(args, user, controller, encoder);
-        break;
-      
-      case 'confirm_file_selection':
-        // If file_id is "unknown", search for the file instead
-        if (args.file_id === 'unknown' && args.file_name) {
-          console.log('[handleToolCall] File ID unknown, searching for:', args.file_name);
-          const fileType = args.field_name?.toLowerCase().includes('folder') ? 'folder' : 
-                          args.field_name?.toLowerCase().includes('spreadsheet') ? 'spreadsheet' : 'any';
-          await handleSearchUserFiles({ query: args.file_name, file_type: fileType, field_name: args.field_name }, user, controller, encoder);
-        } else {
-          handleConfirmFileSelection(args, controller, encoder);
-        }
-        break;
-      
-      case 'collect_text_input':
-        handleCollectTextInput(args, controller, encoder);
-        break;
-      
-      case 'execute_automation':
-        await handleExecuteAutomation(args, user, controller, encoder);
-        break;
-      
-      default:
-        console.log('[handleToolCall] Unknown tool:', functionCallData.name);
-    }
-  } catch (e) {
-    console.error('[handleToolCall] Error:', e.message);
-    // Send error message to user
-    const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-    sendSSE({ content: "Sorry, something went wrong. Please try again." });
+      collectedConfig = JSON.parse(configMatch[1]);
+    } catch (e) {}
   }
+  
+  if (automationId) {
+    return {
+      automationId,
+      automationName: automationNameMatch?.[1] || null,
+      collectedConfig
+    };
+  }
+  
+  return null;
 }

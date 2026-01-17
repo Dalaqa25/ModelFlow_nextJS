@@ -20,28 +20,51 @@ export function useAiChat({ onLoadingChange }) {
   const buildContextInfo = useCallback(() => {
     let contextInfo = '';
     if (automationContext) {
-      contextInfo += `\n\n[Context: Previously shown automations:\n${automationContext}]`;
+      contextInfo += `\n\n[AVAILABLE AUTOMATIONS - Use these REAL descriptions when answering questions about them:\n${automationContext}]`;
     }
-    if (setupState) {
-      const remaining = setupState.requiredFields.filter(f => !setupState.collectedFields[f.name || f]);
-      const collectedEntries = Object.entries(setupState.collectedFields);
+    if (setupState && setupState.automationId) {
+      const requiredFields = setupState.requiredFields || [];
+      const collectedFields = setupState.collectedFields || {};
+      const remaining = requiredFields.filter(f => !collectedFields[f.name || f]);
+      const collectedEntries = Object.entries(collectedFields);
       const collectedStr = collectedEntries.length > 0 
         ? collectedEntries.map(([k, v]) => `${k}="${v}"`).join(', ')
         : 'none yet';
       const remainingStr = remaining.length > 0 
         ? remaining.map(f => f.name || f).join(', ')
-        : 'NONE - all fields collected, ready to execute';
+        : (setupState.missingFields?.length > 0 ? setupState.missingFields.join(', ') : 'NONE - all fields collected, ready to execute');
       
-      contextInfo += `\n\n[Setup State: Setting up "${setupState.automationName}" (ID: ${setupState.automationId})
+      // Include collected config as JSON for AI to pass to collect_text_input
+      const collectedConfig = setupState.collectedConfig || {};
+      const configJson = Object.keys(collectedConfig).length > 0 
+        ? JSON.stringify(collectedConfig)
+        : '{}';
+      
+      contextInfo += `\n\n[ACTIVE SETUP: "${setupState.automationName}" (automation_id: ${setupState.automationId})
 Collected: ${collectedStr}
-Remaining: ${remainingStr}]`;
+Remaining: ${remainingStr}
+existing_config: ${configJson}
+IMPORTANT: When calling collect_text_input, you MUST include:
+- automation_id="${setupState.automationId}"
+- automation_name="${setupState.automationName}"
+- existing_config=${configJson} (pass this EXACTLY to preserve already-created files!)]`;
+      
+      // If ready to execute, include that info
+      if (setupState.isReadyToExecute && setupState.readyConfig) {
+        // Use base64 encoding to avoid regex issues with JSON
+        const configStr = Buffer.from(JSON.stringify(setupState.readyConfig)).toString('base64');
+        contextInfo += `\n\n[READY_TO_EXECUTE automation_id="${setupState.automationId}" config_b64="${configStr}"]`;
+      }
     }
     // Include last file search results so AI knows what files were found
-    if (lastFileSearchResults) {
+    // CRITICAL: Include file IDs so AI can call confirm_file_selection
+    if (lastFileSearchResults && lastFileSearchResults.files?.length > 0) {
       const fileList = lastFileSearchResults.files.map((f, i) => 
-        `${i + 1}. "${f.name}" (ID: ${f.id})`
+        `${i + 1}. "${f.name}" (file_id: ${f.id})`
       ).join(', ');
-      contextInfo += `\n\n[Last file search for "${lastFileSearchResults.field_name || 'unknown field'}": ${fileList}]`;
+      const fieldInfo = lastFileSearchResults.field_name ? ` for field "${lastFileSearchResults.field_name}"` : '';
+      const automationInfo = lastFileSearchResults.automation_id ? ` (automation_id: ${lastFileSearchResults.automation_id}, automation_name: "${lastFileSearchResults.automation_name}")` : '';
+      contextInfo += `\n\n[IMPORTANT - Last file search results${fieldInfo}${automationInfo}: ${fileList}. If user says a number like "1" or "first one", call confirm_file_selection with the corresponding file_id, file_name, field_name, automation_id, and automation_name.]`;
     }
     return contextInfo;
   }, [automationContext, setupState, lastFileSearchResults]);
