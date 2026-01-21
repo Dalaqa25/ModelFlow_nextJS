@@ -9,16 +9,41 @@ const supabase = createClient(
 
 export async function POST(req) {
   try {
-    const user = await getSupabaseUser();
-    
+    let user = await getSupabaseUser();
+    console.log('[EXECUTE DEBUG] getSupabaseUser result:', user ? 'found' : 'null');
+
+    // For internal server-to-server calls (from AI stream), user_id may be passed directly
+    const body = await req.json();
+    const { automation_id, config, user_id } = body;
+    console.log('[EXECUTE DEBUG] Body received:', { automation_id, user_id, hasConfig: !!config });
+
+    // If no session but user_id provided (internal call), validate and use it
+    if (!user && user_id) {
+      console.log('[EXECUTE DEBUG] No session, trying user_id fallback:', user_id);
+      // Verify the user exists in database
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('id', user_id)
+        .single();
+
+      console.log('[EXECUTE DEBUG] User lookup result:', { profile, error });
+
+      if (profile) {
+        user = { id: profile.id, email: profile.email };
+        console.log('[EXECUTE DEBUG] User set from DB:', user);
+      }
+    }
+
     if (!user) {
+      console.log('[EXECUTE DEBUG] FINAL: No user, returning 401');
       return NextResponse.json(
         { error: 'You must be logged in to execute automations' },
         { status: 401 }
       );
     }
 
-    const { automation_id, config } = await req.json();
+    console.log('[EXECUTE DEBUG] Auth OK, proceeding with user:', user.id);
 
     // Validate inputs
     if (!automation_id || !config) {
@@ -37,16 +62,29 @@ export async function POST(req) {
       );
     }
 
-    // Send minimal data to automation runner
-    // Runner will fetch workflow, developer_keys, and user tokens from database
-    
+    // Fetch automation details to check if it requires background processing
+    const { data: automation, error: automationError } = await supabase
+      .from('automations')
+      .select('id, name, requires_background')
+      .eq('id', automation_id)
+      .single();
+
+    if (automationError || !automation) {
+      return NextResponse.json(
+        { error: 'Automation not found' },
+        { status: 404 }
+      );
+    }
+
+    console.log('[EXECUTE DEBUG] Automation type:', automation.requires_background ? 'Background (Continuous)' : 'On-Demand (Run Once)');
+
     // Convert config keys to lowercase for webhook body compatibility
     // (Database stores TIKTOK_URL, but workflow expects tiktok_url)
     const lowercaseConfig = {};
     Object.entries(config).forEach(([key, value]) => {
       lowercaseConfig[key.toLowerCase()] = value;
     });
-    
+
     const runnerPayload = {
       automation_id,
       user_id: user.id,
@@ -54,7 +92,7 @@ export async function POST(req) {
     };
 
     const startTime = Date.now();
-    
+
     const runnerResponse = await fetch('http://localhost:3001/api/automations/run', {
       method: 'POST',
       headers: {
@@ -68,7 +106,7 @@ export async function POST(req) {
 
     if (!runnerResponse.ok) {
       const errorData = await runnerResponse.json().catch(() => ({}));
-      
+
       // Log failed execution
       await supabase.from('automation_executions').insert({
         automation_id,
@@ -80,7 +118,7 @@ export async function POST(req) {
         duration_ms: durationMs,
         error_message: errorData.error || 'Automation runner failed'
       });
-      
+
       return NextResponse.json(
         { error: 'Automation runner failed', details: errorData },
         { status: 500 }
@@ -88,6 +126,27 @@ export async function POST(req) {
     }
 
     const result = await runnerResponse.json();
+
+    // SCENARIO 1: On-Demand (Run Once) - Just execute, don't save config
+    // SCENARIO 2: Background (Continuous) - Save config for recurring execution
+    if (automation.requires_background) {
+      console.log('[EXECUTE DEBUG] Background automation - saving config to automation_instances');
+      
+      await supabase
+        .from('automation_instances')
+        .upsert({
+          automation_id,
+          user_id: user.id,
+          config: lowercaseConfig,
+          enabled: true,
+          last_run: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'automation_id,user_id' // Update if already exists
+        });
+    } else {
+      console.log('[EXECUTE DEBUG] On-demand automation - config not saved (run once)');
+    }
 
     // Log successful execution and increment total_runs
     await supabase.from('automation_executions').insert({

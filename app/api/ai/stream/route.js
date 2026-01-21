@@ -14,6 +14,7 @@ import {
   handleConfirmFileSelection,
   handleCollectTextInput,
   handleExecuteAutomation,
+  handleShowUserAutomations,
 } from '@/lib/ai/tool-handlers';
 
 // Llama client (Groq) - the brain/orchestrator
@@ -48,9 +49,9 @@ export async function POST(request) {
 
     const encoder = new TextEncoder();
     const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
-    
+
     // STEP 1: Ask Llama (the brain) to understand and decide
-    
+
     const orchestratorMessages = [
       { role: "system", content: ORCHESTRATOR_PROMPT },
       ...chatMessages.filter(m => m.role !== 'system')
@@ -92,7 +93,7 @@ export async function POST(request) {
           // STEP 3: If action needed, execute it
           if (actionNeeded && actionNeeded.tool) {
             const setupContext = extractSetupContext(chatMessages);
-            
+
             // Use GPT-4o-mini to generate proper tool arguments
             const toolArgs = await generateToolArguments(
               actionNeeded.tool,
@@ -137,6 +138,15 @@ export async function POST(request) {
 // Use GPT-4o-mini to generate proper tool arguments
 async function generateToolArguments(toolName, hint, userMessage, chatMessages, setupContext) {
   try {
+    // SHORTCUT: If executing and we have ready-to-execute config, use it directly!
+    // This ensures the config doesn't get lost when GPT tries to generate arguments
+    if (toolName === 'execute_automation' && setupContext?.readyToExecute && setupContext?.collectedConfig) {
+      return {
+        automation_id: setupContext.automationId,
+        config: setupContext.collectedConfig
+      };
+    }
+
     // Build context for tool executor
     const contextParts = [
       `Tool to call: ${toolName}`,
@@ -208,6 +218,11 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
       case 'execute_automation':
         await handleExecuteAutomation(args, user, controller, encoder);
         break;
+      
+      case 'show_user_automations':
+        await handleShowUserAutomations(args, user, controller, encoder);
+        break;
+      
       default:
         sendSSE({ content: "\n\nI'm not sure how to do that. Could you try again?" });
     }
@@ -230,23 +245,38 @@ function buildChatMessages(messages, prompt) {
 // Extract setup context from conversation
 function extractSetupContext(messages) {
   const allContent = messages.map(m => m.content || '').join('\n');
-  
+
   // Look for automation context
   const automationIdMatch = allContent.match(/automation_id[=:]\s*"?([a-f0-9-]+)"?/i);
   const automationNameMatch = allContent.match(/(?:Setting up |automation_name[=:]\s*)"([^"]+)"/i);
-  
-  // Better regex to capture JSON config (handles nested braces)
+
+  // PRIORITY 1: Look for READY_TO_RUN marker (has full config ready to execute)
+  const readyToRunMatch = allContent.match(/\[READY_TO_RUN automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
+
+  if (readyToRunMatch) {
+    try {
+      const config = JSON.parse(readyToRunMatch[2]);
+      return {
+        automationId: readyToRunMatch[1],
+        automationName: automationNameMatch?.[1] || null,
+        collectedConfig: config,
+        readyToExecute: true  // Flag that setup is complete
+      };
+    } catch (e) { }
+  }
+
+  // PRIORITY 2: Look for existing_config (during setup flow)
   const configMatch = allContent.match(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/);
-  
+
   const automationId = automationIdMatch?.[1];
-  
+
   let collectedConfig = {};
   if (configMatch) {
     try {
       collectedConfig = JSON.parse(configMatch[1]);
-    } catch (e) {}
+    } catch (e) { }
   }
-  
+
   if (automationId) {
     return {
       automationId,
@@ -254,6 +284,6 @@ function extractSetupContext(messages) {
       collectedConfig
     };
   }
-  
+
   return null;
 }

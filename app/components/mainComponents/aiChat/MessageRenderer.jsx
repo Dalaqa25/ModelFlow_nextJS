@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import AutomationCard from '../AutomationCard';
+import AutomationInstanceCard from './AutomationInstanceCard';
 import ConnectButton from '../ConnectButton';
 import ConfigForm from '../ConfigForm';
 
@@ -88,6 +89,37 @@ export default function MessageRenderer({
             automationId={message.configRequest.automation_id}
             onSubmit={onConfigSubmit}
           />
+        </div>
+      )}
+
+      {/* Automation instances (user stats) */}
+      {message.automationInstances?.length > 0 && (
+        <div className="mt-4 space-y-3 max-w-[85%]">
+          {message.automationInstances.map((instance) => (
+            <AutomationInstanceCard
+              key={instance.id}
+              automation={instance}
+              onToggleEnabled={async (id, enabled) => {
+                try {
+                  const response = await fetch(`/api/automations/${id}/toggle`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                  });
+                  if (!response.ok) throw new Error('Failed to toggle');
+                  // Refresh the message to show updated state
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Toggle failed:', error);
+                  alert('Failed to toggle automation. Please try again.');
+                }
+              }}
+              onViewDetails={(instance) => {
+                // Show details in alert for now (can be improved with modal)
+                alert(`Automation Details:\n\nName: ${instance.name}\nStatus: ${instance.enabled ? 'Active' : 'Paused'}\nTotal Runs: ${instance.total_runs}\nSuccess Rate: ${instance.success_rate}%\nLast Run: ${instance.last_run || 'Never'}\n\nConfig:\n${JSON.stringify(instance.config, null, 2)}`);
+              }}
+            />
+          ))}
         </div>
       )}
     </div>

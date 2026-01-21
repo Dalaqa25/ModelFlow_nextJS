@@ -184,6 +184,22 @@ export function createStreamHandler({
         isAwaitingInput: true
       }));
     }
+    // Handle automation instances (user stats)
+    else if (parsed.type === 'automation_instances' && parsed.instances) {
+      flushQueue();
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: displayedText, automationInstances: parsed.instances }
+            : msg
+        )
+      );
+    }
+    // Handle hidden context (for AI memory, not displayed to user)
+    else if (parsed.type === 'hidden_context') {
+      // Do nothing - this is just for AI to remember config in chat history
+      // Don't add to message content or display anything
+    }
     // Handle regular content
     else if (parsed.content) {
       textQueue += parsed.content;
