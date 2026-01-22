@@ -52,7 +52,7 @@ export default function SidebarUploadIcon({ isMobileExpanded = false }) {
         onClose={() => setShowUploadDialog(false)}
         onUploadSuccess={() => {
           setShowUploadDialog(false);
-          toast.success('Automation uploaded successfully');
+          // Toast already shown in AutomationUpload component
         }}
       />
     </>

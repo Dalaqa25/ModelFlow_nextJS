@@ -9,9 +9,6 @@ import { LoadingOverlay } from './shared/components';
 import { useStepper } from './shared/hooks';
 import AutomationStep1BasicInfo from './steps/AutomationStep1BasicInfo';
 import AutomationStep3JsonUpload from './steps/AutomationStep3JsonUpload';
-import AutomationStep3DeveloperKeys from './steps/AutomationStep3DeveloperKeys';
-import AutomationStep4InputTypes from './steps/AutomationStep4InputTypes';
-import { detectDeveloperKeys, detectUserConnectors, replaceCredentialsWithPlaceholders, replaceN8nPlaceholders } from './detectKeys';
 import {
     clearStepErrors,
     validateAutomationForm,
@@ -24,19 +21,12 @@ const INITIAL_FORM_STATE = {
     description: '',
     estimatedPrice: '',
     jsonFile: null,
-    developerKeys: {},
-    inputTypes: {}
 };
 
 export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
     const [formData, setFormData] = useState(INITIAL_FORM_STATE);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [detectedKeys, setDetectedKeys] = useState([]);
-    const [detectedConnectors, setDetectedConnectors] = useState([]);
-    const [detectedInputs, setDetectedInputs] = useState([]);
-    const [showKeysStep, setShowKeysStep] = useState(false);
-    const [showInputTypesStep, setShowInputTypesStep] = useState(false);
 
     const { step, stepDirection, handleNext, handleBack, resetStepper } = useStepper();
     const jsonInputRef = useRef(null);
@@ -45,16 +35,11 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
         () => ({
             1: 'Automation Basics',
             2: 'n8n JSON Upload',
-            3: 'Developer Keys',
-            4: 'Input Types'
         }),
         []
     );
 
-    const totalSteps = showKeysStep && showInputTypesStep ? 4 
-                     : showKeysStep ? 3 
-                     : showInputTypesStep ? 3 
-                     : 2;
+    const totalSteps = 2;
 
     useEffect(() => {
         if (!isOpen) {
@@ -92,66 +77,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             return;
         }
         
-        // Read and parse JSON to detect keys
-        try {
-            const text = await file.text();
-            let workflow = JSON.parse(text);
-            
-            // Step 1: Convert n8n placeholders to standard format
-            const { workflow: workflowWithStandardPlaceholders, userInputs } = replaceN8nPlaceholders(workflow);
-            workflow = workflowWithStandardPlaceholders;
-            
-            setDetectedInputs(userInputs);
-            setShowInputTypesStep(userInputs.length > 0);
-            
-            // Step 2a: Detect user connectors (OAuth services)
-            const connectors = detectUserConnectors(workflow);
-            setDetectedConnectors(connectors);
-            
-            // Step 2b: Detect developer keys (API keys, secrets)
-            const keys = detectDeveloperKeys(workflow);
-            setDetectedKeys(keys);
-            setShowKeysStep(keys.length > 0);
-            
-            // Step 3: Replace credentials with placeholders if keys detected
-            if (keys.length > 0) {
-                workflow = replaceCredentialsWithPlaceholders(workflow, keys);
-            }
-            
-            // Create a new file with all modifications
-            const modifiedJson = JSON.stringify(workflow, null, 2);
-            const modifiedFile = new File([modifiedJson], file.name, { type: 'application/json' });
-            
-            setFormData((prev) => ({ ...prev, jsonFile: modifiedFile }));
-        } catch (error) {
-            setFormData((prev) => ({ ...prev, jsonFile: file }));
-        }
-        
+        setFormData((prev) => ({ ...prev, jsonFile: file }));
         setErrors((prev) => ({ ...prev, jsonFile: '' }));
     };
 
     const handleRemoveJson = () => {
         setFormData((prev) => ({ ...prev, jsonFile: null }));
-        setDetectedKeys([]);
-        setDetectedConnectors([]);
-        setDetectedInputs([]);
-        setShowKeysStep(false);
-        setShowInputTypesStep(false);
         if (jsonInputRef.current) jsonInputRef.current.value = '';
-    };
-
-    const handleKeysChange = (keys) => {
-        setFormData((prev) => ({ ...prev, developerKeys: keys }));
-        if (errors.developerKeys) {
-            setErrors((prev) => ({ ...prev, developerKeys: '' }));
-        }
-    };
-
-    const handleInputTypesChange = (types) => {
-        setFormData((prev) => ({ ...prev, inputTypes: types }));
-        if (errors.inputTypes) {
-            setErrors((prev) => ({ ...prev, inputTypes: '' }));
-        }
     };
 
     const handleEstimatedPriceChange = (value) => {
@@ -168,27 +100,7 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
             return;
         }
         setErrors((prev) => clearStepErrors(prev, step));
-        
-        // Navigation logic based on what steps are shown
-        if (step === 2) {
-            // After JSON upload
-            if (showKeysStep) {
-                handleNext(); // Go to step 3 (keys)
-            } else if (showInputTypesStep) {
-                handleNext(); // Go to step 3 (input types)
-            } else {
-                handleSubmit(); // No more steps, submit
-            }
-        } else if (step === 3) {
-            // After keys or input types
-            if (showKeysStep && showInputTypesStep) {
-                handleNext(); // Go to step 4 (input types)
-            } else {
-                handleSubmit(); // No more steps, submit
-            }
-        } else {
-            handleNext();
-        }
+        handleNext();
     };
 
     const handleSubmit = async () => {
@@ -207,21 +119,6 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                 payload.append('estimatedPrice', parseFloat(formData.estimatedPrice));
             }
             if (formData.jsonFile) payload.append('automationFile', formData.jsonFile);
-            
-            // Add user connectors if any
-            if (detectedConnectors.length > 0) {
-                payload.append('requiredConnectors', JSON.stringify(detectedConnectors));
-            }
-            
-            // Add developer keys if any
-            if (Object.keys(formData.developerKeys).length > 0) {
-                payload.append('developerKeys', JSON.stringify(formData.developerKeys));
-            }
-            
-            // Add input types if any
-            if (Object.keys(formData.inputTypes).length > 0) {
-                payload.append('inputTypes', JSON.stringify(formData.inputTypes));
-            }
 
             const response = await fetch('/api/automations', {
                 method: 'POST',
@@ -315,47 +212,13 @@ export default function AutomationUpload({ isOpen, onClose, onUploadSuccess }) {
                                                 formData={formData}
                                                 errors={errors}
                                                 handleBack={handleBack}
-                                                handleSubmit={(showKeysStep || showInputTypesStep) ? handleNextWithValidation : handleSubmit}
+                                                handleSubmit={handleSubmit}
                                                 onJsonSelect={handleJsonSelect}
                                                 onRemoveJson={handleRemoveJson}
                                                 onEstimatedPriceChange={handleEstimatedPriceChange}
                                                 jsonInputRef={jsonInputRef}
                                                 isSubmitting={isSubmitting}
-                                                buttonText={(showKeysStep || showInputTypesStep) ? 'Next' : 'Publish Automation'}
-                                            />
-                                        )}
-                                        {step === 3 && showKeysStep && (
-                                            <AutomationStep3DeveloperKeys
-                                                detectedKeys={detectedKeys}
-                                                formData={formData}
-                                                errors={errors}
-                                                handleBack={handleBack}
-                                                handleSubmit={showInputTypesStep ? handleNextWithValidation : handleSubmit}
-                                                onKeysChange={handleKeysChange}
-                                                isSubmitting={isSubmitting}
-                                                buttonText={showInputTypesStep ? 'Next' : 'Publish Automation'}
-                                            />
-                                        )}
-                                        {step === 3 && !showKeysStep && showInputTypesStep && (
-                                            <AutomationStep4InputTypes
-                                                detectedInputs={detectedInputs}
-                                                formData={formData}
-                                                errors={errors}
-                                                handleBack={handleBack}
-                                                handleSubmit={handleSubmit}
-                                                onInputTypesChange={handleInputTypesChange}
-                                                isSubmitting={isSubmitting}
-                                            />
-                                        )}
-                                        {step === 4 && showInputTypesStep && (
-                                            <AutomationStep4InputTypes
-                                                detectedInputs={detectedInputs}
-                                                formData={formData}
-                                                errors={errors}
-                                                handleBack={handleBack}
-                                                handleSubmit={handleSubmit}
-                                                onInputTypesChange={handleInputTypesChange}
-                                                isSubmitting={isSubmitting}
+                                                buttonText="Publish Automation"
                                             />
                                         )}
                                     </div>

@@ -3,11 +3,57 @@ import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { encryptKeys } from '@/lib/auth/encryption';
+import { n8nClient } from '@/lib/n8n/n8n-client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+function extractWorkflowPayload(dbWorkflow, automationName) {
+  let wf = dbWorkflow;
+
+  if (Array.isArray(wf)) {
+    wf = wf[0];
+  }
+
+  if (wf && typeof wf === 'object' && wf.workflow && typeof wf.workflow === 'object') {
+    wf = wf.workflow;
+  }
+
+  if (!wf || typeof wf !== 'object') {
+    throw new Error('workflow is empty or not an object');
+  }
+
+  const nodes = wf.nodes;
+  const connections = wf.connections;
+
+  if (!Array.isArray(nodes)) {
+    throw new Error('workflow.nodes must be an array');
+  }
+
+  if (!connections || typeof connections !== 'object') {
+    throw new Error('workflow.connections must be an object');
+  }
+
+  const payload = {
+    name: (automationName || wf.name || 'Imported workflow').toString(),
+    nodes,
+    connections,
+    settings: wf.settings && typeof wf.settings === 'object' ? wf.settings : {},
+    active: false,
+  };
+
+  if (wf.staticData && typeof wf.staticData === 'object') {
+    payload.staticData = wf.staticData;
+  }
+
+  if (wf.pinData && typeof wf.pinData === 'object') {
+    payload.pinData = wf.pinData;
+  }
+
+  return payload;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -212,7 +258,7 @@ export async function POST(req) {
         required_connectors: requiredConnectors,
         required_inputs: requiredInputs,
         developer_keys: developerKeys,
-        is_active: true
+        is_active: false
       })
       .select()
       .single();
@@ -224,10 +270,150 @@ export async function POST(req) {
       );
     }
 
+    // Auto-sync to n8n after successful database insert
+    try {
+      // Clean the nodes - remove any read-only fields from each node
+      const cleanedNodes = (workflow?.nodes || []).map(node => {
+        const cleanNode = {
+          name: node.name,
+          type: node.type,
+          position: node.position,
+          parameters: node.parameters || {},
+          typeVersion: node.typeVersion,
+        };
+        
+        // Include optional fields if they exist
+        if (node.credentials) cleanNode.credentials = node.credentials;
+        if (node.webhookId) cleanNode.webhookId = node.webhookId;
+        if (node.disabled !== undefined) cleanNode.disabled = node.disabled;
+        if (node.notes) cleanNode.notes = node.notes;
+        if (node.notesInFlow !== undefined) cleanNode.notesInFlow = node.notesInFlow;
+        
+        return cleanNode;
+      });
+
+      const n8nWorkflowData = {
+        name: name.trim(),
+        nodes: cleanedNodes,
+        connections: workflow?.connections || {},
+        settings: workflow?.settings || {},
+      };
+
+      if (workflow?.staticData) {
+        n8nWorkflowData.staticData = workflow.staticData;
+      }
+
+      // Create workflow in n8n
+      const createdWorkflow = await n8nClient.createWorkflow(n8nWorkflowData);
+      const n8nWorkflowId = createdWorkflow?.id || createdWorkflow?.data?.id;
+
+      if (n8nWorkflowId) {
+        // Activate the workflow
+        try {
+          await n8nClient.activateWorkflow(n8nWorkflowId);
+        } catch (activateError) {
+          console.warn(`Created workflow ${n8nWorkflowId} but couldn't activate:`, activateError.message);
+        }
+
+        // Update automation with n8n workflow ID (but keep is_active as false for admin approval)
+        const { data: updatedAutomation, error: updateError } = await supabase
+          .from('automations')
+          .update({ n8n_workflow_id: n8nWorkflowId })
+          .eq('id', data.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Failed to update automation with n8n_workflow_id:', updateError);
+        }
+
+        return NextResponse.json({
+          ...data,
+          n8n_workflow_id: n8nWorkflowId,
+          is_active: false,
+          message: 'Automation uploaded and synced to n8n. Awaiting admin approval.'
+        }, { status: 201 });
+      }
+    } catch (n8nError) {
+      // n8n sync failed, but automation is saved in database
+      console.error('Failed to sync to n8n:', n8nError.message);
+      return NextResponse.json({
+        ...data,
+        warning: 'Automation saved but failed to sync to n8n',
+        n8n_error: n8nError.message
+      }, { status: 201 });
+    }
+
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: error.message || 'Failed to create automation' },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function DELETE(request) {
+  try {
+    const user = await getSupabaseUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const automationId = searchParams.get('id');
+
+    if (!automationId) {
+      return NextResponse.json({ error: 'Automation ID is required' }, { status: 400 });
+    }
+
+    // Get the automation to check ownership and get n8n_workflow_id
+    const { data: automation, error: fetchError } = await supabase
+      .from('automations')
+      .select('*')
+      .eq('id', automationId)
+      .single();
+
+    if (fetchError || !automation) {
+      return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
+    }
+
+    // Check if user owns this automation
+    if (automation.author_email !== user.email) {
+      return NextResponse.json({ error: 'You can only delete your own automations' }, { status: 403 });
+    }
+
+    // Delete from n8n if it has a workflow ID
+    if (automation.n8n_workflow_id) {
+      try {
+        await n8nClient.deleteWorkflow(automation.n8n_workflow_id);
+        console.log(`Deleted workflow ${automation.n8n_workflow_id} from n8n`);
+      } catch (n8nError) {
+        console.warn(`Failed to delete workflow from n8n:`, n8nError.message);
+        // Continue with database deletion even if n8n deletion fails
+      }
+    }
+
+    // Delete from database
+    const { error: deleteError } = await supabase
+      .from('automations')
+      .delete()
+      .eq('id', automationId);
+
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to delete automation' }, { status: 500 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Automation deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error deleting automation:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
