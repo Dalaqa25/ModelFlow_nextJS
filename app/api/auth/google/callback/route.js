@@ -6,6 +6,17 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
+    const state = searchParams.get('state');
+
+    // Parse state to check if this is an automation connection
+    let automationContext = null;
+    if (state) {
+      try {
+        automationContext = JSON.parse(Buffer.from(state, 'base64').toString());
+      } catch (e) {
+        // Invalid state, continue with normal flow
+      }
+    }
 
     // Handle OAuth errors
     if (error) {
@@ -43,7 +54,7 @@ export async function GET(request) {
     }
 
     const tokenData = await tokenResponse.json();
-    const { access_token, refresh_token, expires_in } = tokenData;
+    const { access_token, refresh_token, expires_in, scope } = tokenData;
     
     // Calculate expiration time (expires_in is in seconds)
     const expiresAt = expires_in 
@@ -84,8 +95,113 @@ export async function GET(request) {
       }, { status: 401 });
     }
 
-    // Ensure user exists in users table (sync from auth.users to users table)
-    // ALWAYS use the current auth user's ID
+    // AUTOMATION CONNECTION FLOW - Create n8n credential
+    if (automationContext && automationContext.automationId) {
+      const { n8nClient } = await import('@/lib/n8n/n8n-client');
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+
+      try {
+        // Create credentials for ALL Google service types in n8n
+        const credentialBaseName = `${email}`;
+        const credentials = await n8nClient.createAllGoogleCredentials(credentialBaseName, {
+          access_token,
+          refresh_token,
+          expires_in,
+          scope,
+        });
+
+        console.log('Created credentials:', credentials);
+
+        // Store all credential IDs as JSON
+        if (Object.keys(credentials).length === 0) {
+          throw new Error('Failed to create any credentials in n8n');
+        }
+
+        // Create or update user_automations record with credentials (NO workflow yet)
+        const { error: upsertError } = await supabase
+          .from('user_automations')
+          .upsert({
+            user_id: automationContext.userId,
+            automation_id: automationContext.automationId,
+            provider: 'google',
+            n8n_credential_id: JSON.stringify(credentials), // Store all credential IDs
+            n8n_workflow_id: null, // Will be set when workflow is cloned
+            is_active: false,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,automation_id',
+            ignoreDuplicates: false,
+          });
+
+        if (upsertError) {
+          console.error('Failed to save credential mapping:', upsertError);
+          throw upsertError;
+        }
+
+        // Success - close popup
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Google Connected</title>
+            </head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.postMessage({ 
+                    type: 'automation_connected', 
+                    success: true,
+                    credentials: ${JSON.stringify(credentials)}
+                  }, '*');
+                  window.close();
+                } else {
+                  window.location.href = '/main?automation_connected=true';
+                }
+              </script>
+              <p>Google connected successfully! This window should close automatically...</p>
+            </body>
+          </html>
+        `;
+        return new Response(html, {
+          headers: { 'Content-Type': 'text/html' },
+        });
+
+      } catch (n8nError) {
+        console.error('Failed to create n8n credential:', n8nError);
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Connection Failed</title>
+            </head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.postMessage({ 
+                    type: 'automation_connected', 
+                    success: false, 
+                    error: '${n8nError.message.replace(/'/g, "\\'")}' 
+                  }, '*');
+                  window.close();
+                } else {
+                  window.location.href = '/main?google_error=${encodeURIComponent(n8nError.message)}';
+                }
+              </script>
+              <p>Connection failed. This window should close automatically...</p>
+            </body>
+          </html>
+        `;
+        return new Response(html, {
+          headers: { 'Content-Type': 'text/html' },
+        });
+      }
+    }
+
+    // NORMAL USER LOGIN FLOW (existing code)
     const targetUserId = currentUser.id;
     
     try {
