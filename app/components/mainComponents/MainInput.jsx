@@ -158,8 +158,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
             >
                 <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border-2 backdrop-blur-md shadow-xl transition-all ${
                     isDarkMode 
-                        ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/70'
-                        : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60 focus-within:border-purple-500/80'
+                        ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50'
+                        : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60'
                 }`}
                     onMouseEnter={handleInteraction}
                 >
@@ -172,7 +172,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             onFocus={handleInteraction}
                             placeholder={hasInteracted ? "I want to automate..." : ""}
                             rows={1}
-                            className={`w-full bg-transparent outline-none text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${
+                            className={`w-full bg-transparent border-none focus:outline-none focus:ring-0 text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${
                                 isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                             }`}
                             style={{ maxHeight: isMobile ? '120px' : '150px' }}
@@ -204,7 +204,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
                                     : isDarkMode 
                                         ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gray-200/50 text-gray-400 cursor-not-allowed'
+                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                 }
                             `}
                         >

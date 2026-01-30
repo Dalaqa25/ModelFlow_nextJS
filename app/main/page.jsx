@@ -60,7 +60,7 @@ export default function Home() {
 
             <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
                 {!hasStartedChat ? (
-                    <div className="w-full flex flex-col items-center gap-3 -mt-15">
+                    <div className="w-full flex flex-col items-center gap-8 -mt-15">
                         <Greetings />
                     </div>
                 ) : (

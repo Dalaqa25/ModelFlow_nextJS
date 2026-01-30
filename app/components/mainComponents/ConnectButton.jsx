@@ -3,7 +3,7 @@
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState } from 'react';
 
-export default function ConnectButton({ provider, onConnect }) {
+export default function ConnectButton({ provider, automationId, onConnect }) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const providerConfig = {
@@ -20,14 +20,18 @@ export default function ConnectButton({ provider, onConnect }) {
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      // Trigger OAuth flow
+      // Trigger OAuth flow with automation_id if provided
       const width = 500;
       const height = 600;
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
       
+      const url = automationId 
+        ? `/api/auth/${provider}?automation_id=${automationId}`
+        : `/api/auth/${provider}`;
+      
       const popup = window.open(
-        `/api/auth/${provider}`,
+        url,
         'oauth',
         `width=${width},height=${height},left=${left},top=${top}`
       );

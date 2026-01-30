@@ -49,6 +49,19 @@ export default function MessageRenderer({
               : isDarkMode ? 'text-gray-100' : 'text-gray-900'
           }`}
         >
+          {/* Searching indicator */}
+          {message.isSearching && (
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex gap-1">
+                <div className={`w-2 h-2 rounded-full animate-bounce ${isDarkMode ? 'bg-purple-400' : 'bg-purple-600'}`} style={{ animationDelay: '0ms' }}></div>
+                <div className={`w-2 h-2 rounded-full animate-bounce ${isDarkMode ? 'bg-purple-400' : 'bg-purple-600'}`} style={{ animationDelay: '150ms' }}></div>
+                <div className={`w-2 h-2 rounded-full animate-bounce ${isDarkMode ? 'bg-purple-400' : 'bg-purple-600'}`} style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className={`text-sm italic ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Searching...
+              </span>
+            </div>
+          )}
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
             {message.role === 'assistant' && isCurrentStreamingAssistant && message.content === '' && (
@@ -77,7 +90,11 @@ export default function MessageRenderer({
       {/* Connect button */}
       {message.connectRequest && (
         <div className="mt-4">
-          <ConnectButton provider={message.connectRequest.provider} onConnect={onConnectionComplete} />
+          <ConnectButton 
+            provider={message.connectRequest.provider} 
+            automationId={message.connectRequest.automation_id}
+            onConnect={onConnectionComplete} 
+          />
         </div>
       )}
 
@@ -117,6 +134,34 @@ export default function MessageRenderer({
               onViewDetails={(instance) => {
                 // Show details in alert for now (can be improved with modal)
                 alert(`Automation Details:\n\nName: ${instance.name}\nStatus: ${instance.enabled ? 'Active' : 'Paused'}\nTotal Runs: ${instance.total_runs}\nSuccess Rate: ${instance.success_rate}%\nLast Run: ${instance.last_run || 'Never'}\n\nConfig:\n${JSON.stringify(instance.config, null, 2)}`);
+              }}
+              onRunNow={async (automation, config) => {
+                try {
+                  // Send automation data to localhost:3001 backend
+                  const response = await fetch('http://localhost:3001/api/automations/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      automation_id: automation.automation_id,
+                      user_id: automation.user_id,
+                      config: config // Use the config from the form
+                    })
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to run automation');
+                  }
+
+                  const result = await response.json();
+                  alert(`Automation executed successfully!\n\nResult: ${JSON.stringify(result, null, 2)}`);
+                  
+                  // Optionally refresh to show updated stats
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Run failed:', error);
+                  alert(`Failed to run automation: ${error.message}`);
+                }
               }}
             />
           ))}

@@ -36,7 +36,7 @@ export async function GET(request) {
       return NextResponse.json(
         { 
           error: 'No Google integration found for this user',
-          message: 'Please authenticate with Google first at /api/auth/google/test'
+          message: 'Please authenticate with Google first at /api/auth/google'
         },
         { status: 404 }
       );

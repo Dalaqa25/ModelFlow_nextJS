@@ -26,7 +26,7 @@ export default function SidebarToggle() {
       >
         {isExpanded ? (
           <div className="flex items-center gap-2 w-full px-1">
-            <Image src="/logo.png" alt="Logo" width={32} height={32} />
+            <Image src="/logo.png" alt="Logo" width={32} height={32} className="flex-shrink-0" />
           </div>
         ) : (
           <Image 
@@ -34,7 +34,7 @@ export default function SidebarToggle() {
             alt="Logo" 
             width={30} 
             height={30} 
-            className="pt-1" 
+            className="pt-1 flex-shrink-0" 
           />
         )}
       </button>

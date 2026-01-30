@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { userDB, userIntegrationDB } from '@/lib/db/supabase-db';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
   try {
@@ -8,13 +13,16 @@ export async function GET(request) {
     const error = searchParams.get('error');
     const state = searchParams.get('state');
 
-    // Parse state to check if this is an automation connection
-    let automationContext = null;
+    // Parse state to get automation_id and user_id if provided
+    let automationId = null;
+    let testUserId = null;
     if (state) {
       try {
-        automationContext = JSON.parse(Buffer.from(state, 'base64').toString());
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+        automationId = stateData.automation_id;
+        testUserId = stateData.user_id;
       } catch (e) {
-        // Invalid state, continue with normal flow
+        // Invalid state, continue without automation_id
       }
     }
 
@@ -54,10 +62,10 @@ export async function GET(request) {
     }
 
     const tokenData = await tokenResponse.json();
-    const { access_token, refresh_token, expires_in, scope } = tokenData;
+    const { access_token, refresh_token, expires_in } = tokenData;
     
     // Calculate expiration time (expires_in is in seconds)
-    const expiresAt = expires_in 
+    const tokenExpiry = expires_in 
       ? new Date(Date.now() + expires_in * 1000).toISOString()
       : null;
 
@@ -67,23 +75,6 @@ export async function GET(request) {
         error: 'No access token received from Google' 
       }, { status: 400 });
     }
-
-    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-    });
-
-    if (!userInfoResponse.ok) {
-      const errorData = await userInfoResponse.text();
-      return NextResponse.json({ 
-        error: 'Failed to fetch user information from Google',
-        details: errorData 
-      }, { status: 400 });
-    }
-
-    const userInfo = await userInfoResponse.json();
-    const { email, id: google_user_id } = userInfo;
 
     // Get the currently logged-in user from session
     const { getSupabaseUser } = await import('@/lib/auth/auth-utils');
@@ -95,184 +86,85 @@ export async function GET(request) {
       }, { status: 401 });
     }
 
-    // AUTOMATION CONNECTION FLOW - Create n8n credential
-    if (automationContext && automationContext.automationId) {
-      const { n8nClient } = await import('@/lib/n8n/n8n-client');
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      try {
-        // Create credentials for ALL Google service types in n8n
-        const credentialBaseName = `${email}`;
-        const credentials = await n8nClient.createAllGoogleCredentials(credentialBaseName, {
-          access_token,
-          refresh_token,
-          expires_in,
-          scope,
-        });
-
-        console.log('Created credentials:', credentials);
-
-        // Store all credential IDs as JSON
-        if (Object.keys(credentials).length === 0) {
-          throw new Error('Failed to create any credentials in n8n');
-        }
-
-        // Create or update user_automations record with credentials (NO workflow yet)
-        const { error: upsertError } = await supabase
-          .from('user_automations')
-          .upsert({
-            user_id: automationContext.userId,
-            automation_id: automationContext.automationId,
-            provider: 'google',
-            n8n_credential_id: JSON.stringify(credentials), // Store all credential IDs
-            n8n_workflow_id: null, // Will be set when workflow is cloned
-            is_active: false,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id,automation_id',
-            ignoreDuplicates: false,
-          });
-
-        if (upsertError) {
-          console.error('Failed to save credential mapping:', upsertError);
-          throw upsertError;
-        }
-
-        // Success - close popup
-        const html = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Google Connected</title>
-            </head>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ 
-                    type: 'automation_connected', 
-                    success: true,
-                    credentials: ${JSON.stringify(credentials)}
-                  }, '*');
-                  window.close();
-                } else {
-                  window.location.href = '/main?automation_connected=true';
-                }
-              </script>
-              <p>Google connected successfully! This window should close automatically...</p>
-            </body>
-          </html>
-        `;
-        return new Response(html, {
-          headers: { 'Content-Type': 'text/html' },
-        });
-
-      } catch (n8nError) {
-        console.error('Failed to create n8n credential:', n8nError);
-        const html = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Connection Failed</title>
-            </head>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.postMessage({ 
-                    type: 'automation_connected', 
-                    success: false, 
-                    error: '${n8nError.message.replace(/'/g, "\\'")}' 
-                  }, '*');
-                  window.close();
-                } else {
-                  window.location.href = '/main?google_error=${encodeURIComponent(n8nError.message)}';
-                }
-              </script>
-              <p>Connection failed. This window should close automatically...</p>
-            </body>
-          </html>
-        `;
-        return new Response(html, {
-          headers: { 'Content-Type': 'text/html' },
-        });
-      }
+    // Find user in database by EMAIL (not by auth ID, they might not match)
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', currentUser.email)
+      .maybeSingle();
+    
+    if (!dbUser) {
+      return NextResponse.json({ 
+        error: 'User not found in database',
+        details: 'Please contact support'
+      }, { status: 404 });
     }
 
-    // NORMAL USER LOGIN FLOW (existing code)
-    const targetUserId = currentUser.id;
-    
-    try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      // Check if user with this ID exists
-      const { data: existingById } = await supabase
-        .from('users')
+    // Use the database user ID (not the auth ID)
+    const userId = testUserId || dbUser.id;
+
+    // Save tokens to user_automations table
+    if (automationId) {
+      // Check if automation exists
+      const { data: automation } = await supabase
+        .from('automations')
         .select('id')
-        .eq('id', targetUserId)
+        .eq('id', automationId)
         .maybeSingle();
       
-      if (!existingById) {
-        // Check if email exists with different ID
-        const { data: existingByEmail } = await supabase
-          .from('users')
-          .select('id, email')
-          .eq('email', currentUser.email)
-          .maybeSingle();
-        
-        if (existingByEmail) {
-          // Delete the old user record (this will cascade delete integrations too)
-          await supabase
-            .from('users')
-            .delete()
-            .eq('id', existingByEmail.id);
-        }
-        
-        // Insert with the current auth user's ID
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: targetUserId,
-            email: currentUser.email,
-            name: currentUser.user_metadata?.name || currentUser.email,
-            profile_image_url: currentUser.user_metadata?.avatar_url || null,
-          })
-          .select()
-          .single();
-        
-        if (insertError) {
-          throw insertError;
-        }
+      if (!automation) {
+        return NextResponse.json({ 
+          error: 'Automation not found',
+          details: `Automation with id ${automationId} does not exist in the database`
+        }, { status: 404 });
       }
-    } catch (userError) {
-      return NextResponse.json({ 
-        error: 'Failed to sync user data',
-        details: userError.message 
-      }, { status: 500 });
-    }
 
-    // Save or update Google OAuth integration for the logged-in user
-    try {
-      const integration = await userIntegrationDB.upsertIntegration({
-        user_id: targetUserId,
-        provider: 'google',
-        provider_user_id: google_user_id,
-        provider_email: email,
-        access_token: access_token,
-        refresh_token: refresh_token,
-        expires_at: expiresAt,
+      // Save for specific automation
+      const { error: upsertError } = await supabase
+        .from('user_automations')
+        .upsert({
+          user_id: userId,
+          automation_id: automationId,
+          provider: 'google',
+          access_token: access_token,
+          refresh_token: refresh_token,
+          token_expiry: tokenExpiry,
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,automation_id'
+        });
+
+      if (upsertError) {
+        console.error('Failed to save tokens:', upsertError);
+        return NextResponse.json({ 
+          error: 'Failed to save Google tokens',
+          details: upsertError.message 
+        }, { status: 500 });
+      }
+    } else {
+      // No automation_id - this is a general Google connection
+      // We still need to save it somewhere for the user
+      // Option: Save to user_integrations for general use
+      const { userIntegrationDB } = await import('@/lib/db/supabase-db');
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
       });
-    } catch (integrationError) {
-      return NextResponse.json({ 
-        error: 'Failed to save Google integration',
-        details: integrationError.message 
-      }, { status: 500 });
+
+      if (userInfoResponse.ok) {
+        const userInfo = await userInfoResponse.json();
+        await userIntegrationDB.upsertIntegration({
+          user_id: userId,
+          provider: 'google',
+          provider_user_id: userInfo.id,
+          provider_email: userInfo.email,
+          access_token: access_token,
+          refresh_token: refresh_token,
+          expires_at: tokenExpiry,
+        });
+      }
     }
 
     // Return success - close popup and notify parent window
@@ -285,7 +177,11 @@ export async function GET(request) {
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'google_connected', success: true }, '*');
+              window.opener.postMessage({ 
+                type: 'google_connected', 
+                success: true,
+                automation_id: ${automationId ? `'${automationId}'` : 'null'}
+              }, '*');
               window.close();
             } else {
               window.location.href = '/main?google_connected=true';
@@ -300,6 +196,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
+    console.error('OAuth callback error:', error);
     const html = `
       <!DOCTYPE html>
       <html>
@@ -309,7 +206,11 @@ export async function GET(request) {
         <body>
           <script>
             if (window.opener) {
-              window.opener.postMessage({ type: 'google_connected', success: false, error: '${error.message.replace(/'/g, "\\'")}' }, '*');
+              window.opener.postMessage({ 
+                type: 'google_connected', 
+                success: false, 
+                error: '${error.message.replace(/'/g, "\\'")}'
+              }, '*');
               window.close();
             } else {
               window.location.href = '/main?google_error=${encodeURIComponent(error.message)}';

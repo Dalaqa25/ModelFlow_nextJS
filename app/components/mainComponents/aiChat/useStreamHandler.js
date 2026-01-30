@@ -96,7 +96,7 @@ export function createStreamHandler({
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, reason: parsed.reason } }
+            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, automation_id: parsed.automation_id, reason: parsed.reason } }
             : msg
         )
       );
@@ -115,6 +115,28 @@ export function createStreamHandler({
     // Handle automation context
     else if (parsed.type === 'automation_context' && parsed.context) {
       setAutomationContext(parsed.context);
+    }
+    // Handle searching indicator
+    else if (parsed.type === 'searching') {
+      if (parsed.status === 'start') {
+        // Add a temporary searching message
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, isSearching: true }
+              : msg
+          )
+        );
+      } else if (parsed.status === 'end') {
+        // Remove searching indicator
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, isSearching: false }
+              : msg
+          )
+        );
+      }
     }
     // Handle setup started
     else if (parsed.type === 'setup_started') {

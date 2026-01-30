@@ -85,6 +85,27 @@ export async function POST(req) {
       lowercaseConfig[key.toLowerCase()] = value;
     });
 
+    // Fetch user's Google OAuth tokens from user_automations
+    const { data: integration } = await supabase
+      .from('user_automations')
+      .select('access_token, refresh_token, token_expiry')
+      .eq('user_id', user.id)
+      .eq('automation_id', automation_id)
+      .eq('provider', 'google')
+      .maybeSingle();
+
+    // If user has Google integration, add access_token to config
+    // This allows workflows to use HTTP Request nodes with Bearer tokens
+    if (integration?.access_token) {
+      console.log('[EXECUTE DEBUG] Adding Google access_token to workflow payload');
+      lowercaseConfig.access_token = integration.access_token;
+      
+      // Also add refresh_token in case workflow needs to refresh
+      if (integration.refresh_token) {
+        lowercaseConfig.refresh_token = integration.refresh_token;
+      }
+    }
+
     const runnerPayload = {
       automation_id,
       user_id: user.id,

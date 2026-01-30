@@ -3,7 +3,6 @@ import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { encryptKeys } from '@/lib/auth/encryption';
-import { n8nClient } from '@/lib/n8n/n8n-client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -270,80 +269,6 @@ export async function POST(req) {
       );
     }
 
-    // Auto-sync to n8n after successful database insert
-    try {
-      // Clean the nodes - remove any read-only fields from each node
-      const cleanedNodes = (workflow?.nodes || []).map(node => {
-        const cleanNode = {
-          name: node.name,
-          type: node.type,
-          position: node.position,
-          parameters: node.parameters || {},
-          typeVersion: node.typeVersion,
-        };
-        
-        // Include optional fields if they exist
-        if (node.credentials) cleanNode.credentials = node.credentials;
-        if (node.webhookId) cleanNode.webhookId = node.webhookId;
-        if (node.disabled !== undefined) cleanNode.disabled = node.disabled;
-        if (node.notes) cleanNode.notes = node.notes;
-        if (node.notesInFlow !== undefined) cleanNode.notesInFlow = node.notesInFlow;
-        
-        return cleanNode;
-      });
-
-      const n8nWorkflowData = {
-        name: name.trim(),
-        nodes: cleanedNodes,
-        connections: workflow?.connections || {},
-        settings: workflow?.settings || {},
-      };
-
-      if (workflow?.staticData) {
-        n8nWorkflowData.staticData = workflow.staticData;
-      }
-
-      // Create workflow in n8n
-      const createdWorkflow = await n8nClient.createWorkflow(n8nWorkflowData);
-      const n8nWorkflowId = createdWorkflow?.id || createdWorkflow?.data?.id;
-
-      if (n8nWorkflowId) {
-        // Activate the workflow
-        try {
-          await n8nClient.activateWorkflow(n8nWorkflowId);
-        } catch (activateError) {
-          console.warn(`Created workflow ${n8nWorkflowId} but couldn't activate:`, activateError.message);
-        }
-
-        // Update automation with n8n workflow ID (but keep is_active as false for admin approval)
-        const { data: updatedAutomation, error: updateError } = await supabase
-          .from('automations')
-          .update({ n8n_workflow_id: n8nWorkflowId })
-          .eq('id', data.id)
-          .select()
-          .single();
-
-        if (updateError) {
-          console.error('Failed to update automation with n8n_workflow_id:', updateError);
-        }
-
-        return NextResponse.json({
-          ...data,
-          n8n_workflow_id: n8nWorkflowId,
-          is_active: false,
-          message: 'Automation uploaded and synced to n8n. Awaiting admin approval.'
-        }, { status: 201 });
-      }
-    } catch (n8nError) {
-      // n8n sync failed, but automation is saved in database
-      console.error('Failed to sync to n8n:', n8nError.message);
-      return NextResponse.json({
-        ...data,
-        warning: 'Automation saved but failed to sync to n8n',
-        n8n_error: n8nError.message
-      }, { status: 201 });
-    }
-
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     return NextResponse.json(
@@ -368,7 +293,7 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Automation ID is required' }, { status: 400 });
     }
 
-    // Get the automation to check ownership and get n8n_workflow_id
+    // Get the automation to check ownership
     const { data: automation, error: fetchError } = await supabase
       .from('automations')
       .select('*')
@@ -382,17 +307,6 @@ export async function DELETE(request) {
     // Check if user owns this automation
     if (automation.author_email !== user.email) {
       return NextResponse.json({ error: 'You can only delete your own automations' }, { status: 403 });
-    }
-
-    // Delete from n8n if it has a workflow ID
-    if (automation.n8n_workflow_id) {
-      try {
-        await n8nClient.deleteWorkflow(automation.n8n_workflow_id);
-        console.log(`Deleted workflow ${automation.n8n_workflow_id} from n8n`);
-      } catch (n8nError) {
-        console.warn(`Failed to delete workflow from n8n:`, n8nError.message);
-        // Continue with database deletion even if n8n deletion fails
-      }
     }
 
     // Delete from database

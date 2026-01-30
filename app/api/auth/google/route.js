@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const automationId = searchParams.get('automation_id');
+    const userId = searchParams.get('user_id');
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback';
 
@@ -16,6 +20,15 @@ export async function GET(request) {
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('response_type', 'code');
+    
+    // Pass automation_id and user_id through state
+    if (automationId || userId) {
+      const state = Buffer.from(JSON.stringify({ 
+        automation_id: automationId,
+        user_id: userId 
+      })).toString('base64');
+      authUrl.searchParams.set('state', state);
+    }
     
     // Comprehensive Google API scopes for automation runner
     const scopes = [
