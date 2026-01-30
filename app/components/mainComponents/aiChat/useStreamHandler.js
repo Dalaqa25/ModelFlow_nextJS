@@ -219,8 +219,15 @@ export function createStreamHandler({
     }
     // Handle hidden context (for AI memory, not displayed to user)
     else if (parsed.type === 'hidden_context') {
-      // Do nothing - this is just for AI to remember config in chat history
-      // Don't add to message content or display anything
+      // Add to message content so it persists in chat history for AI
+      // But don't display it to the user
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: msg.content + '\n' + parsed.context }
+            : msg
+        )
+      );
     }
     // Handle regular content
     else if (parsed.content) {

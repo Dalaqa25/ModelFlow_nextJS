@@ -34,10 +34,30 @@ const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
 
 export async function POST(request) {
   try {
-    const user = await getSupabaseUser();
-    if (!user) {
+    const authUser = await getSupabaseUser();
+    if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Get the database user ID (not the auth ID)
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', authUser.email)
+      .maybeSingle();
+    
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+    }
+
+    // Use database user (with correct ID) for all tool handlers
+    const user = { id: dbUser.id, email: dbUser.email };
 
     const body = await request.json();
     const { prompt, messages, temperature = 0.7 } = body;
@@ -246,6 +266,8 @@ function buildChatMessages(messages, prompt) {
 function extractSetupContext(messages) {
   const allContent = messages.map(m => m.content || '').join('\n');
 
+  console.log('[extractSetupContext] Searching in messages:', allContent.substring(0, 500));
+
   // Look for automation context
   const automationIdMatch = allContent.match(/automation_id[=:]\s*"?([a-f0-9-]+)"?/i);
   const automationNameMatch = allContent.match(/(?:Setting up |automation_name[=:]\s*)"([^"]+)"/i);
@@ -253,16 +275,21 @@ function extractSetupContext(messages) {
   // PRIORITY 1: Look for READY_TO_RUN marker (has full config ready to execute)
   const readyToRunMatch = allContent.match(/\[READY_TO_RUN automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
 
+  console.log('[extractSetupContext] Found READY_TO_RUN:', !!readyToRunMatch);
+
   if (readyToRunMatch) {
     try {
       const config = JSON.parse(readyToRunMatch[2]);
+      console.log('[extractSetupContext] Parsed config:', config);
       return {
         automationId: readyToRunMatch[1],
         automationName: automationNameMatch?.[1] || null,
         collectedConfig: config,
         readyToExecute: true  // Flag that setup is complete
       };
-    } catch (e) { }
+    } catch (e) { 
+      console.log('[extractSetupContext] Failed to parse config:', e);
+    }
   }
 
   // PRIORITY 2: Look for existing_config (during setup flow)
@@ -278,6 +305,7 @@ function extractSetupContext(messages) {
   }
 
   if (automationId) {
+    console.log('[extractSetupContext] Found automation_id:', automationId, 'with config keys:', Object.keys(collectedConfig));
     return {
       automationId,
       automationName: automationNameMatch?.[1] || null,
@@ -285,5 +313,6 @@ function extractSetupContext(messages) {
     };
   }
 
+  console.log('[extractSetupContext] No context found');
   return null;
 }
