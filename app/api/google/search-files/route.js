@@ -16,13 +16,15 @@ export async function POST(req) {
 
     const { query, fileType } = await req.json();
 
-    // Get user's Google tokens
+    // Get user's Google tokens from user_automations (any automation with Google connected)
     const { data: integration, error: integrationError } = await supabase
-      .from('user_integrations')
-      .select('access_token, refresh_token, expires_at')
+      .from('user_automations')
+      .select('access_token, refresh_token, token_expiry')
       .eq('user_id', user.id)
       .eq('provider', 'google')
-      .single();
+      .not('access_token', 'is', null)
+      .limit(1)
+      .maybeSingle();
 
     if (integrationError || !integration) {
       return NextResponse.json({ 
@@ -33,7 +35,7 @@ export async function POST(req) {
 
     // Check if token needs refresh
     let accessToken = integration.access_token;
-    if (new Date(integration.expires_at) < new Date()) {
+    if (new Date(integration.token_expiry) < new Date()) {
       // Refresh the token
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -56,12 +58,12 @@ export async function POST(req) {
       const tokens = await refreshResponse.json();
       accessToken = tokens.access_token;
 
-      // Update stored tokens
+      // Update stored tokens for all Google automations
       await supabase
-        .from('user_integrations')
+        .from('user_automations')
         .update({
           access_token: tokens.access_token,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+          token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
         })
         .eq('user_id', user.id)
         .eq('provider', 'google');

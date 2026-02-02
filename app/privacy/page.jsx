@@ -9,7 +9,15 @@ export default function Privacy() {
                     <div className="flex flex-col items-center text-center gap-5 mb-16">
                         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-white">Privacy Policy</h1>
                         <p className="text-xl sm:text-2xl text-gray-300 font-light">Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Your privacy is important to us. This Privacy Policy explains how ModelGrow ("we," "our," or "us") collects, uses, discloses, and protects your personal information when you use our AI automation platform.</p>   
+                                <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Your privacy is important to us. This Privacy Policy explains how ModelGrow ("we," "our," or "us") collects, uses, discloses, and protects your personal information when you use our AI automation platform.</p>
+                        
+                        {/* Limited Use Clarification */}
+                        <div className="bg-purple-900/30 border-2 border-purple-500/50 rounded-xl p-6 mt-4 max-w-4xl">
+                            <h3 className="text-2xl font-semibold text-white mb-3">🔒 We Only Use What Your Automations Need</h3>
+                            <p className="text-lg text-gray-200">
+                                While we request access to multiple Google services, <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need Drive, we don't access your Drive. You're always in control of which automations you run.
+                            </p>
+                        </div>
                     </div>   
                     
                     <div className="flex flex-col gap-12 text-gray-300">
@@ -69,6 +77,7 @@ export default function Privacy() {
                                         <li><strong>Supabase:</strong> We use Supabase for authentication, database storage, and user management. Supabase processes your authentication data and stores your account information.</li>
                                         <li><strong>Paddle:</strong> We use Paddle as our payment processor for subscriptions and credit purchases. Paddle processes payment information in accordance with their privacy policy.</li>
                                         <li><strong>Resend:</strong> We use Resend to send transactional and notification emails. Resend processes your email address for email delivery purposes.</li>
+                                        <li><strong>Google APIs:</strong> When you connect your Google account to use automations, we access Google services on your behalf using OAuth 2.0. We only access the data necessary for your automations to function and do not store your Google credentials. See Section 3.6 for detailed information about Google data usage.</li>
                                     </ul>
                                 </div>
                                 <div>
@@ -80,8 +89,43 @@ export default function Privacy() {
                                     <p>We may disclose your information if required by law, court order, or government regulation, or if we believe disclosure is necessary to protect our rights, property, or safety, or that of our users or others.</p>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">3.4 Business Transfers</h3>
+                                    <h3 className="text-xl font-semibold text-white mb-2">3.5 Business Transfers</h3>
                                     <p>In the event of a merger, acquisition, or sale of assets, your information may be transferred to the acquiring entity.</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">3.6 Google API Services User Data</h3>
+                                    <p className="mb-2">ModelGrow's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements. Specifically:</p>
+                                    
+                                    {/* Prominent Limited Use Notice */}
+                                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-5 my-4">
+                                        <p className="text-lg font-semibold text-green-300 mb-2">✓ Limited Use Commitment</p>
+                                        <p className="text-gray-200">
+                                            <strong>We only access and use the Google services that your chosen automations specifically require.</strong> While we request comprehensive permissions to support various automation types, we never access services that your active automations don't need. For example, if your automation only uses Drive and Sheets, we will not access your Gmail, Calendar, or any other service.
+                                        </p>
+                                    </div>
+                                    
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>What We Access:</strong> When you connect your Google account, we request access to specific Google services (such as Drive, Gmail, Sheets, Calendar, YouTube, Docs, Slides, Forms, and Tasks) only as needed for your automations to function.</li>
+                                        <li><strong>How We Use It:</strong> We use your Google data solely to provide the automation services you request. For example, if you create an automation that processes invoices from Google Drive and updates a Google Sheet, we only access those specific files and sheets.</li>
+                                        <li><strong>Limited Use:</strong> We do not use Google user data for any purpose other than providing and improving the automation features you explicitly request. We do not use it for advertising, analytics unrelated to your automations, or any other purpose.</li>
+                                        <li><strong>No Sharing:</strong> We do not share your Google data with third parties except as necessary to provide the automation service (e.g., processing data through our secure servers) or as required by law.</li>
+                                        <li><strong>Data Storage:</strong> We only store Google data temporarily as needed to execute your automations. We do not permanently store your Google files, emails, or other content unless explicitly required for the automation's functionality.</li>
+                                        <li><strong>Security:</strong> All Google data is transmitted and processed using industry-standard encryption and security measures.</li>
+                                        <li><strong>Your Control:</strong> You can revoke ModelGrow's access to your Google account at any time through your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google Account permissions page</a>.</li>
+                                    </ul>
+                                    <p className="mt-4">The specific Google services we may access include:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>Google Drive:</strong> To read, create, update, and manage files for file-based automations</li>
+                                        <li><strong>Google Sheets:</strong> To read and write spreadsheet data for data processing automations</li>
+                                        <li><strong>Gmail:</strong> To send emails and read messages for email automation workflows</li>
+                                        <li><strong>Google Calendar:</strong> To create and manage calendar events for scheduling automations</li>
+                                        <li><strong>YouTube:</strong> To upload videos and manage your YouTube content for video automations</li>
+                                        <li><strong>Google Docs:</strong> To create and edit documents for document automation workflows</li>
+                                        <li><strong>Google Slides:</strong> To create and edit presentations for presentation automations</li>
+                                        <li><strong>Google Forms:</strong> To create forms and access responses for form automations</li>
+                                        <li><strong>Google Tasks:</strong> To create and manage tasks for productivity automations</li>
+                                    </ul>
+                                    <p className="mt-4">We only request access to the services that your specific automations require. You will see exactly which permissions are requested when you connect your Google account.</p>
                                 </div>
                             </div>
                         </section>

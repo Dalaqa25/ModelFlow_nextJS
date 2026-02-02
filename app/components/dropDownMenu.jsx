@@ -92,9 +92,13 @@ export default function DropDownMenu() {
                     <FaDollarSign size={20} className="text-gray-400 mr-2" />
                     <p className="text-xl">Billing</p>
                 </NavigationLink>
-                <NavigationLink href="/privacy" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 mb-1.5">
+                <NavigationLink href="/privacy" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5">
                     <MdPrivacyTip size={20} className="text-gray-400 mr-2" />
                     <p className="text-xl">Privacy</p>
+                </NavigationLink>
+                <NavigationLink href="/google-permissions" className="cursor-pointer items-center flex hover:bg-gray-100 rounded-lg transition-all p-2 mt-1.5 mb-1.5">
+                    <MdPrivacyTip size={20} className="text-gray-400 mr-2" />
+                    <p className="text-xl">Permissions</p>
                 </NavigationLink>
                 <hr className="border-gray-200"/>
                 <button 

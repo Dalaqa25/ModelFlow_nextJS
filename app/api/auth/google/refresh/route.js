@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getValidGoogleAccessToken } from '@/lib/auth/google-oauth';
 import { userDB } from '@/lib/db/supabase-db';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 /**
  * POST /api/auth/google/refresh
  * Refreshes Google access token for a user
  * 
  * Body: { email: string }
- * Returns: { success: boolean, access_token: string, expires_at: string }
+ * Returns: { success: boolean, access_token: string, token_expiry: string }
  */
 export async function POST(request) {
   try {
@@ -32,17 +38,20 @@ export async function POST(request) {
     // Get valid access token (will refresh if needed)
     const accessToken = await getValidGoogleAccessToken(user.id);
 
-    // Get updated integration to get expires_at
-    const { userIntegrationDB } = await import('@/lib/db/supabase-db');
-    const integration = await userIntegrationDB.getIntegrationByUserAndProvider(
-      user.id,
-      'google'
-    );
+    // Get updated integration to get token_expiry
+    const { data: integration } = await supabase
+      .from('user_automations')
+      .select('token_expiry')
+      .eq('user_id', user.id)
+      .eq('provider', 'google')
+      .not('access_token', 'is', null)
+      .limit(1)
+      .maybeSingle();
 
     return NextResponse.json({
       success: true,
       access_token: accessToken,
-      expires_at: integration?.expires_at || null,
+      token_expiry: integration?.token_expiry || null,
       message: 'Token refreshed successfully',
     });
   } catch (error) {
@@ -84,17 +93,20 @@ export async function GET(request) {
     // Get valid access token (will refresh if needed)
     const accessToken = await getValidGoogleAccessToken(user.id);
 
-    // Get updated integration to get expires_at
-    const { userIntegrationDB } = await import('@/lib/db/supabase-db');
-    const integration = await userIntegrationDB.getIntegrationByUserAndProvider(
-      user.id,
-      'google'
-    );
+    // Get updated integration to get token_expiry
+    const { data: integration } = await supabase
+      .from('user_automations')
+      .select('token_expiry')
+      .eq('user_id', user.id)
+      .eq('provider', 'google')
+      .not('access_token', 'is', null)
+      .limit(1)
+      .maybeSingle();
 
     return NextResponse.json({
       success: true,
       access_token: accessToken,
-      expires_at: integration?.expires_at || null,
+      token_expiry: integration?.token_expiry || null,
       message: 'Token refreshed successfully',
     });
   } catch (error) {
@@ -107,4 +119,5 @@ export async function GET(request) {
     );
   }
 }
+
 

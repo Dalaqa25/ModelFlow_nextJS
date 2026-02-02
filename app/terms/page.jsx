@@ -9,7 +9,15 @@ export default function Terms() {
                     <div className="flex flex-col items-center text-center gap-5 mb-16">
                         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-white">Terms of Service</h1>
                         <p className="text-xl sm:text-2xl text-gray-300 font-light">Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                        <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Please read these Terms of Service carefully before using ModelGrow. By accessing or using our platform, you agree to be bound by these terms.</p>   
+                        <p className="text-lg sm:text-xl text-gray-300 font-light max-w-3xl">Please read these Terms of Service carefully before using ModelGrow. By accessing or using our platform, you agree to be bound by these terms.</p>
+                        
+                        {/* Limited Use Clarification */}
+                        <div className="bg-purple-900/30 border-2 border-purple-500/50 rounded-xl p-6 mt-4 max-w-4xl">
+                            <h3 className="text-2xl font-semibold text-white mb-3">🔒 We Only Use What Your Automations Need</h3>
+                            <p className="text-lg text-gray-200">
+                                While we request access to multiple Google services, <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need Drive, we don't access your Drive. You're always in control of which automations you run.
+                            </p>
+                        </div>
                     </div>   
                     
                     <div className="flex flex-col gap-12 text-gray-300">

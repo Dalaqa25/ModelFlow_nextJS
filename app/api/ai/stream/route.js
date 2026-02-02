@@ -15,6 +15,7 @@ import {
   handleCollectTextInput,
   handleExecuteAutomation,
   handleShowUserAutomations,
+  handleSaveBackgroundConfig,
 } from '@/lib/ai/tool-handlers';
 
 // Llama client (Groq) - the brain/orchestrator
@@ -45,13 +46,13 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    
+
     const { data: dbUser } = await supabase
       .from('users')
       .select('id, email')
       .eq('email', authUser.email)
       .maybeSingle();
-    
+
     if (!dbUser) {
       return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
     }
@@ -238,11 +239,15 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
       case 'execute_automation':
         await handleExecuteAutomation(args, user, controller, encoder);
         break;
-      
+
       case 'show_user_automations':
         await handleShowUserAutomations(args, user, controller, encoder);
         break;
-      
+
+      case 'save_background_config':
+        await handleSaveBackgroundConfig(args, user, controller, encoder);
+        break;
+
       default:
         sendSSE({ content: "\n\nI'm not sure how to do that. Could you try again?" });
     }
@@ -287,7 +292,7 @@ function extractSetupContext(messages) {
         collectedConfig: config,
         readyToExecute: true  // Flag that setup is complete
       };
-    } catch (e) { 
+    } catch (e) {
       console.log('[extractSetupContext] Failed to parse config:', e);
     }
   }

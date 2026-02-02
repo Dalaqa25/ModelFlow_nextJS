@@ -9,6 +9,7 @@ export default function Footer() {
     const links = [
         { label: 'Terms', href: '/terms' },
         { label: 'Privacy', href: '/privacy' },
+        { label: 'Google Permissions', href: '/google-permissions' },
         { label: 'Refund', href: '/refund' },
         { label: 'Pricing', href: '/pricing' },
         { label: 'Community', href: '/community' },

@@ -27,19 +27,19 @@ export function useAiChat({ onLoadingChange }) {
       const collectedFields = setupState.collectedFields || {};
       const remaining = requiredFields.filter(f => !collectedFields[f.name || f]);
       const collectedEntries = Object.entries(collectedFields);
-      const collectedStr = collectedEntries.length > 0 
+      const collectedStr = collectedEntries.length > 0
         ? collectedEntries.map(([k, v]) => `${k}="${v}"`).join(', ')
         : 'none yet';
-      const remainingStr = remaining.length > 0 
+      const remainingStr = remaining.length > 0
         ? remaining.map(f => f.name || f).join(', ')
         : (setupState.missingFields?.length > 0 ? setupState.missingFields.join(', ') : 'NONE - all fields collected, ready to execute');
-      
+
       // Include collected config as JSON for AI to pass to collect_text_input
       const collectedConfig = setupState.collectedConfig || {};
-      const configJson = Object.keys(collectedConfig).length > 0 
+      const configJson = Object.keys(collectedConfig).length > 0
         ? JSON.stringify(collectedConfig)
         : '{}';
-      
+
       contextInfo += `\n\n[ACTIVE SETUP: "${setupState.automationName}" (automation_id: ${setupState.automationId})
 Collected: ${collectedStr}
 Remaining: ${remainingStr}
@@ -48,7 +48,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 - automation_id="${setupState.automationId}"
 - automation_name="${setupState.automationName}"
 - existing_config=${configJson} (pass this EXACTLY to preserve already-created files!)]`;
-      
+
       // If ready to execute, include that info
       if (setupState.isReadyToExecute && setupState.readyConfig) {
         // Use base64 encoding to avoid regex issues with JSON
@@ -59,7 +59,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     // Include last file search results so AI knows what files were found
     // CRITICAL: Include file IDs so AI can call confirm_file_selection
     if (lastFileSearchResults && lastFileSearchResults.files?.length > 0) {
-      const fileList = lastFileSearchResults.files.map((f, i) => 
+      const fileList = lastFileSearchResults.files.map((f, i) =>
         `${i + 1}. "${f.name}" (file_id: ${f.id})`
       ).join(', ');
       const fieldInfo = lastFileSearchResults.field_name ? ` for field "${lastFileSearchResults.field_name}"` : '';
@@ -145,7 +145,11 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     try {
       let conversationHistory = messages
         .filter(msg => msg.content?.trim())
-        .map(msg => ({ role: msg.role, content: msg.content }));
+        .map(msg => ({
+          role: msg.role,
+          // Append hidden context (like READY_TO_RUN configs) if present
+          content: msg.content + (msg.hiddenContext || '')
+        }));
 
       const contextInfo = buildContextInfo() + extraContext;
       conversationHistory.push({ role: 'user', content: messageText + contextInfo });

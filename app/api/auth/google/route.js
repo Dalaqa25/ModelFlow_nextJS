@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getScopesForServices } from '@/lib/auth/scope-manager';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const automationId = searchParams.get('automation_id');
     const userId = searchParams.get('user_id');
+    const requiredServices = searchParams.get('services'); // NEW: comma-separated list
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback';
@@ -15,81 +17,62 @@ export async function GET(request) {
       }, { status: 500 });
     }
 
+    // SMART OAUTH: Determine which scopes to request
+    let scopes;
+    let scopeSource = 'default';
+    
+    // Option 1: Automation ID provided - fetch its required scopes
+    if (automationId) {
+      try {
+        const { automationDB } = await import('@/lib/db/automation-db');
+        const automation = await automationDB.getAutomationWithScopes(automationId);
+        
+        if (automation && automation.required_scopes && automation.required_scopes.length > 0) {
+          scopes = getScopesForServices(automation.required_scopes);
+          scopeSource = `automation:${automation.name}`;
+          console.log(`Requesting scopes for automation "${automation.name}":`, automation.required_scopes);
+        }
+      } catch (error) {
+        console.error('Failed to fetch automation scopes:', error);
+      }
+    }
+    
+    // Option 2: Services explicitly provided
+    if (!scopes && requiredServices) {
+      const services = requiredServices.split(',').map(s => s.trim().toUpperCase());
+      scopes = getScopesForServices(services);
+      scopeSource = `explicit:${services.join(',')}`;
+      console.log(`Requesting scopes for services: ${services.join(', ')}`);
+    }
+    
+    // Option 3: Fallback to safe defaults (most common use case)
+    if (!scopes) {
+      scopes = getScopesForServices(['DRIVE', 'SHEETS', 'GMAIL']);
+      scopeSource = 'default:safe';
+      console.log('Using safe default scopes: DRIVE, SHEETS, GMAIL');
+    }
+
     // Construct Google OAuth authorization URL
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('response_type', 'code');
     
-    // Pass automation_id and user_id through state
-    if (automationId || userId) {
-      const state = Buffer.from(JSON.stringify({ 
-        automation_id: automationId,
-        user_id: userId 
-      })).toString('base64');
-      authUrl.searchParams.set('state', state);
-    }
+    // Pass automation_id, user_id, and scope_source through state
+    const state = Buffer.from(JSON.stringify({ 
+      automation_id: automationId,
+      user_id: userId,
+      scope_source: scopeSource
+    })).toString('base64');
+    authUrl.searchParams.set('state', state);
     
-    // Comprehensive Google API scopes for automation runner
-    const scopes = [
-      // Basic profile
-      'openid',
-      'email',
-      'profile',
-      
-      // YouTube Data API v3 - Full access
-      'https://www.googleapis.com/auth/youtube',
-      'https://www.googleapis.com/auth/youtube.upload',
-      'https://www.googleapis.com/auth/youtube.force-ssl',
-      'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/youtubepartner',
-      'https://www.googleapis.com/auth/youtube.channel-memberships.creator',
-      
-      // Google Sheets - Full access (read/write)
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/spreadsheets.readonly',
-      
-      // Google Docs - Full access
-      'https://www.googleapis.com/auth/documents',
-      'https://www.googleapis.com/auth/documents.readonly',
-      
-      // Google Drive - Full access
-      'https://www.googleapis.com/auth/drive',
-      'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/drive.readonly',
-      'https://www.googleapis.com/auth/drive.metadata',
-      'https://www.googleapis.com/auth/drive.appdata',
-      
-      // Gmail - Full access
-      'https://www.googleapis.com/auth/gmail.send',
-      'https://www.googleapis.com/auth/gmail.compose',
-      'https://www.googleapis.com/auth/gmail.modify',
-      'https://www.googleapis.com/auth/gmail.readonly',
-      
-      // Google Calendar - Full access
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/calendar.events',
-      'https://www.googleapis.com/auth/calendar.readonly',
-      
-      // Google Slides - Full access
-      'https://www.googleapis.com/auth/presentations',
-      'https://www.googleapis.com/auth/presentations.readonly',
-      
-      // Google Forms - Full access
-      'https://www.googleapis.com/auth/forms.body',
-      'https://www.googleapis.com/auth/forms.responses.readonly',
-      
-      // Google Tasks
-      'https://www.googleapis.com/auth/tasks',
-      
-      // Google Contacts
-      'https://www.googleapis.com/auth/contacts',
-      'https://www.googleapis.com/auth/contacts.readonly',
-    ].join(' ');
-    
-    authUrl.searchParams.set('scope', scopes);
+    authUrl.searchParams.set('scope', scopes.join(' '));
     authUrl.searchParams.set('access_type', 'offline'); // Required to get refresh token
     authUrl.searchParams.set('prompt', 'consent'); // Force consent screen to ensure refresh token
+    
+    // IMPORTANT: Include existing scopes to avoid losing access
+    // Google will merge new scopes with existing ones
+    authUrl.searchParams.set('include_granted_scopes', 'true');
 
     // Redirect to Google OAuth
     return NextResponse.redirect(authUrl.toString());

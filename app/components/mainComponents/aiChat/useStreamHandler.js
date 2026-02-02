@@ -163,8 +163,8 @@ export function createStreamHandler({
         )
       );
       // Store for context - include field_name and automation context so selection can continue
-      setLastFileSearchResults({ 
-        files: parsed.files, 
+      setLastFileSearchResults({
+        files: parsed.files,
         field_name: parsed.field_name,
         automation_id: parsed.automation_id,
         automation_name: parsed.automation_name
@@ -219,12 +219,12 @@ export function createStreamHandler({
     }
     // Handle hidden context (for AI memory, not displayed to user)
     else if (parsed.type === 'hidden_context') {
-      // Add to message content so it persists in chat history for AI
-      // But don't display it to the user
+      // Store in hiddenContext property instead of content
+      // This prevents it from being overwritten by typewriter animation
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: msg.content + '\n' + parsed.context }
+            ? { ...msg, hiddenContext: (msg.hiddenContext || '') + '\n' + parsed.context }
             : msg
         )
       );

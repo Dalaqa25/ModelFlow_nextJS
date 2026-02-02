@@ -244,6 +244,18 @@ export async function POST(req) {
       });
     }
 
+    // SMART OAUTH: Detect required Google services from workflow
+    let requiredScopes = [];
+    try {
+      const { getRequiredServices } = await import('@/lib/auth/automation-scope-detector');
+      requiredScopes = getRequiredServices(workflow);
+      console.log(`Detected required services for "${name}":`, requiredScopes);
+    } catch (scopeError) {
+      console.error('Failed to detect scopes:', scopeError);
+      // Fallback to safe defaults if detection fails
+      requiredScopes = ['DRIVE', 'SHEETS', 'GMAIL'];
+    }
+
     // Insert into database
     const { data, error } = await supabase
       .from('automations')
@@ -257,6 +269,7 @@ export async function POST(req) {
         required_connectors: requiredConnectors,
         required_inputs: requiredInputs,
         developer_keys: developerKeys,
+        required_scopes: requiredScopes, // NEW: Store required scopes
         is_active: false
       })
       .select()

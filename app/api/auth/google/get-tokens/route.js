@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { userDB, userIntegrationDB } from '@/lib/db/supabase-db';
+import { userDB } from '@/lib/db/supabase-db';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 /**
  * GET /api/auth/google/get-tokens?email=user@example.com
@@ -26,26 +32,65 @@ export async function GET(request) {
       );
     }
 
-    // Get Google integration
-    const integration = await userIntegrationDB.getIntegrationByUserAndProvider(
-      user.id,
-      'google'
-    );
+    // Get Google automations for this user
+    const { data: automations, error } = await supabase
+      .from('user_automations')
+      .select(`
+        id,
+        automation_id,
+        provider,
+        access_token,
+        refresh_token,
+        token_expiry,
+        is_active,
+        created_at,
+        updated_at,
+        automations (
+          name,
+          description
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('provider', 'google');
 
-    if (!integration) {
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch Google automations', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!automations || automations.length === 0) {
       return NextResponse.json(
         { 
-          error: 'No Google integration found for this user',
-          message: 'Please authenticate with Google first at /api/auth/google'
+          error: 'No Google automations found for this user',
+          message: 'Please connect Google through an automation setup first'
         },
         { status: 404 }
       );
     }
 
-    // Check if token is expired
+    // Check token expiry for each automation
     const now = new Date();
-    const expiresAt = integration.expires_at ? new Date(integration.expires_at) : null;
-    const isExpired = expiresAt ? expiresAt <= now : false;
+    const automationsWithStatus = automations.map(automation => {
+      const expiresAt = automation.token_expiry ? new Date(automation.token_expiry) : null;
+      const isExpired = expiresAt ? expiresAt <= now : false;
+      
+      return {
+        automation_id: automation.automation_id,
+        automation_name: automation.automations?.name || 'Unknown',
+        automation_description: automation.automations?.description || '',
+        provider: automation.provider,
+        has_access_token: !!automation.access_token,
+        has_refresh_token: !!automation.refresh_token,
+        token_expiry: automation.token_expiry,
+        is_expired: isExpired,
+        is_active: automation.is_active,
+        time_until_expiry: expiresAt ? Math.floor((expiresAt - now) / 1000) + ' seconds' : 'unknown',
+        created_at: automation.created_at,
+        updated_at: automation.updated_at,
+      };
+    });
 
     // Return the tokens
     return NextResponse.json({
@@ -55,22 +100,8 @@ export async function GET(request) {
         email: user.email,
         name: user.name,
       },
-      google_integration: {
-        provider: integration.provider,
-        provider_user_id: integration.provider_user_id,
-        provider_email: integration.provider_email,
-        access_token: integration.access_token,
-        refresh_token: integration.refresh_token,
-        expires_at: integration.expires_at,
-        is_expired: isExpired,
-        created_at: integration.created_at,
-        updated_at: integration.updated_at,
-      },
-      token_status: {
-        is_expired: isExpired,
-        expires_at: integration.expires_at,
-        time_until_expiry: expiresAt ? Math.floor((expiresAt - now) / 1000) + ' seconds' : 'unknown',
-      }
+      google_automations: automationsWithStatus,
+      total_count: automationsWithStatus.length,
     });
   } catch (error) {
     return NextResponse.json(
@@ -82,4 +113,5 @@ export async function GET(request) {
     );
   }
 }
+
 

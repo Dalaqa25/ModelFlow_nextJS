@@ -62,7 +62,11 @@ export async function GET(request) {
     }
 
     const tokenData = await tokenResponse.json();
-    const { access_token, refresh_token, expires_in } = tokenData;
+    const { access_token, refresh_token, expires_in, scope } = tokenData;
+    
+    // Parse granted scopes from token response
+    const grantedScopes = scope ? scope.split(' ') : [];
+    console.log('Granted scopes:', grantedScopes);
     
     // Calculate expiration time (expires_in is in seconds)
     const tokenExpiry = expires_in 
@@ -129,6 +133,7 @@ export async function GET(request) {
           access_token: access_token,
           refresh_token: refresh_token,
           token_expiry: tokenExpiry,
+          granted_scopes: grantedScopes, // SMART OAUTH: Store granted scopes
           is_active: false,
           updated_at: new Date().toISOString(),
         }, {
@@ -143,28 +148,13 @@ export async function GET(request) {
         }, { status: 500 });
       }
     } else {
-      // No automation_id - this is a general Google connection
-      // We still need to save it somewhere for the user
-      // Option: Save to user_integrations for general use
-      const { userIntegrationDB } = await import('@/lib/db/supabase-db');
-      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-
-      if (userInfoResponse.ok) {
-        const userInfo = await userInfoResponse.json();
-        await userIntegrationDB.upsertIntegration({
-          user_id: userId,
-          provider: 'google',
-          provider_user_id: userInfo.id,
-          provider_email: userInfo.email,
-          access_token: access_token,
-          refresh_token: refresh_token,
-          expires_at: tokenExpiry,
-        });
-      }
+      // No automation_id provided - this shouldn't happen in normal flow
+      // User should always connect Google for a specific automation
+      console.warn('[Google OAuth] No automation_id provided in callback');
+      return NextResponse.json({ 
+        error: 'No automation specified',
+        details: 'Please connect Google through an automation setup'
+      }, { status: 400 });
     }
 
     // Return success - close popup and notify parent window
