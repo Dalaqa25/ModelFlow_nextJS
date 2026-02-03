@@ -174,7 +174,8 @@ export function createStreamHandler({
     else if (parsed.type === 'field_collected') {
       setSetupState(prev => prev ? {
         ...prev,
-        collectedFields: { ...prev.collectedFields, [parsed.field_name]: parsed.value }
+        collectedFields: { ...prev.collectedFields, [parsed.field_name]: parsed.value },
+        collectedConfig: { ...prev.collectedConfig, [parsed.field_name]: parsed.value }  // CRITICAL: Update config too!
       } : null);
       // Clear file search results after field is collected
       setLastFileSearchResults(null);

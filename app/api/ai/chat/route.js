@@ -215,24 +215,35 @@ async function executeProvideFile(data, context, user, controller, encoder) {
 async function executeProvideEmail(data, context, user, controller, encoder) {
   const { email } = data;
   
-  // Validate email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  // More lenient email validation
+  const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  
+  if (!email || !emailRegex.test(email.trim())) {
+    sendSSE(controller, encoder, {
+      content: "That doesn't look like a valid email address. Please provide a valid email (e.g., billing@company.com)"
+    });
     return { type: 'error', message: 'Invalid email format' };
   }
+
+  const cleanEmail = email.trim().toLowerCase();
 
   // Add to collected fields
   const updatedConfig = {
     ...context?.collectedFields,
-    BILLING_EMAIL: email
+    billing_email: cleanEmail
   };
+
+  // Send confirmation
+  sendSSE(controller, encoder, {
+    content: `✓ Saved ${cleanEmail} as your billing email.`
+  });
 
   return { 
     type: 'field_collected', 
-    field: 'BILLING_EMAIL', 
-    value: email,
+    field: 'billing_email', 
+    value: cleanEmail,
     updatedConfig,
-    uiUpdate: { type: 'field_collected', field_name: 'BILLING_EMAIL', value: email }
+    uiUpdate: { type: 'field_collected', field_name: 'billing_email', value: cleanEmail }
   };
 }
 

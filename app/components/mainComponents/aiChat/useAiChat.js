@@ -248,12 +248,30 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   }, [sendMessage]);
 
   const handleConnectionComplete = useCallback((provider) => {
-    if (selectedAutomation) {
-      sendMessage(`I've connected my ${provider} account for "${selectedAutomation.name}". What's next?`, `\n\n[Selected automation UUID: ${selectedAutomation.id}]`);
-    } else {
-      sendMessage(`I've connected my ${provider} account. What's next?`);
+    // Build context with collected fields to preserve state after OAuth
+    let contextStr = '';
+    
+    if (setupState) {
+      const collectedConfig = setupState.collectedConfig || {};
+      if (Object.keys(collectedConfig).length > 0) {
+        contextStr += `\n\n[COLLECTED FIELDS (preserved after OAuth): ${JSON.stringify(collectedConfig)}]`;
+        contextStr += `\n[IMPORTANT: These fields were already collected BEFORE OAuth. Do NOT ask for them again!]`;
+      }
+      if (setupState.automationId) {
+        contextStr += `\n[automation_id: ${setupState.automationId}, automation_name: "${setupState.automationName}"]`;
+      }
+    } else if (selectedAutomation) {
+      contextStr += `\n\n[Selected automation UUID: ${selectedAutomation.id}]`;
     }
-  }, [selectedAutomation, sendMessage]);
+    
+    const message = setupState 
+      ? `I've connected my ${provider} account for "${setupState.automationName}". What's next?`
+      : selectedAutomation
+        ? `I've connected my ${provider} account for "${selectedAutomation.name}". What's next?`
+        : `I've connected my ${provider} account. What's next?`;
+    
+    sendMessage(message, contextStr);
+  }, [selectedAutomation, setupState, sendMessage]);
 
   const handleConfigSubmit = useCallback(async (configData, automationId) => {
     try {

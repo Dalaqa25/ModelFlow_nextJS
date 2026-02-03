@@ -168,6 +168,15 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
       };
     }
 
+    // CRITICAL FIX: If calling auto_setup and we have collected config, pass it directly!
+    if (toolName === 'auto_setup' && setupContext?.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
+      return {
+        automation_id: setupContext.automationId,
+        automation_name: setupContext.automationName,
+        existing_config: setupContext.collectedConfig  // Pass collected fields directly!
+      };
+    }
+
     // Build context for tool executor
     const contextParts = [
       `Tool to call: ${toolName}`,
