@@ -5,6 +5,7 @@ import AutomationCard from '../AutomationCard';
 import AutomationInstanceCard from './AutomationInstanceCard';
 import ConnectButton from '../ConnectButton';
 import ConfigForm from '../ConfigForm';
+import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
 
 export default function MessageRenderer({
   message,
@@ -14,7 +15,8 @@ export default function MessageRenderer({
   isDarkMode,
   onAutomationSelect,
   onConnectionComplete,
-  onConfigSubmit
+  onConfigSubmit,
+  onBackgroundActivate
 }) {
   const isCurrentStreamingAssistant =
     message.role === 'assistant' &&
@@ -105,6 +107,19 @@ export default function MessageRenderer({
             requiredInputs={message.configRequest.required_inputs}
             automationId={message.configRequest.automation_id}
             onSubmit={onConfigSubmit}
+          />
+        </div>
+      )}
+
+      {/* Background activation prompt */}
+      {message.backgroundActivationPrompt && (
+        <div className="mt-4">
+          <BackgroundActivationPrompt
+            automationId={message.backgroundActivationPrompt.automation_id}
+            automationName={message.backgroundActivationPrompt.automation_name}
+            config={message.backgroundActivationPrompt.config}
+            onActivate={onBackgroundActivate}
+            isDarkMode={isDarkMode}
           />
         </div>
       )}

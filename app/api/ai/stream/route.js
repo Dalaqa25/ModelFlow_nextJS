@@ -177,6 +177,14 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
       };
     }
 
+    // SHORTCUT: If saving background config and we have the context, use it directly!
+    if (toolName === 'save_background_config' && setupContext?.isBackgroundPrompt && setupContext?.collectedConfig) {
+      return {
+        automation_id: setupContext.automationId,
+        config: setupContext.collectedConfig
+      };
+    }
+
     // Build context for tool executor
     const contextParts = [
       `Tool to call: ${toolName}`,
@@ -286,7 +294,27 @@ function extractSetupContext(messages) {
   const automationIdMatch = allContent.match(/automation_id[=:]\s*"?([a-f0-9-]+)"?/i);
   const automationNameMatch = allContent.match(/(?:Setting up |automation_name[=:]\s*)"([^"]+)"/i);
 
-  // PRIORITY 1: Look for READY_TO_RUN marker (has full config ready to execute)
+  // PRIORITY 1: Look for BACKGROUND_PROMPT marker (user is being asked about background execution)
+  const backgroundPromptMatch = allContent.match(/\[BACKGROUND_PROMPT automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
+
+  console.log('[extractSetupContext] Found BACKGROUND_PROMPT:', !!backgroundPromptMatch);
+
+  if (backgroundPromptMatch) {
+    try {
+      const config = JSON.parse(backgroundPromptMatch[2]);
+      console.log('[extractSetupContext] Background prompt config:', config);
+      return {
+        automationId: backgroundPromptMatch[1],
+        automationName: automationNameMatch?.[1] || null,
+        collectedConfig: config,
+        isBackgroundPrompt: true  // Flag that we're in background activation flow
+      };
+    } catch (e) {
+      console.log('[extractSetupContext] Failed to parse background config:', e);
+    }
+  }
+
+  // PRIORITY 2: Look for READY_TO_RUN marker (has full config ready to execute)
   const readyToRunMatch = allContent.match(/\[READY_TO_RUN automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
 
   console.log('[extractSetupContext] Found READY_TO_RUN:', !!readyToRunMatch);
@@ -306,7 +334,7 @@ function extractSetupContext(messages) {
     }
   }
 
-  // PRIORITY 2: Look for existing_config (during setup flow)
+  // PRIORITY 3: Look for existing_config (during setup flow)
   const configMatch = allContent.match(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/);
 
   const automationId = automationIdMatch?.[1];

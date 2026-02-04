@@ -47,9 +47,10 @@ export async function GET(request) {
     
     // Option 3: Fallback to safe defaults (most common use case)
     if (!scopes) {
+      // Only request the approved scopes: BASIC + DRIVE + SHEETS + GMAIL
       scopes = getScopesForServices(['DRIVE', 'SHEETS', 'GMAIL']);
-      scopeSource = 'default:safe';
-      console.log('Using safe default scopes: DRIVE, SHEETS, GMAIL');
+      scopeSource = 'default:approved';
+      console.log('Using approved default scopes: DRIVE (per-file), SHEETS, GMAIL');
     }
 
     // Construct Google OAuth authorization URL

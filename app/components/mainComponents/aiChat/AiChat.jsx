@@ -18,7 +18,8 @@ const AiChat = forwardRef((props, ref) => {
     stopGeneration,
     handleAutomationSelect,
     handleConnectionComplete,
-    handleConfigSubmit
+    handleConfigSubmit,
+    handleBackgroundActivate
   } = useAiChat({ onLoadingChange });
 
   const scrollToBottom = () => {
@@ -53,6 +54,7 @@ const AiChat = forwardRef((props, ref) => {
             onAutomationSelect={handleAutomationSelect}
             onConnectionComplete={handleConnectionComplete}
             onConfigSubmit={handleConfigSubmit}
+            onBackgroundActivate={handleBackgroundActivate}
           />
         ))}
         <div ref={messagesEndRef} />

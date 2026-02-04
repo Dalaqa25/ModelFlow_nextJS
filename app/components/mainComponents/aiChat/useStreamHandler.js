@@ -230,6 +230,25 @@ export function createStreamHandler({
         )
       );
     }
+    // Handle background activation prompt
+    else if (parsed.type === 'background_activation_prompt') {
+      flushQueue();
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { 
+                ...msg, 
+                content: displayedText, 
+                backgroundActivationPrompt: {
+                  automation_id: parsed.automation_id,
+                  automation_name: parsed.automation_name,
+                  config: parsed.config
+                }
+              }
+            : msg
+        )
+      );
+    }
     // Handle regular content
     else if (parsed.content) {
       textQueue += parsed.content;

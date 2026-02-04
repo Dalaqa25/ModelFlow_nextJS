@@ -1,51 +1,26 @@
 /**
  * Detects required Google OAuth scopes from n8n workflow JSON
  * This helps inform users which permissions their automation needs
+ * 
+ * IMPORTANT: Only includes scopes that are approved in Google Cloud Console
  */
 
 const GOOGLE_NODE_SCOPES = {
-  // Google Drive nodes
-  'n8n-nodes-base.googleDrive': ['drive'],
-  'n8n-nodes-base.googleDriveTrigger': ['drive.readonly'],
+  // Google Drive nodes - ONLY per-file access is approved
+  'n8n-nodes-base.googleDrive': ['drive.file'],
+  'n8n-nodes-base.googleDriveTrigger': ['drive.file'],
   
   // Google Sheets nodes
   'n8n-nodes-base.googleSheets': ['spreadsheets'],
   
-  // Gmail nodes
-  'n8n-nodes-base.gmail': ['gmail.send', 'gmail.readonly'],
+  // Gmail nodes - ONLY send and compose are approved
+  'n8n-nodes-base.gmail': ['gmail.send'],
   'n8n-nodes-base.gmailTool': ['gmail.send'],
   
-  // Google Calendar nodes
-  'n8n-nodes-base.googleCalendar': ['calendar'],
-  
-  // Google Docs nodes
-  'n8n-nodes-base.googleDocs': ['documents'],
-  
-  // Google Slides nodes
-  'n8n-nodes-base.googleSlides': ['presentations'],
-  
-  // Google Tasks nodes
-  'n8n-nodes-base.googleTasks': ['tasks'],
-  
-  // YouTube nodes
-  'n8n-nodes-base.youtube': ['youtube'],
+  // REMOVED: Calendar, Docs, Slides, Tasks, YouTube (not approved in Google Cloud Console)
 };
 
 const SCOPE_DETAILS = {
-  'drive': {
-    fullScope: 'https://www.googleapis.com/auth/drive',
-    name: 'Google Drive',
-    description: 'Full access to Google Drive files',
-    sensitivity: 'RESTRICTED',
-    requiresVerification: true,
-  },
-  'drive.readonly': {
-    fullScope: 'https://www.googleapis.com/auth/drive.readonly',
-    name: 'Google Drive (Read Only)',
-    description: 'Read-only access to Google Drive files',
-    sensitivity: 'RESTRICTED',
-    requiresVerification: true,
-  },
   'drive.file': {
     fullScope: 'https://www.googleapis.com/auth/drive.file',
     name: 'Google Drive (Per-File)',
@@ -67,54 +42,12 @@ const SCOPE_DETAILS = {
     sensitivity: 'SENSITIVE',
     requiresVerification: true,
   },
-  'gmail.readonly': {
-    fullScope: 'https://www.googleapis.com/auth/gmail.readonly',
-    name: 'Gmail (Read Only)',
-    description: 'Read your emails',
-    sensitivity: 'RESTRICTED',
-    requiresVerification: true,
-  },
-  'gmail.compose': {
-    fullScope: 'https://www.googleapis.com/auth/gmail.compose',
-    name: 'Gmail (Compose)',
-    description: 'Create and send emails',
-    sensitivity: 'RESTRICTED',
-    requiresVerification: true,
-  },
-  'calendar': {
-    fullScope: 'https://www.googleapis.com/auth/calendar',
-    name: 'Google Calendar',
-    description: 'Manage your calendar events',
-    sensitivity: 'SENSITIVE',
-    requiresVerification: true,
-  },
-  'documents': {
-    fullScope: 'https://www.googleapis.com/auth/documents',
-    name: 'Google Docs',
-    description: 'Read and write Google Docs',
-    sensitivity: 'SENSITIVE',
-    requiresVerification: true,
-  },
-  'presentations': {
-    fullScope: 'https://www.googleapis.com/auth/presentations',
-    name: 'Google Slides',
-    description: 'Read and write Google Slides',
-    sensitivity: 'SENSITIVE',
-    requiresVerification: true,
-  },
-  'tasks': {
-    fullScope: 'https://www.googleapis.com/auth/tasks',
-    name: 'Google Tasks',
-    description: 'Manage your tasks',
-    sensitivity: 'SENSITIVE',
-    requiresVerification: true,
-  },
-  'youtube': {
-    fullScope: 'https://www.googleapis.com/auth/youtube',
-    name: 'YouTube',
-    description: 'Manage your YouTube account',
-    sensitivity: 'SENSITIVE',
-    requiresVerification: true,
+  'gmail.addons.current.action.compose': {
+    fullScope: 'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
+    name: 'Gmail (Compose in Add-on)',
+    description: 'Compose emails in Gmail add-on',
+    sensitivity: 'NON-SENSITIVE',
+    requiresVerification: false,
   },
 };
 
@@ -146,22 +79,13 @@ export function detectGoogleScopes(workflowJson) {
     
     // Check for Gmail operations that need specific scopes
     if (nodeType === 'n8n-nodes-base.gmail') {
-      const operation = node.parameters?.operation;
-      if (operation === 'send') {
-        detectedScopes.add('gmail.send');
-      } else if (operation === 'get' || operation === 'getAll') {
-        detectedScopes.add('gmail.readonly');
-      }
+      // Only gmail.send is approved
+      detectedScopes.add('gmail.send');
     }
     
-    // Check for Drive operations
+    // Check for Drive operations - only per-file access is approved
     if (nodeType === 'n8n-nodes-base.googleDrive') {
-      const operation = node.parameters?.operation;
-      if (operation === 'upload' || operation === 'update' || operation === 'delete') {
-        detectedScopes.add('drive');
-      } else if (operation === 'download' || operation === 'list') {
-        detectedScopes.add('drive.readonly');
-      }
+      detectedScopes.add('drive.file');
     }
   });
   

@@ -5,54 +5,23 @@
  * Usage: node validate-scopes.js
  */
 
-// Expected scopes that should be in Google Cloud Console
+// Expected scopes that MUST match Google Cloud Console configuration
+// Last updated: Based on actual Google Cloud Console setup
 const EXPECTED_SCOPES = [
-  // Basic (3)
+  // Basic (3) - NON-SENSITIVE
   'openid',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
   
-  // Drive (2)
-  'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/drive.file',
+  // Drive (1) - NON-SENSITIVE
+  'https://www.googleapis.com/auth/drive.file', // Per-file access only
   
-  // Sheets (1)
+  // Sheets (1) - SENSITIVE
   'https://www.googleapis.com/auth/spreadsheets',
   
-  // Docs (1)
-  'https://www.googleapis.com/auth/documents',
-  
-  // Gmail (3)
+  // Gmail (2) - SENSITIVE
   'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.compose',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  
-  // Calendar (2)
-  'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/calendar.events',
-  
-  // YouTube (2)
-  'https://www.googleapis.com/auth/youtube',
-  'https://www.googleapis.com/auth/youtube.upload',
-  
-  // Slides (1)
-  'https://www.googleapis.com/auth/presentations',
-  
-  // Forms (2)
-  'https://www.googleapis.com/auth/forms.body',
-  'https://www.googleapis.com/auth/forms.responses.readonly',
-  
-  // Tasks (1)
-  'https://www.googleapis.com/auth/tasks',
-  
-  // Contacts (1)
-  'https://www.googleapis.com/auth/contacts',
-  
-  // Photos (1)
-  'https://www.googleapis.com/auth/photoslibrary',
-  
-  // Analytics (1)
-  'https://www.googleapis.com/auth/analytics.readonly',
+  'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
 ];
 
 // Import your scope manager
@@ -63,7 +32,7 @@ console.log('🔍 Validating Google OAuth Scopes...\n');
 // Get scopes from your code
 const codeScopes = getAllScopes();
 
-console.log(`Expected scopes: ${EXPECTED_SCOPES.length}`);
+console.log(`Expected scopes (from Google Cloud Console): ${EXPECTED_SCOPES.length}`);
 console.log(`Scopes in code: ${codeScopes.length}\n`);
 
 // Check for missing scopes
@@ -71,42 +40,35 @@ const missingScopes = EXPECTED_SCOPES.filter(scope => !codeScopes.includes(scope
 const extraScopes = codeScopes.filter(scope => !EXPECTED_SCOPES.includes(scope));
 
 if (missingScopes.length === 0 && extraScopes.length === 0) {
-  console.log('✅ SUCCESS! All scopes are correctly configured.\n');
-  console.log('📋 Scopes by service:');
-  console.log('   • Basic: 3 scopes');
-  console.log('   • Drive: 2 scopes');
+  console.log('✅ SUCCESS! All scopes match Google Cloud Console configuration.\n');
+  console.log('📋 Approved scopes by service:');
+  console.log('   • Basic (openid, email, profile): 3 scopes');
+  console.log('   • Drive (per-file access): 1 scope');
   console.log('   • Sheets: 1 scope');
-  console.log('   • Docs: 1 scope');
-  console.log('   • Gmail: 3 scopes');
-  console.log('   • Calendar: 2 scopes');
-  console.log('   • YouTube: 2 scopes');
-  console.log('   • Slides: 1 scope');
-  console.log('   • Forms: 2 scopes');
-  console.log('   • Tasks: 1 scope');
-  console.log('   • Contacts: 1 scope');
-  console.log('   • Photos: 1 scope');
-  console.log('   • Analytics: 1 scope');
-  console.log('\n✅ Total: 21 scopes\n');
-  console.log('🎯 Next step: Add these same 21 scopes to Google Cloud Console OAuth consent screen');
+  console.log('   • Gmail: 2 scopes');
+  console.log('\n✅ Total: 7 scopes\n');
+  console.log('🎯 Your app will only request these approved scopes');
 } else {
   if (missingScopes.length > 0) {
-    console.log('❌ MISSING SCOPES in your code:');
+    console.log('❌ MISSING SCOPES in your code (but in Google Cloud Console):');
     missingScopes.forEach(scope => console.log(`   - ${scope}`));
-    console.log('');
+    console.log('\n⚠️  Add these to lib/auth/scope-manager.js\n');
   }
   
   if (extraScopes.length > 0) {
-    console.log('⚠️  EXTRA SCOPES in your code (not in expected list):');
+    console.log('⚠️  EXTRA SCOPES in your code (NOT in Google Cloud Console):');
     extraScopes.forEach(scope => console.log(`   - ${scope}`));
-    console.log('');
+    console.log('\n⚠️  These will cause OAuth errors! Remove from lib/auth/scope-manager.js\n');
   }
 }
 
-// Print full list for easy copy-paste
-console.log('\n📋 Complete scope list for Google Cloud Console:\n');
+// Print full list for verification
+console.log('\n📋 Complete scope list (matches Google Cloud Console):\n');
 EXPECTED_SCOPES.forEach((scope, index) => {
   console.log(`${index + 1}. ${scope}`);
 });
 
-console.log('\n💡 Copy this list and add each scope to:');
-console.log('   Google Cloud Console → OAuth consent screen → Scopes → Add or Remove Scopes\n');
+console.log('\n💡 These scopes are configured in:');
+console.log('   Google Cloud Console → APIs & Services → OAuth consent screen → Scopes\n');
+console.log('✅ Non-sensitive scopes: openid, email, profile, drive.file, gmail.addons.current.action.compose');
+console.log('⚠️  Sensitive scopes (require verification): spreadsheets, gmail.send\n');

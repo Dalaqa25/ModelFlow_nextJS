@@ -293,6 +293,47 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     }
   }, [sendMessage]);
 
+  const handleBackgroundActivate = useCallback(async (automationId, config) => {
+    // If automationId is null, user declined
+    if (!automationId) {
+      sendMessage("No problem! The automation will run manually when you trigger it.");
+      return;
+    }
+
+    try {
+      // Get auth session from Supabase
+      const { createBrowserSupabaseClient } = await import('@/lib/db/supabase');
+      const supabase = createBrowserSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        sendMessage("Please sign in to enable background mode.");
+        return;
+      }
+
+      const response = await fetch(`/api/automations/${automationId}/activate-background`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        credentials: 'include',
+        body: JSON.stringify({ config })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        sendMessage(`Failed to enable background mode: ${result.error || 'Unknown error'}`);
+        return;
+      }
+
+      sendMessage(`✅ Background execution enabled! Your automation will now run automatically.`);
+    } catch (error) {
+      sendMessage(`Failed to enable background mode: ${error.message}`);
+    }
+  }, [sendMessage]);
+
   return {
     messages,
     isLoading,
@@ -301,6 +342,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     stopGeneration,
     handleAutomationSelect,
     handleConnectionComplete,
-    handleConfigSubmit
+    handleConfigSubmit,
+    handleBackgroundActivate
   };
 }
