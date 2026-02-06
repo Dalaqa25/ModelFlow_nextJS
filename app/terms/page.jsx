@@ -15,7 +15,7 @@ export default function Terms() {
                         <div className="bg-purple-900/30 border-2 border-purple-500/50 rounded-xl p-6 mt-4 max-w-4xl">
                             <h3 className="text-2xl font-semibold text-white mb-3">🔒 We Only Use What Your Automations Need</h3>
                             <p className="text-lg text-gray-200">
-                                While we request access to multiple Google services, <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need Drive, we don't access your Drive. You're always in control of which automations you run.
+                                While we request access to multiple services (Google, TikTok, etc.), <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need TikTok video upload, we don't access that feature. You're always in control of which automations you run.
                             </p>
                         </div>
                     </div>   
@@ -46,6 +46,7 @@ export default function Terms() {
                                 <ul className="list-disc list-inside space-y-2 ml-4">
                                     <li>Purchase credits to run AI automations</li>
                                     <li>Browse and use automations available on the platform</li>
+                                    <li>Connect third-party services (Google, TikTok, etc.) to enable automations</li>
                                     <li>Participate in community features, including requests and comments</li>
                                     <li>Manage subscriptions and earnings</li>
                                     <li>Interact with other users through the platform</li>
@@ -206,6 +207,48 @@ export default function Terms() {
                                     <li>Collect or harvest information about other users without consent</li>
                                     <li>Use the Platform to transmit viruses or malicious code</li>
                                 </ul>
+                            </div>
+                        </section>
+
+                        {/* 6.5 Third-Party Service Integrations */}
+                        <section>
+                            <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6">6.5 Third-Party Service Integrations</h2>
+                            <div className="space-y-4 text-lg">
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.1 Google Services Integration</h3>
+                                    <p className="mb-2">When you connect your Google account to use automations:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li>You authorize ModelGrow to access specific Google services on your behalf using OAuth 2.0</li>
+                                        <li>We only access the Google services that your specific automations require</li>
+                                        <li>You can revoke access at any time through your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google Account permissions page</a></li>
+                                        <li>Our use of Google user data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google API Services User Data Policy</a>, including Limited Use requirements</li>
+                                        <li>You are responsible for ensuring your use of Google services through our Platform complies with Google's Terms of Service</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.2 TikTok Services Integration</h3>
+                                    <p className="mb-2">When you connect your TikTok account to use automations:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li>You authorize ModelGrow to access specific TikTok services on your behalf using OAuth 2.0</li>
+                                        <li>We only access the TikTok services that your specific automations require (e.g., video upload, analytics, user profile)</li>
+                                        <li>You can revoke access at any time through your TikTok account settings or by disconnecting your account in ModelGrow</li>
+                                        <li>Our use of TikTok user data complies with TikTok's API Terms of Service and data usage policies</li>
+                                        <li>You are responsible for ensuring your use of TikTok services through our Platform complies with TikTok's Terms of Service and Community Guidelines</li>
+                                        <li>You represent that you have the right to upload and publish any content to TikTok through our automations</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.3 General Third-Party Service Terms</h3>
+                                    <p className="mb-2">For all third-party service integrations:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li>You are responsible for maintaining valid accounts with third-party services</li>
+                                        <li>We are not responsible for changes, interruptions, or termination of third-party services</li>
+                                        <li>You must comply with all applicable terms of service and policies of third-party services</li>
+                                        <li>We do not guarantee the availability or functionality of third-party service integrations</li>
+                                        <li>Third-party services may have their own data collection and privacy practices</li>
+                                        <li>You acknowledge that automations may stop working if third-party services change their APIs or policies</li>
+                                    </ul>
+                                </div>
                             </div>
                         </section>
 
