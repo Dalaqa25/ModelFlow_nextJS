@@ -41,14 +41,14 @@ export async function POST(req) {
       );
     }
 
-    // Create or update automation instance
+    // Create or update user_automations record (consolidated)
     const { error: upsertError } = await supabase
-      .from('automation_instances')
+      .from('user_automations')
       .upsert({
         user_id: user.id,
         automation_id: automationId,
-        config: parameters || {},
-        enabled: true,
+        parameters: parameters || {},
+        is_active: true,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id,automation_id',

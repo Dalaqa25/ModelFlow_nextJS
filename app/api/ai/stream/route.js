@@ -16,6 +16,8 @@ import {
   handleExecuteAutomation,
   handleShowUserAutomations,
   handleSaveBackgroundConfig,
+  handleRequestFileUpload,
+  handleScheduleAutomation,
 } from '@/lib/ai/tool-handlers';
 
 // Llama client (Groq) - the brain/orchestrator
@@ -78,12 +80,34 @@ export async function POST(request) {
       ...chatMessages.filter(m => m.role !== 'system')
     ];
 
-    const orchestratorResponse = await orchestratorClient.chat.completions.create({
-      messages: orchestratorMessages,
-      model: ORCHESTRATOR_MODEL,
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-    });
+    let orchestratorResponse;
+    try {
+      orchestratorResponse = await orchestratorClient.chat.completions.create({
+        messages: orchestratorMessages,
+        model: ORCHESTRATOR_MODEL,
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      });
+    } catch (rateLimitError) {
+      // Handle rate limit errors gracefully
+      if (rateLimitError.status === 429) {
+        const retryAfter = rateLimitError.headers?.['retry-after'];
+        const waitTime = retryAfter ? `${Math.ceil(retryAfter / 60)} minutes` : 'a few minutes';
+        
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded', 
+            message: `AI service rate limit reached. Please try again in ${waitTime}.`,
+            retryAfter: retryAfter 
+          }),
+          { 
+            status: 429,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      throw rateLimitError; // Re-throw if not a rate limit error
+    }
 
     const llamaOutput = orchestratorResponse.choices[0].message.content;
 
@@ -132,7 +156,8 @@ export async function POST(request) {
                 user,
                 controller,
                 encoder,
-                setupContext
+                setupContext,
+                chatMessages
               );
             }
           }
@@ -152,6 +177,8 @@ export async function POST(request) {
     });
 
   } catch (error) {
+    console.error('[POST /api/ai/stream] Error:', error);
+    console.error('[POST /api/ai/stream] Stack:', error.stack);
     return NextResponse.json({ error: "Failed to process chat request", message: error.message }, { status: 500 });
   }
 }
@@ -227,48 +254,104 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
 }
 
 // Execute the tool action
-async function executeToolAction(toolName, args, user, controller, encoder, setupContext) {
-  const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+async function executeToolAction(toolName, args, user, controller, encoder, setupContext, chatMessages) {
+  // Capture all tool output for conversation history
+  let toolOutputText = '';
+  
+  // Create a wrapper controller that captures output
+  const capturingController = {
+    enqueue: (chunk) => {
+      // Decode the chunk to extract text
+      try {
+        const decoder = new TextDecoder();
+        const text = decoder.decode(chunk);
+        
+        // Extract content from SSE format: "data: {...}\n\n"
+        if (text.startsWith('data: ')) {
+          const jsonStr = text.slice(6).trim();
+          if (jsonStr && jsonStr !== '[DONE]') {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.content && typeof parsed.content === 'string') {
+              toolOutputText += parsed.content;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+      
+      // Pass through to real controller
+      controller.enqueue(chunk);
+    }
+  };
 
   try {
     switch (toolName) {
       case 'search_automations':
-        await handleSearchAutomations(args, controller, encoder);
+        await handleSearchAutomations(args, capturingController, encoder);
         break;
       case 'start_setup':
-        await handleStartSetup(args, user, controller, encoder);
+        await handleStartSetup(args, user, capturingController, encoder);
         break;
       case 'auto_setup':
-        await handleAutoSetup(args, user, controller, encoder);
+        // Pass conversation history so tool can check for file uploads
+        const autoSetupContext = {
+          ...setupContext,
+          conversationHistory: chatMessages ? chatMessages.map(m => m.content) : []
+        };
+        await handleAutoSetup(args, user, capturingController, encoder, autoSetupContext);
         break;
       case 'search_user_files':
-        await handleSearchUserFiles(args, user, controller, encoder, setupContext);
+        await handleSearchUserFiles(args, user, capturingController, encoder, setupContext);
         break;
       case 'list_user_files':
-        await handleListUserFiles(args, user, controller, encoder, setupContext);
+        await handleListUserFiles(args, user, capturingController, encoder, setupContext);
         break;
       case 'confirm_file_selection':
-        await handleConfirmFileSelection(args, user, controller, encoder);
+        await handleConfirmFileSelection(args, user, capturingController, encoder);
         break;
       case 'collect_text_input':
-        await handleCollectTextInput(args, user, controller, encoder, setupContext);
+        await handleCollectTextInput(args, user, capturingController, encoder, setupContext);
         break;
       case 'execute_automation':
-        await handleExecuteAutomation(args, user, controller, encoder);
+        await handleExecuteAutomation(args, user, capturingController, encoder);
         break;
 
       case 'show_user_automations':
-        await handleShowUserAutomations(args, user, controller, encoder);
+        await handleShowUserAutomations(args, user, capturingController, encoder);
         break;
 
       case 'save_background_config':
-        await handleSaveBackgroundConfig(args, user, controller, encoder);
+        await handleSaveBackgroundConfig(args, user, capturingController, encoder);
+        break;
+
+      case 'request_file_upload':
+        await handleRequestFileUpload(args, user, capturingController, encoder);
+        break;
+
+      case 'schedule_automation':
+        await handleScheduleAutomation(args, setupContext, user, capturingController, encoder);
         break;
 
       default:
+        const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         sendSSE({ content: "\n\nI'm not sure how to do that. Could you try again?" });
     }
+    
+    // Send captured tool output as a special event for frontend to save
+    if (toolOutputText.trim()) {
+      console.log('[executeToolAction] Captured tool output:', toolOutputText.substring(0, 200));
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+        type: 'tool_output',
+        content: toolOutputText,
+        tool: toolName
+      })}\n\n`));
+    } else {
+      console.log('[executeToolAction] No tool output captured for:', toolName);
+    }
   } catch (e) {
+    console.error('[executeToolAction] Error:', e);
+    const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
     sendSSE({ content: "\n\nSorry, something went wrong with that action." });
   }
 }

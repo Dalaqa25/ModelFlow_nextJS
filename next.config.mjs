@@ -12,6 +12,14 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '100mb',
+    },
+    proxyClientMaxBodySize: '100mb',
+  },
+  // This is the key setting for App Router API routes
+  middlewareClientMaxBodySize: '100mb',
 };
 
 export default nextConfig;

@@ -12,6 +12,7 @@ import {
   handleListUserFiles,
   handleConfirmFileSelection,
   handleExecuteAutomation,
+  handleScheduleAutomation,
 } from '@/lib/ai/tool-handlers';
 
 export async function POST(request) {
@@ -88,6 +89,16 @@ export async function POST(request) {
 
             case 'confirm_execute':
               actionResult = await executeConfirmRun(
+                context,
+                user,
+                controller,
+                encoder
+              );
+              break;
+
+            case 'schedule_automation':
+              actionResult = await executeScheduleAutomation(
+                intentResult.extracted_data,
                 context,
                 user,
                 controller,
@@ -263,6 +274,23 @@ async function executeConfirmRun(context, user, controller, encoder) {
   );
 
   return { type: 'execution_started' };
+}
+
+async function executeScheduleAutomation(data, context, user, controller, encoder) {
+  try {
+    const result = await handleScheduleAutomation(data, context, user, controller, encoder);
+    return {
+      type: 'schedule_created',
+      timeExpression: data.time_expression,
+      scheduleType: data.schedule_type,
+      result
+    };
+  } catch (error) {
+    sendSSE(controller, encoder, {
+      content: `Sorry, I couldn't schedule that: ${error.message}`
+    });
+    return { type: 'error', message: error.message };
+  }
 }
 
 function buildContextString(context, actionResult) {

@@ -85,21 +85,39 @@ export async function POST(req) {
       lowercaseConfig[key.toLowerCase()] = value;
     });
 
-    // Fetch user's Google OAuth tokens from user_automations
+    // Check for required connectors to fetch the correct token
+    const { data: fullAutomation } = await supabase
+      .from('automations')
+      .select('required_connectors')
+      .eq('id', automation_id)
+      .single();
+
+    const parseConnectors = (connectors) => {
+      if (!connectors) return [];
+      if (Array.isArray(connectors)) return connectors;
+      try { return JSON.parse(connectors); } catch (e) { return [connectors]; }
+    };
+
+    const requiredConnectors = parseConnectors(fullAutomation?.required_connectors);
+    const primaryProvider = requiredConnectors.length > 0
+      ? (requiredConnectors[0].toLowerCase().includes('google') || requiredConnectors[0].toLowerCase().includes('sheets') ? 'google' : requiredConnectors[0].toLowerCase())
+      : 'google';
+
+    // Fetch user's OAuth tokens from user_automations for the correct provider
     const { data: integration } = await supabase
       .from('user_automations')
       .select('access_token, refresh_token, token_expiry')
       .eq('user_id', user.id)
       .eq('automation_id', automation_id)
-      .eq('provider', 'google')
+      .eq('provider', primaryProvider)
       .maybeSingle();
 
-    // If user has Google integration, add access_token to config
+    // If user has integration, add access_token to config
     // This allows workflows to use HTTP Request nodes with Bearer tokens
     if (integration?.access_token) {
-      console.log('[EXECUTE DEBUG] Adding Google access_token to workflow payload');
+      console.log(`[EXECUTE DEBUG] Adding ${primaryProvider} access_token to workflow payload`);
       lowercaseConfig.access_token = integration.access_token;
-      
+
       // Also add refresh_token in case workflow needs to refresh
       if (integration.refresh_token) {
         lowercaseConfig.refresh_token = integration.refresh_token;
@@ -151,15 +169,15 @@ export async function POST(req) {
     // SCENARIO 1: On-Demand (Run Once) - Just execute, don't save config
     // SCENARIO 2: Background (Continuous) - Save config for recurring execution
     if (automation.requires_background) {
-      console.log('[EXECUTE DEBUG] Background automation - saving config to automation_instances');
-      
+      console.log('[EXECUTE DEBUG] Background automation - saving config to user_automations');
+
       await supabase
-        .from('automation_instances')
+        .from('user_automations')
         .upsert({
           automation_id,
           user_id: user.id,
-          config: lowercaseConfig,
-          enabled: true,
+          parameters: lowercaseConfig,
+          is_active: true,
           last_run: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }, {

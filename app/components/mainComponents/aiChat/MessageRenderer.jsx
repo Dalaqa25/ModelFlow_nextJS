@@ -6,6 +6,7 @@ import AutomationInstanceCard from './AutomationInstanceCard';
 import ConnectButton from '../ConnectButton';
 import ConfigForm from '../ConfigForm';
 import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
+import NoResultsPopup from './NoResultsPopup';
 
 export default function MessageRenderer({
   message,
@@ -16,7 +17,8 @@ export default function MessageRenderer({
   onAutomationSelect,
   onConnectionComplete,
   onConfigSubmit,
-  onBackgroundActivate
+  onBackgroundActivate,
+  onNoResultsClose
 }) {
   const isCurrentStreamingAssistant =
     message.role === 'assistant' &&
@@ -45,11 +47,10 @@ export default function MessageRenderer({
     >
       <div className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
         <div
-          className={`${message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'} ${
-            message.role === 'user'
+          className={`${message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'} ${message.role === 'user'
               ? `rounded-4xl px-3 py-2 ${isDarkMode ? 'bg-slate-800/60 text-white' : 'bg-slate-700/60 text-white'}`
               : isDarkMode ? 'text-gray-100' : 'text-gray-900'
-          }`}
+            }`}
         >
           {/* Searching indicator */}
           {message.isSearching && (
@@ -92,10 +93,10 @@ export default function MessageRenderer({
       {/* Connect button */}
       {message.connectRequest && (
         <div className="mt-4">
-          <ConnectButton 
-            provider={message.connectRequest.provider} 
+          <ConnectButton
+            provider={message.connectRequest.provider}
             automationId={message.connectRequest.automation_id}
-            onConnect={onConnectionComplete} 
+            onConnect={onConnectionComplete}
           />
         </div>
       )}
@@ -122,6 +123,14 @@ export default function MessageRenderer({
             isDarkMode={isDarkMode}
           />
         </div>
+      )}
+
+      {/* No Results Popup */}
+      {message.noResultsPopup && (
+        <NoResultsPopup
+          query={message.noResultsPopup.query}
+          onClose={onNoResultsClose}
+        />
       )}
 
       {/* Automation instances (user stats) */}
@@ -170,7 +179,7 @@ export default function MessageRenderer({
 
                   const result = await response.json();
                   alert(`Automation executed successfully!\n\nResult: ${JSON.stringify(result, null, 2)}`);
-                  
+
                   // Optionally refresh to show updated stats
                   window.location.reload();
                 } catch (error) {
@@ -195,9 +204,8 @@ function AutomationList({ automations, isDarkMode }) {
             <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {automation.index}. {automation.name}
             </span>
-            <span className={`text-sm px-2 py-0.5 rounded-full ${
-              automation.price === 'Free' ? 'bg-green-500/20 text-green-400' : 'bg-purple-500/20 text-purple-400'
-            }`}>
+            <span className={`text-sm px-2 py-0.5 rounded-full ${automation.price === 'Free' ? 'bg-green-500/20 text-green-400' : 'bg-purple-500/20 text-purple-400'
+              }`}>
               {automation.price}
             </span>
           </div>

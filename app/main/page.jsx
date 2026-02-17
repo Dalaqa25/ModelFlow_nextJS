@@ -13,7 +13,17 @@ export default function Home() {
     const chatRef = useRef(null);
     const [isScoped, setIsScoped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [showUploadDialog, setShowUploadDialog] = useState(false);
+    const [isUploadActive, setIsUploadActive] = useState(false); // New state
+
+    const handleUploadStatusChange = (isActive) => {
+        setIsUploadActive(isActive);
+    };
+
+    const handleFileUpload = (file) => {
+        if (chatRef.current) {
+            chatRef.current.handleFileUpload(file);
+        }
+    };
     const handleMessageSent = (message) => {
         if (!hasStartedChat) {
             setHasStartedChat(true);
@@ -66,7 +76,11 @@ export default function Home() {
                 ) : (
                     <div className="w-full h-full flex items-start justify-center pt-8">
                         <div className="w-full max-w-4xl">
-                            <AiChat ref={chatRef} onLoadingChange={handleLoadingChange} />
+                            <AiChat
+                                ref={chatRef}
+                                onLoadingChange={handleLoadingChange}
+                                onAwaitFileUploadChange={handleUploadStatusChange}
+                            />
                         </div>
                     </div>
                 )}
@@ -76,6 +90,8 @@ export default function Home() {
                 onScopeChange={setIsScoped}
                 isLoading={isLoading}
                 onStopGeneration={handleStopGeneration}
+                isUploadActive={isUploadActive}
+                onFileUpload={handleFileUpload}
             />
             <WelcomeModal />
         </AdaptiveBackground>

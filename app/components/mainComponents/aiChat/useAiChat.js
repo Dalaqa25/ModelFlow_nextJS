@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 import { createStreamHandler } from './useStreamHandler';
+import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 
 export function useAiChat({ onLoadingChange }) {
   const [messages, setMessages] = useState([]);
@@ -117,11 +119,15 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   const sendMessage = useCallback(async (messageText, extraContext = '') => {
     if (!messageText.trim() || isLoading) return;
 
+    // CRITICAL FIX: Save extraContext as hiddenContext so it persists in conversation history
     const userMessage = {
       role: 'user',
       content: messageText,
+      hiddenContext: extraContext, // Save hidden context for future messages
       timestamp: new Date().toISOString(),
     };
+    
+    // Update state with new message
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     if (onLoadingChange) onLoadingChange(true);
@@ -143,16 +149,22 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     abortControllerRef.current = abortController;
 
     try {
-      let conversationHistory = messages
+      // CRITICAL: Build conversation history from CURRENT messages + new message
+      // This ensures the file upload context is included
+      let conversationHistory = [...messages, userMessage]
         .filter(msg => msg.content?.trim())
         .map(msg => ({
           role: msg.role,
-          // Append hidden context (like READY_TO_RUN configs) if present
+          // Append hidden context (like file uploads, READY_TO_RUN configs) if present
           content: msg.content + (msg.hiddenContext || '')
         }));
 
-      const contextInfo = buildContextInfo() + extraContext;
-      conversationHistory.push({ role: 'user', content: messageText + contextInfo });
+      const contextInfo = buildContextInfo();
+      // The last message already has extraContext in hiddenContext, so don't add it again
+      // Just add the buildContextInfo
+      if (contextInfo) {
+        conversationHistory[conversationHistory.length - 1].content += contextInfo;
+      }
 
       // Summarize if needed
       if (conversationHistory.length >= 10 && conversationHistory.length % 10 === 0) {
@@ -207,6 +219,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       });
 
       if (!response.ok) {
+        // Handle rate limit errors specially
+        if (response.status === 429) {
+          const errorData = await response.json();
+          const retryMinutes = errorData.retryAfter ? Math.ceil(errorData.retryAfter / 60) : 'a few';
+          throw new Error(`⏱️ Rate limit reached. Please wait ${retryMinutes} minutes and try again.`);
+        }
         throw new Error(response.status === 401 ? 'Please sign in to use the AI chat feature.' : 'Failed to get response from AI.');
       }
 
@@ -250,7 +268,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   const handleConnectionComplete = useCallback((provider) => {
     // Build context with collected fields to preserve state after OAuth
     let contextStr = '';
-    
+
     if (setupState) {
       const collectedConfig = setupState.collectedConfig || {};
       if (Object.keys(collectedConfig).length > 0) {
@@ -263,13 +281,13 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     } else if (selectedAutomation) {
       contextStr += `\n\n[Selected automation UUID: ${selectedAutomation.id}]`;
     }
-    
-    const message = setupState 
+
+    const message = setupState
       ? `I've connected my ${provider} account for "${setupState.automationName}". What's next?`
       : selectedAutomation
         ? `I've connected my ${provider} account for "${selectedAutomation.name}". What's next?`
         : `I've connected my ${provider} account. What's next?`;
-    
+
     sendMessage(message, contextStr);
   }, [selectedAutomation, setupState, sendMessage]);
 
@@ -302,7 +320,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
     try {
       // Get auth session from Supabase
-      const { createBrowserSupabaseClient } = await import('@/lib/db/supabase');
       const supabase = createBrowserSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -313,7 +330,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
       const response = await fetch(`/api/automations/${automationId}/activate-background`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
@@ -322,7 +339,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       });
 
       const result = await response.json();
-      
+
       if (!response.ok) {
         sendMessage(`Failed to enable background mode: ${result.error || 'Unknown error'}`);
         return;
@@ -334,6 +351,212 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     }
   }, [sendMessage]);
 
+  /* ------------------------------------------------------------------
+   * File Upload Logic (Video Compression + Upload)
+   * ------------------------------------------------------------------ */
+  const [uploadState, setUploadState] = useState({
+    isUploading: false,
+    progress: 0,
+    status: '', // 'uploading', 'done', 'error'
+    statusText: '', // Human-readable status
+    fileName: ''
+  });
+
+  // Determine if we are waiting for a file upload
+  const isAwaitingFileUpload = useMemo(() => {
+    if (!setupState?.missingFields) return false;
+
+    // Check if any missing field is a file type
+    return setupState.missingFields.some(fieldName => {
+      const fieldDef = setupState.requiredFields?.find(f => f.name === fieldName);
+      // Check type 'file' or implicit file naming
+      return fieldDef?.type === 'file' || fieldName.includes('FILE') || fieldName.includes('PATH') || fieldName.includes('IMAGE') || fieldName.includes('VIDEO');
+    });
+  }, [setupState]);
+
+  const handleFileUpload = useCallback(async (file) => {
+    if (!file) return;
+
+    if (!isAwaitingFileUpload) {
+      toast.error("I'm not ready for files yet. Waiting for AI to ask for a file.");
+      return;
+    }
+
+    // 1. Get current automation context
+    // We need an automation ID to know which bucket to use
+    // Prioritize setupState (active setup) -> selectedAutomation (context)
+    const automationId = setupState?.automationId || selectedAutomation?.id;
+
+    if (!automationId) {
+      sendMessage("Please select or start an automation first so I know where to upload this file.");
+      return;
+    }
+
+    setUploadState({
+      isUploading: true,
+      progress: 0,
+      status: 'uploading',
+      statusText: 'Preparing upload...',
+      fileName: file.name
+    });
+
+    console.log('[UPLOAD DEBUG] Starting upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2) + 'MB',
+      fileType: file.type
+    });
+
+    try {
+      // 2. Upload to server (server will compress if needed)
+      let fileToUpload = file;
+
+      console.log('[UPLOAD DEBUG] Starting upload:', {
+        size: fileToUpload.size,
+        sizeMB: (fileToUpload.size / (1024 * 1024)).toFixed(2) + 'MB',
+        type: fileToUpload.type || file.type
+      });
+
+      // Show initial upload progress
+      setUploadState(prev => ({ 
+        ...prev, 
+        progress: 10, 
+        status: 'uploading',
+        statusText: 'Uploading file...'
+      }));
+
+      // 3. Upload to API
+      const formData = new FormData();
+      formData.append('file', fileToUpload, file.name);
+      formData.append('automationId', automationId);
+
+      console.log('[UPLOAD DEBUG] Sending request to /api/automations/upload...');
+
+      // Simulate progress while waiting for server
+      const progressInterval = setInterval(() => {
+        setUploadState(prev => {
+          if (prev.progress < 95) {
+            // Fast progress up to 90%, then slow down
+            const increment = prev.progress < 90 ? 5 : 1;
+            const newProgress = Math.min(prev.progress + increment, 95);
+            let statusText = 'Uploading file...';
+            
+            if (newProgress > 30 && newProgress < 60) {
+              statusText = 'Processing on server...';
+            } else if (newProgress >= 60 && newProgress < 90) {
+              statusText = 'Compressing video...';
+            } else if (newProgress >= 90) {
+              statusText = 'Finalizing...';
+            }
+            
+            return { 
+              ...prev, 
+              progress: newProgress,
+              statusText
+            };
+          }
+          return prev;
+        });
+      }, 1000); // Update every second
+
+      const uploadRes = await fetch('/api/automations/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      clearInterval(progressInterval);
+
+      console.log('[UPLOAD DEBUG] Upload response:', {
+        status: uploadRes.status,
+        ok: uploadRes.ok
+      });
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json();
+        console.error('[UPLOAD DEBUG] Upload failed:', err);
+        
+        // If file is too large (413 status), notify AI to tell user
+        if (uploadRes.status === 413) {
+          const message = err.error || 'File is too large to upload';
+          sendMessage(`The file upload failed: ${message}`);
+          setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
+          return;
+        }
+        
+        throw new Error(err.error || 'Upload failed');
+      }
+
+      const result = await uploadRes.json();
+      console.log('[UPLOAD DEBUG] Upload successful:', result);
+
+      setUploadState(prev => ({ 
+        ...prev, 
+        progress: 100, 
+        status: 'done',
+        statusText: 'Upload complete!'
+      }));
+
+      // 4. CRITICAL: Save file path to setupState so auto_setup knows it's ready
+      // Determine which field this file is for (VIDEO_FILES, IMAGE_FILE, etc.)
+      const fileFieldName = setupState?.missingFields?.find(fieldName => {
+        const upper = fieldName.toUpperCase();
+        return upper.includes('FILE') || upper.includes('PATH') || upper.includes('VIDEO') || upper.includes('IMAGE');
+      }) || 'VIDEO_FILES';
+
+      // Update setupState with the collected file
+      setSetupState(prev => {
+        if (!prev) return prev;
+        const newCollectedConfig = {
+          ...(prev.collectedConfig || {}),
+          [fileFieldName]: result.file.path
+        };
+        const newCollectedFields = {
+          ...(prev.collectedFields || {}),
+          [fileFieldName]: result.file.path
+        };
+        // Remove from missingFields
+        const newMissingFields = (prev.missingFields || []).filter(f => f !== fileFieldName);
+
+        return {
+          ...prev,
+          collectedConfig: newCollectedConfig,
+          collectedFields: newCollectedFields,
+          missingFields: newMissingFields
+        };
+      });
+
+      // 5. Notify AI about the file with the path saved
+      const fileContext = `\n\n[USER UPLOADED FILE]
+File: "${result.file.name}"
+Path: "${result.file.path}" (stored in bucket "${result.file.bucket}")
+Size: ${result.file.size} bytes
+
+[CRITICAL - FILE UPLOAD COMPLETE]
+Field "${fileFieldName}" has been collected and saved.
+Path: "${result.file.path}"
+
+IMPORTANT: This file field is NOW COLLECTED. Do NOT ask for it again.
+Check what OTHER fields are still needed (like interval, schedule time, etc.).
+If all fields are collected, proceed with auto_setup tool.`;
+
+      sendMessage(`I've uploaded the video "${file.name}"!`, fileContext);
+
+      // Reset state after delay
+      setTimeout(() => {
+        setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
+      }, 2000);
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadState(prev => ({ ...prev, status: 'error' }));
+      sendMessage(`Failed to upload file: ${error.message}`);
+
+      setTimeout(() => {
+        setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
+      }, 3000);
+    }
+  }, [setupState, selectedAutomation, sendMessage]);
+
   return {
     messages,
     isLoading,
@@ -343,6 +566,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     handleAutomationSelect,
     handleConnectionComplete,
     handleConfigSubmit,
-    handleBackgroundActivate
+    handleBackgroundActivate,
+    handleFileUpload,
+    handleFileUpload,
+    uploadState,
+    isAwaitingFileUpload
   };
 }

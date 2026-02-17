@@ -18,11 +18,11 @@ export async function PATCH(request, { params }) {
 
     const supabase = createClient();
 
-    // Update the automation instance
+    // Update the automation status in user_automations
     const { data, error } = await supabase
-      .from('automation_instances')
-      .update({ 
-        enabled,
+      .from('user_automations')
+      .update({
+        is_active: enabled,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -35,7 +35,7 @@ export async function PATCH(request, { params }) {
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Automation instance not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, data });

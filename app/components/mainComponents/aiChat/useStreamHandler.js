@@ -138,6 +138,17 @@ export function createStreamHandler({
         );
       }
     }
+    // Handle no results popup trigger
+    else if (parsed.type === 'no_results_popup') {
+      flushQueue();
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: displayedText, noResultsPopup: { query: parsed.query } }
+            : msg
+        )
+      );
+    }
     // Handle setup started
     else if (parsed.type === 'setup_started') {
       setSetupState(prev => ({
@@ -230,21 +241,34 @@ export function createStreamHandler({
         )
       );
     }
+    // Handle tool output (save as assistant message for AI memory)
+    else if (parsed.type === 'tool_output') {
+      console.log('[StreamHandler] Received tool output:', parsed.content.substring(0, 100));
+      // Don't flush or update current message - tool output is invisible to user
+      // Just add it as a hidden assistant message for AI memory
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: parsed.content,
+        timestamp: new Date().toISOString(),
+        isToolOutput: true, // Mark as tool output
+        isHidden: true // Hide from UI - only for AI memory
+      }]);
+    }
     // Handle background activation prompt
     else if (parsed.type === 'background_activation_prompt') {
       flushQueue();
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { 
-                ...msg, 
-                content: displayedText, 
-                backgroundActivationPrompt: {
-                  automation_id: parsed.automation_id,
-                  automation_name: parsed.automation_name,
-                  config: parsed.config
-                }
+            ? {
+              ...msg,
+              content: displayedText,
+              backgroundActivationPrompt: {
+                automation_id: parsed.automation_id,
+                automation_name: parsed.automation_name,
+                config: parsed.config
               }
+            }
             : msg
         )
       );

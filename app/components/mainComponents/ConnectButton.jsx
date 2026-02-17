@@ -2,6 +2,8 @@
 
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState } from 'react';
+import { FcGoogle } from 'react-icons/fc';
+import { FaTiktok } from 'react-icons/fa';
 
 export default function ConnectButton({ provider, automationId, onConnect }) {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -9,8 +11,13 @@ export default function ConnectButton({ provider, automationId, onConnect }) {
   const providerConfig = {
     google: {
       name: 'Google',
-      icon: '🔗',
-      color: 'bg-blue-600 hover:bg-blue-700',
+      icon: <FcGoogle size={20} />,
+      color: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:shadow-sm',
+    },
+    tiktok: {
+      name: 'TikTok',
+      icon: <FaTiktok size={20} />,
+      color: 'bg-black text-white hover:bg-gray-800 border border-transparent shadow-sm',
     },
     // Add more providers as needed
   };
@@ -25,11 +32,11 @@ export default function ConnectButton({ provider, automationId, onConnect }) {
       const height = 600;
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
-      
-      const url = automationId 
+
+      const url = automationId
         ? `/api/auth/${provider}?automation_id=${automationId}`
         : `/api/auth/${provider}`;
-      
+
       const popup = window.open(
         url,
         'oauth',
@@ -38,7 +45,7 @@ export default function ConnectButton({ provider, automationId, onConnect }) {
 
       // Listen for OAuth completion message from popup
       const handleMessage = (event) => {
-        if (event.data?.type === 'google_connected') {
+        if (event.data?.type === `${provider}_connected` || event.data?.type === 'google_connected' || event.data?.type === 'tiktok_connected') {
           window.removeEventListener('message', handleMessage);
           setIsConnecting(false);
           if (event.data.success) {
