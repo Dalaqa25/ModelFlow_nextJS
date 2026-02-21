@@ -146,7 +146,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
     // On mobile, position from top without vertical centering so it grows downward
     const topPosition = isAtBottom
         ? 'calc(100vh - 7rem)'
-        : isMobile ? '52%' : '58%';
+        : isMobile ? '40%' : '46.5%';
 
     return (
         <div
@@ -170,8 +170,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onBlur={handleScopeOff}
             >
                 <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border-2 backdrop-blur-md shadow-xl transition-all ${isDarkMode
-                        ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50'
-                        : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60'
+                    ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50'
+                    : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60'
                     }`}
                     onMouseEnter={handleInteraction}
                 >

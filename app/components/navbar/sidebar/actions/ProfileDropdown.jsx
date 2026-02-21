@@ -21,8 +21,9 @@ export default function ProfileDropdown() {
       return response.json();
     },
     enabled: !!user,
-    staleTime: 3 * 60 * 1000,
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes instead of 30 seconds
+    refetchOnWindowFocus: false, // Don't refetch on every window focus
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;

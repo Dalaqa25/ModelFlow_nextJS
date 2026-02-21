@@ -3,9 +3,9 @@
 import { useRef } from 'react';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
-export default function LightBackground({ 
-  variant = 'default', 
-  children, 
+export default function LightBackground({
+  variant = 'default',
+  children,
   className = '',
   showParticles = false,
 }) {
@@ -17,15 +17,15 @@ export default function LightBackground({
     landing: isDarkMode
       ? "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative"
       : "min-h-screen bg-gradient-to-br from-purple-50/40 via-purple-100/30 to-purple-50/40 overflow-hidden relative",
-    
+
     default: isDarkMode
       ? "min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-purple-900 overflow-hidden relative"
       : "min-h-screen bg-gradient-to-br from-white via-slate-50 to-purple-50/20 overflow-hidden relative",
-    
+
     auth: isDarkMode
       ? "min-h-screen bg-gradient-to-br from-slate-800 via-purple-800 to-slate-900 overflow-hidden relative"
       : "min-h-screen bg-gradient-to-br from-slate-100 via-purple-50/40 to-slate-50 overflow-hidden relative",
-    
+
     content: isDarkMode
       ? "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-purple-900 overflow-hidden relative"
       : "min-h-screen bg-gradient-to-br from-white via-slate-50 to-purple-50/30 overflow-hidden relative"
@@ -40,12 +40,6 @@ export default function LightBackground({
 
   return (
     <div ref={containerRef} className={`${backgroundClass} ${className}`}>
-      {/* Static background elements - no animations */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className={`absolute top-20 left-20 w-72 h-72 ${blobColor} rounded-full opacity-50`} />
-        <div className={`absolute bottom-20 right-20 w-96 h-96 ${blobColor2} rounded-full opacity-50`} />
-      </div>
-
       {/* Content */}
       <div className="relative z-10">
         {children}

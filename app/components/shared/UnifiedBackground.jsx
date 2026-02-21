@@ -3,12 +3,12 @@
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useEffect, useRef, useCallback } from 'react';
 
-export default function UnifiedBackground({ 
-  variant = 'default', 
-  children, 
+export default function UnifiedBackground({
+  variant = 'default',
+  children,
   className = '',
   showParticles = false,
-  showFloatingElements = true 
+  showFloatingElements = true
 }) {
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
@@ -22,11 +22,11 @@ export default function UnifiedBackground({
     lastUpdateRef.current = now;
 
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
     const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    
+
     mouseX.set(x);
     mouseY.set(y);
   }, [mouseX, mouseY]);
@@ -42,13 +42,13 @@ export default function UnifiedBackground({
   const backgroundVariants = {
     // Landing page - lighter glassy look
     landing: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-800 to-slate-800 overflow-hidden relative",
-    
+
     // Default lighter theme for most pages
     default: "min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-indigo-900 overflow-hidden relative",
-    
+
     // Auth pages - lighter and more inviting
     auth: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-700 to-slate-800 overflow-hidden relative",
-    
+
     // Content pages - more balanced purple/blue, less pink
     content: "min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-indigo-900 overflow-hidden relative"
   };

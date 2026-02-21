@@ -14,10 +14,15 @@ export function useAiChat({ onLoadingChange }) {
   const [automationContext, setAutomationContext] = useState(null);
   const [setupState, setSetupState] = useState(null);
   const [lastFileSearchResults, setLastFileSearchResults] = useState(null);
+  
+  // Conversation tracking
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   const abortControllerRef = useRef(null);
   const readerRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const currentAiMessageContentRef = useRef(''); // Track AI response content
 
   const buildContextInfo = useCallback(() => {
     let contextInfo = '';
@@ -75,6 +80,9 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     const reader = response.body.getReader();
     readerRef.current = reader;
     const decoder = new TextDecoder();
+    
+    // Reset content tracker for new AI message
+    currentAiMessageContentRef.current = '';
 
     const handler = createStreamHandler({
       aiMessageId,
@@ -86,13 +94,35 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       animationFrameRef,
       onLoadingChange,
       setIsLoading,
-      setCurrentAiMessageId
+      setCurrentAiMessageId,
+      // Pass callback to track AI content
+      onContentUpdate: (content) => {
+        currentAiMessageContentRef.current = content;
+      }
     });
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
         handler.markStreamEnded();
+        
+        // Save AI response to DB when stream completes
+        if (currentConversationId && userId && currentAiMessageContentRef.current) {
+          try {
+            await fetch('/api/conversations/' + currentConversationId + '/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                role: 'assistant',
+                content: currentAiMessageContentRef.current
+              })
+            });
+          } catch (error) {
+            console.error('Failed to save AI message:', error);
+          }
+        }
+        
         break;
       }
 
@@ -119,6 +149,38 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   const sendMessage = useCallback(async (messageText, extraContext = '') => {
     if (!messageText.trim() || isLoading) return;
 
+    // Get or create conversation
+    const supabase = createBrowserSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error('Please sign in to chat');
+      return;
+    }
+
+    // Create conversation if this is the first message
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      try {
+        const automationId = setupState?.automationId || selectedAutomation?.id || null;
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ relatedAutomationId: automationId })
+        });
+        
+        if (response.ok) {
+          const conversation = await response.json();
+          conversationId = conversation.id;
+          setCurrentConversationId(conversationId);
+          setUserId(user.id);
+        }
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+      }
+    }
+
     // CRITICAL FIX: Save extraContext as hiddenContext so it persists in conversation history
     const userMessage = {
       role: 'user',
@@ -131,6 +193,23 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     if (onLoadingChange) onLoadingChange(true);
+
+    // Save user message to DB
+    if (conversationId) {
+      try {
+        await fetch('/api/conversations/' + conversationId + '/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            role: 'user',
+            content: messageText
+          })
+        });
+      } catch (error) {
+        console.error('Failed to save user message:', error);
+      }
+    }
 
     const aiMessageId = Date.now();
     const aiMessage = {

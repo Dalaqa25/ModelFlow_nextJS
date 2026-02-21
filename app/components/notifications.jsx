@@ -16,7 +16,9 @@ export default function Notifications({ isOpen, onClose }) {
             if (!response.ok) throw new Error('Failed to fetch notifications');
             return response.json();
         },
-        enabled: true,
+        enabled: isOpen, // Only fetch when modal is open
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     const handleMarkAsRead = async () => {

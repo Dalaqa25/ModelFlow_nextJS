@@ -37,7 +37,14 @@ const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
 
 export async function POST(request) {
   try {
-    const authUser = await getSupabaseUser();
+    let authUser = await getSupabaseUser();
+
+    // Fallback: check Authorization header (for API-level testing)
+    if (!authUser) {
+      const { getAuthenticatedUser } = await import('@/lib/db/supabase-server');
+      authUser = await getAuthenticatedUser(request);
+    }
+
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -93,14 +100,14 @@ export async function POST(request) {
       if (rateLimitError.status === 429) {
         const retryAfter = rateLimitError.headers?.['retry-after'];
         const waitTime = retryAfter ? `${Math.ceil(retryAfter / 60)} minutes` : 'a few minutes';
-        
+
         return new Response(
-          JSON.stringify({ 
-            error: 'Rate limit exceeded', 
+          JSON.stringify({
+            error: 'Rate limit exceeded',
             message: `AI service rate limit reached. Please try again in ${waitTime}.`,
-            retryAfter: retryAfter 
+            retryAfter: retryAfter
           }),
-          { 
+          {
             status: 429,
             headers: { 'Content-Type': 'application/json' }
           }
@@ -257,7 +264,7 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
 async function executeToolAction(toolName, args, user, controller, encoder, setupContext, chatMessages) {
   // Capture all tool output for conversation history
   let toolOutputText = '';
-  
+
   // Create a wrapper controller that captures output
   const capturingController = {
     enqueue: (chunk) => {
@@ -265,7 +272,7 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
       try {
         const decoder = new TextDecoder();
         const text = decoder.decode(chunk);
-        
+
         // Extract content from SSE format: "data: {...}\n\n"
         if (text.startsWith('data: ')) {
           const jsonStr = text.slice(6).trim();
@@ -279,7 +286,7 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
       } catch (e) {
         // Ignore parsing errors
       }
-      
+
       // Pass through to real controller
       controller.enqueue(chunk);
     }
@@ -337,7 +344,7 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
         const sendSSE = (data) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         sendSSE({ content: "\n\nI'm not sure how to do that. Could you try again?" });
     }
-    
+
     // Send captured tool output as a special event for frontend to save
     if (toolOutputText.trim()) {
       console.log('[executeToolAction] Captured tool output:', toolOutputText.substring(0, 200));

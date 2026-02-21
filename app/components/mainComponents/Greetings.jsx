@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 export default function Greetings() {
     const { user } = useAuth();
     const { textColors } = useThemeAdaptive();
-    
+
     // Get cached username from localStorage immediately
     const [cachedUserName, setCachedUserName] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -34,7 +34,7 @@ export default function Greetings() {
 
     const fullName = userData?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there';
     const userName = fullName.split(' ')[0]; // Get only first name
-    
+
     // Update localStorage when userData is fetched
     useEffect(() => {
         if (userName && userName !== 'there') {
@@ -42,7 +42,7 @@ export default function Greetings() {
             setCachedUserName(userName);
         }
     }, [userName]);
-    
+
     // Use cached name if available, otherwise show loading or fetched name
     const displayName = cachedUserName || (isLoading ? '...' : userName);
 
@@ -50,10 +50,10 @@ export default function Greetings() {
         <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
             {/* Greeting Section */}
             {/* Mobile: stacked vertically, Desktop: horizontal */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-6">
-                <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px]" />
-                <h1 className={`text-3xl sm:text-5xl lg:text-6xl ${textColors.primary} font-light text-center`} style={{ fontFamily: 'Georgia, serif' }}>
-                    Hey there, <span className="font-normal">{displayName}</span>.
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-3">
+                <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px] object-contain flex-shrink-0" />
+                <h1 className={`text-3xl sm:text-4xl lg:text-5xl ${textColors.primary} font-medium tracking-tight text-center`}>
+                    Hey there, <span className="font-semibold text-purple-400">{displayName}</span>.
                 </h1>
             </div>
         </div>

@@ -9,7 +9,8 @@ export function createStreamHandler({
   animationFrameRef,
   onLoadingChange,
   setIsLoading,
-  setCurrentAiMessageId
+  setCurrentAiMessageId,
+  onContentUpdate // NEW: callback to track full content
 }) {
   let textQueue = '';
   let displayedText = '';
@@ -26,6 +27,8 @@ export function createStreamHandler({
     if (textQueue) {
       displayedText += textQueue;
       textQueue = '';
+      // Notify parent of content update
+      if (onContentUpdate) onContentUpdate(displayedText);
     }
   };
 
@@ -48,6 +51,10 @@ export function createStreamHandler({
             msg.id === aiMessageId ? { ...msg, content: displayedText } : msg
           )
         );
+        
+        // Notify parent of content update
+        if (onContentUpdate) onContentUpdate(displayedText);
+        
         lastFrameTime = currentTime;
       }
 
@@ -283,7 +290,11 @@ export function createStreamHandler({
   return {
     handleParsedEvent,
     startTypewriterAnimation,
-    markStreamEnded: () => { streamEnded = true; },
+    markStreamEnded: () => { 
+      streamEnded = true;
+      // Final content update when stream ends
+      if (onContentUpdate) onContentUpdate(displayedText + textQueue);
+    },
     getDisplayedText: () => displayedText
   };
 }

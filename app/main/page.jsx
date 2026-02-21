@@ -13,7 +13,7 @@ export default function Home() {
     const chatRef = useRef(null);
     const [isScoped, setIsScoped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [isUploadActive, setIsUploadActive] = useState(false); // New state
+    const [isUploadActive, setIsUploadActive] = useState(false);
 
     const handleUploadStatusChange = (isActive) => {
         setIsUploadActive(isActive);
@@ -70,7 +70,7 @@ export default function Home() {
 
             <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
                 {!hasStartedChat ? (
-                    <div className="w-full flex flex-col items-center gap-8 -mt-15">
+                    <div className="w-full flex flex-col items-center gap-8 -mt-44">
                         <Greetings />
                     </div>
                 ) : (
