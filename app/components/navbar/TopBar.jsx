@@ -38,7 +38,7 @@ export default function TopBar() {
   }
 
   return (
-    <div className={`fixed top-0 right-0 h-14 bg-transparent z-30 flex items-center justify-between px-4 transition-all duration-300 ${isMobile ? 'left-0' : isExpanded ? 'left-48' : 'left-16'
+    <div className={`fixed top-0 right-0 h-12 bg-transparent z-30 flex items-center justify-between px-4 transition-all duration-300 ${isMobile ? 'left-0' : isExpanded ? 'left-48' : 'left-16'
       }`}>
       {/* Left: Hamburger (mobile) or Model Selector (desktop) */}
       <div className="flex items-center gap-2">

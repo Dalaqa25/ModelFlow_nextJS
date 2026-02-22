@@ -142,23 +142,22 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
         }
     };
 
-    // Different top position for mobile vs desktop
-    // On mobile, position from top without vertical centering so it grows downward
-    const topPosition = isAtBottom
-        ? 'calc(100vh - 7rem)'
-        : isMobile ? '40%' : '46.5%';
+    // Different position for mobile vs desktop
+    const positioning = isAtBottom
+        ? { bottom: '1rem', top: 'auto' }
+        : { top: isMobile ? '40%' : '46.5%', bottom: 'auto' };
 
     return (
         <div
             className="fixed left-1/2 w-full max-w-4xl px-6 pointer-events-none z-50"
             style={{
-                top: topPosition,
+                ...positioning,
                 transform: isAtBottom
                     ? 'translateX(-50%)'
                     : isMobile
                         ? 'translateX(-50%)' // Mobile: no vertical centering, grows downward
                         : 'translate(-50%, -50%)', // Desktop: centered
-                transition: 'top 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), top 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
         >
             <form
@@ -170,8 +169,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onBlur={handleScopeOff}
             >
                 <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border-2 backdrop-blur-md shadow-xl transition-all ${isDarkMode
-                    ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50'
-                    : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60'
+                    ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/50'
+                    : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60 focus-within:border-purple-400/60'
                     }`}
                     onMouseEnter={handleInteraction}
                 >
@@ -202,9 +201,9 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             onFocus={handleInteraction}
                             placeholder={hasInteracted ? "I want to automate..." : ""}
                             rows={1}
-                            className={`w-full bg-transparent border-none focus:outline-none focus:ring-0 text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
+                            className={`w-full bg-transparent !border-0 !outline-0 !ring-0 !shadow-none text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                                 }`}
-                            style={{ maxHeight: isMobile ? '120px' : '150px' }}
+                            style={{ maxHeight: isMobile ? '120px' : '150px', outline: 'none !important', border: 'none !important', boxShadow: 'none !important' }}
                         />
                         {showAnimatedPlaceholder && (
                             <div className={`absolute top-0 left-0 right-0 pointer-events-none flex items-center text-base font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'

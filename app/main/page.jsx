@@ -6,6 +6,7 @@ import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
 import AiChat from '@/app/components/mainComponents/aiChat';
 import WelcomeModal from '@/app/components/WelcomeModal';
+import AutomationsList from '@/app/components/mainComponents/AutomationsList';
 
 export default function Home() {
     const [hasStartedChat, setHasStartedChat] = useState(false);
@@ -55,7 +56,7 @@ export default function Home() {
     };
 
     return (
-        <AdaptiveBackground variant="content" className="pt-16" showFloatingElements={false}>
+        <AdaptiveBackground variant="content" className="" showFloatingElements={false}>
             {/* Full-page sniper-scope style overlay */}
             <div
                 className={`
@@ -68,13 +69,13 @@ export default function Home() {
                 <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_82%,rgba(0,0,0,0.22)_100%)] backdrop-blur-[1px]" />
             </div>
 
-            <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-6 -mt-16">
+            <div className={`flex flex-col items-center px-6 ${!hasStartedChat ? 'min-h-[calc(100vh-4rem)] justify-center -mt-16' : ''}`}>
                 {!hasStartedChat ? (
                     <div className="w-full flex flex-col items-center gap-8 -mt-44">
                         <Greetings />
                     </div>
                 ) : (
-                    <div className="w-full h-full flex items-start justify-center pt-8">
+                    <div className="w-full h-full flex items-start justify-center pt-2">
                         <div className="w-full max-w-4xl">
                             <AiChat
                                 ref={chatRef}
@@ -93,6 +94,7 @@ export default function Home() {
                 isUploadActive={isUploadActive}
                 onFileUpload={handleFileUpload}
             />
+            <AutomationsList isVisible={!hasStartedChat} />
             <WelcomeModal />
         </AdaptiveBackground>
     );

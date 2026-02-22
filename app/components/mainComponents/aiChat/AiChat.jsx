@@ -123,8 +123,8 @@ const AiChat = forwardRef((props, ref) => {
       )}
 
       <div
-        className="flex-1 overflow-y-auto px-6 py-4 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        style={{ maxHeight: 'calc(100vh - 12rem)', paddingBottom: '2rem' }}
+        className="flex-1 overflow-y-auto px-6 py-1 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        style={{ maxHeight: 'calc(100vh - 6rem)', paddingBottom: '2rem' }}
       >
         {messages.filter(msg => !msg.isHidden).map((message, index) => (
           <MessageRenderer
