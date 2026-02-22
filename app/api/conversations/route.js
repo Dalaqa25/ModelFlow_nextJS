@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   try {
     const user = await getSupabaseUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -21,13 +21,16 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const includeArchived = searchParams.get('archived') === 'true';
     const automationId = searchParams.get('automationId');
+    const limit = parseInt(searchParams.get('limit') || '15');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = supabase
       .from('conversations')
       .select('*')
       .eq('user_id', user.id)
       .order('last_message_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (!includeArchived) {
       query = query.eq('is_archived', false);
@@ -50,7 +53,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const user = await getSupabaseUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

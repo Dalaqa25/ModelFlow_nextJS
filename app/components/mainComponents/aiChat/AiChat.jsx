@@ -6,7 +6,7 @@ import { useAiChat } from './useAiChat';
 import MessageRenderer from './MessageRenderer';
 
 const AiChat = forwardRef((props, ref) => {
-  const { onLoadingChange, onAwaitFileUploadChange } = props;
+  const { onLoadingChange, onAwaitFileUploadChange, initialConversationId } = props;
   const { isDarkMode } = useThemeAdaptive();
   const messagesEndRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -24,7 +24,7 @@ const AiChat = forwardRef((props, ref) => {
     handleFileUpload,
     uploadState,
     isAwaitingFileUpload
-  } = useAiChat({ onLoadingChange });
+  } = useAiChat({ onLoadingChange, initialConversationId });
 
   // Sync upload state with parent
   useEffect(() => {
@@ -124,7 +124,7 @@ const AiChat = forwardRef((props, ref) => {
 
       <div
         className="flex-1 overflow-y-auto px-6 py-1 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        style={{ maxHeight: 'calc(100vh - 6rem)', paddingBottom: '2rem' }}
+        style={{ maxHeight: 'calc(100vh - 2rem)', paddingBottom: '12rem' }}
       >
         {messages.filter(msg => !msg.isHidden).map((message, index) => (
           <MessageRenderer

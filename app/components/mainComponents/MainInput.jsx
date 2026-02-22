@@ -60,9 +60,10 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
     return displayText;
 }
 
-export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload }) {
+export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false }) {
     const [inputValue, setInputValue] = useState('');
-    const [isAtBottom, setIsAtBottom] = useState(false);
+    const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
+    const isAtBottom = chatStarted || isAtBottomInternal;
     const [hasInteracted, setHasInteracted] = useState(false);
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -121,12 +122,11 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
         e.preventDefault();
         if (inputValue.trim()) {
             const message = inputValue.trim();
-            setIsAtBottom(true);
+            setIsAtBottomInternal(true);
             if (onMessageSent) {
                 onMessageSent(message);
             }
-            setInputValue(''); // Clear input after sending
-            // Handle your submission logic here
+            setInputValue('');
         }
     };
 
@@ -145,7 +145,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
     // Different position for mobile vs desktop
     const positioning = isAtBottom
         ? { bottom: '1rem', top: 'auto' }
-        : { top: isMobile ? '40%' : '46.5%', bottom: 'auto' };
+        : { top: isMobile ? '40%' : '41%', bottom: 'auto' };
 
     return (
         <div
@@ -240,6 +240,12 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                     )}
                 </div>
             </form>
+            {!chatStarted && (
+                <p className={`text-center text-xs mt-2 transition-opacity duration-300 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'
+                    }`}>
+                    💬 Chats without automations are temporary and won't be saved
+                </p>
+            )}
         </div>
     );
 }

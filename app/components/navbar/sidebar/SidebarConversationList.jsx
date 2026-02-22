@@ -1,28 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, MessageSquare, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SidebarConversationList({ onBack }) {
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const listRef = useRef(null);
   const router = useRouter();
+  const LIMIT = 15;
 
   useEffect(() => {
-    loadConversations();
+    loadConversations(0);
   }, []);
 
-  const loadConversations = async () => {
+  const loadConversations = async (currentOffset) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await fetch(`/api/conversations?limit=${LIMIT}&offset=${currentOffset}`, {
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setConversations(data);
+        if (currentOffset === 0) {
+          setConversations(data);
+        } else {
+          setConversations(prev => [...prev, ...data]);
+        }
+        setHasMore(data.length === LIMIT);
+        setOffset(currentOffset + data.length);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
@@ -31,9 +42,17 @@ export default function SidebarConversationList({ onBack }) {
     }
   };
 
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 60 && hasMore && !isLoading) {
+      loadConversations(offset);
+    }
+  };
+
+
   const handleDelete = async (conversationId, e) => {
     e.stopPropagation();
-    
+
     if (!confirm('Delete this conversation?')) return;
 
     try {
@@ -62,7 +81,7 @@ export default function SidebarConversationList({ onBack }) {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -88,7 +107,7 @@ export default function SidebarConversationList({ onBack }) {
       </div>
 
       {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5" onScroll={handleScroll}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400" />
@@ -102,13 +121,19 @@ export default function SidebarConversationList({ onBack }) {
           </div>
         ) : (
           conversations.map((conversation) => (
-            <button
+            <div
               key={conversation.id}
               onClick={() => {
-                // TODO: Load conversation
-                console.log('Load conversation:', conversation.id);
+                router.push(`/main?chat=${conversation.id}`);
               }}
-              className="w-full p-3 rounded-lg text-left transition-all duration-200 group relative bg-slate-800/30 hover:bg-slate-800/60 border border-transparent hover:border-purple-500/30"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  router.push(`/main?chat=${conversation.id}`);
+                }
+              }}
+              className="w-full p-3 rounded-lg text-left transition-all duration-200 group relative bg-slate-800/30 hover:bg-slate-800/60 border border-transparent hover:border-purple-500/30 cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -119,7 +144,7 @@ export default function SidebarConversationList({ onBack }) {
                     {formatDate(conversation.last_message_at || conversation.created_at)}
                   </p>
                 </div>
-                
+
                 {/* Delete button */}
                 <button
                   onClick={(e) => handleDelete(conversation.id, e)}
@@ -129,7 +154,7 @@ export default function SidebarConversationList({ onBack }) {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </button>
+            </div>
           ))
         )}
       </div>

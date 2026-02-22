@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { createStreamHandler } from './useStreamHandler';
 import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 
-export function useAiChat({ onLoadingChange }) {
+export function useAiChat({ onLoadingChange, initialConversationId }) {
   const [messages, setMessages] = useState([]);
   const [conversationSummary, setConversationSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,15 +14,75 @@ export function useAiChat({ onLoadingChange }) {
   const [automationContext, setAutomationContext] = useState(null);
   const [setupState, setSetupState] = useState(null);
   const [lastFileSearchResults, setLastFileSearchResults] = useState(null);
-  
+
   // Conversation tracking
-  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [currentConversationId, setCurrentConversationId] = useState(initialConversationId || null);
   const [userId, setUserId] = useState(null);
+  const hasLoadedInitial = useRef(false);
+
+  // Load existing conversation messages
+  useEffect(() => {
+    async function loadConversation() {
+      if (!initialConversationId) return;
+      if (hasLoadedInitial.current && currentConversationId === initialConversationId) return;
+
+      setCurrentConversationId(initialConversationId);
+      hasLoadedInitial.current = true;
+      setIsLoading(true);
+      if (onLoadingChange) onLoadingChange(true);
+
+      try {
+        const res = await fetch(`/api/conversations/${initialConversationId}/messages`, {
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const formattedMessages = data.map(msg => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.created_at
+          }));
+          setMessages(formattedMessages);
+
+          // Reset setup state since we are loading an old conversation
+          setSetupState(null);
+          setAutomationContext(null);
+        }
+      } catch (err) {
+        console.error('Failed to load conversation messages:', err);
+      } finally {
+        setIsLoading(false);
+        if (onLoadingChange) onLoadingChange(false);
+      }
+    }
+
+    loadConversation();
+  }, [initialConversationId]);
+
+  // Sync conversation title when an automation is selected/started
+  useEffect(() => {
+    if (currentConversationId && setupState?.automationName) {
+      // Fire-and-forget update to the database
+      fetch(`/api/conversations/${currentConversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: setupState.automationName,
+          relatedAutomationId: setupState.automationId || null
+        })
+      }).catch(err => console.error('Failed to sync conversation title:', err));
+    }
+  }, [currentConversationId, setupState?.automationName, setupState?.automationId]);
+
 
   const abortControllerRef = useRef(null);
   const readerRef = useRef(null);
   const animationFrameRef = useRef(null);
   const currentAiMessageContentRef = useRef(''); // Track AI response content
+
 
   const buildContextInfo = useCallback(() => {
     let contextInfo = '';
@@ -80,7 +140,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     const reader = response.body.getReader();
     readerRef.current = reader;
     const decoder = new TextDecoder();
-    
+
     // Reset content tracker for new AI message
     currentAiMessageContentRef.current = '';
 
@@ -105,7 +165,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       const { done, value } = await reader.read();
       if (done) {
         handler.markStreamEnded();
-        
+
         // Save AI response to DB when stream completes
         if (currentConversationId && userId && currentAiMessageContentRef.current) {
           try {
@@ -122,7 +182,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
             console.error('Failed to save AI message:', error);
           }
         }
-        
+
         break;
       }
 
@@ -152,7 +212,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     // Get or create conversation
     const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       toast.error('Please sign in to chat');
       return;
@@ -169,7 +229,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           credentials: 'include',
           body: JSON.stringify({ relatedAutomationId: automationId })
         });
-        
+
         if (response.ok) {
           const conversation = await response.json();
           conversationId = conversation.id;
@@ -188,7 +248,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       hiddenContext: extraContext, // Save hidden context for future messages
       timestamp: new Date().toISOString(),
     };
-    
+
     // Update state with new message
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
@@ -497,9 +557,9 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       });
 
       // Show initial upload progress
-      setUploadState(prev => ({ 
-        ...prev, 
-        progress: 10, 
+      setUploadState(prev => ({
+        ...prev,
+        progress: 10,
         status: 'uploading',
         statusText: 'Uploading file...'
       }));
@@ -519,7 +579,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
             const increment = prev.progress < 90 ? 5 : 1;
             const newProgress = Math.min(prev.progress + increment, 95);
             let statusText = 'Uploading file...';
-            
+
             if (newProgress > 30 && newProgress < 60) {
               statusText = 'Processing on server...';
             } else if (newProgress >= 60 && newProgress < 90) {
@@ -527,9 +587,9 @@ IMPORTANT: When calling collect_text_input, you MUST include:
             } else if (newProgress >= 90) {
               statusText = 'Finalizing...';
             }
-            
-            return { 
-              ...prev, 
+
+            return {
+              ...prev,
               progress: newProgress,
               statusText
             };
@@ -553,7 +613,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       if (!uploadRes.ok) {
         const err = await uploadRes.json();
         console.error('[UPLOAD DEBUG] Upload failed:', err);
-        
+
         // If file is too large (413 status), notify AI to tell user
         if (uploadRes.status === 413) {
           const message = err.error || 'File is too large to upload';
@@ -561,16 +621,16 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
           return;
         }
-        
+
         throw new Error(err.error || 'Upload failed');
       }
 
       const result = await uploadRes.json();
       console.log('[UPLOAD DEBUG] Upload successful:', result);
 
-      setUploadState(prev => ({ 
-        ...prev, 
-        progress: 100, 
+      setUploadState(prev => ({
+        ...prev,
+        progress: 100,
         status: 'done',
         statusText: 'Upload complete!'
       }));

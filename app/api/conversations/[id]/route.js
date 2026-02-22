@@ -11,7 +11,7 @@ const supabase = createClient(
 export async function GET(request, { params }) {
   try {
     const user = await getSupabaseUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -52,14 +52,14 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
   try {
     const user = await getSupabaseUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     const body = await request.json();
-    const { title, isArchived } = body;
+    const { title, isArchived, relatedAutomationId } = body;
 
     // Verify ownership
     const { data: existing } = await supabase
@@ -76,6 +76,7 @@ export async function PATCH(request, { params }) {
     const updateData = {};
     if (title !== undefined) updateData.title = title;
     if (isArchived !== undefined) updateData.is_archived = isArchived;
+    if (relatedAutomationId !== undefined) updateData.related_automation_id = relatedAutomationId;
 
     const { data, error } = await supabase
       .from('conversations')
@@ -95,7 +96,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const user = await getSupabaseUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
