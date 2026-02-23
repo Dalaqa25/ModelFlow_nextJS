@@ -99,7 +99,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const validateField = (field, value) => {
     const currentEmail = field === 'email' ? value : email;
     const currentUsername = field === 'username' ? value : username;
-    
+
     const emailValidation = validateEmail(currentEmail);
     const usernameValidation = validateUsername(currentUsername);
     setValidationErrors({
@@ -111,10 +111,10 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   // Handle sending OTP
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    
+
     const emailValidation = validateEmail(email);
     const usernameValidation = validateUsername(username);
-    
+
     if (!emailValidation.isValid || !usernameValidation.isValid) {
       setValidationErrors({
         email: emailValidation.errors,
@@ -131,7 +131,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
     setLoading(true);
     try {
       const { error } = await signUpWithOtp(email, { name: username, email });
-      
+
       if (error) {
         if (error.validationErrors) {
           setValidationErrors(error.validationErrors);
@@ -157,7 +157,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
 
     try {
       const { error } = await verifyOtp(email, otpCode);
-      
+
       if (error) {
         toast.error(error.message);
       } else {
@@ -175,11 +175,11 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   // Handle resend OTP
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
-    
+
     setLoading(true);
     try {
       const { error } = await signUpWithOtp(email, { name: username, email });
-      
+
       if (error) {
         toast.error(error.message);
       } else {
@@ -201,17 +201,17 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           {/* Backdrop */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
-            onClick={onClose} 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
           />
-          
+
           {/* Dialog */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -251,11 +251,10 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                       type="text"
                       required
                       autoFocus
-                      className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                        validationErrors.username?.length > 0 ? 'border-red-500' :
-                        usernameAvailable === true ? 'border-green-500' :
-                        usernameAvailable === false ? 'border-red-500' : 'border-slate-700/50'
-                      }`}
+                      className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${validationErrors.username?.length > 0 ? 'border-red-500' :
+                          usernameAvailable === true ? 'border-green-500' :
+                            usernameAvailable === false ? 'border-red-500' : 'border-slate-700/50'
+                        }`}
                       placeholder="Choose a username (5-20 characters)"
                       value={username}
                       onChange={(e) => {
@@ -292,9 +291,8 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                   <input
                     type="email"
                     required
-                    className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                      validationErrors.email?.length > 0 ? 'border-red-500' : 'border-slate-700/50'
-                    }`}
+                    className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${validationErrors.email?.length > 0 ? 'border-red-500' : 'border-slate-700/50'
+                      }`}
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => {
@@ -329,7 +327,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                   <p className="text-gray-400">We sent a verification code to</p>
                   <p className="text-white font-medium">{email}</p>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Verification Code</label>
                   <input
@@ -358,7 +356,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                     'Verify & Create Account'
                   )}
                 </button>
-                
+
                 <div className="text-center space-y-2">
                   <button
                     type="button"
@@ -392,6 +390,16 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                 >
                   Sign in
                 </button>
+              </p>
+              <p className="text-gray-600 text-xs mt-3">
+                By creating an account, you agree to our{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 underline hover:text-purple-400 transition-colors">
+                  Terms of Service
+                </a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gray-400 underline hover:text-purple-400 transition-colors">
+                  Privacy Policy
+                </a>
               </p>
             </div>
           </motion.div>

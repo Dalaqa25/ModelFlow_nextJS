@@ -29,9 +29,8 @@ export default function CTASection() {
                 viewport={{ once: true }}
                 className="max-w-3xl mx-auto text-center"
             >
-                <h2 className={`text-3xl sm:text-4xl font-bold mb-4 ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
+                <h2 className={`text-3xl sm:text-4xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
                     Ready to Automate?
                 </h2>
                 <p className={`text-lg mb-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -47,11 +46,10 @@ export default function CTASection() {
                     </button>
                     <button
                         onClick={() => setIsSignInOpen(true)}
-                        className={`px-8 py-4 font-semibold rounded-xl border-2 transition-all hover:scale-105 ${
-                            isDarkMode
+                        className={`px-8 py-4 font-semibold rounded-xl border-2 transition-all hover:scale-105 ${isDarkMode
                                 ? 'border-slate-600 text-white hover:bg-slate-800'
                                 : 'border-purple-200 text-purple-700 hover:bg-purple-50'
-                        }`}
+                            }`}
                     >
                         Sign In
                     </button>
@@ -59,6 +57,17 @@ export default function CTASection() {
 
                 <p className={`mt-6 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                     No credit card required
+                </p>
+                <p className={`mt-3 text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                    By signing up, you agree to our{' '}
+                    <a href="/terms" className={`underline hover:text-purple-500 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Terms of Service
+                    </a>
+                    {' '}and{' '}
+                    <a href="/privacy" className={`underline hover:text-purple-500 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Privacy Policy
+                    </a>
+                    .
                 </p>
             </motion.div>
 
