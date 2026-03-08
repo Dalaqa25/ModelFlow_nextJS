@@ -7,7 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "health": "node scripts/health-check.js"
+    "health": "node scripts/health-check.js",
+    "test": "node ../tests/run-all-tests.js",
+    "test:quick": "node ../tests/quick-test.js",
+    "test:api": "SKIP_AUTOMATION_TESTS=true SKIP_AI_TESTS=true SKIP_INTEGRATION_TESTS=true SKIP_E2E_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
+    "test:automation": "SKIP_API_TESTS=true SKIP_AI_TESTS=true SKIP_INTEGRATION_TESTS=true SKIP_E2E_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
+    "test:ai": "SKIP_API_TESTS=true SKIP_AUTOMATION_TESTS=true SKIP_INTEGRATION_TESTS=true SKIP_E2E_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
+    "test:integration": "SKIP_API_TESTS=true SKIP_AUTOMATION_TESTS=true SKIP_AI_TESTS=true SKIP_E2E_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
+    "test:e2e": "SKIP_API_TESTS=true SKIP_AUTOMATION_TESTS=true SKIP_AI_TESTS=true SKIP_INTEGRATION_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
+    "test:tiktok": "node ../tests/test-tiktok.js",
+    "test:tiktok:run": "node ../tests/run-tiktok-workflow.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

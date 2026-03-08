@@ -10,7 +10,8 @@ export function createStreamHandler({
   onLoadingChange,
   setIsLoading,
   setCurrentAiMessageId,
-  onContentUpdate // NEW: callback to track full content
+  onContentUpdate, // Callback to track full content
+  onHiddenContextUpdate // NEW: Callback to track hidden context
 }) {
   let textQueue = '';
   let displayedText = '';
@@ -247,6 +248,10 @@ export function createStreamHandler({
             : msg
         )
       );
+      // Also notify parent to save it
+      if (onHiddenContextUpdate) {
+        onHiddenContextUpdate(parsed.context);
+      }
     }
     // Handle tool output (save as assistant message for AI memory)
     else if (parsed.type === 'tool_output') {
@@ -274,6 +279,25 @@ export function createStreamHandler({
                 automation_id: parsed.automation_id,
                 automation_name: parsed.automation_name,
                 config: parsed.config
+              }
+            }
+            : msg
+        )
+      );
+    }
+    // Handle video preview
+    else if (parsed.type === 'video_preview') {
+      flushQueue();
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? {
+              ...msg,
+              content: displayedText,
+              videoPreview: {
+                file_name: parsed.file_name,
+                preview_url: parsed.preview_url,
+                expires_in: parsed.expires_in
               }
             }
             : msg

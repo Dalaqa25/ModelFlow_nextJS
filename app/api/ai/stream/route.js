@@ -1,5 +1,6 @@
 // Multi-model AI stream endpoint
 // Llama (Groq) as orchestrator/brain, GPT-4o-mini (GitHub) as tool executor
+// Supports multiple Groq API keys with automatic rotation on rate limits
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
@@ -17,14 +18,53 @@ import {
   handleShowUserAutomations,
   handleSaveBackgroundConfig,
   handleRequestFileUpload,
+  handleListAutomationFiles,
+  handleDeleteAutomationFile,
+  handlePreviewAutomationFile,
   handleScheduleAutomation,
 } from '@/lib/ai/tool-handlers';
 
-// Llama client (Groq) - the brain/orchestrator
-const orchestratorClient = new OpenAI({
-  baseURL: "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
+// Multiple Groq API keys for rotation (supports unlimited keys)
+const GROQ_API_KEYS = [
+  process.env.GROQ_API_KEY,
+  process.env.GROQ_API_KEY_2,
+  process.env.GROQ_API_KEY_3,
+  process.env.GROQ_API_KEY_4,
+  process.env.GROQ_API_KEY_5,
+  process.env.GROQ_API_KEY_6,
+  process.env.GROQ_API_KEY_7,
+  process.env.GROQ_API_KEY_8,
+].filter(Boolean); // Remove undefined keys
+
+console.log(`[AI] Loaded ${GROQ_API_KEYS.length} Groq API keys`);
+GROQ_API_KEYS.forEach((key, i) => {
+  console.log(`[AI] Key ${i + 1}: ${key.substring(0, 20)}...${key.substring(key.length - 4)}`);
 });
+
+if (GROQ_API_KEYS.length === 0) {
+  console.error('[AI] ERROR: No Groq API keys found! Check your .env.local file.');
+}
+
+let currentKeyIndex = 0;
+
+// Get next API key (round-robin)
+function getNextGroqKey() {
+  if (GROQ_API_KEYS.length === 0) {
+    throw new Error('No Groq API keys configured');
+  }
+  const key = GROQ_API_KEYS[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
+  console.log(`[AI] Using key #${currentKeyIndex}/${GROQ_API_KEYS.length}: ${key.substring(0, 20)}...`);
+  return key;
+}
+
+// Create Groq client with current key
+function createGroqClient() {
+  return new OpenAI({
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKey: getNextGroqKey(),
+  });
+}
 
 // GPT-4o-mini client (GitHub Models) - tool executor
 const toolExecutorClient = new OpenAI({
@@ -88,32 +128,53 @@ export async function POST(request) {
     ];
 
     let orchestratorResponse;
-    try {
-      orchestratorResponse = await orchestratorClient.chat.completions.create({
-        messages: orchestratorMessages,
-        model: ORCHESTRATOR_MODEL,
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-      });
-    } catch (rateLimitError) {
-      // Handle rate limit errors gracefully
-      if (rateLimitError.status === 429) {
-        const retryAfter = rateLimitError.headers?.['retry-after'];
-        const waitTime = retryAfter ? `${Math.ceil(retryAfter / 60)} minutes` : 'a few minutes';
+    let retryCount = 0;
+    const maxRetries = GROQ_API_KEYS.length; // Try all available keys
+    
+    while (retryCount < maxRetries) {
+      try {
+        const orchestratorClient = createGroqClient(); // Get client with next key
+        console.log(`[AI] Using Groq key ${currentKeyIndex}/${GROQ_API_KEYS.length}`);
+        
+        orchestratorResponse = await orchestratorClient.chat.completions.create({
+          messages: orchestratorMessages,
+          model: ORCHESTRATOR_MODEL,
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        });
+        
+        break; // Success! Exit retry loop
+      } catch (rateLimitError) {
+        retryCount++;
+        
+        if (rateLimitError.status === 429) {
+          console.log(`[AI] Rate limit hit on key ${currentKeyIndex}, trying next key...`);
+          
+          // If we've tried all keys, return error
+          if (retryCount >= maxRetries) {
+            const retryAfter = rateLimitError.headers?.['retry-after'];
+            const waitTime = retryAfter ? `${Math.ceil(retryAfter / 60)} minutes` : 'a few minutes';
 
-        return new Response(
-          JSON.stringify({
-            error: 'Rate limit exceeded',
-            message: `AI service rate limit reached. Please try again in ${waitTime}.`,
-            retryAfter: retryAfter
-          }),
-          {
-            status: 429,
-            headers: { 'Content-Type': 'application/json' }
+            return new Response(
+              JSON.stringify({
+                error: 'Rate limit exceeded',
+                message: `All AI service keys are rate limited. Please try again in ${waitTime}.`,
+                retryAfter: retryAfter
+              }),
+              {
+                status: 429,
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
           }
-        );
+          
+          // Try next key
+          continue;
+        }
+        
+        // Not a rate limit error, throw it
+        throw rateLimitError;
       }
-      throw rateLimitError; // Re-throw if not a rate limit error
     }
 
     const llamaOutput = orchestratorResponse.choices[0].message.content;
@@ -336,6 +397,18 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
         await handleRequestFileUpload(args, user, capturingController, encoder);
         break;
 
+      case 'list_automation_files':
+        await handleListAutomationFiles(args, user, capturingController, encoder, setupContext);
+        break;
+
+      case 'delete_automation_file':
+        await handleDeleteAutomationFile(args, user, capturingController, encoder);
+        break;
+
+      case 'preview_automation_file':
+        await handlePreviewAutomationFile(args, user, capturingController, encoder);
+        break;
+
       case 'schedule_automation':
         await handleScheduleAutomation(args, setupContext, user, capturingController, encoder);
         break;
@@ -366,8 +439,18 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
 // Build chat messages with system context (but not ORCHESTRATOR_PROMPT - that's added separately)
 function buildChatMessages(messages, prompt) {
   if (messages && Array.isArray(messages)) {
-    // Keep user's context but we'll add our own system prompt
-    return messages;
+    // CRITICAL: Include hidden context from metadata in message content
+    // This ensures file uploads and other hidden markers are visible to the AI
+    return messages.map(msg => {
+      if (msg.metadata && msg.metadata.hiddenContext) {
+        // Append hidden context to the message content
+        return {
+          ...msg,
+          content: msg.content + '\n' + msg.metadata.hiddenContext
+        };
+      }
+      return msg;
+    });
   } else if (prompt) {
     return [{ role: "user", content: prompt }];
   }

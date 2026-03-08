@@ -47,7 +47,7 @@ export default function Greetings() {
     const displayName = cachedUserName || (isLoading ? '...' : userName);
 
     return (
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center mb-">
             {/* Greeting Section */}
             {/* Mobile: stacked vertically, Desktop: horizontal */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-3">

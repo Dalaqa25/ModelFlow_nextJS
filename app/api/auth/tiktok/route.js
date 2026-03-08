@@ -15,14 +15,11 @@ export async function GET(request) {
       }, { status: 500 });
     }
 
-    // TikTok scopes - request only what we need
+    // TikTok scopes - only request what was approved
     const scopes = [
       'user.info.basic',
-      'user.info.profile',
-      'user.info.stats',
-      'video.list',
       'video.upload',
-      'video.publish'  // Required for Direct Post API
+      'video.publish'
     ];
 
     // Generate random state for CSRF protection

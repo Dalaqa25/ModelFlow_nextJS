@@ -42,7 +42,8 @@ export function useAiChat({ onLoadingChange, initialConversationId }) {
             id: msg.id,
             role: msg.role,
             content: msg.content,
-            timestamp: msg.created_at
+            timestamp: msg.created_at,
+            hiddenContext: msg.metadata?.hiddenContext || '' // Restore hidden context
           }));
           setMessages(formattedMessages);
 
@@ -82,6 +83,7 @@ export function useAiChat({ onLoadingChange, initialConversationId }) {
   const readerRef = useRef(null);
   const animationFrameRef = useRef(null);
   const currentAiMessageContentRef = useRef(''); // Track AI response content
+  const currentAiMessageHiddenContextRef = useRef(''); // Track hidden context
 
 
   const buildContextInfo = useCallback(() => {
@@ -143,6 +145,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
     // Reset content tracker for new AI message
     currentAiMessageContentRef.current = '';
+    currentAiMessageHiddenContextRef.current = '';
 
     const handler = createStreamHandler({
       aiMessageId,
@@ -158,6 +161,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       // Pass callback to track AI content
       onContentUpdate: (content) => {
         currentAiMessageContentRef.current = content;
+      },
+      // Track hidden context
+      onHiddenContextUpdate: (context) => {
+        currentAiMessageHiddenContextRef.current += '\n' + context;
       }
     });
 
@@ -175,7 +182,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
               credentials: 'include',
               body: JSON.stringify({
                 role: 'assistant',
-                content: currentAiMessageContentRef.current
+                content: currentAiMessageContentRef.current,
+                metadata: {
+                  hiddenContext: currentAiMessageHiddenContextRef.current || undefined
+                }
               })
             });
           } catch (error) {
@@ -263,7 +273,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           credentials: 'include',
           body: JSON.stringify({
             role: 'user',
-            content: messageText
+            content: messageText,
+            metadata: {
+              hiddenContext: extraContext || undefined // Save hidden context in metadata
+            }
           })
         });
       } catch (error) {

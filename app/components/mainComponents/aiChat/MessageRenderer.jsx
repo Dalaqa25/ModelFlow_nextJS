@@ -7,6 +7,7 @@ import ConnectButton from '../ConnectButton';
 import ConfigForm from '../ConfigForm';
 import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
 import NoResultsPopup from './NoResultsPopup';
+import VideoPreview from '../VideoPreview';
 
 export default function MessageRenderer({
   message,
@@ -120,6 +121,18 @@ export default function MessageRenderer({
             automationName={message.backgroundActivationPrompt.automation_name}
             config={message.backgroundActivationPrompt.config}
             onActivate={onBackgroundActivate}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+      )}
+
+      {/* Video Preview */}
+      {message.videoPreview && (
+        <div className="mt-4">
+          <VideoPreview
+            fileName={message.videoPreview.file_name}
+            previewUrl={message.videoPreview.preview_url}
+            expiresIn={message.videoPreview.expires_in}
             isDarkMode={isDarkMode}
           />
         </div>

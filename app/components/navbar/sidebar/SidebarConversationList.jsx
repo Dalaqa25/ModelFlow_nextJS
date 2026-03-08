@@ -63,6 +63,13 @@ export default function SidebarConversationList({ onBack }) {
 
       if (response.ok) {
         setConversations(prev => prev.filter(c => c.id !== conversationId));
+        
+        // If the deleted conversation is currently open, redirect to new chat
+        const currentUrl = new URL(window.location.href);
+        const currentChatId = currentUrl.searchParams.get('chat');
+        if (currentChatId === conversationId) {
+          router.push('/main');
+        }
       }
     } catch (error) {
       console.error('Failed to delete conversation:', error);
