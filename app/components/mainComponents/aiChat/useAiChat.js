@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { createStreamHandler } from './useStreamHandler';
 import { createBrowserSupabaseClient } from '@/lib/db/supabase';
+import { compressFile } from '@/lib/utils/file-compressor';
 
 export function useAiChat({ onLoadingChange, initialConversationId }) {
   const [messages, setMessages] = useState([]);
@@ -583,12 +584,48 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
       const { signedUrl, token, path: filePath, bucket: bucketName, publicUrl, contentType } = await signRes.json();
 
-      console.log('[UPLOAD] Got signed URL, uploading directly to Supabase...');
+      console.log('[UPLOAD] Got signed URL, preparing file...');
 
-      // ── Step 2: Upload file directly to Supabase via signed URL ──
+      // ── Step 2: Compress file if needed ───────────────────────────
+      let fileToUpload = file;
+
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > 1) {
+        console.log('[UPLOAD] File over 1MB, attempting compression...');
+        setUploadState(prev => ({
+          ...prev,
+          progress: 10,
+          statusText: 'Compressing file...'
+        }));
+
+        const result = await compressFile(file, {
+          targetSizeMB: 15,
+          minSizeToCompress: 1,
+          maxImageDimension: 1920,
+          imageQuality: 0.8,
+          onProgress: (pct) => {
+            const mappedPct = Math.round(10 + (pct / 100) * 30);
+            setUploadState(prev => ({
+              ...prev,
+              progress: mappedPct,
+              statusText: `Compressing file... ${pct}%`
+            }));
+          }
+        });
+
+        fileToUpload = result.file;
+
+        if (result.compressed) {
+          const origMB = (result.originalSize / (1024 * 1024)).toFixed(1);
+          const compMB = (result.compressedSize / (1024 * 1024)).toFixed(1);
+          console.log(`[UPLOAD] Compressed: ${origMB}MB → ${compMB}MB`);
+        }
+      }
+
+      // ── Step 3: Upload file directly to Supabase via signed URL ──
       setUploadState(prev => ({
         ...prev,
-        progress: 10,
+        progress: 40,
         statusText: 'Uploading file...'
       }));
 
@@ -598,10 +635,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         // Track real upload progress
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
-            // Map upload progress to 10-95% range
-            const pct = Math.round(10 + (e.loaded / e.total) * 85);
+            // Map upload progress to 40-95% range
+            const pct = Math.round(40 + (e.loaded / e.total) * 55);
             let statusText = 'Uploading file...';
-            if (pct > 50 && pct < 80) statusText = 'Uploading...';
+            if (pct > 60 && pct < 80) statusText = 'Uploading...';
             else if (pct >= 80) statusText = 'Finalizing...';
 
             setUploadState(prev => ({
@@ -624,8 +661,8 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')));
 
         xhr.open('PUT', signedUrl);
-        xhr.setRequestHeader('Content-Type', contentType || file.type || 'video/mp4');
-        xhr.send(file);
+        xhr.setRequestHeader('Content-Type', contentType || fileToUpload.type || 'video/mp4');
+        xhr.send(fileToUpload);
       });
 
       console.log('[UPLOAD] Direct upload to Supabase succeeded');
