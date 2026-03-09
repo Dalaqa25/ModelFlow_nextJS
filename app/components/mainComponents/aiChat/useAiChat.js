@@ -534,9 +534,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       return;
     }
 
-    // 1. Get current automation context
-    // We need an automation ID to know which bucket to use
-    // Prioritize setupState (active setup) -> selectedAutomation (context)
     const automationId = setupState?.automationId || selectedAutomation?.id;
 
     if (!automationId) {
@@ -552,7 +549,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       fileName: file.name
     });
 
-    console.log('[UPLOAD DEBUG] Starting upload:', {
+    console.log('[UPLOAD] Starting upload:', {
       fileName: file.name,
       fileSize: file.size,
       fileSizeMB: (file.size / (1024 * 1024)).toFixed(2) + 'MB',
@@ -560,86 +557,78 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     });
 
     try {
-      // 2. Upload to server (server will compress if needed)
-      let fileToUpload = file;
+      // ── Step 1: Get signed upload URL from our API ──────────────
+      setUploadState(prev => ({
+        ...prev,
+        progress: 5,
+        statusText: 'Preparing upload...'
+      }));
 
-      console.log('[UPLOAD DEBUG] Starting upload:', {
-        size: fileToUpload.size,
-        sizeMB: (fileToUpload.size / (1024 * 1024)).toFixed(2) + 'MB',
-        type: fileToUpload.type || file.type
+      console.log('[UPLOAD] Requesting signed upload URL...');
+
+      const signRes = await fetch('/api/automations/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          automationId
+        })
       });
 
-      // Show initial upload progress
+      if (!signRes.ok) {
+        const err = await signRes.json();
+        throw new Error(err.error || 'Failed to prepare upload');
+      }
+
+      const { signedUrl, token, path: filePath, bucket: bucketName, publicUrl, contentType } = await signRes.json();
+
+      console.log('[UPLOAD] Got signed URL, uploading directly to Supabase...');
+
+      // ── Step 2: Upload file directly to Supabase via signed URL ──
       setUploadState(prev => ({
         ...prev,
         progress: 10,
-        status: 'uploading',
         statusText: 'Uploading file...'
       }));
 
-      // 3. Upload to API
-      const formData = new FormData();
-      formData.append('file', fileToUpload, file.name);
-      formData.append('automationId', automationId);
+      const uploadResult = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      console.log('[UPLOAD DEBUG] Sending request to /api/automations/upload...');
-
-      // Simulate progress while waiting for server
-      const progressInterval = setInterval(() => {
-        setUploadState(prev => {
-          if (prev.progress < 95) {
-            // Fast progress up to 90%, then slow down
-            const increment = prev.progress < 90 ? 5 : 1;
-            const newProgress = Math.min(prev.progress + increment, 95);
+        // Track real upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            // Map upload progress to 10-95% range
+            const pct = Math.round(10 + (e.loaded / e.total) * 85);
             let statusText = 'Uploading file...';
+            if (pct > 50 && pct < 80) statusText = 'Uploading...';
+            else if (pct >= 80) statusText = 'Finalizing...';
 
-            if (newProgress > 30 && newProgress < 60) {
-              statusText = 'Processing on server...';
-            } else if (newProgress >= 60 && newProgress < 90) {
-              statusText = 'Compressing video...';
-            } else if (newProgress >= 90) {
-              statusText = 'Finalizing...';
-            }
-
-            return {
+            setUploadState(prev => ({
               ...prev,
-              progress: newProgress,
+              progress: pct,
               statusText
-            };
+            }));
           }
-          return prev;
         });
-      }, 1000); // Update every second
 
-      const uploadRes = await fetch('/api/automations/upload', {
-        method: 'POST',
-        body: formData
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({ success: true });
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Upload failed - network error')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')));
+
+        xhr.open('PUT', signedUrl);
+        xhr.setRequestHeader('Content-Type', contentType || file.type || 'video/mp4');
+        xhr.send(file);
       });
 
-      clearInterval(progressInterval);
-
-      console.log('[UPLOAD DEBUG] Upload response:', {
-        status: uploadRes.status,
-        ok: uploadRes.ok
-      });
-
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json();
-        console.error('[UPLOAD DEBUG] Upload failed:', err);
-
-        // If file is too large (413 status), notify AI to tell user
-        if (uploadRes.status === 413) {
-          const message = err.error || 'File is too large to upload';
-          sendMessage(`The file upload failed: ${message}`);
-          setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
-          return;
-        }
-
-        throw new Error(err.error || 'Upload failed');
-      }
-
-      const result = await uploadRes.json();
-      console.log('[UPLOAD DEBUG] Upload successful:', result);
+      console.log('[UPLOAD] Direct upload to Supabase succeeded');
 
       setUploadState(prev => ({
         ...prev,
@@ -648,25 +637,22 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         statusText: 'Upload complete!'
       }));
 
-      // 4. CRITICAL: Save file path to setupState so auto_setup knows it's ready
-      // Determine which field this file is for (VIDEO_FILES, IMAGE_FILE, etc.)
+      // ── Step 3: Update setup state & notify AI ──────────────────
       const fileFieldName = setupState?.missingFields?.find(fieldName => {
         const upper = fieldName.toUpperCase();
         return upper.includes('FILE') || upper.includes('PATH') || upper.includes('VIDEO') || upper.includes('IMAGE');
       }) || 'VIDEO_FILES';
 
-      // Update setupState with the collected file
       setSetupState(prev => {
         if (!prev) return prev;
         const newCollectedConfig = {
           ...(prev.collectedConfig || {}),
-          [fileFieldName]: result.file.path
+          [fileFieldName]: filePath
         };
         const newCollectedFields = {
           ...(prev.collectedFields || {}),
-          [fileFieldName]: result.file.path
+          [fileFieldName]: filePath
         };
-        // Remove from missingFields
         const newMissingFields = (prev.missingFields || []).filter(f => f !== fileFieldName);
 
         return {
@@ -677,15 +663,14 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         };
       });
 
-      // 5. Notify AI about the file with the path saved
       const fileContext = `\n\n[USER UPLOADED FILE]
-File: "${result.file.name}"
-Path: "${result.file.path}" (stored in bucket "${result.file.bucket}")
-Size: ${result.file.size} bytes
+File: "${file.name}"
+Path: "${filePath}" (stored in bucket "${bucketName}")
+Size: ${file.size} bytes
 
 [CRITICAL - FILE UPLOAD COMPLETE]
 Field "${fileFieldName}" has been collected and saved.
-Path: "${result.file.path}"
+Path: "${filePath}"
 
 IMPORTANT: This file field is NOW COLLECTED. Do NOT ask for it again.
 Check what OTHER fields are still needed (like interval, schedule time, etc.).
@@ -693,7 +678,6 @@ If all fields are collected, proceed with auto_setup tool.`;
 
       sendMessage(`I've uploaded the video "${file.name}"!`, fileContext);
 
-      // Reset state after delay
       setTimeout(() => {
         setUploadState({ isUploading: false, progress: 0, status: '', fileName: '' });
       }, 2000);
