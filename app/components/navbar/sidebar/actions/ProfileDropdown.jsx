@@ -10,8 +10,10 @@ import Notifications from '@/app/components/notifications';
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { signOut, user } = useAuth();
+  const { signOut, user, isAuthenticated } = useAuth();
   const { isDarkMode, themeMode, setTheme } = useTheme();
+
+  if (!isAuthenticated) return null;
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],

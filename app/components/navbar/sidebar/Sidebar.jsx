@@ -12,15 +12,12 @@ import SidebarCollapseButton from './actions/SidebarCollapseButton';
 import UploadTooltip from './UploadTooltip';
 import SidebarConversationList from './SidebarConversationList';
 
-export default function Sidebar() {
-  const { isAuthenticated } = useAuth();
-  const { isExpanded, setIsExpanded } = useSidebar();
-  const [showConversations, setShowConversations] = useState(false);
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
-  // Only show for authenticated users
-  if (!isAuthenticated) {
-    return null;
-  }
+export default function Sidebar() {
+  const { isExpanded, setIsExpanded } = useSidebar();
+  const { isDarkMode } = useThemeAdaptive();
+  const [showConversations, setShowConversations] = useState(false);
 
   const handleConversationIconClick = () => {
     setShowConversations(true);
@@ -36,7 +33,7 @@ export default function Sidebar() {
       <div 
         className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-all duration-300 border-r border-purple-500/20 ${
           isExpanded 
-            ? 'w-64 bg-slate-900/60 backdrop-blur-sm' 
+            ? `w-64 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`
             : 'w-13 bg-transparent'
         }`}
       >

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 
 const SidebarContext = createContext({
   isExpanded: false,
@@ -11,9 +12,17 @@ const SidebarContext = createContext({
 });
 
 export function SidebarProvider({ children }) {
+  const { isAuthenticated, loading } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Expand by default for unauthenticated users once auth state is known
+  useEffect(() => {
+    if (!loading && !isAuthenticated && !isMobile) {
+      setIsExpanded(true);
+    }
+  }, [loading, isAuthenticated, isMobile]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);

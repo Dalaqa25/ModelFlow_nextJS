@@ -1,72 +1,142 @@
-import LandingPageClient from './components/homeComponents/LandingPageClient';
+'use client';
 
-export const metadata = {
-  title: 'ModelGrow - Business Automation Platform | Connect Google Services',
-  description: 'Automate your business workflows with ModelGrow. Connect Google Drive, Gmail, Sheets, Calendar, and more. Pre-built automations for invoice processing, email management, document generation, and data synchronization.',
-  keywords: 'automation platform, business automation, Google Drive automation, Gmail automation, Google Sheets automation, workflow automation, n8n, no-code automation, business process automation',
-  openGraph: {
-    title: 'ModelGrow - Business Automation Platform',
-    description: 'Automate your business workflows with pre-built integrations for Google services and more.',
-    type: 'website',
-  },
-};
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
+import MainInput from '@/app/components/mainComponents/MainInput';
+import Greetings from '@/app/components/mainComponents/Greetings';
+import AiChat from '@/app/components/mainComponents/aiChat';
+import WelcomeModal from '@/app/components/WelcomeModal';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
-// This is a Server Component - the HTML content here will be visible to Google
 export default function Home() {
-  return (
-    <>
-      {/* SEO-friendly content that Google can crawl */}
-      <div className="sr-only">
-        <h1>ModelGrow - AI Automation Platform for Business Workflows</h1>
-        <p>
-          ModelGrow is a comprehensive automation platform that connects your business tools and automates workflows. 
-          Discover and run pre-built automation workflows that integrate with Google Drive, Gmail, Google Sheets, 
-          Google Calendar, YouTube, Google Docs, and other popular services.
-        </p>
-        <h2>What ModelGrow Does</h2>
-        <p>
-          Our platform allows you to automate repetitive business tasks by connecting your Google account and other services. 
-          Create powerful workflows that automatically process files, send emails, update spreadsheets, manage calendars, 
-          and more - all without writing code.
-        </p>
-        <h2>Key Features</h2>
-        <ul>
-          <li>Pre-built automation workflows for common business tasks</li>
-          <li>Secure Google OAuth integration for Drive, Gmail, Sheets, Calendar, YouTube, Docs, Slides, Forms, and Tasks</li>
-          <li>AI-powered automation discovery and matching</li>
-          <li>No-code business process automation</li>
-          <li>Invoice processing, email automation, document generation, and more</li>
-          <li>Built on n8n workflow technology</li>
-          <li>Ready-to-deploy workflow templates</li>
-        </ul>
-        <h2>How It Works</h2>
-        <ol>
-          <li>Describe your automation need in plain English</li>
-          <li>Our AI finds the perfect pre-built automation</li>
-          <li>Connect your Google account securely via OAuth</li>
-          <li>Run your automation and save hours of manual work</li>
-        </ol>
-        <h2>Google Services Integration</h2>
-        <p>
-          ModelGrow integrates with Google services to automate your workflows. When you connect your Google account, 
-          you grant ModelGrow permission to access specific Google services needed for your automations. We use OAuth 2.0 
-          for secure authentication and only access the data necessary for your chosen automations to function.
-        </p>
-        <h2>Privacy and Security</h2>
-        <p>
-          Your data security is our priority. We use industry-standard encryption, secure OAuth authentication, 
-          and comply with Google API Services User Data Policy. We never sell your data or use it for purposes 
-          other than providing the automation services you request. You can revoke access at any time.
-        </p>
-        <h2>For Developers</h2>
-        <p>
-          Are you an n8n developer? Join our team and build automations that help thousands of businesses. 
-          We're looking for talented developers to create innovative workflow solutions.
-        </p>
-      </div>
-      
-      {/* Client-side interactive landing page */}
-      <LandingPageClient />
-    </>
-  );
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+            <HomeContent />
+        </Suspense>
+    );
+}
+
+function HomeContent() {
+    const { isAuthenticated } = useAuth();
+    const { isExpanded, isMobile } = useSidebar();
+    const searchParams = useSearchParams();
+    const chatId = searchParams.get('chat');
+
+    const [hasStartedChat, setHasStartedChat] = useState(!!chatId);
+
+    useEffect(() => {
+        if (chatId) {
+            setHasStartedChat(true);
+        } else {
+            setHasStartedChat(false);
+        }
+    }, [chatId]);
+
+    const [pendingMessage, setPendingMessage] = useState(null);
+    const chatRef = useRef(null);
+    const [isScoped, setIsScoped] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isUploadActive, setIsUploadActive] = useState(false);
+
+    const handleUploadStatusChange = (isActive) => {
+        setIsUploadActive(isActive);
+    };
+
+    const handleFileUpload = (file) => {
+        if (chatRef.current) {
+            chatRef.current.handleFileUpload(file);
+        }
+    };
+
+    const handleMessageSent = (message) => {
+        if (!hasStartedChat) {
+            setHasStartedChat(true);
+            setPendingMessage(message);
+        } else {
+            if (chatRef.current) {
+                chatRef.current.handleNewMessage(message);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (hasStartedChat && pendingMessage && chatRef.current) {
+            chatRef.current.handleNewMessage(pendingMessage);
+            setPendingMessage(null);
+        }
+    }, [hasStartedChat, pendingMessage]);
+
+    const handleLoadingChange = (loading) => {
+        setIsLoading(loading);
+    };
+
+    const handleStopGeneration = () => {
+        if (chatRef.current) {
+            chatRef.current.stopGeneration();
+        }
+    };
+
+    return (
+        <>
+            {/* SEO content for crawlers */}
+            <div className="sr-only">
+                <h1>ModelGrow - AI Automation Platform for Business Workflows</h1>
+                <p>Automate your business workflows with ModelGrow. Connect Google Drive, Gmail, Sheets, Calendar, and more.</p>
+            </div>
+
+            <AdaptiveBackground variant="content" className="" showFloatingElements={false}>
+                <div
+                    className={`
+                        fixed inset-0 z-40 pointer-events-none
+                        transition-opacity duration-300
+                        ${isScoped ? 'opacity-62' : 'opacity-0'}
+                    `}
+                >
+                    <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_82%,rgba(0,0,0,0.22)_100%)] backdrop-blur-[1px]" />
+                </div>
+
+                <div
+                    className={`flex flex-col items-center px-6 transition-all duration-300 ${!hasStartedChat ? 'min-h-[calc(100vh-4rem)] justify-center' : ''}`}
+                    style={{ paddingLeft: !isMobile && isExpanded ? '256px' : !isMobile ? '52px' : '0' }}
+                >
+                    {!hasStartedChat ? null : (
+                        <div className="w-full h-full flex flex-col items-center pt-[15vh]">
+                            <div className="w-full max-w-4xl flex-1 flex flex-col">
+                                <AiChat
+                                    ref={chatRef}
+                                    initialConversationId={chatId}
+                                    onLoadingChange={handleLoadingChange}
+                                    onAwaitFileUploadChange={handleUploadStatusChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <MainInput
+                    onMessageSent={handleMessageSent}
+                    onScopeChange={setIsScoped}
+                    isLoading={isLoading}
+                    onStopGeneration={handleStopGeneration}
+                    isUploadActive={isUploadActive}
+                    onFileUpload={handleFileUpload}
+                    chatStarted={hasStartedChat}
+                    greetingSlot={!hasStartedChat ? <Greetings /> : null}
+                />
+                <WelcomeModal />
+
+                {!hasStartedChat && !isAuthenticated && (
+                    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-4">
+                        <p className="text-sm text-gray-500 text-center">
+                            By messaging ModelGrow, you agree to our{' '}
+                            <a href="/terms" className="font-semibold text-gray-400 underline hover:text-white transition-colors">Terms</a>
+                            {' '}and{' '}
+                            <a href="/privacy" className="font-semibold text-gray-400 underline hover:text-white transition-colors">Privacy Policy</a>
+                        </p>
+                    </div>
+                )}
+            </AdaptiveBackground>
+        </>
+    );
 }

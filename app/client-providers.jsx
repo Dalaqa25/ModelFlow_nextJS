@@ -4,7 +4,6 @@ import { AuthProvider } from "@/lib/auth/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/contexts/navigation-loading-context";
 import { SidebarProvider } from "@/lib/contexts/sidebar-context";
 import NavigationLoader from "@/app/components/NavigationLoader";
-import PublicNavbar from "@/app/components/PublicNavbar";
 import AppShell from "@/app/components/AppShell";
 import { SplashProvider } from "./splash-context";
 import { Toaster } from 'react-hot-toast';
@@ -26,7 +25,6 @@ export default function ClientProviders({ children }) {
                         <SplashProvider>
                             <AuthProvider>
                                 <SidebarProvider>
-                                    <PublicNavbar />
                                     <AppShell />
                                     {children}
                                     <NavigationLoader />

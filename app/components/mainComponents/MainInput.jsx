@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { FiSend, FiSquare, FiUpload } from 'react-icons/fi';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff } from 'react-icons/fi';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
 
 const PLACEHOLDER_HINTS = [
     "I want to automate my YouTube uploads...",
@@ -60,7 +61,7 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
     return displayText;
 }
 
-export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false }) {
+export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
     const isAtBottom = chatStarted || isAtBottomInternal;
@@ -68,7 +69,61 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
     const { isDarkMode } = useThemeAdaptive();
-    const { isMobile } = useSidebar();
+    const { isMobile, isExpanded } = useSidebar();
+    const { isAuthenticated } = useAuth();
+
+    const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
+
+    // --- Voice recording ---
+    const [isRecording, setIsRecording] = useState(false);
+    const recognitionRef = useRef(null);
+    const isSpeechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+    const startRecording = useCallback(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        let finalTranscript = '';
+
+        recognition.onstart = () => setIsRecording(true);
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const t = event.results[i][0].transcript;
+                if (event.results[i].isFinal) finalTranscript += t;
+                else interim = t;
+            }
+            setInputValue(finalTranscript + interim);
+            handleInteraction();
+        };
+
+        recognition.onend = () => {
+            setIsRecording(false);
+            recognitionRef.current = null;
+        };
+
+        recognition.onerror = () => {
+            setIsRecording(false);
+            recognitionRef.current = null;
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+    }, []);
+
+    const stopRecording = useCallback(() => {
+        recognitionRef.current?.stop();
+    }, []);
+
+    const toggleRecording = () => {
+        if (isRecording) stopRecording();
+        else startRecording();
+    };
+    // --- End voice recording ---
 
     // Animation only runs if user hasn't interacted yet
     const isAnimationActive = !hasInteracted && !inputValue;
@@ -145,21 +200,31 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
     // Different position for mobile vs desktop
     const positioning = isAtBottom
         ? { bottom: '1rem', top: 'auto' }
-        : { top: isMobile ? '40%' : '41%', bottom: 'auto' };
+        : { top: '50%', bottom: 'auto' };
+
+    const transform = isAtBottom
+        ? 'translateX(-50%)'
+        : isMobile
+            ? 'translate(-50%, -50%)'
+            : 'translate(-50%, -50%)';
 
     return (
         <div
-            className="fixed left-1/2 w-full max-w-4xl px-6 pointer-events-none z-50"
+            className="fixed w-full pointer-events-none z-50"
             style={{
                 ...positioning,
-                transform: isAtBottom
-                    ? 'translateX(-50%)'
-                    : isMobile
-                        ? 'translateX(-50%)' // Mobile: no vertical centering, grows downward
-                        : 'translate(-50%, -50%)', // Desktop: centered
-                transition: 'bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), top 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                paddingLeft: !isMobile ? `${sidebarOffset}px` : '0',
+                transition: 'bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), top 0.6s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isAtBottom ? 'none' : 'translateY(-50%)',
             }}
         >
+            <div className="w-full max-w-4xl mx-auto px-6">
+            {/* Greeting sits directly above input as one unit */}
+            {greetingSlot && (
+                <div className="w-full flex justify-center mb-6">
+                    {greetingSlot}
+                </div>
+            )}
             <form
                 onSubmit={handleSubmit}
                 className="pointer-events-auto"
@@ -168,9 +233,9 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onFocus={handleScopeOn}
                 onBlur={handleScopeOff}
             >
-                <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border-2 backdrop-blur-md shadow-xl transition-all ${isDarkMode
-                    ? 'border-purple-500/30 bg-slate-800/90 shadow-purple-900/20 hover:border-purple-500/50 focus-within:border-purple-500/50'
-                    : 'border-purple-300/40 bg-white/90 shadow-purple-200/30 hover:border-purple-400/60 focus-within:border-purple-400/60'
+                <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border backdrop-blur-md shadow-md transition-all duration-500 ${isDarkMode
+                    ? 'border-purple-500/20 bg-slate-800/90 shadow-black/20 hover:border-purple-500/40 focus-within:border-purple-500/40'
+                    : 'border-slate-200 bg-white shadow-slate-200/80 hover:border-indigo-300/80 focus-within:border-indigo-300/80'
                     }`}
                     onMouseEnter={handleInteraction}
                 >
@@ -222,30 +287,75 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             <FiSquare className="w-5 h-5" />
                         </button>
                     ) : (
-                        <button
-                            type="submit"
-                            disabled={!inputValue.trim()}
-                            className={`
-                                flex items-center justify-center p-2.5 rounded-2xl transition-all
-                                ${inputValue.trim()
-                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
-                                    : isDarkMode
-                                        ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                }
-                            `}
-                        >
-                            <FiSend className="w-5 h-5" />
-                        </button>
+                        <>
+                            {isSpeechSupported && (
+                                <button
+                                    type="button"
+                                    onClick={toggleRecording}
+                                    className={`flex items-center justify-center p-2.5 rounded-2xl transition-all ${
+                                        isRecording
+                                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30 animate-pulse'
+                                            : isDarkMode
+                                                ? 'text-gray-400 hover:text-white hover:bg-white/8'
+                                                : 'text-gray-400 hover:text-gray-700 hover:bg-black/5'
+                                    }`}
+                                    title={isRecording ? 'Stop recording' : 'Voice input'}
+                                >
+                                    {isRecording ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+                                </button>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={!inputValue.trim()}
+                                className={`
+                                    flex items-center justify-center p-2.5 rounded-2xl transition-all
+                                    ${inputValue.trim()
+                                        ? 'bg-gradient-to-br from-violet-400 to-indigo-500 hover:from-violet-300 hover:to-indigo-400 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
+                                        : isDarkMode
+                                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    }
+                                `}
+                            >
+                                <FiSend className="w-5 h-5" />
+                            </button>
+                        </>
                     )}
                 </div>
             </form>
             {!chatStarted && (
-                <p className={`text-center text-xs mt-2 transition-opacity duration-300 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'
-                    }`}>
-                    💬 Chats without automations are temporary and won't be saved
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
+                    {[
+                        "Post my TikToks automatically",
+                        "Send weekly reports",
+                        "Schedule social media",
+                        "Notify me on form fill",
+                    ].map((chip) => (
+                        <button
+                            key={chip}
+                            type="button"
+                            onClick={() => {
+                                setInputValue(chip);
+                                handleInteraction();
+                                textareaRef.current?.focus();
+                            }}
+                            className={`pointer-events-auto whitespace-nowrap text-sm px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
+                                isDarkMode
+                                    ? 'border-purple-500/20 text-gray-400 hover:text-white hover:border-purple-500/40 hover:bg-white/5'
+                                    : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
+                            }`}
+                        >
+                            {chip}
+                        </button>
+                    ))}
+                </div>
+            )}
+            {!chatStarted && (
+                <p className={`text-center text-xs mt-2 transition-opacity duration-300 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                    {isAuthenticated && '💬 Chats without automations are temporary and won\'t be saved'}
                 </p>
             )}
+            </div>
         </div>
     );
 }

@@ -1,42 +1,53 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import { FiChevronsLeft } from 'react-icons/fi';
 
 export default function SidebarToggle() {
   const { isExpanded, setIsExpanded } = useSidebar();
+  const { isDarkMode } = useThemeAdaptive();
   const router = useRouter();
-  const pathname = usePathname();
-  const isMainPage = pathname === '/main';
 
-  const handleLogoClick = () => {
-    if (!isExpanded) {
-      router.push('/main');
-    } else {
-      setIsExpanded(false);
-    }
-  };
+  if (!isExpanded) {
+    return (
+      <div className="flex items-center justify-center h-14 px-2">
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="focus:outline-none"
+          aria-label="Expand sidebar"
+        >
+          <Image src="/logo.png" alt="Logo" width={28} height={28} className="flex-shrink-0" />
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-1">
+    <div className="flex items-center justify-between h-14 px-3">
       <button
-        onClick={handleLogoClick}
-        className="w-full flex items-center justify-center p-1 rounded-lg hover:bg-slate-800/60 transition-colors text-white focus:outline-none"
+        onClick={() => router.push('/')}
+        className="flex items-center gap-2 focus:outline-none"
       >
-        {isExpanded ? (
-          <div className="flex items-center gap-2 w-full px-1">
-            <Image src="/logo.png" alt="Logo" width={32} height={32} className="flex-shrink-0" />
-          </div>
-        ) : (
-          <Image 
-            src="/logo.png" 
-            alt="Logo" 
-            width={30} 
-            height={30} 
-            className="pt-1 flex-shrink-0" 
-          />
-        )}
+        <Image src="/logo.png" alt="Logo" width={28} height={28} className="flex-shrink-0" />
+        <span className={`text-sm font-semibold tracking-tight ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+          ModelGrow
+        </span>
+        <span className="text-xs font-medium px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400">beta</span>
+      </button>
+
+      <button
+        onClick={() => setIsExpanded(false)}
+        className={`p-1.5 rounded-lg transition-colors focus:outline-none ${
+          isDarkMode
+            ? 'text-gray-400 hover:text-white hover:bg-white/8'
+            : 'text-gray-400 hover:text-gray-700 hover:bg-black/5'
+        }`}
+        aria-label="Collapse sidebar"
+      >
+        <FiChevronsLeft className="w-4 h-4" />
       </button>
     </div>
   );

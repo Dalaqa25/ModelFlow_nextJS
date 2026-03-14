@@ -47,15 +47,22 @@ export default function Greetings() {
     const displayName = cachedUserName || (isLoading ? '...' : userName);
 
     return (
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center mb-">
-            {/* Greeting Section */}
-            {/* Mobile: stacked vertically, Desktop: horizontal */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-3">
-                <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px] object-contain flex-shrink-0" />
-                <h1 className={`text-3xl sm:text-4xl lg:text-5xl ${textColors.primary} font-medium tracking-tight text-center`}>
-                    Hey there, <span className="font-semibold text-purple-400">{displayName}</span>.
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
+            {user ? (
+                /* Authenticated: logo + "Hey there, Name." */
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-3">
+                    <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px] object-contain flex-shrink-0" />
+                    <h1 className={`text-3xl sm:text-4xl lg:text-5xl ${textColors.primary} font-medium tracking-tight text-center`}>
+                        Hey there, <span className="font-semibold text-purple-400">{displayName}</span>.
+                    </h1>
+                </div>
+            ) : (
+                /* Unauthenticated: headline matching app typography */
+                <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-medium tracking-tight text-center leading-snug`}>
+                    Automate anything.{' '}
+                    <span className={`${textColors.secondary} font-normal`}>Just describe what you need.</span>
                 </h1>
-            </div>
+            )}
         </div>
     );
 }
