@@ -234,7 +234,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onFocus={handleScopeOn}
                 onBlur={handleScopeOff}
             >
-                <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border shadow-md transition-all duration-500 ${isDarkMode
+                <div className={`flex items-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] border shadow-md transition-all duration-500 ${isDarkMode
                     ? 'border-white/10 bg-slate-800 shadow-black/30 hover:border-purple-500/40 focus-within:border-purple-500/40'
                     : 'border-slate-200 bg-white shadow-slate-300/50 hover:border-indigo-300/80 focus-within:border-indigo-300/80'
                     }`}
@@ -267,15 +267,17 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             onFocus={handleInteraction}
                             placeholder={hasInteracted ? "I want to automate..." : ""}
                             rows={1}
-                            className={`w-full bg-transparent !border-0 !outline-0 !ring-0 !shadow-none text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
+                            className={`w-full bg-transparent !border-0 !outline-0 !ring-0 !shadow-none text-sm sm:text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
                                 }`}
                             style={{ maxHeight: isMobile ? '120px' : '150px', outline: 'none !important', border: 'none !important', boxShadow: 'none !important' }}
                         />
                         {showAnimatedPlaceholder && (
-                            <div className={`absolute top-0 left-0 right-0 pointer-events-none flex items-center text-base font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                            <div className={`absolute top-0 left-0 right-[40px] pointer-events-none flex items-center text-sm sm:text-base font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'
                                 }`}>
-                                {animatedPlaceholder}
-                                <span className="animate-pulse ml-0.5">|</span>
+                                <span className="whitespace-nowrap overflow-hidden text-ellipsis block max-w-full">
+                                    {animatedPlaceholder}
+                                </span>
+                                <span className="animate-pulse ml-0.5 flex-shrink-0">|</span>
                             </div>
                         )}
                     </div>
@@ -293,7 +295,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 <button
                                     type="button"
                                     onClick={toggleRecording}
-                                    className={`flex items-center justify-center p-2.5 rounded-2xl transition-all ${
+                                    className={`flex items-center justify-center p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all ${
                                         isRecording
                                             ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30 animate-pulse'
                                             : isDarkMode
@@ -309,7 +311,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 type="submit"
                                 disabled={!inputValue.trim()}
                                 className={`
-                                    flex items-center justify-center p-2.5 rounded-2xl transition-all
+                                    flex items-center justify-center p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all
                                     ${inputValue.trim()
                                         ? 'bg-gradient-to-br from-violet-400 to-indigo-500 hover:from-violet-300 hover:to-indigo-400 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
                                         : isDarkMode
@@ -340,7 +342,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto whitespace-nowrap text-sm px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
+                            className={`pointer-events-auto whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
                                 isDarkMode
                                     ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
                                     : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'

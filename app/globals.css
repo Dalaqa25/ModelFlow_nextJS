@@ -326,3 +326,126 @@ button {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Landing section split-layout stagger delays */
+.stagger-1 {
+  transition-delay: 0.1s;
+}
+
+.stagger-2 {
+  transition-delay: 0.3s;
+}
+
+.stagger-3 {
+  transition-delay: 0.45s;
+}
+
+/* Step connector line (horizontal dashed) */
+.step-connector {
+  position: relative;
+}
+
+.step-connector::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  right: -1.5rem;
+  width: 3rem;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0,
+    currentColor 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  opacity: 0.2;
+}
+
+.step-connector:last-child::after {
+  display: none;
+}
+
+/* CTA shimmer button */
+@keyframes shimmer-btn {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-btn 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Decorative glow orbs for landing sections */
+.landing-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glassmorphic animation wrapper */
+.glass-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Timeline connector line */
+.timeline-line {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  top: 0;
+}
+
+/* Landing section responsive split */
+@media (min-width: 768px) {
+  .landing-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .landing-split-reverse {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .landing-split-reverse > :first-child {
+    order: 2;
+  }
+
+  .landing-split-reverse > :last-child {
+    order: 1;
+  }
+}

@@ -33,7 +33,7 @@ export default function Sidebar() {
       <div 
         className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-all duration-300 border-r border-purple-500/20 ${
           isExpanded 
-            ? `w-64 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`
+            ? `w-64 ${isDarkMode ? 'bg-slate-800/70 backdrop-blur-xl' : 'bg-white'}`
             : 'w-14 bg-transparent'
         }`}
       >
