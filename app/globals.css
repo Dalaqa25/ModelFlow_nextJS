@@ -12,7 +12,6 @@ li:hover {
 button {
   cursor: pointer;
   transition: all 0.3s;
-  color: inherit;
 }
 
 @keyframes float {
@@ -314,4 +313,16 @@ button {
 .animate-fade-in-up {
   animation: fade-in-up 0.8s ease-out forwards;
   opacity: 0;
+}
+
+/* Scroll-triggered animations for landing page */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
 }

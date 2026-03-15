@@ -34,7 +34,7 @@ export default function SidebarUploadIcon({ isMobileExpanded = false }) {
         <button
           onClick={handleClick}
           className={`flex items-center gap-3 rounded-lg transition-colors ${
-            showLabel ? 'w-full px-3 py-2' : 'w-8 h-8 justify-center mx-auto'
+            showLabel ? 'w-full px-3 py-2' : 'w-full h-8 justify-center'
           } ${showAttention ? 'upload-attention text-purple-400' : `text-gray-400 ${isDarkMode ? 'hover:text-white hover:bg-white/8' : 'hover:text-gray-900 hover:bg-black/5'}`}`}
           title="Upload Automation"
         >

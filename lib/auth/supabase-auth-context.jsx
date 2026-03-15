@@ -23,16 +23,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) {
           await supabase.auth.signOut({ scope: 'local' });
           setUser(null);
         } else {
-          setUser(session?.user ?? null);
-          if (session?.user?.email) {
-            try { await fetch('/api/user', { method: 'GET' }); } catch (e) { }
-          }
+          setUser(user ?? null);
         }
       } catch (error) {
         await supabase.auth.signOut({ scope: 'local' });

@@ -9,7 +9,7 @@ export default function SidebarCollapseButton() {
   const { isDarkMode } = useThemeAdaptive();
 
   return (
-    <div className={`border-t p-3 ${isDarkMode ? 'border-purple-500/20' : 'border-gray-200'}`}>
+    <div className={`border-t p-3 ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
       <button
         onClick={() => setIsExpanded(false)}
         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${

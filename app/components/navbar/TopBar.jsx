@@ -14,7 +14,7 @@ const UPLOAD_SEEN_KEY = 'upload_button_seen';
 export default function TopBar() {
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
   const { isDarkMode, textColors } = useThemeAdaptive();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [showAttention, setShowAttention] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -28,7 +28,6 @@ export default function TopBar() {
       setShowAttention(true);
     }
 
-    // Listen for storage changes to sync with SidebarUploadIcon
     const handleStorage = () => {
       const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
       if (hasSeen) {
@@ -68,7 +67,7 @@ export default function TopBar() {
       </div>
 
       {/* Right: Auth buttons or Profile */}
-      {isAuthenticated ? (
+      {authLoading ? null : isAuthenticated ? (
         <ProfileDropdown />
       ) : (
         <div className="flex items-center gap-2">

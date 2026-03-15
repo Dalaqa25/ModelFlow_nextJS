@@ -34,7 +34,7 @@ export default function SidebarNavIcons() {
 
   return (
     <>
-      <div className={`flex flex-col gap-1 ${isExpanded ? 'px-3 py-4' : 'items-center py-4'}`}>
+      <div className={`flex flex-col gap-1 ${isExpanded ? 'px-3 py-4' : 'py-4'}`}>
         {navItems.map((item) => (
           <button
             key={item.path}
@@ -43,7 +43,7 @@ export default function SidebarNavIcons() {
               isDarkMode
                 ? 'text-gray-400 hover:text-white hover:bg-white/8'
                 : 'text-gray-500 hover:text-gray-900 hover:bg-black/5'
-            } ${isExpanded ? 'w-full px-3 py-2' : 'w-8 h-8 justify-center'}`}
+            } ${isExpanded ? 'w-full px-3 py-2' : 'w-full h-8 justify-center'}`}
             title={item.label}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />

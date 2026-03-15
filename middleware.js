@@ -27,18 +27,21 @@ export async function middleware(request) {
     }
   );
 
+  // Refresh session on every non-API request so cookies stay fresh
+  await supabase.auth.getUser();
+
   // Get the current pathname
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
   
-  // Get user session - check for all routes that need auth protection
+  // Get user session for route protection checks
   let user = null;
   
-  // Check auth for protected routes AND auth routes (to redirect authenticated users)
   if (pathname.startsWith('/dashboard') || 
       pathname.startsWith('/profile') || 
       pathname.startsWith('/auth/') || 
-      pathname === '/') {
+      pathname === '/' ||
+      pathname.startsWith('/main')) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
   }

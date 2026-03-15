@@ -7,6 +7,9 @@ import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
 import AiChat from '@/app/components/mainComponents/aiChat';
 import WelcomeModal from '@/app/components/WelcomeModal';
+import LandingSections from '@/app/components/mainComponents/LandingSections';
+import SignInDialog from '@/app/components/auth/login/SignInDialog';
+import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 
@@ -39,6 +42,26 @@ function HomeContent() {
     const [isScoped, setIsScoped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadActive, setIsUploadActive] = useState(false);
+    const [isSignInOpen, setIsSignInOpen] = useState(false);
+    const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+    // ── Scroll-based hero fade for non-auth landing ──
+    const [heroOpacity, setHeroOpacity] = useState(1);
+    const isLanding = !hasStartedChat && !isAuthenticated;
+
+    useEffect(() => {
+        if (!isLanding) return;
+
+        const handleScroll = () => {
+            const scrollY = window.scrollY;
+            // Start fading at 100px, fully faded at 400px
+            const opacity = Math.max(0, 1 - scrollY / 400);
+            setHeroOpacity(opacity);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [isLanding]);
 
     const handleUploadStatusChange = (isActive) => {
         setIsUploadActive(isActive);
@@ -51,6 +74,10 @@ function HomeContent() {
     };
 
     const handleMessageSent = (message) => {
+        if (!isAuthenticated) {
+            setIsSignInOpen(true);
+            return false;
+        }
         if (!hasStartedChat) {
             setHasStartedChat(true);
             setPendingMessage(message);
@@ -59,6 +86,7 @@ function HomeContent() {
                 chatRef.current.handleNewMessage(message);
             }
         }
+        return true;
     };
 
     useEffect(() => {
@@ -114,20 +142,63 @@ function HomeContent() {
                         </div>
                     )}
                 </div>
-                <MainInput
-                    onMessageSent={handleMessageSent}
-                    onScopeChange={setIsScoped}
-                    isLoading={isLoading}
-                    onStopGeneration={handleStopGeneration}
-                    isUploadActive={isUploadActive}
-                    onFileUpload={handleFileUpload}
-                    chatStarted={hasStartedChat}
-                    greetingSlot={!hasStartedChat ? <Greetings /> : null}
-                />
+
+                {/* Hero input — fades out on scroll for non-auth landing */}
+                <div
+                    style={isLanding ? {
+                        opacity: heroOpacity,
+                        pointerEvents: heroOpacity < 0.1 ? 'none' : 'auto',
+                        transition: 'opacity 0.1s ease-out',
+                    } : undefined}
+                >
+                    <MainInput
+                        onMessageSent={handleMessageSent}
+                        onScopeChange={setIsScoped}
+                        isLoading={isLoading}
+                        onStopGeneration={handleStopGeneration}
+                        isUploadActive={isUploadActive}
+                        onFileUpload={handleFileUpload}
+                        chatStarted={hasStartedChat}
+                        greetingSlot={!hasStartedChat ? <Greetings /> : null}
+                    />
+                </div>
+
+                {/* Below-fold scrollable sections for non-authenticated users */}
+                {isLanding && (
+                    <>
+                        {/* Small spacer after the hero fold */}
+                        <div className="h-8" />
+                        <div
+                            style={{ paddingLeft: !isMobile && isExpanded ? '256px' : !isMobile ? '52px' : '0' }}
+                            className="relative z-[60] transition-all duration-300"
+                        >
+                            <LandingSections onSignUpClick={() => setIsSignUpOpen(true)} />
+                        </div>
+                    </>
+                )}
                 <WelcomeModal />
 
-                {!hasStartedChat && !isAuthenticated && (
-                    <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-4">
+                <SignInDialog
+                    isOpen={isSignInOpen}
+                    onClose={() => setIsSignInOpen(false)}
+                    onSwitchToSignUp={() => { setIsSignInOpen(false); setIsSignUpOpen(true); }}
+                />
+                <SignUpDialog
+                    isOpen={isSignUpOpen}
+                    onClose={() => setIsSignUpOpen(false)}
+                    onSwitchToSignIn={() => { setIsSignUpOpen(false); setIsSignInOpen(true); }}
+                />
+
+                {isLanding && (
+                    <div
+                        className="fixed bottom-0 right-0 z-50 flex items-center justify-center pb-4"
+                        style={{
+                            left: !isMobile && isExpanded ? '256px' : !isMobile ? '52px' : '0',
+                            transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            opacity: heroOpacity,
+                            pointerEvents: heroOpacity < 0.1 ? 'none' : 'auto',
+                        }}
+                    >
                         <p className="text-sm text-gray-500 text-center">
                             By messaging ModelGrow, you agree to our{' '}
                             <a href="/terms" className="font-semibold text-gray-400 underline hover:text-white transition-colors">Terms</a>
@@ -140,3 +211,4 @@ function HomeContent() {
         </>
     );
 }
+

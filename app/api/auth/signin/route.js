@@ -68,30 +68,24 @@ export async function POST(request) {
       dbUser = null;
     }
 
-    // If user doesn't exist in auth, return error
+    // If user doesn't exist in auth, check if we should auto-recover
     if (!authUser) {
       if (dbUser) {
-        // User exists in DB but not in Auth - this is the issue!
-        return NextResponse.json({ 
-          error: 'Account found in database but not in authentication system. Please contact support or try signing up again.',
-          field: 'email',
-          debug: {
-            auth_user_missing: true,
-            db_user_exists: true,
-            cleanEmail,
-            originalEmail: email,
-            dbUserDetails: dbUser
-          }
-        }, { status: 400 });
+        // User exists in DB but not in Auth — recover by sending OTP and creating auth user
+        const { error } = await supabaseAdmin.auth.signInWithOtp({
+          email: cleanEmail,
+          options: { shouldCreateUser: true },
+        });
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+        return NextResponse.json({
+          message: 'OTP sent to email. Please check your inbox for the verification code.'
+        });
       } else {
         return NextResponse.json({ 
           error: 'No account found with this email address. Please sign up first.',
-          field: 'email',
-          debug: {
-            both_missing: true,
-            cleanEmail,
-            originalEmail: email
-          }
+          field: 'email'
         }, { status: 404 });
       }
     }

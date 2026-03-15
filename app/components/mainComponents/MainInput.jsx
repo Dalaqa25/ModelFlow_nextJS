@@ -177,11 +177,11 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
         e.preventDefault();
         if (inputValue.trim()) {
             const message = inputValue.trim();
-            setIsAtBottomInternal(true);
-            if (onMessageSent) {
-                onMessageSent(message);
+            const accepted = onMessageSent ? onMessageSent(message) : false;
+            if (accepted) {
+                setIsAtBottomInternal(true);
+                setInputValue('');
             }
-            setInputValue('');
         }
     };
 
@@ -210,15 +210,16 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
 
     return (
         <div
-            className="fixed w-full pointer-events-none z-50"
+            className="fixed pointer-events-none z-50"
             style={{
-                ...positioning,
-                paddingLeft: !isMobile ? `${sidebarOffset}px` : '0',
-                transition: 'bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), top 0.6s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isAtBottom ? 'none' : 'translateY(-50%)',
+                ...(isAtBottom
+                    ? { bottom: '1rem', left: sidebarOffset, right: 0 }
+                    : { top: isAuthenticated ? 'calc(50% - 140px)' : 'calc(50% - 90px)', left: sidebarOffset, right: 0, transform: 'translateY(-50%)' }
+                ),
+                transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), top 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
         >
-            <div className="w-full max-w-4xl mx-auto px-6">
+            <div className="w-full max-w-3xl mx-auto px-6">
             {/* Greeting sits directly above input as one unit */}
             {greetingSlot && (
                 <div className="w-full flex justify-center mb-6">
@@ -233,9 +234,9 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onFocus={handleScopeOn}
                 onBlur={handleScopeOff}
             >
-                <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border backdrop-blur-md shadow-md transition-all duration-500 ${isDarkMode
-                    ? 'border-purple-500/20 bg-slate-800/90 shadow-black/20 hover:border-purple-500/40 focus-within:border-purple-500/40'
-                    : 'border-slate-200 bg-white shadow-slate-200/80 hover:border-indigo-300/80 focus-within:border-indigo-300/80'
+                <div className={`flex items-end gap-3 px-6 py-4 rounded-[2rem] border shadow-md transition-all duration-500 ${isDarkMode
+                    ? 'border-white/10 bg-slate-800 shadow-black/30 hover:border-purple-500/40 focus-within:border-purple-500/40'
+                    : 'border-slate-200 bg-white shadow-slate-300/50 hover:border-indigo-300/80 focus-within:border-indigo-300/80'
                     }`}
                     onMouseEnter={handleInteraction}
                 >
@@ -341,7 +342,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             }}
                             className={`pointer-events-auto whitespace-nowrap text-sm px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
                                 isDarkMode
-                                    ? 'border-purple-500/20 text-gray-400 hover:text-white hover:border-purple-500/40 hover:bg-white/5'
+                                    ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
                                     : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
                             }`}
                         >
@@ -350,11 +351,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                     ))}
                 </div>
             )}
-            {!chatStarted && (
-                <p className={`text-center text-xs mt-2 transition-opacity duration-300 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                    {isAuthenticated && '💬 Chats without automations are temporary and won\'t be saved'}
-                </p>
-            )}
+
             </div>
         </div>
     );

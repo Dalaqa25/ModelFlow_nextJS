@@ -52,11 +52,11 @@ function HomeContent() {
             setHasStartedChat(true);
             setPendingMessage(message);
         } else {
-            // Chat already exists, send directly
             if (chatRef.current) {
                 chatRef.current.handleNewMessage(message);
             }
         }
+        return true;
     };
 
     // Send pending message once chat component is mounted
@@ -91,12 +91,8 @@ function HomeContent() {
                 <div className="w-full h-full bg-[radial-gradient(circle_at_center,transparent_0%,transparent_82%,rgba(0,0,0,0.22)_100%)] backdrop-blur-[1px]" />
             </div>
 
-            <div className={`flex flex-col items-center px-6 ${!hasStartedChat ? 'min-h-[calc(100vh-4rem)] justify-center -mt-16' : ''}`}>
-                {!hasStartedChat ? (
-                    <div className="w-full flex flex-col items-center gap-8 -mt-44">
-                        <Greetings />
-                    </div>
-                ) : (
+            <div className={`flex flex-col items-center px-6 ${!hasStartedChat ? 'min-h-[calc(100vh-4rem)] justify-center' : ''}`}>
+                {!hasStartedChat ? null : (
                     <div className="w-full h-full flex flex-col items-center pt-[15vh]">
                         <div className="w-full max-w-4xl flex-1 flex flex-col">
                             <AiChat
@@ -117,6 +113,7 @@ function HomeContent() {
                 isUploadActive={isUploadActive}
                 onFileUpload={handleFileUpload}
                 chatStarted={hasStartedChat}
+                greetingSlot={!hasStartedChat ? <Greetings /> : null}
             />
             <AutomationsList
                 isVisible={!hasStartedChat}
