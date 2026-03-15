@@ -32,9 +32,6 @@ export default function MobileSidebar() {
     };
   }, [isMobileOpen]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
 
   const navItems = [
     { icon: FaUsers, path: '/community', label: 'Community' },
@@ -63,22 +60,22 @@ export default function MobileSidebar() {
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-purple-500/20">
+        {/* Header - Fixed to match TopBar height perfectly */}
+        <div className="flex items-center justify-between h-14 px-5 border-b border-purple-500/20 bg-slate-900">
           <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Logo" width={32} height={32} />
-            <span className="text-white font-medium">ModelGrow</span>
+            <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-7 h-7 object-contain" />
+            <span className="text-white font-semibold tracking-tight text-lg">ModelGrow</span>
           </div>
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-800/60 transition-colors text-gray-400 hover:text-white"
+            className="p-1.5 -mr-1.5 rounded-lg hover:bg-slate-800/60 transition-colors text-gray-400 hover:text-white"
           >
             <FaTimes className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col p-4 gap-2">
+        <nav className="flex flex-col p-3 gap-1 mt-2">
           {navItems.map((item) => (
             <button
               key={item.path}
