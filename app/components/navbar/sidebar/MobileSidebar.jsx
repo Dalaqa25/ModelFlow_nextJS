@@ -48,7 +48,7 @@ export default function MobileSidebar() {
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
           isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setIsMobileOpen(false)}
@@ -56,7 +56,7 @@ export default function MobileSidebar() {
 
       {/* Sidebar Drawer */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900/95 backdrop-blur-md z-50 transform transition-transform duration-300 ease-out border-r border-purple-500/20 ${
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-slate-900/95 backdrop-blur-md z-[70] transform transition-transform duration-300 ease-out border-r border-purple-500/20 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -93,7 +93,7 @@ export default function MobileSidebar() {
         </nav>
 
         {/* Upload Button */}
-        <div className="px-4 mt-auto">
+        <div className="px-4 mt-auto pb-6">
           <MobileUploadButton onClose={() => setIsMobileOpen(false)} />
         </div>
       </div>
@@ -104,8 +104,8 @@ export default function MobileSidebar() {
 // Separate upload button for mobile with expanded styling
 function MobileUploadButton({ onClose }) {
   return (
-    <div className="border-t border-purple-500/20 pt-4">
-      <SidebarUploadIcon isMobileExpanded={true} />
+    <div className="pt-4 border-t border-purple-500/20 flex justify-center w-full">
+      <SidebarUploadIcon isMobileExpanded={true} className="w-full" />
     </div>
   );
 }

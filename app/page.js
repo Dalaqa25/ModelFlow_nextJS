@@ -6,7 +6,6 @@ import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
 import AiChat from '@/app/components/mainComponents/aiChat';
-import WelcomeModal from '@/app/components/WelcomeModal';
 import LandingSections from '@/app/components/mainComponents/LandingSections';
 import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
@@ -176,7 +175,6 @@ function HomeContent() {
                         </div>
                     </>
                 )}
-                <WelcomeModal />
 
                 <SignInDialog
                     isOpen={isSignInOpen}
