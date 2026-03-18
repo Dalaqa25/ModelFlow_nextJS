@@ -96,27 +96,42 @@ export async function GET(request) {
     const { getSupabaseUser } = await import('@/lib/auth/auth-utils');
     const currentUser = await getSupabaseUser();
     
-    if (!currentUser) {
+    let userId = null;
+
+    if (currentUser) {
+      // User has a valid session - find them in database by email
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', currentUser.email)
+        .maybeSingle();
+      
+      if (dbUser) {
+        userId = dbUser.id;
+      }
+    }
+
+    // Fall back to user_id from OAuth state (needed for ngrok/cross-domain redirects
+    // where the session cookie isn't sent back with the callback)
+    if (!userId && testUserId) {
+      // Verify the user actually exists in the database
+      const { data: stateUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', testUserId)
+        .maybeSingle();
+      
+      if (stateUser) {
+        userId = stateUser.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json({ 
-        error: 'You must be logged in to connect TikTok account' 
+        error: 'You must be logged in to connect TikTok account',
+        details: 'Could not identify user from session or OAuth state'
       }, { status: 401 });
     }
-
-    // Find user in database by EMAIL
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('email', currentUser.email)
-      .maybeSingle();
-    
-    if (!dbUser) {
-      return NextResponse.json({ 
-        error: 'User not found in database',
-        details: 'Please contact support'
-      }, { status: 404 });
-    }
-
-    const userId = testUserId || dbUser.id;
 
     // Save tokens to user_automations table
     if (automationId) {

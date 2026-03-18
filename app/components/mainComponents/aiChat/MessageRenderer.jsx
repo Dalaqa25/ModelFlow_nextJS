@@ -97,6 +97,7 @@ export default function MessageRenderer({
           <ConnectButton
             provider={message.connectRequest.provider}
             automationId={message.connectRequest.automation_id}
+            userId={message.connectRequest.user_id}
             onConnect={onConnectionComplete}
           />
         </div>

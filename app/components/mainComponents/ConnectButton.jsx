@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaTiktok } from 'react-icons/fa';
 
-export default function ConnectButton({ provider, automationId, onConnect }) {
+export default function ConnectButton({ provider, automationId, userId, onConnect }) {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const providerConfig = {
@@ -33,9 +33,11 @@ export default function ConnectButton({ provider, automationId, onConnect }) {
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
 
-      const url = automationId
-        ? `/api/auth/${provider}?automation_id=${automationId}`
-        : `/api/auth/${provider}`;
+      let url = `/api/auth/${provider}`;
+      const params = new URLSearchParams();
+      if (automationId) params.set('automation_id', automationId);
+      if (userId) params.set('user_id', userId);
+      if (params.toString()) url += `?${params.toString()}`;
 
       const popup = window.open(
         url,

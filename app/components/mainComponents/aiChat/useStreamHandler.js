@@ -104,7 +104,7 @@ export function createStreamHandler({
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, automation_id: parsed.automation_id, reason: parsed.reason } }
+            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, automation_id: parsed.automation_id, user_id: parsed.user_id, reason: parsed.reason } }
             : msg
         )
       );
