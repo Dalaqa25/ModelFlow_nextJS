@@ -57,11 +57,15 @@ export default function Greetings() {
                     </h1>
                 </div>
             ) : (
-                /* Unauthenticated: headline matching app typography */
-                <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-medium tracking-tight text-center leading-snug`}>
-                    Automate anything.{' '}
-                    <span className={`${textColors.secondary} font-normal`}>Just describe what you need.</span>
-                </h1>
+                /* Unauthenticated: two-line value prop */
+                <div className="flex flex-col items-center gap-1 text-center">
+                    <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-semibold tracking-tight leading-snug`}>
+                        What do you want to automate?
+                    </h1>
+                    <p className={`text-sm sm:text-base ${textColors.secondary} font-normal`}>
+                        Describe any workflow in plain language — it handles the rest, automatically.
+                    </p>
+                </div>
             )}
         </div>
     );

@@ -2,6 +2,17 @@
 
 html {
   font-size: 90%;
+  background-color: #f8fafc; /* slate-50 */
+  overscroll-behavior-y: none;
+}
+
+html.dark {
+  background-color: #1e293b; /* slate-800 */
+}
+
+body {
+  background-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 li:hover {
@@ -60,6 +71,21 @@ button {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+.animate-scroll-bounce {
+  animation: scroll-bounce 1.6s ease-in-out infinite;
 }
 
 @keyframes particle-float {
@@ -413,6 +439,11 @@ button {
 .glass-card {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* Performance: isolate animation subtrees from page reflow */
+.anim-contain {
+  contain: layout style paint;
 }
 
 /* Timeline connector line */

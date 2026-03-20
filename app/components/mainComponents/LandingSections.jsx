@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { FaTiktok, FaLinkedinIn, FaFileInvoiceDollar, FaTwitter, FaDiscord, FaGithub } from 'react-icons/fa';
-import { FiTrendingUp, FiUpload, FiUsers, FiDollarSign, FiZap, FiPlay, FiCheck, FiMessageSquare, FiSearch, FiCpu, FiCode, FiBarChart2, FiShield, FiGlobe, FiGitBranch, FiActivity, FiTerminal, FiChevronDown, FiLayout, FiShoppingCart, FiHelpCircle, FiUser, FiUploadCloud } from 'react-icons/fi';
+import { FiTrendingUp, FiUpload, FiUsers, FiDollarSign, FiZap, FiPlay, FiCheck, FiMessageSquare, FiSearch, FiCpu, FiCode, FiBarChart2, FiShield, FiGlobe, FiGitBranch, FiActivity, FiTerminal, FiChevronDown, FiChevronLeft, FiChevronRight, FiLayout, FiShoppingCart, FiHelpCircle, FiUser, FiUploadCloud, FiRefreshCw } from 'react-icons/fi';
 
 // ─── Scroll-triggered visibility hook ───
 function useScrollVisible(threshold = 0.15) {
@@ -1099,8 +1099,8 @@ function Footer({ dark }) {
                 <div className={`pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-xs ${dark ? 'border-white/10 text-slate-400' : 'border-slate-200/80 text-slate-500'}`}>
                     <p>© {currentYear} ModelGrow Inc. All rights reserved.</p>
                     <div className="flex items-center gap-6">
-                        <a href="#" className={`transition-colors ${dark ? 'hover:text-violet-400 text-slate-400' : 'hover:text-violet-500 text-slate-500'}`}>Privacy Policy</a>
-                        <a href="#" className={`transition-colors ${dark ? 'hover:text-violet-400 text-slate-400' : 'hover:text-violet-500 text-slate-500'}`}>Terms of Service</a>
+                        <a href="/privacy" className={`transition-colors ${dark ? 'hover:text-violet-400 text-slate-400' : 'hover:text-violet-500 text-slate-500'}`}>Privacy Policy</a>
+                        <a href="/terms" className={`transition-colors ${dark ? 'hover:text-violet-400 text-slate-400' : 'hover:text-violet-500 text-slate-500'}`}>Terms of Service</a>
                         <a href="#" className={`transition-colors ${dark ? 'hover:text-violet-400 text-slate-400' : 'hover:text-violet-500 text-slate-500'}`}>Security</a>
                     </div>
                 </div>
@@ -1109,11 +1109,279 @@ function Footer({ dark }) {
     );
 }
 
-// ─── MAIN COMPONENT ───
+// ─── STORY PANEL ───
+const STORY_SCENES = [
+    {
+        id: 'before',
+        headline: 'Every week. The same tasks.',
+        sub: 'Caption. Post. Schedule. Invoice. Repeat. Hours gone every single week.',
+        visual: ({ active, dark }) => (
+            <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+                {['Write caption manually', 'Pick the best posting time', 'Schedule to all platforms', 'Send invoice to brand', 'Follow up on payment'].map((task, i) => (
+                    <div
+                        key={task}
+                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm shadow-sm border ${dark ? 'bg-slate-800/80 border-white/[0.07] text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}
+                        style={{
+                            opacity: active ? 1 : 0,
+                            transform: active ? 'translateX(0)' : 'translateX(-14px)',
+                            transition: `opacity 0.35s ease ${i * 90}ms, transform 0.35s ease ${i * 90}ms`,
+                        }}
+                    >
+                        <div className={`w-4 h-4 rounded border-2 flex-shrink-0 ${dark ? 'border-slate-600' : 'border-slate-300'}`} />
+                        <span className="flex-1">{task}</span>
+                        <FiRefreshCw className={`w-3 h-3 flex-shrink-0 ${dark ? 'text-slate-600' : 'text-slate-300'}`} style={{ animation: active ? 'spin 3s linear infinite' : 'none' }} />
+                    </div>
+                ))}
+            </div>
+        ),
+    },
+    {
+        id: 'ask',
+        headline: 'She typed one sentence.',
+        sub: 'That was the last time she ever had to think about it.',
+        visual: ({ active, dark }) => (
+            <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
+                <div style={{ opacity: active ? 1 : 0, transform: active ? 'translateY(0)' : 'translateY(10px)', transition: 'all 0.5s ease' }} className="flex justify-end">
+                    <div className="bg-indigo-500 text-white px-4 py-3 rounded-2xl rounded-tr-sm text-sm max-w-[88%] shadow-lg leading-relaxed">
+                        "Post my video every Tuesday and send the invoice to my sponsor automatically"
+                    </div>
+                </div>
+                <div style={{ opacity: active ? 1 : 0, transform: active ? 'translateY(0)' : 'translateY(10px)', transition: 'all 0.5s ease 650ms' }} className="flex justify-start">
+                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm border shadow-sm ${dark ? 'bg-slate-800 border-white/10 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+                        <FiCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        Got it. Setting up your workflow now...
+                    </div>
+                </div>
+            </div>
+        ),
+    },
+    {
+        id: 'setup',
+        headline: 'ModelGrow understood.',
+        sub: 'A complete automated workflow, built and running in seconds.',
+        visual: ({ active, dark }) => {
+            const nodes = [
+                { icon: <FiPlay className="w-4 h-4" />, label: 'Video', grad: 'from-violet-500 to-indigo-600' },
+                { icon: <FiMessageSquare className="w-4 h-4" />, label: 'Caption', grad: 'from-blue-500 to-cyan-500' },
+                { icon: <FiZap className="w-4 h-4" />, label: 'Post', grad: 'from-pink-500 to-rose-500' },
+                { icon: <FiDollarSign className="w-4 h-4" />, label: 'Invoice', grad: 'from-emerald-500 to-green-500' },
+            ];
+            return (
+                <div className="flex items-center justify-center w-full gap-1 sm:gap-2">
+                    {nodes.map((node, i) => (
+                        <div key={node.label} className="flex items-center">
+                            <div
+                                className="flex flex-col items-center gap-2"
+                                style={{
+                                    opacity: active ? 1 : 0,
+                                    transform: active ? 'scale(1)' : 'scale(0.5)',
+                                    transition: `all 0.45s cubic-bezier(0.34,1.56,0.64,1) ${i * 180}ms`,
+                                }}
+                            >
+                                <div className={`w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-gradient-to-br ${node.grad} flex items-center justify-center text-white shadow-lg`}>
+                                    {node.icon}
+                                </div>
+                                <span className={`text-[11px] font-semibold ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{node.label}</span>
+                            </div>
+                            {i < nodes.length - 1 && (
+                                <div
+                                    className="flex items-center pb-5 px-1 sm:px-2"
+                                    style={{ opacity: active ? 1 : 0, transition: `opacity 0.3s ease ${i * 180 + 280}ms` }}
+                                >
+                                    <div className={`w-5 sm:w-8 h-px ${dark ? 'bg-slate-600' : 'bg-slate-300'}`} />
+                                    <div className={`border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[6px] -ml-px ${dark ? 'border-l-slate-600' : 'border-l-slate-300'}`} />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        },
+    },
+    {
+        id: 'runs',
+        headline: 'Tuesday 9am. She was asleep.',
+        sub: 'Two notifications. Zero effort.',
+        visual: ({ active, dark }) => (
+            <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
+                {[
+                    { icon: <FiPlay className="w-4 h-4 text-white" />, grad: 'from-violet-500 to-indigo-600', title: 'Video posted', detail: '2.3k views in the first hour', time: '9:14 AM' },
+                    { icon: <FiDollarSign className="w-4 h-4 text-white" />, grad: 'from-emerald-500 to-green-500', title: 'Invoice sent', detail: '$800 delivered to Brand Co.', time: '9:15 AM' },
+                ].map((n, i) => (
+                    <div
+                        key={n.title}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border shadow-lg ${dark ? 'bg-slate-800/90 border-white/[0.08]' : 'bg-white border-slate-200'}`}
+                        style={{
+                            opacity: active ? 1 : 0,
+                            transform: active ? 'translateX(0)' : 'translateX(28px)',
+                            transition: `all 0.55s cubic-bezier(0.22,1,0.36,1) ${i * 400}ms`,
+                        }}
+                    >
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${n.grad} flex items-center justify-center flex-shrink-0 shadow-md`}>
+                            {n.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <p className={`text-sm font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{n.title}</p>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${dark ? 'bg-green-500/15 text-green-400' : 'bg-green-50 text-green-700'}`}>
+                                    <FiCheck className="w-2.5 h-2.5" /> Done
+                                </span>
+                            </div>
+                            <p className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{n.detail}</p>
+                        </div>
+                        <span className={`text-[11px] font-mono flex-shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{n.time}</span>
+                    </div>
+                ))}
+            </div>
+        ),
+    },
+    {
+        id: 'result',
+        headline: 'Alex did nothing.',
+        sub: 'Everything ran. Every week. Automatically.',
+        visual: ({ active }) => (
+            <div
+                className="text-center"
+                style={{ opacity: active ? 1 : 0, transform: active ? 'scale(1)' : 'scale(0.85)', transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}
+            >
+                <div className="text-[88px] sm:text-[108px] font-black bg-gradient-to-br from-violet-500 via-indigo-500 to-blue-400 bg-clip-text text-transparent leading-none mb-3 select-none">
+                    0
+                </div>
+                <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">manual tasks</p>
+            </div>
+        ),
+    },
+];
+
+function StoryPanel({ isActive }) {
+    const { isDarkMode } = useThemeAdaptive();
+    const dark = isDarkMode;
+    const [scene, setScene] = useState(0);
+    const [sceneVisible, setSceneVisible] = useState(false);
+    const intervalRef = useRef(null);
+    const TOTAL = STORY_SCENES.length;
+
+    const goTo = useCallback((idx) => {
+        setSceneVisible(false);
+        setTimeout(() => { setScene(idx); setSceneVisible(true); }, 220);
+    }, []);
+
+    const handleNext = useCallback(() => goTo((scene + 1) % TOTAL), [scene, goTo, TOTAL]);
+    const handlePrev = useCallback(() => goTo((scene - 1 + TOTAL) % TOTAL), [scene, goTo, TOTAL]);
+
+    useEffect(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (!isActive) { setSceneVisible(false); return; }
+        setScene(0);
+        setTimeout(() => setSceneVisible(true), 120);
+        intervalRef.current = setInterval(() => {
+            setScene(s => {
+                const next = (s + 1) % TOTAL;
+                setSceneVisible(false);
+                setTimeout(() => setSceneVisible(true), 220);
+                return next;
+            });
+        }, 3800);
+        return () => clearInterval(intervalRef.current);
+    }, [isActive, TOTAL]);
+
+    const current = STORY_SCENES[scene];
+    const Visual = current.visual;
+
+    return (
+        <div className="w-full max-w-2xl mx-auto px-6 sm:px-10 pt-20 sm:pt-28 pb-12">
+            {/* Header */}
+            <div className="text-center mb-10">
+                <span className={`inline-block text-xs font-semibold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${dark ? 'bg-violet-500/15 text-violet-400' : 'bg-violet-100 text-violet-600'}`}>
+                    How it works
+                </span>
+                <h2 className={`text-3xl sm:text-4xl font-bold leading-tight ${dark ? 'text-white' : 'text-gray-900'}`}>
+                    Meet Alex.{' '}
+                    <span className="bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">A content creator.</span>
+                </h2>
+            </div>
+
+            {/* Story card */}
+            <div className={`rounded-3xl border overflow-hidden shadow-xl ${dark ? 'bg-slate-900/70 border-white/[0.07]' : 'bg-white border-slate-200'}`}>
+
+                {/* Step badge */}
+                <div className={`flex items-center justify-between px-6 pt-5 pb-0`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-widest ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        Step {scene + 1} of {TOTAL}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                        {STORY_SCENES.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => { if (intervalRef.current) clearInterval(intervalRef.current); goTo(i); }}
+                                className={`rounded-full transition-all duration-300 ${i === scene
+                                    ? 'w-5 h-2 bg-violet-500'
+                                    : `w-2 h-2 ${dark ? 'bg-slate-700 hover:bg-slate-500' : 'bg-slate-200 hover:bg-slate-400'}`
+                                }`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Visual area */}
+                <div className="h-56 sm:h-60 flex items-center justify-center px-6 py-6 overflow-hidden relative">
+                    <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                            background: dark
+                                ? 'radial-gradient(ellipse at 50% 60%, rgba(139,92,246,0.07) 0%, transparent 70%)'
+                                : 'radial-gradient(ellipse at 50% 60%, rgba(139,92,246,0.05) 0%, transparent 70%)',
+                        }}
+                    />
+                    <div
+                        className="relative z-10 w-full"
+                        style={{ opacity: sceneVisible ? 1 : 0, transition: 'opacity 0.2s ease' }}
+                    >
+                        <Visual active={sceneVisible} dark={dark} />
+                    </div>
+                </div>
+
+                {/* Text + controls */}
+                <div className={`px-6 pb-6 pt-4 border-t ${dark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
+                    <div
+                        className="text-center mb-5"
+                        style={{
+                            opacity: sceneVisible ? 1 : 0,
+                            transform: sceneVisible ? 'translateY(0)' : 'translateY(6px)',
+                            transition: 'all 0.35s ease 0.08s',
+                        }}
+                    >
+                        <p className={`text-lg font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>{current.headline}</p>
+                        <p className={`text-sm leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{current.sub}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <button
+                            onClick={() => { if (intervalRef.current) clearInterval(intervalRef.current); handlePrev(); }}
+                            className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${dark ? 'border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/5' : 'border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                        >
+                            <FiChevronLeft className="w-4 h-4" />
+                        </button>
+                        <p className={`text-xs ${dark ? 'text-slate-600' : 'text-slate-300'}`}>Auto-playing · click to control</p>
+                        <button
+                            onClick={() => { if (intervalRef.current) clearInterval(intervalRef.current); handleNext(); }}
+                            className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${dark ? 'border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/5' : 'border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                        >
+                            <FiChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
 export default function LandingSections({ onSignUpClick }) {
     const { isDarkMode } = useThemeAdaptive();
     const dark = isDarkMode;
 
+    const [wfRef, wfVisible] = useScrollVisible(0.15);
     const [userRef, userVisible] = useScrollVisible(0.15);
     const [dashRef, dashVisible] = useScrollVisible(0.12);
     const [howRef, howVisible] = useScrollVisible(0.12);
@@ -1127,6 +1395,13 @@ export default function LandingSections({ onSignUpClick }) {
 
     return (
         <div className="w-full">
+
+            {/* ══════════════════════════════════════════════════
+                SECTION 0 — WORKFLOW LOG (first thing after hero)
+            ══════════════════════════════════════════════════ */}
+            <div ref={wfRef} className="anim-contain">
+                <StoryPanel isActive={wfVisible} />
+            </div>
 
             {/* ══════════════════════════════════════════════════
                 SECTION 1 — FOR EVERYONE
@@ -1208,7 +1483,7 @@ export default function LandingSections({ onSignUpClick }) {
 
                         {/* Right column — animation */}
                         <div className={`mt-10 md:mt-0 animate-on-scroll stagger-2 ${userVisible ? 'visible' : ''}`}>
-                            <div className={`rounded-2xl p-4 sm:p-6 glass-card ${dark
+                            <div className={`rounded-2xl p-4 sm:p-6 glass-card anim-contain ${dark
                                 ? 'bg-slate-800/40 border border-white/[0.06] shadow-2xl shadow-violet-500/5'
                                 : 'bg-white/50 border border-slate-200/60 shadow-xl shadow-violet-500/5'
                                 }`}>
@@ -1252,7 +1527,7 @@ export default function LandingSections({ onSignUpClick }) {
 
                             {/* Animation — left side (DOM second, pushed left by CSS) */}
                             <div className={`mt-10 md:mt-0 animate-on-scroll stagger-2 ${dashVisible ? 'visible' : ''}`}>
-                                <div className={`rounded-2xl p-4 sm:p-6 glass-card ${dark
+                                <div className={`rounded-2xl p-4 sm:p-6 glass-card anim-contain ${dark
                                     ? 'bg-slate-800/40 border border-white/[0.06] shadow-2xl shadow-violet-500/5'
                                     : 'bg-white/50 border border-slate-200/60 shadow-xl shadow-violet-500/5'
                                 }`}>

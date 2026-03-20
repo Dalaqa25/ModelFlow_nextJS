@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff } from 'react-icons/fi';
+import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff, FiZap, FiCalendar, FiBell, FiDatabase, FiRefreshCw } from 'react-icons/fi';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
@@ -329,26 +329,28 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
             {!chatStarted && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
                     {[
-                        "Post my TikToks automatically",
-                        "Send weekly reports",
-                        "Schedule social media",
-                        "Notify me on form fill",
-                    ].map((chip) => (
+                        { icon: <FiCalendar className="w-3 h-3 flex-shrink-0" />, label: 'Run a task on a schedule', prompt: 'Run a task automatically on a recurring schedule' },
+                        { icon: <FiBell className="w-3 h-3 flex-shrink-0" />, label: 'Alert me when something changes', prompt: 'Monitor something and alert me when there is a change or update' },
+                        { icon: <FiDatabase className="w-3 h-3 flex-shrink-0" />, label: 'Collect and organize data', prompt: 'Collect data from multiple sources and organize it into a report automatically' },
+                        { icon: <FiRefreshCw className="w-3 h-3 flex-shrink-0" />, label: 'Sync data between tools', prompt: 'Automatically sync data between two different tools or platforms' },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Trigger a workflow automatically', prompt: 'Set up a workflow that triggers automatically based on a condition' },
+                    ].map(({ icon, label, prompt }) => (
                         <button
-                            key={chip}
+                            key={label}
                             type="button"
                             onClick={() => {
-                                setInputValue(chip);
+                                setInputValue(prompt);
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
+                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
                                 isDarkMode
                                     ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
                                     : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
                             }`}
                         >
-                            {chip}
+                            {icon}
+                            {label}
                         </button>
                     ))}
                 </div>
