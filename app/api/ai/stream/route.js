@@ -85,29 +85,25 @@ export async function POST(request) {
       authUser = await getAuthenticatedUser(request);
     }
 
-    if (!authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Optional: Database user
+    let user = null;
+    if (authUser) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', authUser.email)
+        .maybeSingle();
+
+      if (dbUser) {
+        user = { id: dbUser.id, email: dbUser.email };
+      }
     }
-
-    // Get the database user ID (not the auth ID)
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('email', authUser.email)
-      .maybeSingle();
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
-    }
-
-    // Use database user (with correct ID) for all tool handlers
-    const user = { id: dbUser.id, email: dbUser.email };
 
     const body = await request.json();
     const { prompt, messages, temperature = 0.7 } = body;
@@ -122,8 +118,13 @@ export async function POST(request) {
 
     // STEP 1: Ask Llama (the brain) to understand and decide
 
+    let currentPrompt = ORCHESTRATOR_PROMPT;
+    if (!user) {
+      currentPrompt += "\n\nCRITICAL CONTEXT: The user is currently NOT signed in (Guest Mode). They can chat with you and explore automations, but to ACTUALLY RUN or configure anything, they will need to create an account. If they ask to run something, enthusiastically guide them to it but mention they'll just need to quickly sign in when they click to start.";
+    }
+
     const orchestratorMessages = [
-      { role: "system", content: ORCHESTRATOR_PROMPT },
+      { role: "system", content: currentPrompt },
       ...chatMessages.filter(m => m.role !== 'system')
     ];
 

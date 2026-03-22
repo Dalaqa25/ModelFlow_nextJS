@@ -6,7 +6,7 @@ import { useAiChat } from './useAiChat';
 import MessageRenderer from './MessageRenderer';
 
 const AiChat = forwardRef((props, ref) => {
-  const { onLoadingChange, onAwaitFileUploadChange, initialConversationId } = props;
+  const { onLoadingChange, onAwaitFileUploadChange, initialConversationId, onRequireAuth } = props;
   const { isDarkMode } = useThemeAdaptive();
   const messagesEndRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -24,7 +24,7 @@ const AiChat = forwardRef((props, ref) => {
     handleFileUpload,
     uploadState,
     isAwaitingFileUpload
-  } = useAiChat({ onLoadingChange, initialConversationId });
+  } = useAiChat({ onLoadingChange, initialConversationId, onRequireAuth });
 
   // Sync upload state with parent
   useEffect(() => {
@@ -138,6 +138,7 @@ const AiChat = forwardRef((props, ref) => {
             onConnectionComplete={handleConnectionComplete}
             onConfigSubmit={handleConfigSubmit}
             onBackgroundActivate={handleBackgroundActivate}
+            onRequireAuth={onRequireAuth}
             onNoResultsClose={() => {
               // Clear the popup from the message
               setMessages(prev =>

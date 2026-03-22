@@ -19,6 +19,7 @@ export default function MessageRenderer({
   onConnectionComplete,
   onConfigSubmit,
   onBackgroundActivate,
+  onRequireAuth,
   onNoResultsClose
 }) {
   const isCurrentStreamingAssistant =
@@ -91,15 +92,29 @@ export default function MessageRenderer({
         <AutomationList automations={message.automationList} isDarkMode={isDarkMode} />
       )}
 
-      {/* Connect button */}
+      {/* Connect button or Sign In button */}
       {message.connectRequest && (
         <div className="mt-4">
-          <ConnectButton
-            provider={message.connectRequest.provider}
-            automationId={message.connectRequest.automation_id}
-            userId={message.connectRequest.user_id}
-            onConnect={onConnectionComplete}
-          />
+          {!message.connectRequest.provider ? (
+            <button
+              onClick={() => onRequireAuth && onRequireAuth()}
+              className={`
+                inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium
+                transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5
+                bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500
+                text-white
+              `}
+            >
+              Sign in to continue
+            </button>
+          ) : (
+            <ConnectButton
+              provider={message.connectRequest.provider}
+              automationId={message.connectRequest.automation_id}
+              userId={message.connectRequest.user_id}
+              onConnect={onConnectionComplete}
+            />
+          )}
         </div>
       )}
 

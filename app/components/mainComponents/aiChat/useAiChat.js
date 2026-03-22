@@ -6,7 +6,7 @@ import { createStreamHandler } from './useStreamHandler';
 import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 import { compressFile } from '@/lib/utils/file-compressor';
 
-export function useAiChat({ onLoadingChange, initialConversationId }) {
+export function useAiChat({ onLoadingChange, initialConversationId, onRequireAuth }) {
   const [messages, setMessages] = useState([]);
   const [conversationSummary, setConversationSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -224,14 +224,13 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      toast.error('Please sign in to chat');
-      return;
-    }
+    // Only block if we need to persist (create conversation) — for unauthed users
+    // we allow AI responses but skip DB persistence
+    const isAuthed = !!user;
 
-    // Create conversation if this is the first message
+    // Create conversation if this is the first message (and user is signed in)
     let conversationId = currentConversationId;
-    if (!conversationId) {
+    if (isAuthed && !conversationId) {
       try {
         const automationId = setupState?.automationId || selectedAutomation?.id || null;
         const response = await fetch('/api/conversations', {
@@ -256,7 +255,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     const userMessage = {
       role: 'user',
       content: messageText,
-      hiddenContext: extraContext, // Save hidden context for future messages
+      hiddenContext: extraContext,
       timestamp: new Date().toISOString(),
     };
 
@@ -265,8 +264,8 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     setIsLoading(true);
     if (onLoadingChange) onLoadingChange(true);
 
-    // Save user message to DB
-    if (conversationId) {
+    // Save user message to DB only when authenticated
+    if (isAuthed && conversationId) {
       try {
         await fetch('/api/conversations/' + conversationId + '/messages', {
           method: 'POST',
@@ -413,10 +412,17 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     setCurrentAiMessageId(null);
   }, [onLoadingChange]);
 
-  const handleAutomationSelect = useCallback((automation) => {
+  const handleAutomationSelect = useCallback(async (automation) => {
+    // Require auth before running any automation
+    const supabase = createBrowserSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
     setSelectedAutomation(automation);
     sendMessage(`I want to use "${automation.name}"`, `\n\n[Selected automation UUID: ${automation.id}]`);
-  }, [sendMessage]);
+  }, [sendMessage, onRequireAuth]);
 
   const handleConnectionComplete = useCallback((provider) => {
     // Build context with collected fields to preserve state after OAuth
@@ -445,6 +451,13 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   }, [selectedAutomation, setupState, sendMessage]);
 
   const handleConfigSubmit = useCallback(async (configData, automationId) => {
+    // Require auth before executing
+    const supabase = createBrowserSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
     try {
       const response = await fetch('/api/automations/execute', {
         method: 'POST',
@@ -462,7 +475,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     } catch (error) {
       sendMessage(`Failed to start automation: ${error.message}`);
     }
-  }, [sendMessage]);
+  }, [sendMessage, onRequireAuth]);
 
   const handleBackgroundActivate = useCallback(async (automationId, config) => {
     // If automationId is null, user declined

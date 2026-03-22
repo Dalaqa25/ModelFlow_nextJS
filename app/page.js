@@ -73,10 +73,6 @@ function HomeContent() {
     };
 
     const handleMessageSent = (message) => {
-        if (!isAuthenticated) {
-            setIsSignInOpen(true);
-            return false;
-        }
         if (!hasStartedChat) {
             setHasStartedChat(true);
             setPendingMessage(message);
@@ -136,6 +132,7 @@ function HomeContent() {
                                     initialConversationId={chatId}
                                     onLoadingChange={handleLoadingChange}
                                     onAwaitFileUploadChange={handleUploadStatusChange}
+                                    onRequireAuth={() => setIsSignInOpen(true)}
                                 />
                             </div>
                         </div>
