@@ -15,7 +15,7 @@ export default function Privacy() {
                         <div className="bg-purple-900/30 border-2 border-purple-500/50 rounded-xl p-6 mt-4 max-w-4xl">
                             <h3 className="text-2xl font-semibold text-white mb-3">🔒 We Only Use What Your Automations Need</h3>
                             <p className="text-lg text-gray-200">
-                                While we request access to multiple services (Google, TikTok, etc.), <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need TikTok video upload, we don't access that feature. You're always in control of which automations you run.
+                                While we request access to multiple services (Google, TikTok, LinkedIn, Reddit, etc.), <strong className="text-purple-300">we ONLY use the permissions that your specific automations require</strong>. If an automation doesn't need Gmail, we don't access your Gmail. If it doesn't need TikTok video upload, we don't access that feature. You're always in control of which automations you run.
                             </p>
                         </div>
                     </div>   
@@ -79,6 +79,8 @@ export default function Privacy() {
                                         <li><strong>Resend:</strong> We use Resend to send transactional and notification emails. Resend processes your email address for email delivery purposes.</li>
                                         <li><strong>Google APIs:</strong> When you connect your Google account to use automations, we access Google services on your behalf using OAuth 2.0. We only access the data necessary for your automations to function and do not store your Google credentials. See Section 3.6 for detailed information about Google data usage.</li>
                                         <li><strong>TikTok APIs:</strong> When you connect your TikTok account to use automations, we access TikTok services on your behalf using OAuth 2.0. We only access the data necessary for your automations to function and do not store your TikTok credentials. See Section 3.7 for detailed information about TikTok data usage.</li>
+                                        <li><strong>LinkedIn APIs:</strong> When you connect your LinkedIn account to use automations, we access LinkedIn services on your behalf using OAuth 2.0. We only access the data necessary for your automations to function and do not store your LinkedIn credentials. See Section 3.8 for detailed information about LinkedIn data usage.</li>
+                                        <li><strong>Reddit APIs:</strong> When you connect your Reddit account to use automations, we access Reddit services on your behalf using OAuth 2.0. We only access the data necessary for your automations to function and do not store your Reddit credentials. See Section 3.9 for detailed information about Reddit data usage.</li>
                                     </ul>
                                 </div>
                                 <div>
@@ -158,6 +160,67 @@ export default function Privacy() {
                                         <li><strong>Comments:</strong> To read or manage comments for engagement automations</li>
                                     </ul>
                                     <p className="mt-4">We only request access to the services that your specific automations require. You will see exactly which permissions are requested when you connect your TikTok account.</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">3.8 LinkedIn API Services User Data</h3>
+                                    <p className="mb-2">ModelGrow's use of information received from LinkedIn APIs adheres to LinkedIn's API Terms of Use and data protection policies. Specifically:</p>
+                                    
+                                    {/* Prominent Limited Use Notice */}
+                                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-5 my-4">
+                                        <p className="text-lg font-semibold text-green-300 mb-2">✓ Limited Use Commitment</p>
+                                        <p className="text-gray-200">
+                                            <strong>We only access and use the LinkedIn services that your chosen automations specifically require.</strong> While we request permissions to support various automation types, we never access services that your active automations don't need. For example, if your automation only posts articles, we will not access your connections, messages, or any other service.
+                                        </p>
+                                    </div>
+                                    
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>What We Access:</strong> When you connect your LinkedIn account, we request access to specific LinkedIn services (such as article posting, profile information, and sharing) only as needed for your automations to function.</li>
+                                        <li><strong>How We Use It:</strong> We use your LinkedIn data solely to provide the automation services you request. For example, if you create an automation that posts blog articles to LinkedIn, we only access the posting functionality.</li>
+                                        <li><strong>Limited Use:</strong> We do not use LinkedIn user data for any purpose other than providing and improving the automation features you explicitly request. We do not use it for advertising, analytics unrelated to your automations, or any other purpose.</li>
+                                        <li><strong>No Sharing:</strong> We do not share your LinkedIn data with third parties except as necessary to provide the automation service or as required by law.</li>
+                                        <li><strong>Data Storage:</strong> We only store LinkedIn data temporarily as needed to execute your automations. We do not permanently store your LinkedIn posts, profile data, or other content unless explicitly required for the automation's functionality.</li>
+                                        <li><strong>Security:</strong> All LinkedIn data is transmitted and processed using industry-standard encryption and security measures.</li>
+                                        <li><strong>Your Control:</strong> You can revoke ModelGrow's access to your LinkedIn account at any time through your <a href="https://www.linkedin.com/psettings/permitted-services" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">LinkedIn Permitted Services page</a>.</li>
+                                    </ul>
+                                    <p className="mt-4">The specific LinkedIn services we may access include:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>Profile:</strong> To access basic profile information for authentication and user identification</li>
+                                        <li><strong>Article Posting:</strong> To publish articles and blog posts to your LinkedIn profile for content automations</li>
+                                        <li><strong>Sharing:</strong> To share updates and content on your LinkedIn feed for social media automations</li>
+                                        <li><strong>Organization Management:</strong> To post content on behalf of company pages you manage (if applicable)</li>
+                                    </ul>
+                                    <p className="mt-4">We only request access to the services that your specific automations require. You will see exactly which permissions are requested when you connect your LinkedIn account.</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">3.9 Reddit API Services User Data</h3>
+                                    <p className="mb-2">ModelGrow's use of information received from Reddit APIs adheres to Reddit's API Terms of Use and developer policies. Specifically:</p>
+                                    
+                                    {/* Prominent Limited Use Notice */}
+                                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-5 my-4">
+                                        <p className="text-lg font-semibold text-green-300 mb-2">✓ Limited Use Commitment</p>
+                                        <p className="text-gray-200">
+                                            <strong>We only access and use the Reddit services that your chosen automations specifically require.</strong> While we request permissions to support various automation types, we never access services that your active automations don't need. For example, if your automation only posts to subreddits, we will not access your private messages, saved posts, or any other service.
+                                        </p>
+                                    </div>
+                                    
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>What We Access:</strong> When you connect your Reddit account, we request access to specific Reddit services (such as posting, commenting, and reading subreddits) only as needed for your automations to function.</li>
+                                        <li><strong>How We Use It:</strong> We use your Reddit data solely to provide the automation services you request. For example, if you create an automation that cross-posts content to specific subreddits, we only access the posting functionality.</li>
+                                        <li><strong>Limited Use:</strong> We do not use Reddit user data for any purpose other than providing and improving the automation features you explicitly request. We do not use it for advertising, analytics unrelated to your automations, or any other purpose.</li>
+                                        <li><strong>No Sharing:</strong> We do not share your Reddit data with third parties except as necessary to provide the automation service or as required by law.</li>
+                                        <li><strong>Data Storage:</strong> We only store Reddit data temporarily as needed to execute your automations. We do not permanently store your Reddit posts, comments, or other content unless explicitly required for the automation's functionality.</li>
+                                        <li><strong>Security:</strong> All Reddit data is transmitted and processed using industry-standard encryption and security measures.</li>
+                                        <li><strong>Your Control:</strong> You can revoke ModelGrow's access to your Reddit account at any time through your <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Reddit App Preferences page</a>.</li>
+                                    </ul>
+                                    <p className="mt-4">The specific Reddit services we may access include:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li><strong>Posting:</strong> To submit posts to subreddits for content distribution automations</li>
+                                        <li><strong>Commenting:</strong> To post comments and replies for engagement automations</li>
+                                        <li><strong>Reading:</strong> To read subreddit content and monitor discussions for research automations</li>
+                                        <li><strong>Identity:</strong> To access basic account information for authentication and user identification</li>
+                                        <li><strong>Moderation:</strong> To manage subreddit content if you are a moderator and use moderation automations</li>
+                                    </ul>
+                                    <p className="mt-4">We only request access to the services that your specific automations require. You will see exactly which permissions are requested when you connect your Reddit account.</p>
                                 </div>
                             </div>
                         </section>

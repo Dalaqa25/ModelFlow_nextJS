@@ -11,6 +11,7 @@ import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import Link from 'next/link';
 
 export default function Home() {
     return (
@@ -156,6 +157,8 @@ function HomeContent() {
                         onFileUpload={handleFileUpload}
                         chatStarted={hasStartedChat}
                         greetingSlot={!hasStartedChat ? <Greetings /> : null}
+                        isLanding={isLanding}
+                        onScrollExplore={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
                     />
                 </div>
 
@@ -186,48 +189,42 @@ function HomeContent() {
 
                 {isLanding && (
                     <div
-                        className="fixed bottom-0 right-0 z-50 flex flex-col items-center justify-end gap-3 pb-4"
+                        className="fixed bottom-0 left-0 right-0 z-[9999] flex flex-col items-center justify-end gap-3 pb-6 pointer-events-none"
                         style={{
-                            left: !isMobile && isExpanded ? '256px' : !isMobile ? '52px' : '0',
-                            transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            paddingLeft: !isMobile && isExpanded ? '256px' : !isMobile ? '52px' : '0',
+                            transition: 'padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             opacity: heroOpacity,
-                            pointerEvents: heroOpacity < 0.1 ? 'none' : 'auto',
                         }}
                     >
-                        {/* Scroll hint arrow */}
-                        <button
-                            onClick={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
-                            aria-label="Scroll down to explore"
-                            className="flex flex-col items-center gap-1.5 group cursor-pointer bg-transparent border-none p-0"
-                        >
-                            <span className="text-xs tracking-widest uppercase text-gray-500 group-hover:text-gray-300 transition-colors duration-300 font-medium">
-                                Scroll to explore
-                            </span>
-                            <div className="animate-scroll-bounce flex flex-col items-center">
-                                {/* Double chevron for visual weight */}
-                                <svg
-                                    width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                    className="text-purple-400 group-hover:text-purple-300 transition-colors duration-300"
-                                    style={{ filter: 'drop-shadow(0 0 6px rgba(168,85,247,0.5))' }}
-                                >
-                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <svg
-                                    width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                    className="text-purple-400/50 group-hover:text-purple-300/60 transition-colors duration-300 -mt-2.5"
-                                >
-                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </div>
-                        </button>
-
-                        {/* Terms text */}
-                        <p className="text-sm text-gray-500 text-center">
-                            By messaging ModelGrow, you agree to our{' '}
-                            <a href="/terms" className="font-semibold text-gray-400 underline hover:text-white transition-colors">Terms</a>
-                            {' '}and{' '}
-                            <a href="/privacy" className="font-semibold text-gray-400 underline hover:text-white transition-colors">Privacy Policy</a>
-                        </p>
+                        <div className="pointer-events-auto flex flex-col items-center gap-2">
+                            <button
+                                onClick={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
+                                aria-label="Scroll down to explore"
+                                className="flex flex-col items-center gap-1.5 group cursor-pointer bg-transparent border-none p-0"
+                            >
+                                <span className="text-xs tracking-widest uppercase text-gray-500 group-hover:text-gray-300 transition-colors duration-300 font-medium">
+                                    Scroll to explore
+                                </span>
+                                <div className="animate-scroll-bounce flex flex-col items-center">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-purple-400 group-hover:text-purple-300 transition-colors duration-300" style={{ filter: 'drop-shadow(0 0 6px rgba(168,85,247,0.5))' }}>
+                                        <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-purple-400/50 group-hover:text-purple-300/60 transition-colors duration-300 -mt-2.5">
+                                        <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </div>
+                            </button>
+                            <p className="text-sm text-gray-500 text-center">
+                                By messaging ModelGrow, you agree to our{' '}
+                                <Link href="/terms" className="font-semibold text-gray-400 underline hover:text-white transition-colors cursor-pointer">
+                                    Terms
+                                </Link>
+                                {' '}and{' '}
+                                <Link href="/privacy" className="font-semibold text-gray-400 underline hover:text-white transition-colors cursor-pointer">
+                                    Privacy Policy
+                                </Link>
+                            </p>
+                        </div>
                     </div>
                 )}
             </AdaptiveBackground>

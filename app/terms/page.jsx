@@ -46,7 +46,7 @@ export default function Terms() {
                                 <ul className="list-disc list-inside space-y-2 ml-4">
                                     <li>Purchase credits to run AI automations</li>
                                     <li>Browse and use automations available on the platform</li>
-                                    <li>Connect third-party services (Google, TikTok, etc.) to enable automations</li>
+                                    <li>Connect third-party services (Google, TikTok, LinkedIn, Reddit, etc.) to enable automations</li>
                                     <li>Participate in community features, including requests and comments</li>
                                     <li>Manage subscriptions and earnings</li>
                                     <li>Interact with other users through the platform</li>
@@ -238,7 +238,31 @@ export default function Terms() {
                                     </ul>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.3 General Third-Party Service Terms</h3>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.3 LinkedIn Services Integration</h3>
+                                    <p className="mb-2">When you connect your LinkedIn account to use automations:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li>You authorize ModelGrow to access specific LinkedIn services on your behalf using OAuth 2.0</li>
+                                        <li>We only access the LinkedIn services that your specific automations require (e.g., posting articles, sharing updates, profile information)</li>
+                                        <li>You can revoke access at any time through your <a href="https://www.linkedin.com/psettings/permitted-services" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">LinkedIn Permitted Services page</a> or by disconnecting your account in ModelGrow</li>
+                                        <li>Our use of LinkedIn user data complies with LinkedIn's API Terms of Use and data usage policies</li>
+                                        <li>You are responsible for ensuring your use of LinkedIn services through our Platform complies with LinkedIn's User Agreement and Professional Community Policies</li>
+                                        <li>You represent that you have the right to publish any content to LinkedIn through our automations</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.4 Reddit Services Integration</h3>
+                                    <p className="mb-2">When you connect your Reddit account to use automations:</p>
+                                    <ul className="list-disc list-inside space-y-2 ml-4">
+                                        <li>You authorize ModelGrow to access specific Reddit services on your behalf using OAuth 2.0</li>
+                                        <li>We only access the Reddit services that your specific automations require (e.g., posting, commenting, reading subreddits)</li>
+                                        <li>You can revoke access at any time through your <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Reddit App Preferences page</a> or by disconnecting your account in ModelGrow</li>
+                                        <li>Our use of Reddit user data complies with Reddit's API Terms of Use and developer policies</li>
+                                        <li>You are responsible for ensuring your use of Reddit services through our Platform complies with Reddit's User Agreement and Content Policy</li>
+                                        <li>You represent that any content posted to Reddit through our automations complies with applicable subreddit rules and Reddit's content policies</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">6.5.5 General Third-Party Service Terms</h3>
                                     <p className="mb-2">For all third-party service integrations:</p>
                                     <ul className="list-disc list-inside space-y-2 ml-4">
                                         <li>You are responsible for maintaining valid accounts with third-party services</li>

@@ -5,6 +5,7 @@ import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff, FiZap, FiCalendar, FiBell,
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
+import Link from 'next/link';
 
 const PLACEHOLDER_HINTS = [
     "I want to automate my YouTube uploads...",
@@ -61,7 +62,7 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
     return displayText;
 }
 
-export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null }) {
+export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
     const isAtBottom = chatStarted || isAtBottomInternal;
@@ -355,7 +356,6 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                     ))}
                 </div>
             )}
-
             </div>
         </div>
     );
