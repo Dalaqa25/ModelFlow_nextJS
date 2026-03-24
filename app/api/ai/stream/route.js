@@ -106,12 +106,18 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { prompt, messages, temperature = 0.7 } = body;
+    const { prompt, messages, temperature = 0.7, frontendSetupState } = body;
 
     const chatMessages = buildChatMessages(messages, prompt);
     if (!chatMessages) {
       return NextResponse.json({ error: "Either 'prompt' or 'messages' is required" }, { status: 400 });
     }
+    
+    // TEMPORARY DEBUG LOGGING: Dump exactly what we receive to a file so the AI can read it
+    try {
+      const fs = require('fs');
+      fs.writeFileSync('/tmp/nextjs_ai_chat_debug.json', JSON.stringify(chatMessages, null, 2));
+    } catch(e) {}
 
     const encoder = new TextEncoder();
     const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
@@ -206,7 +212,32 @@ export async function POST(request) {
 
           // STEP 3: If action needed, execute it
           if (actionNeeded && actionNeeded.tool) {
-            const setupContext = extractSetupContext(chatMessages);
+            let setupContext = extractSetupContext(chatMessages) || {};
+
+            // CRITICAL FIX: Merge explicit frontend state into the context
+            // This prevents lost fields from regex parsing failures
+            if (frontendSetupState && frontendSetupState.automationId) {
+              setupContext.automationId = frontendSetupState.automationId;
+              setupContext.automationName = frontendSetupState.automationName || setupContext.automationName;
+              
+              if (frontendSetupState.collectedConfig) {
+                setupContext.collectedConfig = {
+                  ...(setupContext.collectedConfig || {}),
+                  ...frontendSetupState.collectedConfig
+                };
+              }
+              if (frontendSetupState.isReadyToExecute) {
+                setupContext.readyToExecute = true;
+                if (frontendSetupState.readyConfig) {
+                  setupContext.collectedConfig = frontendSetupState.readyConfig;
+                }
+              }
+            }
+            
+            // If setupContext is empty, make it null to match original behavior
+            if (Object.keys(setupContext).length === 0) {
+              setupContext = null;
+            }
 
             // Use GPT-4o-mini to generate proper tool arguments
             const toolArgs = await generateToolArguments(
@@ -314,10 +345,23 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
 
     const toolCall = response.choices[0].message.tool_calls?.[0];
     if (toolCall) {
-      return JSON.parse(toolCall.function.arguments);
+      const args = JSON.parse(toolCall.function.arguments);
+      
+      // CRITICAL OVERRIDE: GPT often forgets to include existing_config in the tool call
+      // We must forcefully inject our known truth here so memory is never lost!
+      if (toolName === 'collect_text_input' && setupContext?.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
+        args.existing_config = {
+          ...(args.existing_config || {}),
+          ...setupContext.collectedConfig
+        };
+        console.log(`[AI] Force-injected existing_config into ${toolName} args:`, Object.keys(args.existing_config));
+      }
+      
+      return args;
     }
     return null;
   } catch (e) {
+    console.error("[AI] Failed to generate tool arguments:", e);
     return null;
   }
 }
@@ -509,7 +553,9 @@ function extractSetupContext(messages) {
   }
 
   // PRIORITY 3: Look for existing_config (during setup flow)
-  const configMatch = allContent.match(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/);
+  // Use matchAll to find ALL occurrences and take the LAST one, so we always get the most recent state
+  const configMatches = Array.from(allContent.matchAll(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/g));
+  const configMatch = configMatches.length > 0 ? configMatches[configMatches.length - 1] : null;
 
   const automationId = automationIdMatch?.[1];
 

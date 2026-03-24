@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 import AiChat from '@/app/components/mainComponents/aiChat';
 import AutomationsList from '@/app/components/mainComponents/AutomationsList';
 
@@ -36,6 +37,9 @@ function HomeContent() {
     const [isScoped, setIsScoped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadActive, setIsUploadActive] = useState(false);
+    
+    const { isMobile, isExpanded } = useSidebar();
+    const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
 
     const handleUploadStatusChange = (isActive) => {
         setIsUploadActive(isActive);
@@ -92,7 +96,10 @@ function HomeContent() {
 
             <div className={`flex flex-col items-center px-6 ${!hasStartedChat ? 'min-h-[calc(100vh-4rem)] justify-center' : ''}`}>
                 {!hasStartedChat ? null : (
-                    <div className="w-full h-full flex flex-col items-center pt-[15vh]">
+                    <div 
+                        className="w-full h-full flex flex-col items-center pt-[15vh] transition-all duration-300"
+                        style={{ paddingLeft: sidebarOffset }}
+                    >
                         <div className="w-full max-w-4xl flex-1 flex flex-col">
                             <AiChat
                                 ref={chatRef}

@@ -3,7 +3,7 @@
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { FaTiktok } from 'react-icons/fa';
+import { FaTiktok, FaLinkedin } from 'react-icons/fa';
 
 export default function ConnectButton({ provider, automationId, userId, onConnect }) {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -18,6 +18,11 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
       name: 'TikTok',
       icon: <FaTiktok size={20} />,
       color: 'bg-black text-white hover:bg-gray-800 border border-transparent shadow-sm',
+    },
+    linkedin: {
+      name: 'LinkedIn',
+      icon: <FaLinkedin size={20} />,
+      color: 'bg-[#0077b5] text-white btn-white-text hover:bg-[#006396] border border-transparent shadow-sm',
     },
     // Add more providers as needed
   };

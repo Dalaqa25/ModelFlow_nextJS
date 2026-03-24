@@ -15,7 +15,7 @@ body {
   overscroll-behavior-y: none;
 }
 
-li:hover {
+html.light li:hover {
   color: black;
 }
 

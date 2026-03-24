@@ -190,10 +190,7 @@ html.light body {
   backdrop-filter: blur(12px) !important;
 }
 
-/* Special cases for maintaining design consistency */
-.light .bg-gradient-to-br {
-  /* Keep gradient avatars as is for visual consistency */
-}
+/* Special cases: gradient avatars (.bg-gradient-to-br) keep their styles as-is for visual consistency */
 
 .light .from-purple-500 {
   --tw-gradient-from: var(--accent-purple) !important;
@@ -258,9 +255,31 @@ html.light body {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
 }
 
-/* Button styles */
-.light button {
-  color: var(--text-primary) !important;
+/* Button styles — only unstyled/ghost buttons inherit dark text.
+   Gradient and solid-colored buttons keep their own (usually white) text. */
+
+/* Plain buttons with no specific background: use dark text */
+.light button:not([class*="bg-"]):not([class*="from-"]):not([class*="gradient"]) {
+  color: var(--text-primary);
+}
+
+/* Ensure white text on all gradient/colored primary buttons */
+.light button[class*="from-"],
+.light button[class*="bg-gradient"],
+.light button[class*="bg-purple"],
+.light button[class*="bg-blue"],
+.light button[class*="bg-green"],
+.light button[class*="bg-red"],
+.light button[class*="bg-pink"],
+.light button[class*="bg-indigo"],
+.light button[class*="bg-violet"] {
+  color: white !important;
+}
+
+/* Explicit white-text utility — use this class on any button that has
+   a colored background and needs white text in light mode */
+.light .btn-white-text {
+  color: white !important;
 }
 
 /* Scrollbar styles for light mode */

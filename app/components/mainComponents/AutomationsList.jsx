@@ -107,8 +107,7 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                 <div
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="h-full overflow-y-auto p-3"
-                    style={{ scrollbarWidth: 'thin' }}
+                    className="h-full overflow-y-auto p-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
                     <div className="grid grid-cols-3 gap-3">
                         {automations.map((automation, index) => (

@@ -367,7 +367,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         signal: abortController.signal,
-        body: JSON.stringify({ messages: conversationHistory, temperature: 0.7, maxTokens: 2000 }),
+        body: JSON.stringify({ 
+          messages: conversationHistory, 
+          temperature: 0.7, 
+          maxTokens: 2000,
+          frontendSetupState: setupState
+        }),
       });
 
       if (!response.ok) {
