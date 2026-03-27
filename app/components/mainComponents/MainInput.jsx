@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff, FiZap, FiCalendar, FiBell, FiDatabase, FiRefreshCw } from 'react-icons/fi';
+import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff, FiZap } from 'react-icons/fi';
+import { FaLinkedinIn, FaTiktok } from 'react-icons/fa';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
@@ -330,11 +331,11 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
             {!chatStarted && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
                     {[
-                        { icon: <FiCalendar className="w-3 h-3 flex-shrink-0" />, label: 'Run a task on a schedule', prompt: 'Run a task automatically on a recurring schedule' },
-                        { icon: <FiBell className="w-3 h-3 flex-shrink-0" />, label: 'Alert me when something changes', prompt: 'Monitor something and alert me when there is a change or update' },
-                        { icon: <FiDatabase className="w-3 h-3 flex-shrink-0" />, label: 'Collect and organize data', prompt: 'Collect data from multiple sources and organize it into a report automatically' },
-                        { icon: <FiRefreshCw className="w-3 h-3 flex-shrink-0" />, label: 'Sync data between tools', prompt: 'Automatically sync data between two different tools or platforms' },
-                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Trigger a workflow automatically', prompt: 'Set up a workflow that triggers automatically based on a condition' },
+                        { icon: <FaLinkedinIn className="w-3 h-3 flex-shrink-0 text-[#0A66C2]" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
+                        { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation' },
+                        { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Video Uploader', prompt: 'I want to use the TikTok Video Uploader automation' },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation' },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Auto Caption Generator', prompt: 'I want to use the Auto Caption Generator automation' },
                     ].map(({ icon, label, prompt }) => (
                         <button
                             key={label}

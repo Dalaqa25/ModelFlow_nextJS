@@ -1142,6 +1142,13 @@ function getConnectorIcon(name = '') {
     return <FiZap className="w-3 h-3" />;
 }
 
+function getCardIcon(name = '') {
+    const n = name.toLowerCase();
+    if (n.includes('linkedin')) return <FaLinkedinIn className="w-4 h-4 text-white" />;
+    if (n.includes('tiktok')) return <FaTiktok className="w-4 h-4 text-white" />;
+    return <FiZap className="w-4 h-4 text-white" />;
+}
+
 function AutomationShowcaseCard({ automation, index, isVisible, onSignUpClick }) {
     const { isDarkMode } = useThemeAdaptive();
     const dark = isDarkMode;
@@ -1176,7 +1183,7 @@ function AutomationShowcaseCard({ automation, index, isVisible, onSignUpClick })
             {/* Icon + name row */}
             <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform`}>
-                    <FiZap className="w-4 h-4 text-white" />
+                    {getCardIcon(automation.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className={`text-sm font-bold leading-snug truncate ${dark ? 'text-white' : 'text-gray-900'}`}>
@@ -1203,13 +1210,12 @@ function AutomationShowcaseCard({ automation, index, isVisible, onSignUpClick })
                     {connectors.slice(0, 4).map((c, i) => (
                         <span
                             key={i}
-                            className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                            className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${
                                 dark
                                     ? 'bg-slate-700/80 text-slate-300 border border-white/[0.06]'
                                     : 'bg-slate-100 text-slate-600 border border-slate-200'
                             }`}
                         >
-                            {getConnectorIcon(c)}
                             {c}
                         </span>
                     ))}
@@ -1239,7 +1245,18 @@ function AutomationsShowcase({ isActive, onSignUpClick }) {
         fetch('/api/automations')
             .then(r => r.json())
             .then(data => {
-                setAllAutomations(Array.isArray(data) ? data : []);
+                if (!Array.isArray(data)) { setLoading(false); return; }
+                // Sort: LinkedIn first, then TikTok, then rest
+                const sorted = [...data].sort((a, b) => {
+                    const priority = (name = '') => {
+                        const n = name.toLowerCase();
+                        if (n.includes('linkedin')) return 0;
+                        if (n.includes('tiktok')) return 1;
+                        return 2;
+                    };
+                    return priority(a.name) - priority(b.name);
+                });
+                setAllAutomations(sorted);
                 setLoading(false);
             })
             .catch(() => setLoading(false));

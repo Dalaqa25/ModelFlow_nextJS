@@ -8,13 +8,13 @@ import { FcGoogle } from 'react-icons/fc';
 import { FiTrendingUp, FiZap, FiEdit2 } from 'react-icons/fi';
 
 const FEATURED_NAMES = [
-    'TikTok Video Schedule Uploader',
-    'Viral Pattern Detector',
     'LinkedIn Auto Blog Poster',
-    'Invoice Manager System',
+    'TikTok Scheduled Auto-Post from Supabase',
+    'TikTok Video Uploader',
+    'TikTok Scheduled Auto-Post',
+    'Viral Pattern Detector',
     'Video Pacing Analyzer',
-    'Out Caption Generation',
-    'TikTok Automation',
+    'Auto Caption Generator',
 ];
 
 // Map automation name keywords to icon components
@@ -94,6 +94,9 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
         }
     };
 
+    const isFeatured = (automation) =>
+        FEATURED_NAMES.slice(0, 3).some(n => n.toLowerCase() === automation.name?.toLowerCase());
+
     return (
         <div
             className={`fixed bottom-6 right-0 w-full max-w-4xl px-6 z-40 transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -114,11 +117,16 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                             <div
                                 key={`${automation.id}-${index}`}
                                 onClick={() => onSelect?.(automation)}
-                                className={`p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${isDarkMode
+                                className={`p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] relative ${isDarkMode
                                     ? 'bg-slate-800 border-slate-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-900/20'
                                     : 'bg-white border-slate-200 hover:border-purple-400 hover:shadow-md'
-                                }`}
+                                } ${isFeatured(automation) ? (isDarkMode ? 'ring-1 ring-purple-500/30' : 'ring-1 ring-purple-300/50') : ''}`}
                             >
+                                {automation.name?.toLowerCase().includes('linkedin') && (
+                                    <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#0A66C2]/20 text-[#0A66C2]">
+                                        Featured
+                                    </span>
+                                )}
                                 <div className="flex items-center gap-1.5 mb-2">
                                     {getIcons(automation.name)}
                                 </div>
