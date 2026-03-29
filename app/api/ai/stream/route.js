@@ -220,10 +220,11 @@ export async function POST(request) {
               setupContext.automationId = frontendSetupState.automationId;
               setupContext.automationName = frontendSetupState.automationName || setupContext.automationName;
               
-              if (frontendSetupState.collectedConfig) {
+              // Frontend collectedConfig is the most reliable source — always prefer it
+              if (frontendSetupState.collectedConfig && Object.keys(frontendSetupState.collectedConfig).length > 0) {
                 setupContext.collectedConfig = {
-                  ...(setupContext.collectedConfig || {}),
-                  ...frontendSetupState.collectedConfig
+                  ...setupContext.collectedConfig,           // regex-parsed (less reliable)
+                  ...frontendSetupState.collectedConfig      // frontend state (most reliable, wins)
                 };
               }
               if (frontendSetupState.isReadyToExecute) {
@@ -349,12 +350,13 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
       
       // CRITICAL OVERRIDE: GPT often forgets to include existing_config in the tool call
       // We must forcefully inject our known truth here so memory is never lost!
-      if (toolName === 'collect_text_input' && setupContext?.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
-        args.existing_config = {
-          ...(args.existing_config || {}),
-          ...setupContext.collectedConfig
+      if ((toolName === 'collect_text_input' || toolName === 'auto_setup') && setupContext?.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
+        const fieldKey = toolName === 'collect_text_input' ? 'existing_config' : 'existing_config';
+        args[fieldKey] = {
+          ...(args[fieldKey] || {}),
+          ...setupContext.collectedConfig  // frontend state always wins
         };
-        console.log(`[AI] Force-injected existing_config into ${toolName} args:`, Object.keys(args.existing_config));
+        console.log(`[AI] Force-injected existing_config into ${toolName} args:`, Object.keys(args[fieldKey]));
       }
       
       return args;

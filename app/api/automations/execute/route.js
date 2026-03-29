@@ -166,6 +166,28 @@ export async function POST(req) {
 
     const result = await runnerResponse.json();
 
+    // The runner might return 200 OK but with success: false in the JSON body
+    if (!result.success) {
+      console.error('[EXECUTE DEBUG] Automation returned success: false', result.errors);
+      
+      // Log failed execution
+      await supabase.from('automation_executions').insert({
+        automation_id,
+        executed_by: user.email,
+        status: 'failed',
+        credits_used: 0,
+        started_at: new Date(startTime).toISOString(),
+        completed_at: new Date(endTime).toISOString(),
+        duration_ms: durationMs,
+        error_message: (result.errors && result.errors.length > 0) ? result.errors[0] : 'Workflow execution failed'
+      });
+
+      return NextResponse.json(
+        { error: 'Workflow execution failed', message: (result.errors && result.errors.length > 0) ? result.errors[0] : 'Unknown error during execution', details: result },
+        { status: 500 }
+      );
+    }
+
     // SCENARIO 1: On-Demand (Run Once) - Just execute, don't save config
     // SCENARIO 2: Background (Continuous) - Save config for recurring execution
     if (automation.requires_background) {

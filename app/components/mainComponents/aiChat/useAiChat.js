@@ -27,6 +27,13 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
       if (!initialConversationId) return;
       if (hasLoadedInitial.current && currentConversationId === initialConversationId) return;
 
+      // FIX: Set userId when loading existing conversations so AI responses get saved to DB
+      const supabase = createBrowserSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+
       setCurrentConversationId(initialConversationId);
       hasLoadedInitial.current = true;
       setIsLoading(true);
@@ -228,6 +235,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     // we allow AI responses but skip DB persistence
     const isAuthed = !!user;
 
+    // FIX: Always set userId when authenticated, not just when creating new conversations
+    // Without this, AI responses in resumed conversations are never persisted to DB
+    if (isAuthed) {
+      setUserId(user.id);
+    }
+
     // Create conversation if this is the first message (and user is signed in)
     let conversationId = currentConversationId;
     if (isAuthed && !conversationId) {
@@ -303,8 +316,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     try {
       // CRITICAL: Build conversation history from CURRENT messages + new message
       // This ensures the file upload context is included
+      // FIX: Filter out hidden tool output messages before building history
+      // These were polluting the message count and causing real messages to be truncated
       let conversationHistory = [...messages, userMessage]
-        .filter(msg => msg.content?.trim())
+        .filter(msg => msg.content?.trim() && !msg.isToolOutput && !msg.isHidden)
         .map(msg => ({
           role: msg.role,
           // Append hidden context (like file uploads, READY_TO_RUN configs) if present
@@ -356,10 +371,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
 
       // Trim history
-      if (conversationHistory.length > 15) {
+      // FIX: Increased from 15 to 30 — the old limit was far too aggressive
+      // and caused the AI to lose context mid-conversation
+      if (conversationHistory.length > 30) {
         conversationHistory = conversationSummary
-          ? [{ role: 'system', content: `Previous conversation summary: ${conversationSummary}` }, ...conversationHistory.slice(-15)]
-          : conversationHistory.slice(-15);
+          ? [{ role: 'system', content: `Previous conversation summary: ${conversationSummary}` }, ...conversationHistory.slice(-25)]
+          : conversationHistory.slice(-25);
       }
 
       const response = await fetch('/api/ai/stream', {
@@ -386,6 +403,57 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
 
       await processStream(response, aiMessageId);
+
+      // SAFETY NET: Detect when AI acknowledged a field value but forgot to call collect_text_input
+      // This prevents the infinite "ask the same question" loop
+      if (setupState?.missingFields?.length > 0 && messageText.trim()) {
+        const userInput = messageText.trim();
+        const missingFields = setupState.missingFields.map(f => (typeof f === 'string' ? f : f.name || f).toUpperCase());
+        
+        // Check if any missing field was NOT collected during this turn
+        // by comparing current setupState with what we had before
+        const stillMissing = missingFields.filter(fieldName => {
+          // Check if this field is still not in collectedFields after the AI responded
+          const currentCollected = setupState.collectedFields || {};
+          return !currentCollected[fieldName];
+        });
+
+        if (stillMissing.length > 0) {
+          // Heuristic: try to match user input to the first missing field
+          const firstMissing = stillMissing[0];
+          let shouldAutoCollect = false;
+
+          // URL fields: user sends something starting with http
+          if (firstMissing.includes('URL') && /^https?:\/\//i.test(userInput)) {
+            shouldAutoCollect = true;
+          }
+          // Tone/option fields: user sends a short text that matches known options
+          else if (firstMissing.includes('TONE') && userInput.length < 50) {
+            shouldAutoCollect = true;
+          }
+          // Email fields
+          else if (firstMissing.includes('EMAIL') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userInput)) {
+            shouldAutoCollect = true;
+          }
+          // Interval/schedule fields
+          else if ((firstMissing.includes('INTERVAL') || firstMissing.includes('SCHEDULE')) && userInput.length < 100) {
+            shouldAutoCollect = true;
+          }
+          // Generic: if user sends a short, non-question answer (no '?' at end)
+          else if (userInput.length < 200 && !userInput.endsWith('?') && !userInput.toLowerCase().startsWith('what') && !userInput.toLowerCase().startsWith('how') && !userInput.toLowerCase().startsWith('why')) {
+            shouldAutoCollect = true;
+          }
+
+          if (shouldAutoCollect) {
+            console.log(`[Safety Net] AI forgot to collect field ${firstMissing}. Auto-saving value: ${userInput.substring(0, 50)}`);
+            setSetupState(prev => prev ? {
+              ...prev,
+              collectedFields: { ...prev.collectedFields, [firstMissing]: userInput },
+              collectedConfig: { ...prev.collectedConfig, [firstMissing]: userInput }
+            } : null);
+          }
+        }
+      }
     } catch (error) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
