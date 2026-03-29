@@ -255,6 +255,22 @@ html.light body {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
 }
 
+/* Exempt bg-transparent inputs from these global forced styles */
+.light input.bg-transparent,
+.light textarea.bg-transparent,
+.light select.bg-transparent {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.light input:focus.bg-transparent,
+.light textarea:focus.bg-transparent,
+.light select:focus.bg-transparent {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* Button styles — only unstyled/ghost buttons inherit dark text.
    Gradient and solid-colored buttons keep their own (usually white) text. */
 
@@ -601,4 +617,89 @@ html.light body {
 
 .light .border-r {
   border-right-color: var(--border-primary) !important;
+}
+
+/* Community Page Additions */
+.light .bg-black\/50,
+.light .bg-black\/60 {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(8px);
+}
+
+.light .bg-slate-900\/70,
+.light .bg-slate-900\/90,
+.light .bg-slate-900\/98 {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.light .bg-slate-800\/25,
+.light .bg-slate-800\/45,
+.light .bg-slate-800\/60 {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: 0 1px 2px var(--shadow-light) !important;
+}
+
+.light .hover\:bg-slate-800\/45:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.light .bg-slate-700\/40 {
+  background-color: var(--border-primary) !important;
+}
+
+/* Border Opacities used in Community */
+.light .border-slate-700\/20,
+.light .border-slate-700\/30,
+.light .border-slate-700\/40 {
+  border-color: var(--border-primary) !important;
+}
+
+/* Red alerts on community */
+.light .bg-red-500\/8,
+.light .bg-red-500\/15 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.light .border-red-500\/10,
+.light .border-red-500\/15,
+.light .border-red-500\/20 {
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.light .text-red-400\/60,
+.light .text-red-400\/70 {
+  color: #ef4444 !important;
+}
+
+.light .hover\:text-red-300:hover {
+  color: #dc2626 !important;
+}
+
+/* Purple overrides for light mode tags */
+.light .bg-purple-500\/8,
+.light .bg-purple-500\/12,
+.light .bg-purple-500\/15 {
+  background-color: rgba(139, 92, 246, 0.08) !important;
+}
+
+.light .border-purple-500\/10,
+.light .border-purple-500\/20,
+.light .border-purple-500\/40 {
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+.light .text-purple-300\/70 {
+  color: var(--accent-purple) !important;
+}
+
+/* Focus and ring states specific to community input */
+.light .focus-within\:border-purple-500\/40:focus-within {
+  border-color: var(--accent-purple) !important;
+  box-shadow: 0 0 0 1px var(--accent-purple) !important;
+}
+
+.light .focus-within\:ring-purple-500\/20:focus-within {
+  --tw-ring-color: rgba(139, 92, 246, 0.2) !important;
 }

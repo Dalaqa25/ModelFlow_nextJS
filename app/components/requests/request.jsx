@@ -1,5 +1,5 @@
-import { FaRegComment, FaRegUser } from 'react-icons/fa';
-import { useState } from 'react';
+import { FaRegComment } from 'react-icons/fa';
+import { useState, useMemo } from 'react';
 import RequestInfo from './requestInfo';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -23,56 +23,84 @@ export default function Request() {
         }
     });
 
+    const sortedRequests = useMemo(() => {
+        return [...requests].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }, [requests]);
+
     if (isLoading) {
         return (
-            <div className="w-full flex flex-col items-center justify-center min-h-[200px]">
-                <div className="mb-6">
-                    <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                </div>
-                <h1 className="text-xl font-extrabold text-gray-600 drop-shadow-lg tracking-wide animate-pulse">
-                    Loading requests...
-                </h1>
+            <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="bg-slate-800/30 border border-slate-700/20 rounded-xl p-5 animate-pulse h-[140px] flex flex-col justify-center">
+                        <div className="h-4 bg-slate-700/40 rounded w-1/2 mb-4" />
+                        <div className="h-3 bg-slate-700/30 rounded w-full mb-3" />
+                        <div className="h-3 bg-slate-700/30 rounded w-3/4" />
+                    </div>
+                ))}
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="w-full flex justify-center items-center min-h-[200px]">
-                <div className="text-red-500 text-center">
-                    <p className="text-lg font-semibold">{error.message}</p>
-                    <button 
-                        onClick={() => refetch()} 
-                        className="mt-4 px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                        Try Again
-                    </button>
-                </div>
+            <div className="col-span-1 md:col-span-2 bg-red-500/8 border border-red-500/15 rounded-xl p-8 text-center">
+                <p className="text-red-300 text-sm font-medium mb-1">{error.message}</p>
+                <button
+                    onClick={() => refetch()}
+                    className="text-xs text-red-400/70 hover:text-red-300 mt-2 transition-colors"
+                >
+                    Try again
+                </button>
             </div>
         );
     }
 
     if (requests.length === 0) {
         return (
-            <div className="w-full flex justify-center items-center min-h-[200px]">
-                <div className="text-gray-500 text-center">
-                    <p className="text-lg">No requests found</p>
-                    <p className="text-sm mt-2">Be the first to create a request!</p>
-                </div>
+            <div className="col-span-1 md:col-span-2 border border-slate-700/20 border-dashed rounded-xl p-10 text-center">
+                <p className="text-slate-300 font-medium mb-1">No suggestions yet</p>
+                <p className="text-slate-500 text-sm">Be the first to suggest an automation!</p>
             </div>
         );
     }
 
+    const getTimeAgo = (dateString) => {
+        const now = new Date();
+        const created = new Date(dateString);
+        const diffMs = now - created;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 30) return `${diffDays}d ago`;
+        return created.toLocaleDateString();
+    };
+
+    const getInitial = (email) => email ? email.charAt(0).toUpperCase() : '?';
+
+    const getAvatarColor = (email) => {
+        const colors = [
+            'from-purple-500 to-indigo-500',
+            'from-pink-500 to-rose-500',
+            'from-blue-500 to-cyan-500',
+            'from-amber-500 to-orange-500',
+            'from-emerald-500 to-teal-500',
+            'from-violet-500 to-fuchsia-500',
+        ];
+        const hash = email?.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) || 0;
+        return colors[hash % colors.length];
+    };
+
     return (
         <>
+            {/* Backdrop for detail panel */}
             <div
-                className={`fixed inset-0 bg-gray-500/50 z-50 transition-opacity duration-300 ${selectedRequestId ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${selectedRequestId ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setSelectedRequestId(null)}
-                style={{ transitionProperty: 'opacity' }}
-            ></div>
+            />
 
             {selectedRequestId && (
                 <RequestInfo
@@ -81,48 +109,59 @@ export default function Request() {
                 />
             )}
 
-            {requests.map((req) => (
+            {sortedRequests.map((req) => (
                 <div
                     key={req.id}
                     onClick={() => setSelectedRequestId(req.id)}
-                    className="w-[95%] sm:w-[85%] md:w-1/2 max-w-[950px] min-w-[280px] bg-slate-800/90 backdrop-blur-md border border-slate-700/50 rounded-2xl cursor-pointer hover:shadow-lg hover:shadow-purple-500/25 hover:border-purple-500/50 transition-all duration-300 ease-in-out"
+                    className="group bg-slate-800/25 hover:bg-slate-800/45 border border-slate-700/20 hover:border-slate-600/30 rounded-xl cursor-pointer transition-all duration-200"
                 >
-                    <div className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3">
-                        <h1 className="text-xl sm:text-2xl font-semibold text-white">{req.title}</h1>
-                        <p className="text-sm sm:text-base font-light text-slate-300">
-                            {req.description.length > 150
-                                ? `${req.description.substring(0, 150)}...`
-                                : req.description}
+                    <div className="p-4 sm:p-5">
+                        {/* Title */}
+                        <h2 className="text-[15px] sm:text-base font-semibold text-white mb-1.5 group-hover:text-purple-100 transition-colors">
+                            {req.title}
+                        </h2>
+
+                        {/* Description */}
+                        <p className="text-sm text-slate-400 leading-relaxed mb-3 line-clamp-2">
+                            {req.description}
                         </p>
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                            <div className="flex flex-wrap gap-2">
-                                {req.tags.map((tag, index) => (
-                                    <span key={index} className="text-sm sm:text-base text-purple-300 rounded-xl font-medium px-2 sm:px-3 py-0.5 bg-purple-500/20 border border-purple-500/30">
-                                        {tag}
+
+                        {/* Tags */}
+                        {req.tags?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                                {req.tags.map((tag, i) => (
+                                    <span
+                                        key={i}
+                                        className="text-xs text-purple-300/70 bg-purple-500/8 border border-purple-500/10 rounded-md px-2 py-0.5 font-medium"
+                                    >
+                                        #{tag}
                                     </span>
                                 ))}
                             </div>
-                            <div className="flex gap-2 items-center">
-                                <FaRegComment className="cursor-pointer text-slate-400 hover:text-purple-400 text-lg sm:text-xl transition-colors" />
-                                <span className="text-sm sm:text-base text-slate-400">{req.commentsCount || 0}</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm gap-2 sm:gap-0">
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <FaRegUser className="text-sm sm:text-base" />
-                                <p
+                        )}
+
+                        {/* Footer: Author · Time · Comments */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         router.push(`/profile/${req.author_email}`);
                                     }}
-                                    className="hover:underline cursor-pointer text-purple-300 hover:text-purple-200 transition-colors"
+                                    className="flex items-center gap-1.5 hover:text-purple-300 transition-colors"
                                 >
-                                    {req.author_email}
-                                </p>
+                                    <div className={`w-4.5 h-4.5 w-[18px] h-[18px] rounded-full bg-gradient-to-br ${getAvatarColor(req.author_email)} flex items-center justify-center`}>
+                                        <span className="text-[8px] font-bold text-white leading-none">{getInitial(req.author_email)}</span>
+                                    </div>
+                                    <span className="truncate max-w-[150px]">{req.author_email}</span>
+                                </button>
+                                <span className="text-slate-600">·</span>
+                                <span>{getTimeAgo(req.created_at)}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-400 font-light sm:ml-auto">
-                                <p>Created on</p>
-                                <p className="text-slate-300">{new Date(req.created_at).toLocaleDateString()}</p>
+
+                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                                <FaRegComment className="text-[11px]" />
+                                <span>{req.commentsCount || 0}</span>
                             </div>
                         </div>
                     </div>
