@@ -55,7 +55,7 @@ export default function RequestInfo({ request, onClose }) {
         <>
             {/* Side Panel — slides in from right */}
             <div
-                className={`fixed top-0 right-0 h-full z-50 w-full sm:w-[480px] lg:w-[520px] bg-slate-900/98 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col transition-transform duration-300 ease-out ${isVisible ? 'translate-x-0' : 'translate-x-full'
+                className={`fixed top-14 sm:top-0 right-0 h-[calc(100%-3.5rem)] sm:h-full z-50 w-full sm:w-[480px] lg:w-[520px] bg-slate-900/98 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col transition-transform duration-300 ease-out ${isVisible ? 'translate-x-0' : 'translate-x-full'
                     }`}
             >
                 {/* Panel Header */}
