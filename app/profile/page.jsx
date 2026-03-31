@@ -6,10 +6,14 @@ import EditProfile from "./editProfile";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 import EarningsChart from '@/app/components/charts/EarningsChart';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function Profile() {
     const router = useRouter();
     const { user, loading: authLoading, isAuthenticated } = useAuth();
+    const { isMobile, isExpanded } = useSidebar();
+    const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
+
     const [userData, setUserData] = useState({});
     const [stats, setStats] = useState(null);
     const [showEdit, setShowEdit] = useState(false);
@@ -92,7 +96,8 @@ export default function Profile() {
 
     return (
         <AdaptiveBackground variant="content" className="pt-0">
-            <div className="pt-24 pb-12 px-6">
+            <div className="min-h-screen" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
+                <div className="pt-24 pb-12 px-6">
                 <div className="max-w-4xl mx-auto">
                     {/* Profile Header */}
                     <UnifiedCard variant="content" className="mb-8" padding="lg">
@@ -232,6 +237,7 @@ export default function Profile() {
                         initialData={userData}
                     />
                 )}
+            </div>
             </div>
         </AdaptiveBackground>
     );

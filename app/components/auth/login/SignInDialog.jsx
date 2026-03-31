@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,7 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp }) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const { signInWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -91,7 +92,11 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp }) {
       } else {
         toast.success('Logged in successfully!');
         onClose();
-        router.push('/main');
+        if (pathname === '/' || pathname === '/auth/login') {
+          router.push('/main');
+        } else {
+          router.refresh();
+        }
       }
     } catch (error) {
       toast.error('An error occurred during verification');

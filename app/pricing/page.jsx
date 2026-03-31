@@ -2,8 +2,12 @@
 import { useState } from 'react';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import Link from 'next/link';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function Pricing() {
+    const { isMobile, isExpanded } = useSidebar();
+    const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
+    
     const [loading, setLoading] = useState(null);
 
     const handleBuyCredits = async (credits) => {
@@ -56,7 +60,8 @@ export default function Pricing() {
 
     return (
         <AdaptiveBackground variant="content" className="pt-24">
-            <div className="min-h-screen flex flex-col py-12 px-6">
+            <div className="min-h-screen" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
+                <div className="flex flex-col py-12 px-6">
                 <div className="w-[90%] sm:w-[70%] max-w-[1200px] mx-auto">
                     {/* Header */}
                     <div className="flex flex-col items-center text-center gap-5 mb-16">
@@ -206,6 +211,7 @@ export default function Pricing() {
                         </p>
                     </div>
                 </div>
+            </div>
             </div>
         </AdaptiveBackground>
     );

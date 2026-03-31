@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const { signUpWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -163,7 +164,11 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
       } else {
         toast.success('Account created successfully!');
         onClose();
-        router.push('/main');
+        if (pathname === '/' || pathname === '/auth/login') {
+          router.push('/main');
+        } else {
+          router.refresh();
+        }
       }
     } catch (error) {
       toast.error('An error occurred during verification');

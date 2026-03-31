@@ -8,17 +8,27 @@ import Request from "@/app/components/requests/request";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import { FaPlus } from 'react-icons/fa';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import SignInDialog from '@/app/components/auth/login/SignInDialog';
+import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
+import { toast } from 'react-hot-toast';
 
 export default function RequestsClient() {
     const [isClicked, setIsClicked] = useState(false);
+    const [isSignInOpen, setIsSignInOpen] = useState(false);
+    const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+    
     const { user, loading } = useAuth();
     const router = useRouter();
     const { isMobile, isExpanded } = useSidebar();
     const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
 
+    const switchToSignUp = () => { setIsSignInOpen(false); setIsSignUpOpen(true); };
+    const switchToSignIn = () => { setIsSignUpOpen(false); setIsSignInOpen(true); };
+
     const handleNewRequestClick = () => {
         if (!user) {
-            router.push('/auth/login');
+            toast('To make an automation request you need to be signed in.', { icon: '👋' });
+            setIsSignInOpen(true);
             return;
         }
         setIsClicked(true);
@@ -57,7 +67,7 @@ export default function RequestsClient() {
                             ) : (
                                 <>
                                     <FaPlus className="text-xs" />
-                                    New Suggestion
+                                    New Request
                                 </>
                             )}
                         </button>
@@ -84,6 +94,9 @@ export default function RequestsClient() {
                     onRequestPublished={() => setIsClicked(false)}
                 />
             )}
+
+            <SignInDialog isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} onSwitchToSignUp={switchToSignUp} />
+            <SignUpDialog isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} onSwitchToSignIn={switchToSignIn} />
         </AdaptiveBackground>
     );
 }

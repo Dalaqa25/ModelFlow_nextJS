@@ -8,9 +8,13 @@ import { useAuth } from '@/lib/auth/supabase-auth-context';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 import RunsChart from '@/app/components/charts/RunsChart';
+import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
+    const { isMobile, isExpanded } = useSidebar();
+    const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
+    
     const [showAutomationDialog, setShowAutomationDialog] = useState(false);
     const [automations, setAutomations] = useState([]);
     const [stats, setStats] = useState(null);
@@ -60,7 +64,8 @@ export default function Dashboard() {
 
     return (
         <AdaptiveBackground variant="content" className="pt-16">
-            <div className="pt-10 pb-10 px-6">
+            <div className="min-h-screen" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
+                <div className="pt-10 pb-10 px-6">
                 <div className="max-w-5xl mx-auto">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
@@ -165,6 +170,7 @@ export default function Dashboard() {
                         onUploadSuccess={handleUploadSuccess}
                     />
                 </div>
+            </div>
             </div>
         </AdaptiveBackground>
     );
