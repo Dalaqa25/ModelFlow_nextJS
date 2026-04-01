@@ -1246,13 +1246,14 @@ function AutomationsShowcase({ isActive, onSignUpClick }) {
             .then(r => r.json())
             .then(data => {
                 if (!Array.isArray(data)) { setLoading(false); return; }
-                // Sort: LinkedIn first, then TikTok, then rest
+                // Sort: Auto Job Matcher first, then LinkedIn, then TikTok, then rest
                 const sorted = [...data].sort((a, b) => {
                     const priority = (name = '') => {
                         const n = name.toLowerCase();
-                        if (n.includes('linkedin')) return 0;
-                        if (n.includes('tiktok')) return 1;
-                        return 2;
+                        if (n.includes('auto job matcher') || n.includes('job matcher')) return 0;
+                        if (n.includes('linkedin')) return 1;
+                        if (n.includes('tiktok')) return 2;
+                        return 3;
                     };
                     return priority(a.name) - priority(b.name);
                 });
