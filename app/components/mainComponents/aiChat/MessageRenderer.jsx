@@ -9,6 +9,34 @@ import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
 import NoResultsPopup from './NoResultsPopup';
 import VideoPreview from '../VideoPreview';
 
+// Renders message content — parses [text](url) into clickable links, strips ** bold markers
+function renderContent(content) {
+  if (!content) return null;
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+  const parts = [];
+  let last = 0;
+  let match;
+  // Strip ** markers first
+  const cleaned = content.replace(/\*\*/g, '');
+  while ((match = linkRegex.exec(cleaned)) !== null) {
+    if (match.index > last) parts.push(cleaned.slice(last, match.index));
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+      >
+        {match[1]}
+      </a>
+    );
+    last = match.index + match[0].length;
+  }
+  if (last < cleaned.length) parts.push(cleaned.slice(last));
+  return parts;
+}
+
 export default function MessageRenderer({
   message,
   index,
@@ -68,7 +96,7 @@ export default function MessageRenderer({
             </div>
           )}
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-            {message.content}
+            {renderContent(message.content)}
             {message.role === 'assistant' && isCurrentStreamingAssistant && message.content === '' && (
               <span className="inline-flex items-center justify-center mt-1">
                 <Image src="/logo.png" alt="AI thinking" width={28} height={28} className="animate-spin" />

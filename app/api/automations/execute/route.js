@@ -166,6 +166,14 @@ export async function POST(req) {
 
     const result = await runnerResponse.json();
 
+    console.log('[EXECUTE DEBUG] Runner result keys:', Object.keys(result));
+    console.log('[EXECUTE DEBUG] Has outputs:', !!result.outputs);
+    if (result.outputs) {
+      console.log('[EXECUTE DEBUG] Output node keys:', Object.keys(result.outputs));
+      const parseNode = result.outputs['Parse AI JSON'] || result.outputs['parse-ai-json'];
+      console.log('[EXECUTE DEBUG] Parse AI JSON node:', JSON.stringify(parseNode)?.substring(0, 500));
+    }
+
     // The runner might return 200 OK but with success: false in the JSON body
     if (!result.success) {
       console.error('[EXECUTE DEBUG] Automation returned success: false', result.errors);

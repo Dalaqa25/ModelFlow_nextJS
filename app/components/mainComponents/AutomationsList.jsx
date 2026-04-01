@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
-import { FaTiktok, FaLinkedinIn, FaFileInvoiceDollar, FaYoutube } from 'react-icons/fa';
+import { FaTiktok, FaLinkedinIn, FaYoutube } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
-import { FiTrendingUp, FiZap, FiEdit2 } from 'react-icons/fi';
+import { FiTrendingUp, FiZap, FiEdit2, FiBriefcase } from 'react-icons/fi';
 
 const FEATURED_NAMES = [
+    'Auto Job Matcher',
     'LinkedIn Auto Blog Poster',
     'TikTok Scheduled Auto-Post from Supabase',
     'TikTok Video Uploader',
@@ -21,9 +22,9 @@ const FEATURED_NAMES = [
 function getIcons(name = '') {
     const lower = name.toLowerCase();
     const icons = [];
+    if (lower.includes('job') || lower.includes('matcher') || lower.includes('career')) icons.push(<FiBriefcase key="job" className="w-3.5 h-3.5 text-purple-400" />);
     if (lower.includes('tiktok')) icons.push(<FaTiktok key="tiktok" className="w-3.5 h-3.5 text-white" />);
     if (lower.includes('linkedin')) icons.push(<FaLinkedinIn key="linkedin" className="w-3.5 h-3.5 text-[#0A66C2]" />);
-    if (lower.includes('invoice')) icons.push(<FaFileInvoiceDollar key="invoice" className="w-3.5 h-3.5 text-purple-400" />);
     if (lower.includes('youtube')) icons.push(<FaYoutube key="youtube" className="w-3.5 h-3.5 text-red-500" />);
     if (lower.includes('google') || lower.includes('sheet') || lower.includes('drive') || lower.includes('gmail')) icons.push(<FcGoogle key="google" className="w-3.5 h-3.5" />);
     if (lower.includes('viral') || lower.includes('pattern') || lower.includes('pacing') || lower.includes('analyzer')) icons.push(<FiTrendingUp key="trend" className="w-3.5 h-3.5 text-purple-400" />);
