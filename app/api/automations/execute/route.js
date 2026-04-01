@@ -132,7 +132,8 @@ export async function POST(req) {
 
     const startTime = Date.now();
 
-    const runnerResponse = await fetch('http://localhost:3001/api/automations/run', {
+    const RUNNER_URL = process.env.AUTOMATION_RUNNER_URL || 'http://localhost:3001';
+    const runnerResponse = await fetch(`${RUNNER_URL}/api/automations/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
