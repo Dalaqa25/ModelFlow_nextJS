@@ -133,12 +133,14 @@ export async function POST(req) {
     const startTime = Date.now();
 
     const RUNNER_URL = process.env.AUTOMATION_RUNNER_URL || 'http://localhost:3001';
+    console.log('[EXECUTE DEBUG] Runner URL:', RUNNER_URL);
     const runnerResponse = await fetch(`${RUNNER_URL}/api/automations/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(runnerPayload),
+      signal: AbortSignal.timeout(60000) // 60s timeout
     });
 
     const endTime = Date.now();

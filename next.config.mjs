@@ -18,7 +18,6 @@ const nextConfig = {
     },
     proxyClientMaxBodySize: '100mb',
   },
-  // This is the key setting for App Router API routes
   middlewareClientMaxBodySize: '100mb',
 };
 

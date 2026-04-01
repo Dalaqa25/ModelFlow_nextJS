@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/automations/execute/route.js": {
+      "maxDuration": 60
+    },
+    "app/api/ai/stream/route.js": {
+      "maxDuration": 60
+    }
+  }
+}
