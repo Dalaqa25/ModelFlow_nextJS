@@ -506,7 +506,7 @@ function buildChatMessages(messages, prompt) {
 
 // Extract setup context from conversation
 function extractSetupContext(messages) {
-  const allContent = messages.map(m => m.content || '').join('\n');
+  const allContent = messages.map(m => (m.content || '') + (m.metadata?.hiddenContext || '')).join('\n');
 
   console.log('[extractSetupContext] Searching in messages:', allContent.substring(0, 500));
 
@@ -555,8 +555,24 @@ function extractSetupContext(messages) {
   }
 
   // PRIORITY 3: Look for existing_config (during setup flow)
-  // Use matchAll to find ALL occurrences and take the LAST one, so we always get the most recent state
-  const configMatches = Array.from(allContent.matchAll(/existing_config[=:]\s*(\{[\s\S]*?\})(?=\n|IMPORTANT|$)/g));
+  // Use matchAll to find ALL occurrences and take the LAST one (most recent state)
+  // Use a more robust extraction that handles nested JSON
+  const configMatches = [];
+  const configSearchRegex = /existing_config[=:]\s*(\{)/g;
+  let configSearchMatch;
+  while ((configSearchMatch = configSearchRegex.exec(allContent)) !== null) {
+    // Walk forward to find the matching closing brace
+    let depth = 1;
+    let i = configSearchMatch.index + configSearchMatch[0].length;
+    while (i < allContent.length && depth > 0) {
+      if (allContent[i] === '{') depth++;
+      else if (allContent[i] === '}') depth--;
+      i++;
+    }
+    if (depth === 0) {
+      configMatches.push(allContent.slice(configSearchMatch.index + configSearchMatch[0].length - 1, i));
+    }
+  }
   const configMatch = configMatches.length > 0 ? configMatches[configMatches.length - 1] : null;
 
   const automationId = automationIdMatch?.[1];
@@ -564,7 +580,7 @@ function extractSetupContext(messages) {
   let collectedConfig = {};
   if (configMatch) {
     try {
-      collectedConfig = JSON.parse(configMatch[1]);
+      collectedConfig = JSON.parse(configMatch);
     } catch (e) { }
   }
 

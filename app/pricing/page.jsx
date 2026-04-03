@@ -11,30 +11,7 @@ export default function Pricing() {
     const [loading, setLoading] = useState(null);
 
     const handleBuyCredits = async (credits) => {
-        setLoading(credits);
-        try {
-            const res = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credits }),
-            });
-            
-            const data = await res.json();
-            
-            if (data.error) {
-                alert(data.error === 'Unauthorized' ? 'Please sign in to purchase credits' : data.error);
-                return;
-            }
-            
-            if (data.checkout_url) {
-                window.location.href = data.checkout_url;
-            }
-        } catch (error) {
-            console.error('Checkout error:', error);
-            alert('Failed to start checkout. Please try again.');
-        } finally {
-            setLoading(null);
-        }
+        alert("Payment system is currently disabled.");
     };
 
     const creditPacks = [

@@ -14,7 +14,12 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
   const [selectedAutomation, setSelectedAutomation] = useState(null);
   const [automationContext, setAutomationContext] = useState(null);
   const [setupState, setSetupState] = useState(null);
+  const setupStateRef = useRef(null);
   const [lastFileSearchResults, setLastFileSearchResults] = useState(null);
+
+  useEffect(() => {
+    setupStateRef.current = setupState;
+  }, [setupState]);
 
   // Conversation tracking
   const [currentConversationId, setCurrentConversationId] = useState(initialConversationId || null);
@@ -146,7 +151,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     return contextInfo;
   }, [automationContext, setupState, lastFileSearchResults]);
 
-  const processStream = async (response, aiMessageId) => {
+  const processStream = async (response, aiMessageId, userMessageText) => {
     const reader = response.body.getReader();
     readerRef.current = reader;
     const decoder = new TextDecoder();
@@ -180,6 +185,45 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       const { done, value } = await reader.read();
       if (done) {
         handler.markStreamEnded();
+
+        // SAFETY NET BEFORE DB SAVE:
+        // Detect when AI acknowledged a field value but forgot to call collect_text_input
+        const currentSetupState = setupStateRef.current;
+        if (currentSetupState?.missingFields?.length > 0 && userMessageText && userMessageText.trim()) {
+          const userInput = userMessageText.trim();
+          const missingFields = currentSetupState.missingFields.map(f => (typeof f === 'string' ? f : f.name || f).toUpperCase());
+          
+          const stillMissing = missingFields.filter(fieldName => {
+            const currentCollected = currentSetupState.collectedFields || {};
+            return !currentCollected[fieldName];
+          });
+
+          if (stillMissing.length > 0 && !currentAiMessageHiddenContextRef.current.includes('field_collected')) {
+            const firstMissing = stillMissing[0];
+            let shouldAutoCollect = false;
+
+            if (firstMissing.includes('URL') && /^https?:\/\//i.test(userInput)) shouldAutoCollect = true;
+            else if (firstMissing.includes('TONE') && userInput.length < 50) shouldAutoCollect = true;
+            else if (firstMissing.includes('EMAIL') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userInput)) shouldAutoCollect = true;
+            else if ((firstMissing.includes('INTERVAL') || firstMissing.includes('SCHEDULE')) && userInput.length < 100) shouldAutoCollect = true;
+            else if (userInput.length < 200 && !userInput.endsWith('?') && !userInput.toLowerCase().startsWith('what') && !userInput.toLowerCase().startsWith('how') && !userInput.toLowerCase().startsWith('why')) shouldAutoCollect = true;
+
+            if (shouldAutoCollect) {
+              console.log(`[Safety Net] AI forgot to collect field ${firstMissing}. Auto-saving value: ${userInput.substring(0, 50)}`);
+              const newConfig = { ...currentSetupState.collectedConfig, [firstMissing]: userInput };
+              
+              setSetupState(prev => prev ? {
+                ...prev,
+                collectedFields: { ...prev.collectedFields, [firstMissing]: userInput },
+                collectedConfig: newConfig
+              } : null);
+
+              // INJECT INTO HIDDEN CONTEXT BEFORE DB SAVE!
+              // This guarantees it persists across page reloads
+              currentAiMessageHiddenContextRef.current += `\nexisting_config=${JSON.stringify(newConfig)}`;
+            }
+          }
+        }
 
         // Save AI response to DB when stream completes
         if (currentConversationId && userId && currentAiMessageContentRef.current) {
@@ -245,7 +289,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     let conversationId = currentConversationId;
     if (isAuthed && !conversationId) {
       try {
-        const automationId = setupState?.automationId || selectedAutomation?.id || null;
+        const automationId = setupStateRef.current?.automationId || selectedAutomation?.id || null;
         const response = await fetch('/api/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -388,7 +432,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           messages: conversationHistory, 
           temperature: 0.7, 
           maxTokens: 2000,
-          frontendSetupState: setupState
+          frontendSetupState: setupStateRef.current
         }),
       });
 
@@ -402,58 +446,8 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         throw new Error(response.status === 401 ? 'Please sign in to use the AI chat feature.' : 'Failed to get response from AI.');
       }
 
-      await processStream(response, aiMessageId);
+      await processStream(response, aiMessageId, messageText);
 
-      // SAFETY NET: Detect when AI acknowledged a field value but forgot to call collect_text_input
-      // This prevents the infinite "ask the same question" loop
-      if (setupState?.missingFields?.length > 0 && messageText.trim()) {
-        const userInput = messageText.trim();
-        const missingFields = setupState.missingFields.map(f => (typeof f === 'string' ? f : f.name || f).toUpperCase());
-        
-        // Check if any missing field was NOT collected during this turn
-        // by comparing current setupState with what we had before
-        const stillMissing = missingFields.filter(fieldName => {
-          // Check if this field is still not in collectedFields after the AI responded
-          const currentCollected = setupState.collectedFields || {};
-          return !currentCollected[fieldName];
-        });
-
-        if (stillMissing.length > 0) {
-          // Heuristic: try to match user input to the first missing field
-          const firstMissing = stillMissing[0];
-          let shouldAutoCollect = false;
-
-          // URL fields: user sends something starting with http
-          if (firstMissing.includes('URL') && /^https?:\/\//i.test(userInput)) {
-            shouldAutoCollect = true;
-          }
-          // Tone/option fields: user sends a short text that matches known options
-          else if (firstMissing.includes('TONE') && userInput.length < 50) {
-            shouldAutoCollect = true;
-          }
-          // Email fields
-          else if (firstMissing.includes('EMAIL') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userInput)) {
-            shouldAutoCollect = true;
-          }
-          // Interval/schedule fields
-          else if ((firstMissing.includes('INTERVAL') || firstMissing.includes('SCHEDULE')) && userInput.length < 100) {
-            shouldAutoCollect = true;
-          }
-          // Generic: if user sends a short, non-question answer (no '?' at end)
-          else if (userInput.length < 200 && !userInput.endsWith('?') && !userInput.toLowerCase().startsWith('what') && !userInput.toLowerCase().startsWith('how') && !userInput.toLowerCase().startsWith('why')) {
-            shouldAutoCollect = true;
-          }
-
-          if (shouldAutoCollect) {
-            console.log(`[Safety Net] AI forgot to collect field ${firstMissing}. Auto-saving value: ${userInput.substring(0, 50)}`);
-            setSetupState(prev => prev ? {
-              ...prev,
-              collectedFields: { ...prev.collectedFields, [firstMissing]: userInput },
-              collectedConfig: { ...prev.collectedConfig, [firstMissing]: userInput }
-            } : null);
-          }
-        }
-      }
     } catch (error) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);

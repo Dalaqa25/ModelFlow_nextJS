@@ -66,6 +66,13 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
 export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
+    const [scrolledDown, setScrolledDown] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => setScrolledDown(window.scrollY > 100);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
     const isAtBottom = chatStarted || isAtBottomInternal;
     const [hasInteracted, setHasInteracted] = useState(false);
     const textareaRef = useRef(null);
@@ -328,15 +335,15 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                     )}
                 </div>
             </form>
-            {!chatStarted && (
+            {!chatStarted && !isAtBottomInternal && !scrolledDown && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
                     {[
                         { icon: <FiBriefcase className="w-3 h-3 flex-shrink-0 text-purple-400" />, label: 'Auto Job Matcher', prompt: 'I want to use the Auto Job Matcher automation' },
                         { icon: <FaLinkedinIn className="w-3 h-3 flex-shrink-0 text-[#0A66C2]" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
-                        { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation' },
-                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation' },
-                        { icon: <FiZap className="w-3 h-3 flex-shrink-0" />, label: 'Auto Caption Generator', prompt: 'I want to use the Auto Caption Generator automation' },
-                    ].map(({ icon, label, prompt }) => (
+                        { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation', mobileHide: true },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation', mobileHide: true },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Auto Caption Generator', prompt: 'I want to use the Auto Caption Generator automation', mobileHide: true },
+                    ].map(({ icon, label, prompt, mobileHide }) => (
                         <button
                             key={label}
                             type="button"
@@ -345,7 +352,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${
+                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide ? 'hidden sm:flex' : 'flex'} ${
                                 isDarkMode
                                     ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
                                     : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
