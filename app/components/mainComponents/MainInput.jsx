@@ -342,7 +342,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                         { icon: <FaLinkedinIn className="w-3 h-3 flex-shrink-0 text-[#0A66C2]" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
                         { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation', mobileHide: true },
                         { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation', mobileHide: true },
-                        { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Auto Caption Generator', prompt: 'I want to use the Auto Caption Generator automation', mobileHide: true },
+                        { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Vehicle Parts Finder', prompt: 'I want to use the Auto Parts Search Engine automation', mobileHide: true },
                     ].map(({ icon, label, prompt, mobileHide }) => (
                         <button
                             key={label}
@@ -352,10 +352,14 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide ? 'hidden sm:flex' : 'flex'} ${
-                                isDarkMode
-                                    ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
-                                    : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
+                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide && isAuthenticated ? 'hidden sm:flex' : 'flex'} ${
+                                label === 'Vehicle Parts Finder'
+                                    ? isDarkMode
+                                        ? 'border-purple-400/50 text-purple-300 shadow-[0_0_6px_1px_rgba(168,85,247,0.25)] animate-pulse hover:shadow-[0_0_8px_2px_rgba(168,85,247,0.35)] hover:text-purple-200'
+                                        : 'border-purple-400/50 text-purple-500 shadow-[0_0_6px_1px_rgba(168,85,247,0.2)] animate-pulse hover:shadow-[0_0_8px_2px_rgba(168,85,247,0.3)] hover:text-purple-600'
+                                    : isDarkMode
+                                        ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
+                                        : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
                             }`}
                         >
                             {icon}

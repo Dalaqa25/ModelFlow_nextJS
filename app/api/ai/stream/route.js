@@ -406,6 +406,8 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
         await handleSearchAutomations(args, capturingController, encoder);
         break;
       case 'start_setup':
+        // Inject conversation history so handleStartSetup can scan for pre-filled fields
+        args.conversation_history = chatMessages.map(m => m.content || '').join('\n');
         await handleStartSetup(args, user, capturingController, encoder);
         break;
       case 'auto_setup':

@@ -15,7 +15,8 @@ const FEATURED_NAMES = [
     'TikTok Scheduled Auto-Post',
     'Viral Pattern Detector',
     'Video Pacing Analyzer',
-    'Auto Caption Generator',
+    'Vehicle Parts Finder',
+    'Auto Parts Search Engine',
 ];
 
 // Map automation name keywords to icon components
@@ -121,11 +122,18 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                                 className={`p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] relative ${isDarkMode
                                     ? 'bg-slate-800 border-slate-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-900/20'
                                     : 'bg-white border-slate-200 hover:border-purple-400 hover:shadow-md'
-                                } ${isFeatured(automation) ? (isDarkMode ? 'ring-1 ring-purple-500/30' : 'ring-1 ring-purple-300/50') : ''}`}
+                                } ${automation.name?.toLowerCase().includes('vehicle')
+                                    ? 'ring-1 ring-orange-500/60 shadow-[0_0_16px_3px_rgba(249,115,22,0.2)]'
+                                    : isFeatured(automation) ? (isDarkMode ? 'ring-1 ring-purple-500/30' : 'ring-1 ring-purple-300/50') : ''}`}
                             >
                                 {automation.name?.toLowerCase().includes('linkedin') && (
                                     <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#0A66C2]/20 text-[#0A66C2]">
                                         Featured
+                                    </span>
+                                )}
+                                {automation.name?.toLowerCase().includes('vehicle') && (
+                                    <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 animate-pulse shadow-[0_0_8px_2px_rgba(249,115,22,0.4)]">
+                                        New 🔥
                                     </span>
                                 )}
                                 <div className="flex items-center gap-1.5 mb-2">
