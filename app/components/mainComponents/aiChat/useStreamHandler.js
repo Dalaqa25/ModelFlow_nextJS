@@ -221,7 +221,8 @@ export function createStreamHandler({
         automationName: parsed.automation_name,
         requiredFields: prev?.requiredFields || parsed.missing_fields.map(f => ({ name: f })),
         collectedFields: prev?.collectedFields || {},
-        collectedConfig: parsed.collected_config || prev?.collectedConfig || {},  // Store the actual config values!
+        // MERGE: never wipe previously collected fields — incoming config wins for new keys only
+        collectedConfig: { ...(prev?.collectedConfig || {}), ...(parsed.collected_config || {}) },
         missingFields: parsed.missing_fields,
         isAwaitingInput: true
       }));

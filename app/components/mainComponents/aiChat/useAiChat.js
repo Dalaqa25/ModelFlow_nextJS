@@ -198,24 +198,36 @@ IMPORTANT: When calling collect_text_input, you MUST include:
             return !currentCollected[fieldName];
           });
 
-          if (stillMissing.length > 0 && !currentAiMessageHiddenContextRef.current.includes('field_collected')) {
+          // Check both field_collected AND existing_config (which collect_text_input also emits)
+          // to detect whether the server already handled the collection
+          const hiddenCtx = currentAiMessageHiddenContextRef.current || '';
+          const wasFieldCollected = hiddenCtx.includes('field_collected') || hiddenCtx.includes('existing_config=');
+          
+          if (stillMissing.length > 0 && !wasFieldCollected) {
             const firstMissing = stillMissing[0];
-            let shouldAutoCollect = false;
 
-            if (firstMissing.includes('URL') && /^https?:\/\//i.test(userInput)) shouldAutoCollect = true;
-            else if (firstMissing.includes('TONE') && userInput.length < 50) shouldAutoCollect = true;
-            else if (firstMissing.includes('EMAIL') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userInput)) shouldAutoCollect = true;
-            else if ((firstMissing.includes('INTERVAL') || firstMissing.includes('SCHEDULE')) && userInput.length < 100) shouldAutoCollect = true;
-            else if (userInput.length < 200 && !userInput.endsWith('?') && !userInput.toLowerCase().startsWith('what') && !userInput.toLowerCase().startsWith('how') && !userInput.toLowerCase().startsWith('why')) shouldAutoCollect = true;
+            // Fully dynamic: no hardcoded field-type checks.
+            // The required_inputs schema from the DB defines the fields.
+            // If the user is answering a setup question (not asking one, not filler),
+            // save their input to the first missing field — regardless of what type it is.
+            const lower = userInput.toLowerCase();
+            const isQuestion = userInput.endsWith('?') || /^(what|how|why|when|where|who|which|can|do|does|is|are|will|should)\b/i.test(userInput);
+            const isFiller = /^(yes|no|ok|sure|hi|hello|hey|thanks|thank you|cool|great|perfect|nice|sounds good|go ahead)$/i.test(userInput);
 
-            if (shouldAutoCollect) {
-              console.log(`[Safety Net] AI forgot to collect field ${firstMissing}. Auto-saving value: ${userInput.substring(0, 50)}`);
+            if (!isQuestion && !isFiller && userInput.length > 0 && userInput.length < 500) {
+              console.log(`[Safety Net] AI forgot to collect field ${firstMissing}. Auto-saving value: "${userInput.substring(0, 50)}"`);
               const newConfig = { ...currentSetupState.collectedConfig, [firstMissing]: userInput };
               
+              // Update collectedConfig AND remove from missingFields so the
+              // next AI turn knows this field is done
               setSetupState(prev => prev ? {
                 ...prev,
                 collectedFields: { ...prev.collectedFields, [firstMissing]: userInput },
-                collectedConfig: newConfig
+                collectedConfig: newConfig,
+                missingFields: (prev.missingFields || []).filter(f => {
+                  const fn = (typeof f === 'string' ? f : f.name || f).toUpperCase();
+                  return fn !== firstMissing;
+                })
               } : null);
 
               // INJECT INTO HIDDEN CONTEXT BEFORE DB SAVE!

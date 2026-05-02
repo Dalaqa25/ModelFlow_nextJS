@@ -194,14 +194,52 @@ export async function POST(request) {
     }
 
     const conversationalResponse = decision.response || '';
-    const actionNeeded = decision.action;
+    let actionNeeded = decision.action;
+
+    // GUARD: If we're in an active setup and the AI called search_automations,
+    // redirect to collect_text_input — the user is answering setup questions, not searching.
+    if (actionNeeded?.tool === 'search_automations') {
+      const setupContext = extractSetupContext(chatMessages);
+      const activeSetupId = setupContext?.automationId || frontendSetupState?.automationId;
+      if (activeSetupId) {
+        console.log('[AI] Intercepted search_automations during active setup — redirecting to collect_text_input');
+        actionNeeded = { tool: 'collect_text_input', hint: 'user provided setup data during active setup' };
+      }
+    }
+
+    // GUARD: If we're in an active setup with missing fields and the AI did NOT
+    // call collect_text_input (action is null), force it. This prevents the AI from
+    // saying "Got it!" in its text response without actually saving the user's input.
+    if (!actionNeeded || !actionNeeded.tool) {
+      const guardSetupCtx = extractSetupContext(chatMessages);
+      const activeSetupId = guardSetupCtx?.automationId || frontendSetupState?.automationId;
+      const missingFields = frontendSetupState?.missingFields || guardSetupCtx?.missingFields || [];
+
+      if (activeSetupId && missingFields.length > 0) {
+        // Only force collect if the user's message looks like an answer (not a question or filler)
+        const msg = lastUserMessage.trim();
+        const isQuestion = msg.endsWith('?') || /^(what|how|why|when|where|who|which|can|do|does|is|are|will|should)\b/i.test(msg);
+        const isFiller = /^(yes|no|ok|sure|hi|hello|hey|thanks|thank you|cool|great|perfect|nice|sounds good|go ahead)$/i.test(msg);
+
+        if (!isQuestion && !isFiller && msg.length > 0) {
+          console.log(`[AI] SAFETY NET: AI returned action=null during active setup with missing fields [${missingFields.join(', ')}]. Forcing collect_text_input.`);
+          actionNeeded = {
+            tool: 'collect_text_input',
+            hint: `user provided data for setup field. Missing fields: ${missingFields.join(', ')}`
+          };
+        }
+      }
+    }
 
     // STEP 2: Stream response to user
     const stream = new ReadableStream({
       async start(controller) {
         try {
           // First, stream Llama's conversational response
-          if (conversationalResponse) {
+          // SKIP orchestrator text when collect_text_input is the action —
+          // the handler already generates "Got it!" so streaming both causes a
+          // doubled acknowledgment ("Got it! Got it! I just need one more thing...")
+          if (conversationalResponse && actionNeeded?.tool !== 'collect_text_input') {
             // Stream character by character for typewriter effect (or in chunks)
             const chunks = conversationalResponse.match(/.{1,10}/g) || [];
             for (const chunk of chunks) {
@@ -232,6 +270,10 @@ export async function POST(request) {
                 if (frontendSetupState.readyConfig) {
                   setupContext.collectedConfig = frontendSetupState.readyConfig;
                 }
+              }
+              // Pass missing fields so collect_text_input shortcut knows what to collect
+              if (frontendSetupState.missingFields) {
+                setupContext.missingFields = frontendSetupState.missingFields;
               }
             }
             
@@ -311,6 +353,42 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
         automation_id: setupContext.automationId,
         config: setupContext.collectedConfig
       };
+    }
+
+    // SHORTCUT: For collect_text_input, the value is ALWAYS the user's last message.
+    // Never let GPT-4o-mini guess this — it consistently picks the wrong value.
+    if (toolName === 'collect_text_input' && setupContext?.automationId) {
+      const hintUpper = (hint || '').toUpperCase();
+      const missingFields = (setupContext?.missingFields || [])
+        .map(f => (typeof f === 'string' ? f : f.name || f).toUpperCase());
+
+      // Try to get field name from hint (case-insensitive match against known field names)
+      let fieldName = null;
+      if (missingFields.length > 0) {
+        // Check if hint mentions any of the missing fields
+        for (const mf of missingFields) {
+          if (hintUpper.includes(mf) || hintUpper.includes(mf.replace(/_/g, ' '))) {
+            fieldName = mf;
+            break;
+          }
+        }
+      }
+
+      // Fall back to first missing field
+      if (!fieldName && missingFields.length > 0) {
+        fieldName = missingFields[0];
+      }
+
+      if (fieldName) {
+        console.log(`[AI] collect_text_input SHORTCUT: field=${fieldName}, value="${userMessage}"`);
+        return {
+          field_name: fieldName,
+          value: userMessage,
+          automation_id: setupContext.automationId,
+          automation_name: setupContext.automationName,
+          existing_config: setupContext.collectedConfig || {}
+        };
+      }
     }
 
     // Build context for tool executor
@@ -406,8 +484,11 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
         await handleSearchAutomations(args, capturingController, encoder);
         break;
       case 'start_setup':
-        // Inject conversation history so handleStartSetup can scan for pre-filled fields
-        args.conversation_history = chatMessages.map(m => m.content || '').join('\n');
+        // Only inject USER messages so the scan doesn't match words in AI responses
+        args.conversation_history = chatMessages
+          .filter(m => m.role === 'user')
+          .map(m => m.content || '')
+          .join('\n');
         await handleStartSetup(args, user, capturingController, encoder);
         break;
       case 'auto_setup':
