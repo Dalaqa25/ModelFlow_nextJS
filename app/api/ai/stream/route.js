@@ -37,9 +37,7 @@ const GROQ_API_KEYS = [
 ].filter(Boolean); // Remove undefined keys
 
 console.log(`[AI] Loaded ${GROQ_API_KEYS.length} Groq API keys`);
-GROQ_API_KEYS.forEach((key, i) => {
-  console.log(`[AI] Key ${i + 1}: ${key.substring(0, 20)}...${key.substring(key.length - 4)}`);
-});
+// API key details hidden for security
 
 if (GROQ_API_KEYS.length === 0) {
   console.error('[AI] ERROR: No Groq API keys found! Check your .env.local file.');
@@ -54,7 +52,7 @@ function getNextGroqKey() {
   }
   const key = GROQ_API_KEYS[currentKeyIndex];
   currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
-  console.log(`[AI] Using key #${currentKeyIndex}/${GROQ_API_KEYS.length}: ${key.substring(0, 20)}...`);
+  // Using key rotation for rate limit management
   return key;
 }
 
