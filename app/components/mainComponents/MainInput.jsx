@@ -63,7 +63,7 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
     return displayText;
 }
 
-export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore }) {
+export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore, onAuthRequired }) {
     const [inputValue, setInputValue] = useState('');
     const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
     const [scrolledDown, setScrolledDown] = useState(false);
@@ -348,6 +348,11 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             key={label}
                             type="button"
                             onClick={() => {
+                                // Check if user is authenticated before allowing automation badge clicks
+                                if (!isAuthenticated && onAuthRequired) {
+                                    onAuthRequired();
+                                    return;
+                                }
                                 setInputValue(prompt);
                                 handleInteraction();
                                 textareaRef.current?.focus();

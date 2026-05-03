@@ -8,6 +8,8 @@ import Greetings from '@/app/components/mainComponents/Greetings';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import AiChat from '@/app/components/mainComponents/aiChat';
 import AutomationsList from '@/app/components/mainComponents/AutomationsList';
+import SignInDialog from '@/app/components/auth/login/SignInDialog';
+import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 
 export default function Home() {
     return (
@@ -37,9 +39,14 @@ function HomeContent() {
     const [isScoped, setIsScoped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadActive, setIsUploadActive] = useState(false);
+    const [isSignInOpen, setIsSignInOpen] = useState(false);
+    const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     
     const { isMobile, isExpanded } = useSidebar();
     const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
+
+    const switchToSignUp = () => { setIsSignInOpen(false); setIsSignUpOpen(true); };
+    const switchToSignIn = () => { setIsSignUpOpen(false); setIsSignInOpen(true); };
 
     const handleUploadStatusChange = (isActive) => {
         setIsUploadActive(isActive);
@@ -120,6 +127,7 @@ function HomeContent() {
                 onFileUpload={handleFileUpload}
                 chatStarted={hasStartedChat}
                 greetingSlot={!hasStartedChat ? <Greetings /> : null}
+                onAuthRequired={() => setIsSignInOpen(true)}
             />
             <AutomationsList
                 isVisible={!hasStartedChat}
@@ -130,6 +138,8 @@ function HomeContent() {
                     handleMessageSent(message);
                 }}
             />
+            <SignInDialog isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} onSwitchToSignUp={switchToSignUp} />
+            <SignUpDialog isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} onSwitchToSignIn={switchToSignIn} />
         </AdaptiveBackground>
     );
 }
