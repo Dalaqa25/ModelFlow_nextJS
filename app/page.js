@@ -44,6 +44,7 @@ function HomeContent() {
     const [isUploadActive, setIsUploadActive] = useState(false);
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+    const [authMessage, setAuthMessage] = useState('');
 
     // ── Scroll-based hero fade for non-auth landing ──
     const [heroOpacity, setHeroOpacity] = useState(1);
@@ -159,6 +160,10 @@ function HomeContent() {
                         greetingSlot={!hasStartedChat ? <Greetings /> : null}
                         isLanding={isLanding}
                         onScrollExplore={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
+                        onAuthRequired={() => {
+                            setAuthMessage('Sign in to use automations and start building your workflows');
+                            setIsSignInOpen(true);
+                        }}
                     />
                 </div>
 
@@ -178,8 +183,16 @@ function HomeContent() {
 
                 <SignInDialog
                     isOpen={isSignInOpen}
-                    onClose={() => setIsSignInOpen(false)}
-                    onSwitchToSignUp={() => { setIsSignInOpen(false); setIsSignUpOpen(true); }}
+                    onClose={() => {
+                        setIsSignInOpen(false);
+                        setAuthMessage('');
+                    }}
+                    onSwitchToSignUp={() => { 
+                        setIsSignInOpen(false); 
+                        setAuthMessage('');
+                        setIsSignUpOpen(true); 
+                    }}
+                    customMessage={authMessage}
                 />
                 <SignUpDialog
                     isOpen={isSignUpOpen}

@@ -184,6 +184,13 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Check if user is authenticated before allowing message send
+        if (!isAuthenticated && onAuthRequired) {
+            onAuthRequired();
+            return;
+        }
+        
         if (inputValue.trim()) {
             const message = inputValue.trim();
             const accepted = onMessageSent ? onMessageSent(message) : false;
@@ -335,7 +342,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                     )}
                 </div>
             </form>
-            {!chatStarted && !isAtBottomInternal && !scrolledDown && isAuthenticated && (
+            {!chatStarted && !isAtBottomInternal && !scrolledDown && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
                     {[
                         { icon: <FiBriefcase className="w-3 h-3 flex-shrink-0 text-purple-400" />, label: 'Auto Job Matcher', prompt: 'I want to use the Auto Job Matcher automation' },
@@ -348,11 +355,16 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             key={label}
                             type="button"
                             onClick={() => {
+                                // Check if user is authenticated before allowing automation badge clicks
+                                if (!isAuthenticated && onAuthRequired) {
+                                    onAuthRequired();
+                                    return;
+                                }
                                 setInputValue(prompt);
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide ? 'hidden sm:flex' : 'flex'} ${
+                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide && isAuthenticated ? 'hidden sm:flex' : 'flex'} ${
                                 label === 'Auto Parts Search'
                                     ? isDarkMode
                                         ? 'border-orange-400/50 text-orange-300 shadow-[0_0_6px_1px_rgba(251,146,60,0.25)] animate-pulse hover:shadow-[0_0_8px_2px_rgba(251,146,60,0.35)] hover:text-orange-200'
