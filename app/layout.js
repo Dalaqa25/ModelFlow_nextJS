@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-    title: "ModelGrow – AI Automation Platform",
-    description: "Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations to streamline your business processes.",
-    keywords: ["ModelGrow", "automation", "n8n", "workflow", "AI automation", "platform", "no-code", "business automation", "SaaS"],
+    title: "ModelGrow – Automation Marketplace",
+    description: "Find and run pre-built automations built by developers. Describe what you need — our AI searches the marketplace and finds the right automation for you.",
+    keywords: ["ModelGrow", "automation marketplace", "pre-built automations", "AI search", "workflow automation", "no-code", "automation discovery", "SaaS"],
     authors: [{ name: "ModelGrow" }],
     creator: "ModelGrow",
     publisher: "ModelGrow",
@@ -35,8 +35,8 @@ export const metadata = {
         locale: "en_US",
         url: "https://modelgrow.com",
         siteName: "ModelGrow",
-        title: "ModelGrow – AI Automation Platform",
-        description: "Discover and run AI-powered automation workflows built with n8n.",
+        title: "ModelGrow – Automation Marketplace",
+        description: "Find and run pre-built automations. Describe what you need — our AI finds the right automation for you.",
         images: [
             {
                 url: '/logo.png',
@@ -48,8 +48,8 @@ export const metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "ModelGrow – AI Automation Platform",
-        description: "Discover and run AI-powered automation workflows built with n8n.",
+        title: "ModelGrow – Automation Marketplace",
+        description: "Find and run pre-built automations. Describe what you need — our AI finds the right automation for you.",
         images: ['/logo.png'],
     },
 };
@@ -59,9 +59,9 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'ModelGrow',
-    alternateName: 'ModelGrow AI Automation Platform',
+    alternateName: 'ModelGrow Automation Marketplace',
     url: 'https://modelgrow.com',
-    description: 'Discover and run AI-powered automation workflows built with n8n. Browse, purchase, and deploy ready-made automations.',
+    description: 'Find and run pre-built automations built by developers. Describe what you need — our AI searches the marketplace and finds the right automation for you.',
     potentialAction: {
         '@type': 'SearchAction',
         target: 'https://modelgrow.com/community?search={search_term_string}',

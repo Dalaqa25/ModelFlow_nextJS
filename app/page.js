@@ -107,8 +107,8 @@ function HomeContent() {
         <>
             {/* SEO content for crawlers */}
             <div className="sr-only">
-                <h1>ModelGrow - AI Automation Platform for Business Workflows</h1>
-                <p>Automate your business workflows with ModelGrow. Connect Google Drive, Gmail, Sheets, Calendar, and more.</p>
+                <h1>ModelGrow — Automation Marketplace: Find and Run Pre-Built Automations</h1>
+                <p>ModelGrow is an automation marketplace. Describe what you need in plain language, and our AI searches the marketplace to find the best pre-built automation for you. Developers publish automations; users discover and run them instantly.</p>
             </div>
 
             <AdaptiveBackground variant="content" className="" showFloatingElements={false}>

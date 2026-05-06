@@ -60,10 +60,10 @@ export default function Greetings() {
                 /* Unauthenticated: two-line value prop */
                 <div className="flex flex-col items-center gap-1 text-center">
                     <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-semibold tracking-tight leading-snug`}>
-                        What do you want to automate?
+                        Find and run powerful automations
                     </h1>
-                    <p className={`text-sm sm:text-base ${textColors.secondary} font-normal`}>
-                        Describe any workflow in plain language — it handles the rest, automatically.
+                    <p className={`text-xs sm:text-sm ${textColors.secondary} font-normal`}>
+                        Describe what you need — our AI searches the marketplace and finds the right automation for you.
                     </p>
                 </div>
             )}

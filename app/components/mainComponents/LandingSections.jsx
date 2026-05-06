@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { FaTiktok, FaLinkedinIn, FaFileInvoiceDollar, FaTwitter, FaDiscord, FaGithub } from 'react-icons/fa';
 import { FiTrendingUp, FiUpload, FiUsers, FiDollarSign, FiZap, FiPlay, FiCheck, FiMessageSquare, FiSearch, FiCpu, FiCode, FiBarChart2, FiShield, FiGlobe, FiGitBranch, FiActivity, FiTerminal, FiChevronDown, FiChevronLeft, FiChevronRight, FiLayout, FiShoppingCart, FiHelpCircle, FiUser, FiUploadCloud, FiRefreshCw } from 'react-icons/fi';
@@ -29,17 +30,17 @@ function useScrollVisible(threshold = 0.15) {
 const USER_DEMOS = [
     {
         userMsg: 'Schedule my TikToks every day at 9am',
-        aiMsg: 'I found the perfect automation for you…',
+        aiMsg: 'Found a match in the marketplace…',
         card: { icon: <FaTiktok className="w-5 h-5 text-white" />, name: 'TikTok Daily Poster', desc: 'Posts your queued videos every day at 9:00 AM' },
     },
     {
         userMsg: 'Auto-post my blog articles to LinkedIn',
-        aiMsg: 'Great choice — here\'s a popular one...',
+        aiMsg: "Here's the best automation for that…",
         card: { icon: <FaLinkedinIn className="w-5 h-5 text-[#0A66C2]" />, name: 'LinkedIn Auto Blog Poster', desc: 'Publishes new blog posts to your LinkedIn feed automatically' },
     },
     {
         userMsg: 'Manage my invoices automatically',
-        aiMsg: 'Setting up your invoice workflow…',
+        aiMsg: 'Searching marketplace… match found.',
         card: { icon: <FaFileInvoiceDollar className="w-5 h-5 text-purple-400" />, name: 'Invoice Manager System', desc: 'Tracks, sends, and organizes invoices on autopilot' },
     },
 ];
@@ -126,7 +127,7 @@ function UserFlowAnimation({ isActive }) {
                 {/* Step label */}
                 <div className="flex items-center gap-2 mb-1">
                     <span className={`text-xs font-semibold uppercase tracking-wider ${dark ? 'text-purple-400' : 'text-purple-600'}`}>
-                        {phase === 'typing' ? 'Step 1 — Describe' : showAi && !showCard ? 'Step 2 — AI Finds' : showCard ? 'Step 3 — It Runs' : 'Step 1 — Describe'}
+                        {phase === 'typing' ? 'Step 1 — Describe' : showAi && !showCard ? 'Step 2 — AI Searches' : showCard ? 'Step 3 — Run It' : 'Step 1 — Describe'}
                     </span>
                 </div>
 
@@ -189,7 +190,7 @@ function UserFlowAnimation({ isActive }) {
                             ? 'bg-green-500/20 text-green-400'
                             : 'bg-yellow-500/20 text-yellow-400'
                             }`}>
-                            {isRunning ? '✓ Running' : 'Setting up…'}
+                            {isRunning ? '✓ Running' : 'Found ✓'}
                         </span>
                     </div>
                 </div>
@@ -707,8 +708,8 @@ const DEV_STEPS = [
 
 const HOW_IT_WORKS = [
     { num: '01', icon: <FiMessageSquare className="w-6 h-6" />, title: 'Describe', desc: 'Tell the AI what you want in plain words — no technical jargon needed' },
-    { num: '02', icon: <FiSearch className="w-6 h-6" />, title: 'Match', desc: 'Our AI searches the marketplace and finds the best automation for your task' },
-    { num: '03', icon: <FiCpu className="w-6 h-6" />, title: 'Run', desc: 'One click and it runs on autopilot — 24/7, completely hands-free' },
+    { num: '02', icon: <FiSearch className="w-6 h-6" />, title: 'AI Searches', desc: 'Our AI searches the marketplace and surfaces the best pre-built automation for your task' },
+    { num: '03', icon: <FiCpu className="w-6 h-6" />, title: 'Run It', desc: 'One click and the pre-built automation runs on autopilot — 24/7, completely hands-free' },
 ];
 
 const USER_FEATURES = [
@@ -992,7 +993,7 @@ function PlatformStoryAnim({ isActive, dark }) {
 }
 
 const FAQ_ITEMS = [
-    { q: 'What is ModelGrow?', a: 'ModelGrow is an AI-powered automation platform where you can discover, run, and build automations for social media, invoicing, analytics, and more — all through a simple chat interface.' },
+    { q: 'What is ModelGrow?', a: 'ModelGrow is an automation marketplace. Developers publish pre-built automations for social media, invoicing, analytics, and more. You describe what you need, our AI finds the right automation from the marketplace, and you run it — all through a simple chat interface.' },
     { q: 'Is it free to use?', a: 'Yes! You can sign up and start using automations for free. Some premium automations may require tokens, which you can earn by contributing or purchase in the app.' },
     { q: 'How do tokens work?', a: 'Tokens are the in-app currency. Users spend tokens to run premium automations, and developers earn tokens every time someone uses their automation. Tokens can be cashed out or reinvested.' },
     { q: 'Do I need to code?', a: 'Not at all! As a user, just describe what you want in plain language and our AI will find and run the right automation for you. No technical knowledge required.' },
@@ -1051,7 +1052,7 @@ function Footer({ dark }) {
                             <span className={`text-xl font-bold tracking-tight ${dark ? 'text-white' : 'text-slate-900'}`}>ModelGrow</span>
                         </div>
                         <p className={`text-sm leading-relaxed max-w-sm mb-6 ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            The AI automation platform built for scale. Discover, run, and monetize automations effortlessly through a conversational interface.
+                            The automation marketplace where you discover and run pre-built automations. Developers publish, users find and run — powered by AI search.
                         </p>
                         <div className="flex items-center gap-4">
                             <a href="#" className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${dark ? 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-white/10 hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.5)]' : 'bg-white text-slate-500 hover:text-slate-900 shadow-sm border border-slate-200 hover:border-violet-200 hover:shadow-violet-500/10'}`}>
@@ -1298,16 +1299,16 @@ function AutomationsShowcase({ isActive, onSignUpClick }) {
             {/* Header */}
             <div className="text-center mb-12">
                 <span className={`inline-block text-xs font-semibold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${dark ? 'bg-violet-500/15 text-violet-400' : 'bg-violet-100 text-violet-600'}`}>
-                    Live automations
+                    Marketplace
                 </span>
                 <h2 className={`text-3xl sm:text-4xl font-bold leading-tight mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>
-                    Run any of these{' '}
+                    Pre-built automations,{' '}
                     <span className="bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
-                        in one message.
+                        ready to run.
                     </span>
                 </h2>
                 <p className={`text-sm sm:text-base max-w-lg mx-auto ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Real automations, built by creators. Just describe what you need — the AI finds and runs it for you.
+                    Browse the marketplace. Describe what you need — the AI finds the right automation and runs it for you.
                 </p>
             </div>
 
@@ -1393,6 +1394,7 @@ export default function LandingSections({ onSignUpClick }) {
     const dark = isDarkMode;
 
     const [wfRef, wfVisible] = useScrollVisible(0.15);
+    const [ctaRef, ctaVisible] = useScrollVisible(0.15);
     const [userRef, userVisible] = useScrollVisible(0.15);
     const [dashRef, dashVisible] = useScrollVisible(0.12);
     const [howRef, howVisible] = useScrollVisible(0.12);
@@ -1413,6 +1415,44 @@ export default function LandingSections({ onSignUpClick }) {
             <div ref={wfRef} className="anim-contain">
                 <AutomationsShowcase isActive={wfVisible} onSignUpClick={onSignUpClick} />
             </div>
+
+            {/* ══════════════════════════════════════════════════
+                COMMUNITY REQUEST CTA
+                Shown after AutomationsShowcase, before For Everyone
+            ══════════════════════════════════════════════════ */}
+            <section
+                ref={ctaRef}
+                className="relative w-full"
+            >
+                <div
+                    className={`max-w-3xl mx-auto px-6 sm:px-10 py-12 sm:py-16 text-center transition-all duration-700 ${ctaVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+                >
+                    <div className={`rounded-2xl border px-8 py-10 ${
+                        dark
+                            ? 'bg-slate-800/50 border-white/[0.07]'
+                            : 'bg-violet-50/60 border-violet-200/60'
+                    }`}>
+                        <span className={`inline-block text-xs font-semibold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${
+                            dark ? 'bg-violet-500/15 text-violet-400' : 'bg-violet-100 text-violet-600'
+                        }`}>
+                            Community
+                        </span>
+                        <h2 className={`text-xl sm:text-2xl font-bold mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>
+                            Can't find the right automation?
+                        </h2>
+                        <p className={`text-sm sm:text-base mb-6 max-w-md mx-auto ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            Post a request on the community page and let a developer build it for you.
+                        </p>
+                        <Link
+                            href="/community"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-[1.02] transition-all duration-200"
+                        >
+                            <FiUsers className="w-4 h-4" />
+                            Post a request
+                        </Link>
+                    </div>
+                </div>
+            </section>
 
             {/* ══════════════════════════════════════════════════
                 SECTION 1 — FOR EVERYONE
@@ -1452,12 +1492,12 @@ export default function LandingSections({ onSignUpClick }) {
                             <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight ${dark ? 'text-white' : 'text-gray-900'}`}>
                                 Describe It.{' '}
                                 <span className="bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
-                                    We Automate It.
+                                    We Find It.
                                 </span>
                             </h2>
 
                             <p className={`text-base sm:text-lg mb-8 leading-relaxed max-w-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Tell us what you want to automate in plain language. Our AI finds the right tool and runs it for you — no coding needed.
+                                Tell us what you need in plain language. Our AI searches the marketplace and finds the right pre-built automation — no coding, no building, just run it.
                             </p>
 
                             {/* Category pills */}
