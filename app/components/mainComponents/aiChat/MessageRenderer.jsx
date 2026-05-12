@@ -120,6 +120,28 @@ export default function MessageRenderer({
         <AutomationList automations={message.automationList} isDarkMode={isDarkMode} />
       )}
 
+      {/* Insufficient tokens — show Buy Tokens button */}
+      {message.insufficientTokens && (
+        <div className={`mt-3 p-3 rounded-xl border flex items-center justify-between gap-3 ${
+          isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'
+        }`}>
+          <div>
+            <p className={`text-sm font-semibold ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+              {message.insufficientTokens.shortfall} more tokens needed
+            </p>
+            <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-yellow-400/70' : 'text-yellow-600'}`}>
+              Have {message.insufficientTokens.available} · Need {message.insufficientTokens.required}
+            </p>
+          </div>
+          <a
+            href="/pricing"
+            className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+          >
+            Buy Tokens
+          </a>
+        </div>
+      )}
+
       {/* Connect button or Sign In button */}
       {message.connectRequest && (
         <div className="mt-4">

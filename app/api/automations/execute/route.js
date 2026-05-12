@@ -62,10 +62,10 @@ export async function POST(req) {
       );
     }
 
-    // Fetch automation details to check if it requires background processing
+    // Fetch automation details including token cost and creator
     const { data: automation, error: automationError } = await supabase
       .from('automations')
-      .select('id, name, requires_background')
+      .select('id, name, requires_background, token_cost, author_email')
       .eq('id', automation_id)
       .single();
 
@@ -77,6 +77,83 @@ export async function POST(req) {
     }
 
     console.log('[EXECUTE DEBUG] Automation type:', automation.requires_background ? 'Background (Continuous)' : 'On-Demand (Run Once)');
+    console.log('[EXECUTE DEBUG] Token cost:', automation.token_cost);
+
+    // ============================================
+    // TOKEN ECONOMY: Check and deduct tokens
+    // ============================================
+    const tokenCost = automation.token_cost || 0;
+    const TOKEN_TO_USD = 0.10; // 1 token = $0.10 USD
+    
+    if (tokenCost > 0) {
+      console.log('[TOKEN] Automation costs', tokenCost, 'tokens');
+      
+      // Get runner's current token balance
+      const { data: runner, error: runnerError } = await supabase
+        .from('users')
+        .select('id, email, token_balance')
+        .eq('id', user.id)
+        .single();
+      
+      if (runnerError || !runner) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Check if runner has enough tokens
+      if (runner.token_balance < tokenCost) {
+        console.log('[TOKEN] Insufficient balance:', runner.token_balance, '<', tokenCost);
+        return NextResponse.json(
+          { 
+            error: 'Insufficient token balance',
+            required: tokenCost,
+            available: runner.token_balance,
+            message: `This automation costs ${tokenCost} tokens. You have ${runner.token_balance} tokens. Please purchase more tokens.`
+          },
+          { status: 402 } // 402 Payment Required
+        );
+      }
+      
+      // Deduct tokens from runner
+      const { error: deductError } = await supabase
+        .from('users')
+        .update({ 
+          token_balance: runner.token_balance - tokenCost 
+        })
+        .eq('id', user.id);
+      
+      if (deductError) {
+        console.error('[TOKEN] Failed to deduct tokens:', deductError);
+        return NextResponse.json(
+          { error: 'Failed to process token payment' },
+          { status: 500 }
+        );
+      }
+      
+      console.log('[TOKEN] Deducted', tokenCost, 'tokens from runner');
+      
+      // Record spend transaction
+      await supabase
+        .from('token_transactions')
+        .insert({
+          user_id: user.id,
+          transaction_type: 'spend',
+          token_amount: -tokenCost,
+          usd_amount: -(tokenCost * TOKEN_TO_USD),
+          status: 'completed',
+          metadata: {
+            automation_id: automation_id,
+            automation_name: automation.name,
+            developer_email: automation.author_email
+          }
+        });
+    } else if (isOwnAutomation) {
+      console.log('[TOKEN] User running own automation - FREE (no deduction, no earning)');
+    } else {
+      console.log('[TOKEN] Free automation (token_cost = 0)');
+    }
 
     // Convert config keys to lowercase for webhook body compatibility
     // (Database stores TIKTOK_URL, but workflow expects tiktok_url)
@@ -235,10 +312,60 @@ export async function POST(req) {
     // Increment total_runs on the automation
     await supabase.rpc('increment_total_runs', { automation_uuid: automation_id });
 
+    // ============================================
+    // TOKEN ECONOMY: Credit creator if automation costs tokens
+    // Only credit if runner is a DIFFERENT user than the creator
+    // ============================================
+    if (tokenCost > 0 && automation.author_email !== user.email) {
+      console.log('[TOKEN] Crediting creator:', automation.author_email);
+      
+      const usdAmount = tokenCost * TOKEN_TO_USD;
+      
+      // Get creator's user ID from email
+      const { data: creator, error: creatorError } = await supabase
+        .from('users')
+        .select('id, email, token_balance, total_earnings_usd')
+        .eq('email', automation.author_email)
+        .single();
+      
+      if (creator && !creatorError) {
+        // Creator earns USD only — NOT tokens (tokens are only earned by purchasing)
+        await supabase
+          .from('users')
+          .update({
+            total_earnings_usd: creator.total_earnings_usd + usdAmount
+          })
+          .eq('id', creator.id);
+        
+        // Record earning transaction
+        await supabase
+          .from('token_transactions')
+          .insert({
+            user_id: creator.id,
+            transaction_type: 'earning',
+            token_amount: tokenCost,
+            usd_amount: usdAmount,
+            status: 'completed',
+            metadata: {
+              automation_id: automation_id,
+              automation_name: automation.name,
+              runner_id: user.id,
+              runner_email: user.email
+            }
+          });
+        
+        console.log('[TOKEN] Credited', tokenCost, 'tokens and $', usdAmount.toFixed(2), 'to creator');
+      } else {
+        console.error('[TOKEN] Creator not found:', automation.author_email);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Automation executed successfully',
-      result: result
+      result: result,
+      tokens_spent: tokenCost,
+      tokens_remaining: tokenCost > 0 ? (await supabase.from('users').select('token_balance').eq('id', user.id).single()).data?.token_balance : null
     });
 
   } catch (error) {

@@ -76,7 +76,6 @@ export async function GET(request) {
       const dateKey = exec.completed_at?.split('T')[0];
       if (dailyStats[dateKey]) {
         dailyStats[dateKey].runs += 1;
-        dailyStats[dateKey].earnings += parseFloat(exec.credits_used || 0);
         if (exec.status === 'success') {
           dailyStats[dateKey].success += 1;
           successCount += 1;
@@ -84,8 +83,32 @@ export async function GET(request) {
           dailyStats[dateKey].failed += 1;
         }
       }
-      totalEarnings += parseFloat(exec.credits_used || 0);
     });
+
+    // Get actual earnings from token_transactions
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', user.email)
+      .single();
+
+    if (dbUser) {
+      const { data: earningTxns } = await supabase
+        .from('token_transactions')
+        .select('usd_amount, created_at')
+        .eq('user_id', dbUser.id)
+        .eq('transaction_type', 'earning')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString());
+
+      (earningTxns || []).forEach(t => {
+        const dateKey = t.created_at?.split('T')[0];
+        if (dailyStats[dateKey]) {
+          dailyStats[dateKey].earnings += parseFloat(t.usd_amount || 0);
+        }
+        totalEarnings += parseFloat(t.usd_amount || 0);
+      });
+    }
 
     const dailyRuns = Object.values(dailyStats).sort((a, b) => a.date.localeCompare(b.date));
     const totalRuns = executions?.length || 0;

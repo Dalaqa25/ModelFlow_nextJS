@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/supabase-auth-context";
 import EditProfile from "./editProfile";
+import WithdrawalModal from "@/app/components/modals/WithdrawalModal";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
 import EarningsChart from '@/app/components/charts/EarningsChart';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import { DollarSign, TrendingUp, ArrowDownToLine, Clock, Activity, BarChart3 } from 'lucide-react';
 
 export default function Profile() {
     const router = useRouter();
@@ -16,7 +18,9 @@ export default function Profile() {
 
     const [userData, setUserData] = useState({});
     const [stats, setStats] = useState(null);
+    const [earnings, setEarnings] = useState(null);
     const [showEdit, setShowEdit] = useState(false);
+    const [showWithdrawal, setShowWithdrawal] = useState(false);
     const [loading, setLoading] = useState(true);
     
     useEffect(() => {
@@ -38,6 +42,13 @@ export default function Profile() {
                 if (statsResponse.ok) {
                     const statsData = await statsResponse.json();
                     setStats(statsData);
+                }
+
+                // Fetch earnings data
+                const earningsResponse = await fetch('/api/user/earnings');
+                if (earningsResponse.ok) {
+                    const earningsData = await earningsResponse.json();
+                    setEarnings(earningsData);
                 }
             } catch (error) {
                 // Error handled silently
@@ -128,25 +139,171 @@ export default function Profile() {
                         </div>
                     </UnifiedCard>
 
-                    {/* Earnings Section */}
+                    {/* Token Economy Earnings Section */}
+                    {earnings && (
+                        <UnifiedCard variant="content" className="mb-8" padding="lg">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                                        <DollarSign className="w-5 h-5 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-2xl font-semibold text-white">Your Earnings</h4>
+                                        <p className="text-sm text-gray-400 mt-1">Money earned from your automation sales</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg transition-all text-sm font-semibold shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    onClick={() => setShowWithdrawal(true)}
+                                    disabled={earnings.earnings.available_usd < 100}
+                                    title={earnings.earnings.available_usd < 100 ? 'Minimum withdrawal is $100' : 'Request withdrawal'}
+                                >
+                                    <ArrowDownToLine className="w-4 h-4" />
+                                    Withdraw Money
+                                </button>
+                            </div>
+                            
+                            {/* Earnings Stats Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-4">
+                                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Total Earned</p>
+                                    <p className="text-2xl font-bold text-green-400">
+                                        ${earnings.earnings.total_usd.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">Lifetime</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg p-4">
+                                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Available</p>
+                                    <p className="text-2xl font-bold text-purple-400">
+                                        ${earnings.earnings.available_usd.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">Can withdraw</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-4">
+                                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Withdrawn</p>
+                                    <p className="text-2xl font-bold text-blue-400">
+                                        ${earnings.earnings.withdrawn_usd.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">Received</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-4">
+                                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Pending</p>
+                                    <p className="text-2xl font-bold text-yellow-400">
+                                        ${earnings.earnings.pending_usd.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">In review</p>
+                                </div>
+                            </div>
+
+                            {/* Minimum Withdrawal Notice */}
+                            {earnings.earnings.available_usd < 100 && (
+                                <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                                        <Clock className="w-4 h-4 text-yellow-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-yellow-400 mb-1">
+                                            Minimum withdrawal is $100.00
+                                        </p>
+                                        <p className="text-xs text-gray-400">
+                                            You need ${(100 - earnings.earnings.available_usd).toFixed(2)} more to request a withdrawal. Keep creating awesome automations!
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Recent Earnings */}
+                            {earnings.recent_earnings.length > 0 && (
+                                <div className="mb-6">
+                                    <h5 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                        <TrendingUp className="w-5 h-5 text-green-400" />
+                                        Recent Sales
+                                    </h5>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {earnings.recent_earnings.slice(0, 5).map((earning, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-white">{earning.automation_name}</p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {new Date(earning.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                                <p className="text-sm font-bold text-green-400">
+                                                    +${earning.amount_usd.toFixed(2)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Withdrawal History */}
+                            {earnings.withdrawal_history.length > 0 && (
+                                <div>
+                                    <h5 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                        <ArrowDownToLine className="w-5 h-5 text-blue-400" />
+                                        Withdrawal History
+                                    </h5>
+                                    <div className="space-y-2">
+                                        {earnings.withdrawal_history.map((withdrawal, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-white">
+                                                        Withdrawal Request
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {new Date(withdrawal.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • 
+                                                        Platform fee: ${withdrawal.platform_fee_usd.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-bold text-blue-400">
+                                                        ${withdrawal.payout_usd.toFixed(2)}
+                                                    </p>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {withdrawal.status === 'completed' ? (
+                                                            <>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                                                                <p className="text-xs font-medium text-green-400">Paid</p>
+                                                            </>
+                                                        ) : withdrawal.status === 'pending' ? (
+                                                            <>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></div>
+                                                                <p className="text-xs font-medium text-yellow-400">Pending</p>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                                                                <p className="text-xs font-medium text-red-400">Failed</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </UnifiedCard>
+                    )}
+
+                    {/* Automation Performance Stats */}
                     {stats && (
                         <UnifiedCard variant="content" className="mb-8" padding="lg">
                             <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-xl font-semibold text-white">Earnings</h4>
-                                <button 
-                                    className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm font-medium"
-                                    onClick={() => {/* Withdrawal functionality - coming soon */}}
-                                >
-                                    Withdraw
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                                        <BarChart3 className="w-5 h-5 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-semibold text-white">Automation Performance</h4>
+                                        <p className="text-sm text-gray-400 mt-1">Your automation usage statistics</p>
+                                    </div>
+                                </div>
                             </div>
                             
                             {/* Earnings Stats */}
                             <div className="grid grid-cols-3 gap-4 mb-6">
-                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-green-400">${stats.totalEarnings.toFixed(2)}</p>
-                                    <p className="text-xs text-gray-400">Total Earnings</p>
-                                </div>
                                 <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-purple-400">{stats.totalRuns}</p>
                                     <p className="text-xs text-gray-400">Total Runs</p>
@@ -155,11 +312,18 @@ export default function Profile() {
                                     <p className="text-2xl font-bold text-blue-400">{stats.successRate}%</p>
                                     <p className="text-xs text-gray-400">Success Rate</p>
                                 </div>
+                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-green-400">${stats.totalEarnings.toFixed(2)}</p>
+                                    <p className="text-xs text-gray-400">Stats Earnings</p>
+                                </div>
                             </div>
 
                             {/* Earnings Chart */}
                             <div>
-                                <p className="text-sm text-gray-400 mb-2">Earnings (Last 30 Days)</p>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Activity className="w-4 h-4 text-gray-400" />
+                                    <p className="text-sm text-gray-400">Activity (Last 30 Days)</p>
+                                </div>
                                 <EarningsChart data={stats.dailyRuns} />
                             </div>
                         </UnifiedCard>
@@ -235,6 +399,24 @@ export default function Profile() {
                         onClose={() => setShowEdit(false)}
                         onSave={handleSave}
                         initialData={userData}
+                    />
+                )}
+
+                {/* Withdrawal Modal */}
+                {showWithdrawal && earnings && (
+                    <WithdrawalModal
+                        isOpen={showWithdrawal}
+                        onClose={() => setShowWithdrawal(false)}
+                        availableAmount={earnings.earnings.available_usd}
+                        onSuccess={(data) => {
+                            // Refresh earnings data
+                            fetch('/api/user/earnings')
+                                .then(res => res.json())
+                                .then(setEarnings);
+                            
+                            // Show success message
+                            alert(`Withdrawal request submitted! You'll receive $${data.payout_amount.toFixed(2)} after approval.`);
+                        }}
                     />
                 )}
             </div>

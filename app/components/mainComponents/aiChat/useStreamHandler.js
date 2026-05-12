@@ -98,6 +98,17 @@ export function createStreamHandler({
         )
       );
     }
+    // Handle insufficient tokens
+    else if (parsed.type === 'insufficient_tokens') {
+      flushQueue();
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: displayedText, insufficientTokens: { required: parsed.required, available: parsed.available, shortfall: parsed.shortfall } }
+            : msg
+        )
+      );
+    }
     // Handle connection requests
     else if (parsed.type === 'connect_request') {
       flushQueue();

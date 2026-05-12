@@ -8,19 +8,37 @@ import ProfileDropdown from './sidebar/actions/ProfileDropdown';
 import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 import { FaBars } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query';
+import { createBrowserSupabaseClient } from '@/lib/db/supabase';
+import { Coins } from 'lucide-react';
 
 const UPLOAD_SEEN_KEY = 'upload_button_seen';
 
 export default function TopBar() {
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
   const { isDarkMode, textColors } = useThemeAdaptive();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const [showAttention, setShowAttention] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   const switchToSignUp = () => { setIsSignInOpen(false); setIsSignUpOpen(true); };
   const switchToSignIn = () => { setIsSignUpOpen(false); setIsSignInOpen(true); };
+
+  // Fetch token balance
+  const { data: tokenBalance = 0 } = useQuery({
+    queryKey: ['tokenBalance', user?.id],
+    queryFn: async () => {
+      if (!user?.email) return 0;
+      const res = await fetch('/api/user');
+      if (!res.ok) return 0;
+      const data = await res.json();
+      return data?.token_balance || 0;
+    },
+    enabled: !!user?.email && isAuthenticated,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+  });
 
   useEffect(() => {
     const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
@@ -68,7 +86,21 @@ export default function TopBar() {
 
       {/* Right: Auth buttons or Profile */}
       {authLoading ? null : isAuthenticated ? (
-        <ProfileDropdown />
+        <div className="flex items-center gap-3">
+          {/* Token Balance Display */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+            isDarkMode 
+              ? 'bg-slate-800/60 border-purple-500/30 hover:bg-slate-700/60' 
+              : 'bg-white/60 border-purple-200/50 hover:bg-white/80'
+          }`}>
+            <Coins className={`w-4 h-4 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+            <span className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              {tokenBalance.toLocaleString()}
+            </span>
+          </div>
+          
+          <ProfileDropdown tokenBalance={tokenBalance} />
+        </div>
       ) : (
         <div className="flex items-center gap-2">
           <button
