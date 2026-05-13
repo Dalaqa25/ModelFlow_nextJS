@@ -16,8 +16,12 @@ export default function OtherComments({ requestId }) {
         }
     });
 
-    const getInitial = (email) => {
-        return email ? email.charAt(0).toUpperCase() : '?';
+    const getInitial = (nameOrEmail) => {
+        return nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
+    };
+
+    const getCommentDisplayName = (comment) => {
+        return comment.author?.name || comment.author_email?.split('@')[0] || 'User';
     };
 
     const getAvatarColor = (email) => {
@@ -97,20 +101,16 @@ export default function OtherComments({ requestId }) {
                 >
                     {/* Avatar */}
                     <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(comment.author_email)} flex items-center justify-center flex-shrink-0 cursor-pointer`}
-                        onClick={() => router.push(`/profile/${comment.author_email}`)}
+                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(comment.author_email)} flex items-center justify-center flex-shrink-0`}
                     >
-                        <span className="text-[10px] font-bold text-white">{getInitial(comment.author_email)}</span>
+                        <span className="text-[10px] font-bold text-white">{getInitial(getCommentDisplayName(comment))}</span>
                     </div>
 
                     {/* Comment Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2 mb-0.5">
-                            <span
-                                onClick={() => router.push(`/profile/${comment.author_email}`)}
-                                className="text-xs font-semibold text-purple-300 hover:text-purple-200 cursor-pointer transition-colors truncate"
-                            >
-                                {comment.author_email}
+                            <span className="text-xs font-semibold text-purple-300 truncate">
+                                {getCommentDisplayName(comment)}
                             </span>
                             <span className="text-[10px] text-slate-600 flex-shrink-0">
                                 {getTimeAgo(comment.created_at)}

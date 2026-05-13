@@ -32,9 +32,11 @@ export default function RequestInfo({ request, onClose }) {
         setCommentsUpdated(prev => prev + 1);
     };
 
-    const getInitial = (email) => {
-        return email ? email.charAt(0).toUpperCase() : '?';
+    const getInitial = (nameOrEmail) => {
+        return nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
     };
+
+    const getDisplayName = (req) => req?.author_name || req?.author_email?.split('@')[0] || 'User';
 
     const getAvatarColor = (email) => {
         const colors = [
@@ -101,14 +103,11 @@ export default function RequestInfo({ request, onClose }) {
                         {/* Author Info */}
                         <div className="flex items-center gap-3 p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/30">
                             <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(request.author_email)} flex items-center justify-center flex-shrink-0`}>
-                                <span className="text-xs font-bold text-white">{getInitial(request.author_email)}</span>
+                                <span className="text-xs font-bold text-white">{getInitial(getDisplayName(request))}</span>
                             </div>
                             <div className="min-w-0">
-                                <p
-                                    onClick={() => router.push(`/profile/${request.author_email}`)}
-                                    className="text-sm font-medium text-purple-300 hover:text-purple-200 cursor-pointer transition-colors truncate"
-                                >
-                                    {request.author_email}
+                                <p className="text-sm font-medium text-purple-300 truncate">
+                                    {getDisplayName(request)}
                                 </p>
                                 <p className="text-xs text-slate-500">
                                     {new Date(request.created_at).toLocaleDateString('en-US', {

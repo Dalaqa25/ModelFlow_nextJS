@@ -79,7 +79,9 @@ export default function Request() {
         return created.toLocaleDateString();
     };
 
-    const getInitial = (email) => email ? email.charAt(0).toUpperCase() : '?';
+    const getInitial = (nameOrEmail) => nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
+
+    const getDisplayName = (req) => req.author_name || req.author_email?.split('@')[0] || 'User';
 
     const getAvatarColor = (email) => {
         const colors = [
@@ -146,14 +148,13 @@ export default function Request() {
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        router.push(`/profile/${req.author_email}`);
                                     }}
-                                    className="flex items-center gap-1.5 hover:text-purple-300 transition-colors"
+                                    className="flex items-center gap-1.5 text-slate-500"
                                 >
                                     <div className={`w-4.5 h-4.5 w-[18px] h-[18px] rounded-full bg-gradient-to-br ${getAvatarColor(req.author_email)} flex items-center justify-center`}>
-                                        <span className="text-[8px] font-bold text-white leading-none">{getInitial(req.author_email)}</span>
+                                        <span className="text-[8px] font-bold text-white leading-none">{getInitial(getDisplayName(req))}</span>
                                     </div>
-                                    <span className="truncate max-w-[150px]">{req.author_email}</span>
+                                    <span className="truncate max-w-[150px]">{getDisplayName(req)}</span>
                                 </button>
                                 <span className="text-slate-600">·</span>
                                 <span>{getTimeAgo(req.created_at)}</span>
