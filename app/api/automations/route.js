@@ -263,7 +263,7 @@ export async function POST(req) {
         name: name.trim(),
         description: description.trim(),
         author_email: user.email,
-        price_per_run: estimatedPrice ? parseFloat(estimatedPrice) : null,
+        token_cost: estimatedPrice ? parseFloat(estimatedPrice) : null,
         workflow: workflow,
         embedding: embedding,
         required_connectors: requiredConnectors,
@@ -276,8 +276,9 @@ export async function POST(req) {
       .single();
 
     if (error) {
+      console.error('[POST /api/automations] Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'Failed to save automation' },
+        { error: 'Failed to save automation: ' + (error.message || JSON.stringify(error)) },
         { status: 500 }
       );
     }

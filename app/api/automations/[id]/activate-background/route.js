@@ -39,16 +39,21 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'This automation does not require background execution' }, { status: 400 });
     }
 
-    // Update user_automations: set is_active = true and save config
+    // Upsert user_automations: create the row if it doesn't exist yet,
+    // or update it if it does. Using plain .update() silently no-ops when
+    // no row exists, which is the root cause of "failed to save" errors.
     const { error: updateError } = await supabase
       .from('user_automations')
-      .update({
+      .upsert({
+        user_id: user.id,
+        automation_id: automationId,
         is_active: true,
         parameters: config,
         updated_at: new Date().toISOString()
-      })
-      .eq('user_id', user.id)
-      .eq('automation_id', automationId);
+      }, {
+        onConflict: 'user_id,automation_id',
+        ignoreDuplicates: false
+      });
 
     if (updateError) {
       console.error('[activate-background] Error:', updateError);
