@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { getAvatarColor, getInitial } from '@/lib/messages/avatar-utils';
 import MessagesTabBadge from './MessagesTabBadge';
 import { FaEnvelope } from 'react-icons/fa';
@@ -15,7 +14,6 @@ export default function MessagesInbox({
   onSelectThread,
 }) {
   const { user } = useAuth();
-  const { isDarkMode } = useThemeAdaptive();
   const hasAutoTabbed = useRef(false);
 
   const { data: unread } = useQuery({
@@ -55,20 +53,16 @@ export default function MessagesInbox({
   });
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full bg-transparent">
       {/* Tabs */}
-      <div className={`flex gap-1.5 p-2 border-b shrink-0 ${
-        isDarkMode ? 'border-slate-700/40' : 'border-gray-200'
-      }`}>
+      <div className="flex gap-2 p-3 border-b border-slate-700/50 shrink-0 bg-slate-900/40">
         <button
           type="button"
           onClick={() => setTab('chats')}
-          className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-colors inline-flex items-center justify-center ${
+          className={`flex-1 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-300 inline-flex items-center justify-center ${
             tab === 'chats'
-              ? 'bg-purple-600 text-white'
-              : isDarkMode
-                ? 'bg-slate-800/60 text-slate-400 hover:text-white'
-                : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-900/30'
+              : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50'
           }`}
         >
           Chats
@@ -77,16 +71,12 @@ export default function MessagesInbox({
         <button
           type="button"
           onClick={() => setTab('requests')}
-          className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-colors inline-flex items-center justify-center ${
+          className={`flex-1 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-300 inline-flex items-center justify-center ${
             tab === 'requests'
-              ? 'bg-purple-600 text-white'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-900/30'
               : requestsTabAttention
-                ? isDarkMode
-                  ? 'text-slate-200 ring-1 ring-purple-500/50'
-                  : 'text-purple-700 ring-1 ring-purple-400/50 bg-purple-50'
-                : isDarkMode
-                  ? 'bg-slate-800/60 text-slate-400 hover:text-white'
-                  : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'
+                ? 'text-purple-300 ring-1 ring-purple-500/50 bg-purple-500/10 hover:bg-purple-500/20'
+                : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700/50'
           }`}
         >
           Requests
@@ -95,75 +85,74 @@ export default function MessagesInbox({
       </div>
 
       {/* Thread List */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
         {isLoading ? (
-          <p className={`p-4 text-xs text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Loading...</p>
+          <div className="p-8 flex flex-col items-center justify-center space-y-3">
+             <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+             <p className="text-xs text-slate-500 font-medium">Loading conversations...</p>
+          </div>
         ) : threads.length === 0 ? (
-          <div className="p-6 text-center">
-            <FaEnvelope className={`w-6 h-6 mx-auto mb-2 ${isDarkMode ? 'text-slate-600' : 'text-gray-300'}`} />
-            <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+          <div className="p-8 text-center flex flex-col items-center justify-center h-full opacity-60">
+            <div className="w-12 h-12 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4 border border-slate-700/50">
+               <FaEnvelope className="w-5 h-5 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-300">
               {tab === 'requests'
                 ? 'No pending requests'
                 : 'No active chats yet'}
             </p>
-            <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>
-              Message from Community requests
+            <p className="text-xs mt-2 text-slate-500 max-w-[200px] leading-relaxed">
+              When you connect with others in the community, your messages will appear here.
             </p>
           </div>
         ) : (
-          <ul>
+          <ul className="py-2">
             {threads.map((t) => {
               const name = t.other_user?.display_name || 'User';
               const seed = t.other_user?.id || name;
               const showUnread = t.unread_count > 0 || t.is_incoming_request;
 
               return (
-                <li key={t.id}>
+                <li key={t.id} className="px-2 mb-1">
                   <button
                     type="button"
                     onClick={() => onSelectThread(t.id, t.status)}
-                    className={`w-full flex items-start gap-2.5 p-3 text-left transition-colors ${
-                      isDarkMode
-                        ? `hover:bg-slate-800/50 border-b border-slate-800/30 ${
-                            activeThreadId === t.id ? 'bg-slate-800/70' : ''
-                          } ${t.is_incoming_request ? 'bg-purple-500/5' : ''}`
-                        : `hover:bg-gray-50 border-b border-gray-100 ${
-                            activeThreadId === t.id ? 'bg-gray-100' : ''
-                          } ${t.is_incoming_request ? 'bg-purple-50/50' : ''}`
-                    }`}
+                    className={`w-full flex items-start gap-3 p-3 text-left transition-all duration-200 rounded-xl border ${
+                      activeThreadId === t.id
+                        ? 'bg-slate-800/80 border-slate-700/80 shadow-md'
+                        : 'bg-transparent border-transparent hover:bg-slate-800/50 hover:border-slate-700/40'
+                    } ${t.is_incoming_request ? 'bg-purple-500/5 hover:bg-purple-500/10' : ''}`}
                   >
                     <div
-                      className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(seed)} flex items-center justify-center flex-shrink-0 ${
-                        t.is_incoming_request ? 'ring-2 ring-purple-500/50' : ''
+                      className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarColor(seed)} flex items-center justify-center flex-shrink-0 shadow-inner ${
+                        t.is_incoming_request ? 'ring-2 ring-purple-500/50 shadow-purple-500/20' : ''
                       }`}
                     >
-                      <span className="text-[10px] font-bold text-white">
+                      <span className="text-[11px] font-bold text-white tracking-wide">
                         {getInitial(name)}
                       </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex justify-between gap-1 items-start">
-                        <span className={`text-xs font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className="min-w-0 flex-1 py-0.5">
+                      <div className="flex justify-between gap-2 items-start mb-0.5">
+                        <span className="text-sm font-semibold text-slate-200 truncate">
                           {name}
                         </span>
                         {t.is_incoming_request && (
-                          <span className={`text-[8px] font-bold uppercase px-1 py-0.5 rounded ${
-                            isDarkMode ? 'bg-amber-500/25 text-amber-300' : 'bg-amber-100 text-amber-700'
-                          }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
                             New
                           </span>
                         )}
                         {!t.is_incoming_request && showUnread && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1" />
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)] mt-1.5 shrink-0" />
                         )}
                       </div>
                       {t.request_title && (
-                        <p className={`text-[10px] truncate ${isDarkMode ? 'text-purple-400/90' : 'text-purple-600/80'}`}>
+                        <p className="text-[11px] font-medium text-purple-400/90 truncate mb-0.5">
                           {t.request_title}
                         </p>
                       )}
                       {t.last_message && (
-                        <p className={`text-[10px] truncate ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <p className={`text-xs truncate ${showUnread ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
                           {t.last_message.body}
                         </p>
                       )}

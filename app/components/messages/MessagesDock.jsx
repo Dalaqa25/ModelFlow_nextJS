@@ -58,16 +58,18 @@ export default function MessagesDock() {
     <div className="fixed bottom-4 right-4 z-[45] flex flex-col items-end gap-3 pointer-events-none">
       {isOpen && (
         <div
-          className="pointer-events-auto w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] flex flex-col rounded-2xl border border-slate-700/60 bg-slate-900/98 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden"
+          className="pointer-events-auto w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] flex flex-col rounded-2xl border border-slate-700/60 bg-slate-900/95 backdrop-blur-2xl shadow-2xl shadow-purple-900/10 overflow-hidden ring-1 ring-white/5"
           role="dialog"
           aria-label="Messages"
         >
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-700/50 bg-slate-900 shrink-0">
-            <h2 className="text-sm font-semibold text-white">Messages</h2>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/60 backdrop-blur-md shrink-0">
+            <h2 className="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-300 tracking-wide">
+              Messages
+            </h2>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/80 transition-colors"
               aria-label="Minimize messages"
             >
               <FaMinus className="text-xs" />

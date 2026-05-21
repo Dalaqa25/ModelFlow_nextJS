@@ -88,26 +88,24 @@ export async function POST(request) {
       if (!participantIds.includes(requestAuthorId)) {
         // allow messaging anyone on a request thread (builder to author or vice versa)
       }
+    }
 
-      const existing = await messageDB.findThreadBetweenUsersOnRequest(
-        requestId,
-        me.id,
-        recipientUserId
-      );
+    // Always check for an existing thread between these two users to prevent duplicates
+    const existing = await messageDB.findThreadBetweenUsers(me.id, recipientUserId);
 
-      if (existing) {
-        if (existing.status === 'declined') {
-          return NextResponse.json(
-            { error: 'This conversation was declined. It cannot be reopened yet.' },
-            { status: 409 }
-          );
-        }
-        return NextResponse.json({
-          threadId: existing.id,
-          status: existing.status,
-          existing: true,
-        });
+    if (existing) {
+      if (existing.status === 'declined') {
+        return NextResponse.json(
+          { error: 'This conversation was declined. It cannot be reopened yet.' },
+          { status: 409 }
+        );
       }
+      // If thread exists, just return it so frontend redirects there instead of creating a new one
+      return NextResponse.json({
+        threadId: existing.id,
+        status: existing.status,
+        existing: true,
+      });
     }
 
     const { thread, message } = await messageDB.createThread({

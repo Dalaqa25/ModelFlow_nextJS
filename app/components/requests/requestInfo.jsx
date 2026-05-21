@@ -53,8 +53,35 @@ export default function RequestInfo({ request, onClose }) {
     const canMessage =
         authorId && currentUser?.id && authorId !== currentUser.id && user;
 
+    const { data: existingThread, refetch: refetchExistingThread, isLoading: isCheckingThread } = useQuery({
+        queryKey: ['checkThread', authorId],
+        queryFn: async () => {
+            if (!authorId) return null;
+            const res = await fetch(`/api/messages/threads/check?userId=${authorId}`, {
+                credentials: 'include'
+            });
+            if (!res.ok) return null;
+            return res.json();
+        },
+        enabled: !!user && !!authorId && authorId !== currentUser?.id,
+    });
+
+    const hasExistingThread = existingThread?.exists;
+
+    const handleMessageClick = () => {
+        if (hasExistingThread) {
+            handleMessageStarted(existingThread.threadId);
+        } else {
+            setMessageModalOpen(true);
+        }
+    };
+
     const handleMessageStarted = (threadId) => {
-        openThread(threadId, { tab: 'requests' });
+        refetchExistingThread();
+        handleClose();
+        setTimeout(() => {
+            openThread(threadId, { tab: 'requests' });
+        }, 300);
     };
 
     if (!request) return null;
@@ -125,11 +152,21 @@ export default function RequestInfo({ request, onClose }) {
                             {canMessage && (
                                 <button
                                     type="button"
-                                    onClick={() => setMessageModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors shrink-0"
+                                    onClick={handleMessageClick}
+                                    disabled={isCheckingThread}
+                                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <FaEnvelope className="text-[10px]" />
-                                    Message
+                                    {isCheckingThread ? (
+                                        <>
+                                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Checking...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaEnvelope className="text-[10px]" />
+                                            {hasExistingThread ? 'Open Chat' : 'Message'}
+                                        </>
+                                    )}
                                 </button>
                             )}
                         </div>

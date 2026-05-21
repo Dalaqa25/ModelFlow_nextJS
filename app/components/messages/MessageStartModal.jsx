@@ -98,16 +98,23 @@ export default function MessageStartModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-white"
+              className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !message.trim()}
-              className="px-4 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-xl disabled:opacity-50"
+              className="relative w-[130px] flex items-center justify-center h-9 text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-xl disabled:opacity-50 transition-all"
             >
-              {loading ? 'Sending...' : 'Send request'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Sending...</span>
+                </div>
+              ) : (
+                'Send request'
+              )}
             </button>
           </div>
         </form>
