@@ -39,6 +39,7 @@ export async function middleware(request) {
   
   if (pathname.startsWith('/dashboard') || 
       pathname.startsWith('/profile') || 
+      pathname.startsWith('/messages') ||
       pathname.startsWith('/auth/') || 
       pathname === '/' ||
       pathname.startsWith('/main')) {
@@ -64,7 +65,7 @@ export async function middleware(request) {
   }
 
   // If user is not authenticated and trying to access dashboard or other protected routes
-  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile'))) {
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/messages'))) {
     url.pathname = '/';
     return NextResponse.redirect(url);
   }

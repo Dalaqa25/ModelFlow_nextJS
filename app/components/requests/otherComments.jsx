@@ -1,9 +1,28 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 
-export default function OtherComments({ requestId }) {
-    const router = useRouter();
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { FaEnvelope } from 'react-icons/fa';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import MessageStartModal from '@/app/components/messages/MessageStartModal';
+import { getAvatarColor, getInitial } from '@/lib/messages/avatar-utils';
+import { useMessagesDock } from '@/lib/contexts/messages-dock-context';
+
+export default function OtherComments({ requestId, requestTitle }) {
+    const { openThread } = useMessagesDock();
+    const { user } = useAuth();
+    const [messageTarget, setMessageTarget] = useState(null);
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['currentUserProfile'],
+        queryFn: async () => {
+            const res = await fetch('/api/user', { credentials: 'include' });
+            if (!res.ok) return null;
+            return res.json();
+        },
+        enabled: !!user,
+    });
+
     const { data: comments = [], isLoading, error, refetch } = useQuery({
         queryKey: ['requestComments', requestId],
         queryFn: async () => {
@@ -11,31 +30,9 @@ export default function OtherComments({ requestId }) {
             if (!response.ok) {
                 throw new Error('Failed to fetch comments');
             }
-            const data = await response.json();
-            return data;
-        }
+            return response.json();
+        },
     });
-
-    const getInitial = (nameOrEmail) => {
-        return nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
-    };
-
-    const getCommentDisplayName = (comment) => {
-        return comment.author?.name || comment.author_email?.split('@')[0] || 'User';
-    };
-
-    const getAvatarColor = (email) => {
-        const colors = [
-            'from-purple-500 to-indigo-500',
-            'from-pink-500 to-rose-500',
-            'from-blue-500 to-cyan-500',
-            'from-amber-500 to-orange-500',
-            'from-emerald-500 to-teal-500',
-            'from-violet-500 to-purple-500',
-        ];
-        const hash = email?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
-        return colors[hash % colors.length];
-    };
 
     const getTimeAgo = (dateString) => {
         const now = new Date();
@@ -55,13 +52,12 @@ export default function OtherComments({ requestId }) {
     if (isLoading) {
         return (
             <div className="space-y-3">
-                {[1, 2].map(i => (
+                {[1, 2].map((i) => (
                     <div key={i} className="flex items-start gap-3 animate-pulse">
                         <div className="w-8 h-8 rounded-full bg-slate-700/40 flex-shrink-0" />
                         <div className="flex-1 space-y-2">
                             <div className="h-3 bg-slate-700/40 rounded w-24" />
                             <div className="h-3 bg-slate-700/30 rounded w-full" />
-                            <div className="h-3 bg-slate-700/30 rounded w-2/3" />
                         </div>
                     </div>
                 ))}
@@ -93,35 +89,81 @@ export default function OtherComments({ requestId }) {
     }
 
     return (
-        <div className="space-y-0.5">
-            {comments.map((comment, idx) => (
-                <div
-                    key={comment.id}
-                    className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-800/30 transition-colors duration-150"
-                >
-                    {/* Avatar */}
-                    <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(comment.author_email)} flex items-center justify-center flex-shrink-0`}
-                    >
-                        <span className="text-[10px] font-bold text-white">{getInitial(getCommentDisplayName(comment))}</span>
-                    </div>
+        <>
+            <div className="space-y-0.5">
+                {comments.map((comment) => {
+                    const author = comment.author || {};
+                    const name = author.display_name || 'User';
+                    const authorId = author.id;
+                    const seed = author.id || name;
+                    const canMessage =
+                        user &&
+                        currentUser?.id &&
+                        authorId &&
+                        authorId !== currentUser.id;
 
-                    {/* Comment Content */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2 mb-0.5">
-                            <span className="text-xs font-semibold text-purple-300 truncate">
-                                {getCommentDisplayName(comment)}
-                            </span>
-                            <span className="text-[10px] text-slate-600 flex-shrink-0">
-                                {getTimeAgo(comment.created_at)}
-                            </span>
+                    return (
+                        <div
+                            key={comment.id}
+                            className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-800/30 transition-colors duration-150"
+                        >
+                            <div
+                                className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(seed)} flex items-center justify-center flex-shrink-0`}
+                            >
+                                <span className="text-[10px] font-bold text-white">
+                                    {getInitial(name)}
+                                </span>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                                    <div className="flex items-baseline gap-2 min-w-0">
+                                        <span className="text-xs font-semibold text-purple-300 truncate">
+                                            {name}
+                                        </span>
+                                        <span className="text-[10px] text-slate-600 flex-shrink-0">
+                                            {getTimeAgo(comment.created_at)}
+                                        </span>
+                                    </div>
+                                    {canMessage && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setMessageTarget({
+                                                    id: authorId,
+                                                    name,
+                                                })
+                                            }
+                                            className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-[10px] text-purple-400 hover:text-purple-300 transition-opacity shrink-0"
+                                        >
+                                            <FaEnvelope />
+                                            Message
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-sm text-slate-300 leading-relaxed break-words whitespace-pre-wrap">
+                                    {comment.content}
+                                </p>
+                            </div>
                         </div>
-                        <p className="text-sm text-slate-300 leading-relaxed break-words whitespace-pre-wrap">
-                            {comment.content}
-                        </p>
-                    </div>
-                </div>
-            ))}
-        </div>
+                    );
+                })}
+            </div>
+
+            {messageTarget && (
+                <MessageStartModal
+                    isOpen={!!messageTarget}
+                    onClose={() => setMessageTarget(null)}
+                    recipientUserId={messageTarget.id}
+                    requestId={requestId}
+                    requestTitle={requestTitle}
+                    recipientName={messageTarget.name}
+                    onStarted={(threadId) => {
+                        setMessageTarget(null);
+                        openThread(threadId, { tab: 'requests' });
+                    }}
+                />
+            )}
+        </>
     );
 }

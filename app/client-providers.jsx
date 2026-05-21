@@ -3,6 +3,7 @@
 import { AuthProvider } from "@/lib/auth/supabase-auth-context";
 import { NavigationLoadingProvider } from "@/lib/contexts/navigation-loading-context";
 import { SidebarProvider } from "@/lib/contexts/sidebar-context";
+import { MessagesDockProvider } from "@/lib/contexts/messages-dock-context";
 import NavigationLoader from "@/app/components/NavigationLoader";
 import AppShell from "@/app/components/AppShell";
 import { SplashProvider } from "./splash-context";
@@ -25,9 +26,11 @@ export default function ClientProviders({ children }) {
                         <SplashProvider>
                             <AuthProvider>
                                 <SidebarProvider>
+                                    <MessagesDockProvider>
                                     <AppShell />
                                     {children}
                                     <NavigationLoader />
+                                    </MessagesDockProvider>
                                 </SidebarProvider>
                             </AuthProvider>
                         </SplashProvider>

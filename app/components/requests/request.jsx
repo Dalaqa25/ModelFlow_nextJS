@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import RequestInfo from './requestInfo';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { getAvatarColor, getInitial } from '@/lib/messages/avatar-utils';
 
 export default function Request() {
     const [selectedRequestId, setSelectedRequestId] = useState(null);
@@ -79,22 +80,9 @@ export default function Request() {
         return created.toLocaleDateString();
     };
 
-    const getInitial = (nameOrEmail) => nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
+    const getDisplayName = (req) => req.author?.display_name || 'User';
 
-    const getDisplayName = (req) => req.author_name || req.author_email?.split('@')[0] || 'User';
-
-    const getAvatarColor = (email) => {
-        const colors = [
-            'from-purple-500 to-indigo-500',
-            'from-pink-500 to-rose-500',
-            'from-blue-500 to-cyan-500',
-            'from-amber-500 to-orange-500',
-            'from-emerald-500 to-teal-500',
-            'from-violet-500 to-fuchsia-500',
-        ];
-        const hash = email?.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) || 0;
-        return colors[hash % colors.length];
-    };
+    const getAvatarSeed = (req) => req.author?.id || req.author?.display_name || 'user';
 
     return (
         <>
@@ -151,7 +139,7 @@ export default function Request() {
                                     }}
                                     className="flex items-center gap-1.5 text-slate-500"
                                 >
-                                    <div className={`w-4.5 h-4.5 w-[18px] h-[18px] rounded-full bg-gradient-to-br ${getAvatarColor(req.author_email)} flex items-center justify-center`}>
+                                    <div className={`w-[18px] h-[18px] rounded-full bg-gradient-to-br ${getAvatarColor(getAvatarSeed(req))} flex items-center justify-center`}>
                                         <span className="text-[8px] font-bold text-white leading-none">{getInitial(getDisplayName(req))}</span>
                                     </div>
                                     <span className="truncate max-w-[150px]">{getDisplayName(req)}</span>

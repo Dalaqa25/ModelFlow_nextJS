@@ -1,32 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import SidebarToggle from './actions/SidebarToggle';
 import SidebarNavIcons from './SidebarNavIcons';
 import SidebarUploadIcon from './SidebarUploadIcon';
-import SidebarConversationIcon from './SidebarConversationIcon';
+import SidebarRecents from './SidebarRecents';
 import SidebarExpandButton from './actions/SidebarExpandButton';
 import SidebarCollapseButton from './actions/SidebarCollapseButton';
 import UploadTooltip from './UploadTooltip';
-import SidebarConversationList from './SidebarConversationList';
 
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
 export default function Sidebar() {
-  const { isExpanded, setIsExpanded } = useSidebar();
+  const { isExpanded } = useSidebar();
   const { isDarkMode } = useThemeAdaptive();
-  const [showConversations, setShowConversations] = useState(false);
-
-  const handleConversationIconClick = () => {
-    setShowConversations(true);
-    setIsExpanded(true); // Expand sidebar to show conversations
-  };
-
-  const handleBackToNav = () => {
-    setShowConversations(false);
-  };
 
   return (
     <>
@@ -39,19 +26,15 @@ export default function Sidebar() {
       >
         <SidebarToggle />
 
-        {isExpanded && showConversations ? (
-          // Show conversation list when expanded and conversations mode is active
-          <SidebarConversationList onBack={handleBackToNav} />
-        ) : (
-          // Show normal navigation
-          <div className="flex-1 flex flex-col">
-            <SidebarNavIcons />
-            <div className={`flex flex-col gap-2 ${isExpanded ? 'px-3' : 'items-center'}`}>
-              <SidebarUploadIcon />
-              <SidebarConversationIcon onOpenConversations={handleConversationIconClick} />
-            </div>
+        <div className="flex-1 flex flex-col min-h-0">
+          <SidebarNavIcons />
+          <div className={`${isExpanded ? 'px-3' : 'flex flex-col items-center gap-1'}`}>
+            <SidebarUploadIcon />
           </div>
-        )}
+
+          {/* ChatGPT-style recents — only when expanded */}
+          {isExpanded && <SidebarRecents />}
+        </div>
 
         {isExpanded ? <SidebarCollapseButton /> : <SidebarExpandButton />}
       </div>

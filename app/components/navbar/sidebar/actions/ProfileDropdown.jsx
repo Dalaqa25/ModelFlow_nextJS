@@ -3,35 +3,16 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { useQuery } from '@tanstack/react-query';
-import { FaSignOutAlt, FaMoon, FaSun, FaDesktop, FaCheck, FaBell } from 'react-icons/fa';
-import { Coins, Plus, User, Settings } from 'lucide-react';
+import { FaSignOutAlt, FaMoon, FaSun, FaDesktop, FaCheck } from 'react-icons/fa';
+import { Coins, Plus, User } from 'lucide-react';
 import Link from 'next/link';
-import Notifications from '@/app/components/notifications';
 
 export default function ProfileDropdown({ tokenBalance = 0 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const { signOut, user, isAuthenticated } = useAuth();
   const { isDarkMode, themeMode, setTheme } = useTheme();
 
   if (!isAuthenticated) return null;
-
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: async () => {
-      const response = await fetch('/api/notifications');
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      return response.json();
-    },
-    enabled: !!user && isOpen,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleSignOut = async () => {
     await signOut();
@@ -47,7 +28,7 @@ export default function ProfileDropdown({ tokenBalance = 0 }) {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
+        className={`relative w-8 h-8 rounded-full transition-all flex items-center justify-center font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
           isOpen
             ? 'bg-purple-600 text-white ring-2 ring-purple-500/50'
             : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400'
@@ -139,23 +120,6 @@ export default function ProfileDropdown({ tokenBalance = 0 }) {
                 <User className="w-4 h-4" />
                 <span>Profile</span>
               </Link>
-
-              <button
-                onClick={() => { setShowNotifications(true); setIsOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isDarkMode ? 'text-gray-300 hover:bg-slate-700/60 hover:text-white' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FaBell className="w-4 h-4" />
-                  <span>Notifications</span>
-                </div>
-                {unreadCount > 0 && (
-                  <span className="bg-purple-600 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold min-w-[18px] text-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
             </div>
 
             {/* Divider */}
@@ -204,11 +168,6 @@ export default function ProfileDropdown({ tokenBalance = 0 }) {
           </div>
         </>
       )}
-
-      <Notifications
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
     </div>
   );
 }

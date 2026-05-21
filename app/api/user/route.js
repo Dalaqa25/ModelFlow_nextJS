@@ -13,10 +13,9 @@ export async function GET() {
     const userData = await userDB.getUserByEmail(user.email);
     
     if (!userData) {
-      // Create user if doesn't exist
       const newUser = await userDB.upsertUser({
         email: user.email,
-        name: user.user_metadata?.name || user.email
+        name: user.user_metadata?.name || 'User',
       });
       return NextResponse.json(newUser);
     }

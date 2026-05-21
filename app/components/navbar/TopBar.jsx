@@ -1,26 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import { useMessagesDock } from '@/lib/contexts/messages-dock-context';
 import ProfileDropdown from './sidebar/actions/ProfileDropdown';
 import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
+import MessagesInbox from '@/app/components/messages/MessagesInbox';
+import MessageThreadPanel from '@/app/components/messages/MessageThreadPanel';
+import Notifications from '@/app/components/notifications';
 import { FaBars } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
-import { createBrowserSupabaseClient } from '@/lib/db/supabase';
-import { Coins } from 'lucide-react';
-
-const UPLOAD_SEEN_KEY = 'upload_button_seen';
+import { Coins, MessageCircle, Bell } from 'lucide-react';
 
 export default function TopBar() {
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
   const { isDarkMode, textColors } = useThemeAdaptive();
   const { isAuthenticated, loading: authLoading, user } = useAuth();
-  const [showAttention, setShowAttention] = useState(false);
+  const {
+    isOpen: isChatOpen,
+    setIsOpen: setIsChatOpen,
+    tab,
+    setTab,
+    activeThreadId,
+    setActiveThreadId,
+    clearThread,
+  } = useMessagesDock();
+
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const chatRef = useRef(null);
 
   const switchToSignUp = () => { setIsSignInOpen(false); setIsSignUpOpen(true); };
   const switchToSignIn = () => { setIsSignUpOpen(false); setIsSignInOpen(true); };
@@ -40,21 +52,74 @@ export default function TopBar() {
     refetchInterval: 60 * 1000,
   });
 
-  useEffect(() => {
-    const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
-    if (!hasSeen) {
-      setShowAttention(true);
-    }
+  // Fetch unread message count
+  const { data: unread } = useQuery({
+    queryKey: ['messageUnread'],
+    queryFn: async () => {
+      const res = await fetch('/api/messages/unread-count', { credentials: 'include' });
+      if (!res.ok) return { count: 0, incoming_requests: 0, unread_messages: 0 };
+      return res.json();
+    },
+    enabled: !!user && isAuthenticated,
+    refetchInterval: 30000,
+  });
 
-    const handleStorage = () => {
-      const hasSeen = localStorage.getItem(UPLOAD_SEEN_KEY);
-      if (hasSeen) {
-        setShowAttention(false);
+  // Fetch notification count
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const response = await fetch('/api/notifications', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+      return response.json();
+    },
+    enabled: !!user && isAuthenticated,
+    staleTime: 60 * 1000,
+    refetchInterval: 60000,
+  });
+
+  const messageBadge = unread?.count ?? 0;
+  const notificationBadge = notifications.filter((n) => !n.read).length;
+
+  // Close chat dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (chatRef.current && !chatRef.current.contains(e.target)) {
+        setIsChatOpen(false);
       }
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+    if (isChatOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isChatOpen, setIsChatOpen]);
+
+  const handleChatToggle = () => {
+    if (!isChatOpen) {
+      const hasRequests = (unread?.incoming_requests ?? 0) > 0;
+      setTab(hasRequests ? 'requests' : 'chats');
+      clearThread();
+    }
+    setIsChatOpen(!isChatOpen);
+  };
+
+  const handleSelectThread = (threadId, threadStatus) => {
+    setActiveThreadId(threadId);
+    if (threadStatus === 'active' && tab === 'requests') {
+      setTab('chats');
+    }
+  };
+
+  const handleAccepted = () => {
+    setTab('chats');
+  };
+
+  const handleClosePanel = () => {
+    if (activeThreadId) {
+      clearThread();
+    } else {
+      setIsChatOpen(false);
+    }
+  };
 
   return (
     <>
@@ -64,12 +129,11 @@ export default function TopBar() {
         {isMobile ? (
           <button
             onClick={() => setIsMobileOpen(true)}
-            className={`p-2 rounded-lg transition-colors ${showAttention
-                ? 'upload-attention text-purple-400'
-                : isDarkMode
-                  ? 'hover:bg-slate-800/60 text-white'
-                  : 'hover:bg-black/5 text-gray-700'
-              }`}
+            className={`p-2 rounded-lg transition-colors ${
+              isDarkMode
+                ? 'hover:bg-slate-800/60 text-white'
+                : 'hover:bg-black/5 text-gray-700'
+            }`}
             aria-label="Open menu"
           >
             <FaBars className="w-5 h-5" />
@@ -84,9 +148,9 @@ export default function TopBar() {
         ) : null}
       </div>
 
-      {/* Right: Auth buttons or Profile */}
+      {/* Right: Auth buttons or Profile + Icons */}
       {authLoading ? null : isAuthenticated ? (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Token Balance Display */}
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
             isDarkMode 
@@ -98,6 +162,90 @@ export default function TopBar() {
               {tokenBalance.toLocaleString()}
             </span>
           </div>
+
+          {/* Chat / Messages Icon */}
+          <div className="relative" ref={chatRef}>
+            <button
+              onClick={handleChatToggle}
+              className={`relative p-2 rounded-lg transition-all ${
+                isChatOpen
+                  ? isDarkMode
+                    ? 'bg-slate-700/80 text-white'
+                    : 'bg-gray-200 text-gray-900'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-slate-800/60'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              aria-label="Open chat"
+              title="Open chat"
+            >
+              <MessageCircle className="w-5 h-5" />
+              {messageBadge > 0 && (
+                <span className={`absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
+                  {messageBadge > 9 ? '9+' : messageBadge}
+                </span>
+              )}
+            </button>
+
+            {/* Messages Dropdown Panel */}
+            {isChatOpen && (
+              <div
+                className={`absolute right-0 mt-2 w-[360px] max-w-[calc(100vw-2rem)] h-[480px] max-h-[70vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${
+                  isDarkMode
+                    ? 'bg-slate-900/98 backdrop-blur-xl border-slate-700/60 shadow-black/50'
+                    : 'bg-white border-gray-200 shadow-lg shadow-gray-200/60'
+                }`}
+                role="dialog"
+                aria-label="Messages"
+              >
+                {/* Header */}
+                <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${
+                  isDarkMode ? 'border-slate-700/50 bg-slate-900' : 'border-gray-100 bg-gray-50'
+                }`}>
+                  <h2 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Messages</h2>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 flex min-h-0">
+                  {activeThreadId ? (
+                    <MessageThreadPanel
+                      threadId={activeThreadId}
+                      compact
+                      onBack={clearThread}
+                      onClose={handleClosePanel}
+                      onAccepted={handleAccepted}
+                    />
+                  ) : (
+                    <MessagesInbox
+                      tab={tab}
+                      setTab={setTab}
+                      activeThreadId={activeThreadId}
+                      onSelectThread={handleSelectThread}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notification Bell */}
+          <button
+            onClick={() => setShowNotifications(true)}
+            className={`relative p-2 rounded-lg transition-all ${
+              isDarkMode
+                ? 'text-gray-400 hover:text-white hover:bg-slate-800/60'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {notificationBadge > 0 && (
+              <span className={`absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 ${isDarkMode ? 'border-slate-900' : 'border-white'}`}>
+                {notificationBadge > 9 ? '9+' : notificationBadge}
+              </span>
+            )}
+          </button>
           
           <ProfileDropdown tokenBalance={tokenBalance} />
         </div>
@@ -125,6 +273,7 @@ export default function TopBar() {
 
       <SignInDialog isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} onSwitchToSignUp={switchToSignUp} />
       <SignUpDialog isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} onSwitchToSignIn={switchToSignIn} />
+      <Notifications isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     </>
   );
 }

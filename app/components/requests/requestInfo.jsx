@@ -1,20 +1,34 @@
 'use client';
-import { HiOutlineUser } from 'react-icons/hi2';
-import { FaTimes } from 'react-icons/fa';
+
+import { FaTimes, FaEnvelope } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import RequestCommnetCreateion from './requestCommnetCreateion';
 import OtherComments from './otherComments';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { useMessagesDock } from '@/lib/contexts/messages-dock-context';
+import { useQuery } from '@tanstack/react-query';
+import MessageStartModal from '@/app/components/messages/MessageStartModal';
+import { getAvatarColor, getInitial } from '@/lib/messages/avatar-utils';
 
 export default function RequestInfo({ request, onClose }) {
     const [commentsUpdated, setCommentsUpdated] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
-    const router = useRouter();
+    const [messageModalOpen, setMessageModalOpen] = useState(false);
+    const { openThread } = useMessagesDock();
+    const { user } = useAuth();
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['currentUserProfile'],
+        queryFn: async () => {
+            const res = await fetch('/api/user', { credentials: 'include' });
+            if (!res.ok) return null;
+            return res.json();
+        },
+        enabled: !!user,
+    });
 
     useEffect(() => {
         setIsVisible(true);
-        // Prevent body scroll when panel is open
         document.body.style.overflow = 'hidden';
         return () => {
             document.body.style.overflow = '';
@@ -29,38 +43,29 @@ export default function RequestInfo({ request, onClose }) {
     };
 
     const handleCommentAdded = () => {
-        setCommentsUpdated(prev => prev + 1);
+        setCommentsUpdated((prev) => prev + 1);
     };
 
-    const getInitial = (nameOrEmail) => {
-        return nameOrEmail ? nameOrEmail.charAt(0).toUpperCase() : '?';
-    };
+    const author = request?.author;
+    const authorName = author?.display_name || 'User';
+    const authorId = author?.id;
+    const avatarSeed = author?.id || authorName;
+    const canMessage =
+        authorId && currentUser?.id && authorId !== currentUser.id && user;
 
-    const getDisplayName = (req) => req?.author_name || req?.author_email?.split('@')[0] || 'User';
-
-    const getAvatarColor = (email) => {
-        const colors = [
-            'from-purple-500 to-indigo-500',
-            'from-pink-500 to-rose-500',
-            'from-blue-500 to-cyan-500',
-            'from-amber-500 to-orange-500',
-            'from-emerald-500 to-teal-500',
-            'from-violet-500 to-purple-500',
-        ];
-        const hash = email?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
-        return colors[hash % colors.length];
+    const handleMessageStarted = (threadId) => {
+        openThread(threadId, { tab: 'requests' });
     };
 
     if (!request) return null;
 
     return (
         <>
-            {/* Side Panel — slides in from right */}
             <div
-                className={`fixed top-14 sm:top-0 right-0 h-[calc(100%-3.5rem)] sm:h-full z-50 w-full sm:w-[480px] lg:w-[520px] bg-slate-900/98 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col transition-transform duration-300 ease-out ${isVisible ? 'translate-x-0' : 'translate-x-full'
-                    }`}
+                className={`fixed top-14 sm:top-0 right-0 h-[calc(100%-3.5rem)] sm:h-full z-50 w-full sm:w-[480px] lg:w-[520px] bg-slate-900/98 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col transition-transform duration-300 ease-out ${
+                    isVisible ? 'translate-x-0' : 'translate-x-full'
+                }`}
             >
-                {/* Panel Header */}
                 <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-700/40 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
@@ -74,9 +79,7 @@ export default function RequestInfo({ request, onClose }) {
                     </button>
                 </div>
 
-                {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto">
-                    {/* Post Content */}
                     <div className="px-5 sm:px-6 py-5">
                         <h1 className="text-xl sm:text-2xl font-bold text-white mb-3 leading-tight">
                             {request.title}
@@ -86,7 +89,6 @@ export default function RequestInfo({ request, onClose }) {
                             {request.description}
                         </p>
 
-                        {/* Tags */}
                         {request.tags?.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-5">
                                 {request.tags.map((tag, index) => (
@@ -100,27 +102,43 @@ export default function RequestInfo({ request, onClose }) {
                             </div>
                         )}
 
-                        {/* Author Info */}
                         <div className="flex items-center gap-3 p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/30">
-                            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(request.author_email)} flex items-center justify-center flex-shrink-0`}>
-                                <span className="text-xs font-bold text-white">{getInitial(getDisplayName(request))}</span>
+                            <div
+                                className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(avatarSeed)} flex items-center justify-center flex-shrink-0`}
+                            >
+                                <span className="text-xs font-bold text-white">
+                                    {getInitial(authorName)}
+                                </span>
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-purple-300 truncate">
-                                    {getDisplayName(request)}
+                                    {authorName}
                                 </p>
                                 <p className="text-xs text-slate-500">
                                     {new Date(request.created_at).toLocaleDateString('en-US', {
                                         year: 'numeric',
                                         month: 'long',
-                                        day: 'numeric'
+                                        day: 'numeric',
                                     })}
                                 </p>
                             </div>
+                            {canMessage && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMessageModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors shrink-0"
+                                >
+                                    <FaEnvelope className="text-[10px]" />
+                                    Message
+                                </button>
+                            )}
                         </div>
+
+                        <p className="text-xs text-slate-600 mt-4">
+                            Use Message for private collaboration — please do not share email in comments.
+                        </p>
                     </div>
 
-                    {/* Comments Section */}
                     <div className="border-t border-slate-700/40">
                         <div className="px-5 sm:px-6 py-4">
                             <h3 className="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
@@ -128,16 +146,15 @@ export default function RequestInfo({ request, onClose }) {
                                 Discussion
                             </h3>
 
-                            {/* Comments list */}
                             <OtherComments
                                 requestId={request.id}
+                                requestTitle={request.title}
                                 key={commentsUpdated}
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* Comment Input — Pinned to bottom */}
                 <div className="flex-shrink-0 border-t border-slate-700/40 bg-slate-900/90 backdrop-blur-sm">
                     <RequestCommnetCreateion
                         requestId={request.id}
@@ -145,6 +162,18 @@ export default function RequestInfo({ request, onClose }) {
                     />
                 </div>
             </div>
+
+            {canMessage && (
+                <MessageStartModal
+                    isOpen={messageModalOpen}
+                    onClose={() => setMessageModalOpen(false)}
+                    recipientUserId={authorId}
+                    requestId={request.id}
+                    requestTitle={request.title}
+                    recipientName={authorName}
+                    onStarted={handleMessageStarted}
+                />
+            )}
         </>
     );
 }
