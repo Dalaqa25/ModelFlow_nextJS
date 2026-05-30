@@ -7,8 +7,12 @@ import { adminBroadcastEmail } from '@/lib/email/templates';
 const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com', 'g.dalaqishvili01@gmail.com'];
 const MAX_SUBJECT = 140;
 const MAX_MESSAGE = 8000;
-const BATCH_SIZE = 10;
 const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || 'ModelGrow <notifications@send.modelgrow.com>';
+const REQUEST_DELAY_MS = 250; // 4 requests/sec to stay below 5 req/sec rate limit
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function isAdminEmail(email) {
   return Boolean(email && ADMIN_EMAILS.includes(email));
@@ -90,32 +94,25 @@ export async function POST(request) {
     let failed = 0;
     const failureReasons = {};
 
-    for (let i = 0; i < recipientEmails.length; i += BATCH_SIZE) {
-      const batch = recipientEmails.slice(i, i + BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(async (to) => {
-          const { data, error } = await resend.emails.send({
-            from: FROM_ADDRESS,
-            to,
-            subject: template.subject,
-            html: template.html,
-          });
-          if (error) {
-            throw new Error(error.message || 'Resend rejected request');
-          }
-          return data;
-        })
-      );
-
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          sent += 1;
-        } else {
-          failed += 1;
-          const reason = result.reason?.message || 'Unknown send failure';
-          failureReasons[reason] = (failureReasons[reason] || 0) + 1;
+    for (const to of recipientEmails) {
+      try {
+        const { error } = await resend.emails.send({
+          from: FROM_ADDRESS,
+          to,
+          subject: template.subject,
+          html: template.html,
+        });
+        if (error) {
+          throw new Error(error.message || 'Resend rejected request');
         }
+        sent += 1;
+      } catch (sendError) {
+        failed += 1;
+        const reason = sendError?.message || 'Unknown send failure';
+        failureReasons[reason] = (failureReasons[reason] || 0) + 1;
       }
+
+      await sleep(REQUEST_DELAY_MS);
     }
 
     const success = sent > 0;
