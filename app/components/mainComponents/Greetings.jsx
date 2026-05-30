@@ -60,14 +60,13 @@ export default function Greetings() {
                 /* Unauthenticated: two-line value prop */
                 <div className="flex flex-col items-center gap-1 text-center">
                     <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-semibold tracking-tight leading-snug`}>
-                        Find and run powerful automations
+                        Run powerful automations with AI
                     </h1>
                     <p className={`text-xs sm:text-sm ${textColors.secondary} font-normal`}>
-                        Describe what you need — our AI searches the marketplace and finds the right automation for you.
+                        Discover community-built workflows, launch them through chat, and publish your own to earn.
                     </p>
                 </div>
             )}
         </div>
     );
 }
-

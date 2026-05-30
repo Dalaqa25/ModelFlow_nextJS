@@ -993,7 +993,7 @@ function PlatformStoryAnim({ isActive, dark }) {
 }
 
 const FAQ_ITEMS = [
-    { q: 'What is ModelGrow?', a: 'ModelGrow is an automation marketplace. Developers publish pre-built automations for social media, invoicing, analytics, and more. You describe what you need, our AI finds the right automation from the marketplace, and you run it — all through a simple chat interface.' },
+    { q: 'What is ModelGrow?', a: 'ModelGrow is an AI automation marketplace. You discover community-built workflows, launch them through chat, and publish your own automations so others can run them.' },
     { q: 'Is it free to use?', a: 'Yes! You can sign up and start using automations for free. Some premium automations may require tokens, which you can earn by contributing or purchase in the app.' },
     { q: 'How do tokens work?', a: 'Tokens are the in-app currency. Users spend tokens to run premium automations, and developers earn tokens every time someone uses their automation. Tokens can be cashed out or reinvested.' },
     { q: 'Do I need to code?', a: 'Not at all! As a user, just describe what you want in plain language and our AI will find and run the right automation for you. No technical knowledge required.' },
@@ -1052,7 +1052,7 @@ function Footer({ dark }) {
                             <span className={`text-xl font-bold tracking-tight ${dark ? 'text-white' : 'text-slate-900'}`}>ModelGrow</span>
                         </div>
                         <p className={`text-sm leading-relaxed max-w-sm mb-6 ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            The automation marketplace where you discover and run pre-built automations. Developers publish, users find and run — powered by AI search.
+                            The AI automation marketplace where people run community-built workflows and creators earn from the automations they publish.
                         </p>
                         <div className="flex items-center gap-4">
                             <a href="#" className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${dark ? 'bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-white/10 hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.5)]' : 'bg-white text-slate-500 hover:text-slate-900 shadow-sm border border-slate-200 hover:border-violet-200 hover:shadow-violet-500/10'}`}>
@@ -1302,13 +1302,13 @@ function AutomationsShowcase({ isActive, onSignUpClick }) {
                     Marketplace
                 </span>
                 <h2 className={`text-3xl sm:text-4xl font-bold leading-tight mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>
-                    Pre-built automations,{' '}
+                    Community workflows,{' '}
                     <span className="bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
                         ready to run.
                     </span>
                 </h2>
                 <p className={`text-sm sm:text-base max-w-lg mx-auto ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Browse the marketplace. Describe what you need — the AI finds the right automation and runs it for you.
+                    Browse the marketplace, describe the task, and launch the right automation through chat.
                 </p>
             </div>
 
@@ -1490,14 +1490,14 @@ export default function LandingSections({ onSignUpClick }) {
                             </span>
 
                             <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight ${dark ? 'text-white' : 'text-gray-900'}`}>
-                                Describe It.{' '}
+                                Ask for it.{' '}
                                 <span className="bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent">
-                                    We Find It.
+                                    AI runs it.
                                 </span>
                             </h2>
 
                             <p className={`text-base sm:text-lg mb-8 leading-relaxed max-w-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Tell us what you need in plain language. Our AI searches the marketplace and finds the right pre-built automation — no coding, no building, just run it.
+                                Tell ModelGrow what you want done. The AI finds a matching workflow, helps connect the right services, and starts the automation from chat.
                             </p>
 
                             {/* Category pills */}
@@ -1556,14 +1556,14 @@ export default function LandingSections({ onSignUpClick }) {
                                 </span>
 
                                 <h3 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-5 leading-tight ${dark ? 'text-white' : 'text-gray-900'}`}>
-                                    Track Everything.{' '}
+                                    Your work, runs, and earnings.{' '}
                                     <span className="bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-                                        In Real Time.
+                                        In one place.
                                     </span>
                                 </h3>
 
                                 <p className={`text-base sm:text-lg mb-6 leading-relaxed max-w-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    Monitor all your running automations from a single dashboard. See what's active, what's completed, and what needs attention — all in one glance.
+                                    See active automations, recent runs, token activity, and creator earnings from one workspace built for daily use.
                                 </p>
 
                                 <div className="flex flex-wrap gap-4">
@@ -1724,7 +1724,7 @@ export default function LandingSections({ onSignUpClick }) {
                             </h2>
 
                             <p className={`text-base sm:text-lg mb-10 leading-relaxed max-w-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Build automations, publish them to the marketplace, and earn tokens every time someone uses your work. Cash out or reinvest — it's up to you.
+                                Build useful workflows, publish them to the marketplace, and earn when the community runs your automations.
                             </p>
 
                             {/* Vertical timeline — How it works */}
@@ -1903,7 +1903,7 @@ export default function LandingSections({ onSignUpClick }) {
                             </span>
                         </h2>
                         <p className={`text-base sm:text-lg max-w-xl mx-auto ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                            From discovering automations to building and earning — ModelGrow has it all.
+                            One place to discover workflows, run them with AI, and turn your own automations into creator income.
                         </p>
                     </div>
 

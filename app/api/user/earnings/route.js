@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
+import { startTimer } from '@/lib/utils/perf';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,10 +9,12 @@ const supabase = createClient(
 );
 
 export async function GET(request) {
+  const timer = startTimer('api/user/earnings GET');
   try {
     const user = await getSupabaseUser();
 
     if (!user) {
+      timer.end({ status: 401 });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,6 +26,7 @@ export async function GET(request) {
       .single();
 
     if (userError || !userData) {
+      timer.end({ status: 404, reason: 'user_not_found' });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -31,61 +35,43 @@ export async function GET(request) {
 
     const totalWithdrawn = parseFloat(userData.withdrawn_usd) || 0;
 
-    // Calculate earnings from token_transactions as source of truth
-    const { data: earningTxns } = await supabase
-      .from('token_transactions')
-      .select('usd_amount')
-      .eq('user_id', publicUserId)
-      .eq('transaction_type', 'earning')
-      .eq('status', 'completed');
-
-    const calculatedEarnings = earningTxns?.reduce(
-      (sum, t) => sum + parseFloat(t.usd_amount || 0), 0
-    ) || 0;
-
-    // Sync cached value if out of date
-    const cachedEarnings = parseFloat(userData.total_earnings_usd) || 0;
-    if (calculatedEarnings > cachedEarnings) {
-      await supabase
-        .from('users')
-        .update({ total_earnings_usd: calculatedEarnings })
-        .eq('id', publicUserId);
-    }
-
-    const finalEarnings = Math.max(cachedEarnings, calculatedEarnings);
+    // Use cached aggregate from users table to avoid full transaction-table scan per request.
+    const finalEarnings = parseFloat(userData.total_earnings_usd) || 0;
     const available = finalEarnings - totalWithdrawn;
 
-    // Pending withdrawals
-    const { data: pendingWithdrawals } = await supabase
-      .from('token_transactions')
-      .select('usd_amount')
-      .eq('user_id', publicUserId)
-      .eq('transaction_type', 'withdrawal_pending')
-      .eq('status', 'pending');
+    const [pendingResult, recentResult, withdrawalResult] = await Promise.all([
+      supabase
+        .from('token_transactions')
+        .select('usd_amount')
+        .eq('user_id', publicUserId)
+        .eq('transaction_type', 'withdrawal_pending')
+        .eq('status', 'pending'),
+      supabase
+        .from('token_transactions')
+        .select('created_at, usd_amount, metadata')
+        .eq('user_id', publicUserId)
+        .eq('transaction_type', 'earning')
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('token_transactions')
+        .select('created_at, usd_amount, paddle_fee_amount, status, metadata')
+        .eq('user_id', publicUserId)
+        .in('transaction_type', ['withdrawal_pending', 'withdrawal_completed'])
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
 
-    const pendingAmount = pendingWithdrawals?.reduce(
+    const pendingWithdrawals = pendingResult.data || [];
+    const recentEarnings = recentResult.data || [];
+    const withdrawalHistory = withdrawalResult.data || [];
+
+    const pendingAmount = pendingWithdrawals.reduce(
       (sum, w) => sum + parseFloat(w.usd_amount || 0), 0
-    ) || 0;
+    );
 
-    // Recent sales (earning transactions)
-    const { data: recentEarnings } = await supabase
-      .from('token_transactions')
-      .select('created_at, usd_amount, metadata')
-      .eq('user_id', publicUserId)
-      .eq('transaction_type', 'earning')
-      .eq('status', 'completed')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    // Withdrawal history
-    const { data: withdrawalHistory } = await supabase
-      .from('token_transactions')
-      .select('created_at, usd_amount, paddle_fee_amount, status, metadata')
-      .eq('user_id', publicUserId)
-      .in('transaction_type', ['withdrawal_pending', 'withdrawal_completed'])
-      .order('created_at', { ascending: false })
-      .limit(10);
-
+    timer.end({ status: 200, recentCount: recentEarnings?.length || 0 });
     return NextResponse.json({
       token_balance: userData.token_balance,
       earnings: {
@@ -111,6 +97,7 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('[Earnings API] Error:', error);
+    timer.end({ status: 500, error: error?.message });
     return NextResponse.json(
       { error: 'Failed to fetch earnings', message: error.message },
       { status: 500 }

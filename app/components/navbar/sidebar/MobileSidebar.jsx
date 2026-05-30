@@ -3,17 +3,22 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { FaUsers, FaThLarge, FaUser, FaUpload, FaTimes } from 'react-icons/fa';
+import { Users, LayoutDashboard, Coins, User, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import SidebarUploadIcon from './SidebarUploadIcon';
+import SignInDialog from '@/app/components/auth/login/SignInDialog';
+import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
+import { useState } from 'react';
 
 export default function MobileSidebar() {
   const { isAuthenticated } = useAuth();
   const { isMobileOpen, setIsMobileOpen } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
   // Close sidebar on route change
   useEffect(() => {
@@ -34,13 +39,18 @@ export default function MobileSidebar() {
 
 
   const navItems = [
-    { icon: FaUsers, path: '/community', label: 'Community' },
-    { icon: FaThLarge, path: '/dashboard', label: 'Dashboard' },
-    { icon: FaUser, path: '/profile', label: 'Profile' },
+    { icon: Users, path: '/community', label: 'Community', protected: false },
+    { icon: LayoutDashboard, path: '/dashboard', label: 'Dashboard', protected: true },
+    { icon: Coins, path: '/pricing', label: 'Buy Credits', protected: false },
+    { icon: User, path: '/profile', label: 'Profile', protected: true },
   ];
 
-  const handleNavClick = (path) => {
-    router.push(path);
+  const handleNavClick = (item) => {
+    if (item.protected && !isAuthenticated) {
+      setIsSignInOpen(true);
+      return;
+    }
+    router.push(item.path);
     setIsMobileOpen(false);
   };
 
@@ -70,7 +80,7 @@ export default function MobileSidebar() {
             onClick={() => setIsMobileOpen(false)}
             className="p-1.5 -mr-1.5 rounded-lg hover:bg-slate-800/60 transition-colors text-gray-400 hover:text-white"
           >
-            <FaTimes className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -79,14 +89,14 @@ export default function MobileSidebar() {
           {navItems.map((item) => (
             <button
               key={item.path}
-              onClick={() => handleNavClick(item.path)}
+              onClick={() => handleNavClick(item)}
               className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
                 pathname === item.path
                   ? 'bg-purple-500/20 text-white'
                   : 'text-gray-400 hover:bg-slate-800/60 hover:text-white'
               }`}
             >
-              <item.icon className="w-5 h-5" />
+              <item.icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
               <span>{item.label}</span>
             </button>
           ))}
@@ -97,6 +107,23 @@ export default function MobileSidebar() {
           <MobileUploadButton onClose={() => setIsMobileOpen(false)} />
         </div>
       </div>
+
+      <SignInDialog
+        isOpen={isSignInOpen}
+        onClose={() => setIsSignInOpen(false)}
+        onSwitchToSignUp={() => {
+          setIsSignInOpen(false);
+          setIsSignUpOpen(true);
+        }}
+      />
+      <SignUpDialog
+        isOpen={isSignUpOpen}
+        onClose={() => setIsSignUpOpen(false)}
+        onSwitchToSignIn={() => {
+          setIsSignUpOpen(false);
+          setIsSignInOpen(true);
+        }}
+      />
     </>
   );
 }

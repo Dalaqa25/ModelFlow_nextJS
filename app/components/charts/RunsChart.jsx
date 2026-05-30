@@ -1,8 +1,14 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function RunsChart({ data, dataKey = 'runs', color = '#a855f7', title = 'Runs' }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Format date for display (e.g., "Jan 5")
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -14,8 +20,12 @@ export default function RunsChart({ data, dataKey = 'runs', color = '#a855f7', t
     displayDate: formatDate(item.date)
   }));
 
+  if (!mounted) {
+    return <div className="w-full h-48 min-w-0 min-h-[12rem]" />;
+  }
+
   return (
-    <div className="w-full h-48">
+    <div className="w-full h-48 min-w-0 min-h-[12rem]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>

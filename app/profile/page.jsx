@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/supabase-auth-context";
 import EditProfile from "./editProfile";
@@ -9,6 +9,7 @@ import UnifiedCard from '@/app/components/shared/UnifiedCard';
 import EarningsChart from '@/app/components/charts/EarningsChart';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { DollarSign, TrendingUp, ArrowDownToLine, Clock, Activity, BarChart3 } from 'lucide-react';
+import { timedFetch } from '@/lib/utils/perf';
 
 export default function Profile() {
     const router = useRouter();
@@ -22,6 +23,7 @@ export default function Profile() {
     const [showEdit, setShowEdit] = useState(false);
     const [showWithdrawal, setShowWithdrawal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const fetchedRef = useRef(false);
     
     useEffect(() => {
         const fetchUserData = async () => {
@@ -30,22 +32,23 @@ export default function Profile() {
                     router.push("/auth/login");
                     return;
                 }
-                
-                const response = await fetch('/api/user');
-                if (response.ok) {
-                    const data = await response.json();
+
+                const [userResponse, statsResponse, earningsResponse] = await Promise.all([
+                    timedFetch('/api/user', {}, '/api/user'),
+                    timedFetch('/api/automations/stats?days=30', {}, '/api/automations/stats?days=30'),
+                    timedFetch('/api/user/earnings', {}, '/api/user/earnings'),
+                ]);
+
+                if (userResponse.ok) {
+                    const data = await userResponse.json();
                     setUserData(data);
                 }
 
-                // Fetch automation stats
-                const statsResponse = await fetch('/api/automations/stats?days=30');
                 if (statsResponse.ok) {
                     const statsData = await statsResponse.json();
                     setStats(statsData);
                 }
 
-                // Fetch earnings data
-                const earningsResponse = await fetch('/api/user/earnings');
                 if (earningsResponse.ok) {
                     const earningsData = await earningsResponse.json();
                     setEarnings(earningsData);
@@ -57,7 +60,8 @@ export default function Profile() {
             }
         };
         
-        if (!authLoading) {
+        if (!authLoading && !fetchedRef.current) {
+            fetchedRef.current = true;
             fetchUserData();
         }
     }, [router, isAuthenticated, authLoading]);

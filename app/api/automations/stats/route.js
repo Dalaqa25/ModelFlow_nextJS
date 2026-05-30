@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
+import { startTimer } from '@/lib/utils/perf';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -10,10 +11,14 @@ const supabase = createClient(
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
+  const timer = startTimer('api/automations/stats GET');
+  let finished = false;
   try {
     const user = await getSupabaseUser();
     
     if (!user) {
+      finished = true;
+      timer.end({ status: 401 });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,6 +40,8 @@ export async function GET(request) {
     const automationIds = userAutomations?.map(a => a.id) || [];
 
     if (automationIds.length === 0) {
+      finished = true;
+      timer.end({ status: 200, empty: true, days });
       return NextResponse.json({
         dailyRuns: [],
         totalRuns: 0,
@@ -46,7 +53,7 @@ export async function GET(request) {
     // Build query for executions
     let query = supabase
       .from('automation_executions')
-      .select('*')
+      .select('status, completed_at')
       .in('automation_id', automationIds)
       .gte('completed_at', startDate.toISOString())
       .lte('completed_at', endDate.toISOString());
@@ -114,6 +121,8 @@ export async function GET(request) {
     const totalRuns = executions?.length || 0;
     const successRate = totalRuns > 0 ? Math.round((successCount / totalRuns) * 100) : 0;
 
+    finished = true;
+    timer.end({ status: 200, days, executions: totalRuns });
     return NextResponse.json({
       dailyRuns,
       totalRuns,
@@ -122,6 +131,10 @@ export async function GET(request) {
     });
 
   } catch (error) {
+    finished = true;
+    timer.end({ status: 500, error: error?.message });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } finally {
+    if (!finished) timer.end({ status: 200 });
   }
 }

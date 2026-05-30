@@ -107,8 +107,8 @@ function HomeContent() {
         <>
             {/* SEO content for crawlers */}
             <div className="sr-only">
-                <h1>ModelGrow — Automation Marketplace: Find and Run Pre-Built Automations</h1>
-                <p>ModelGrow is an automation marketplace. Describe what you need in plain language, and our AI searches the marketplace to find the best pre-built automation for you. Developers publish automations; users discover and run them instantly.</p>
+                <h1>ModelGrow — Run Powerful Automations with AI</h1>
+                <p>ModelGrow is an AI automation marketplace. Discover community-built workflows, launch them through chat, and earn when others use the automations you publish.</p>
             </div>
 
             <AdaptiveBackground variant="content" className="" showFloatingElements={false}>
@@ -161,7 +161,7 @@ function HomeContent() {
                         isLanding={isLanding}
                         onScrollExplore={() => window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' })}
                         onAuthRequired={() => {
-                            setAuthMessage('Sign in to use automations and start building your workflows');
+                            setAuthMessage('Sign in to run automations, publish workflows, and track your workspace');
                             setIsSignInOpen(true);
                         }}
                     />
@@ -244,4 +244,3 @@ function HomeContent() {
         </>
     );
 }
-

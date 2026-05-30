@@ -1,14 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { toast } from 'react-hot-toast';
-import AutomationUpload from '../components/automationUpload/AutomationUpload';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
-import RunsChart from '@/app/components/charts/RunsChart';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
+import { timedFetch } from '@/lib/utils/perf';
+
+const AutomationUpload = dynamic(() => import('../components/automationUpload/AutomationUpload'), {
+    ssr: false,
+});
+
+const RunsChart = dynamic(() => import('@/app/components/charts/RunsChart'), {
+    ssr: false,
+    loading: () => <div className="h-28 rounded bg-slate-800/40 animate-pulse" />,
+});
 
 export default function Dashboard() {
     const { user, isAuthenticated } = useAuth();
@@ -19,23 +28,34 @@ export default function Dashboard() {
     const [automations, setAutomations] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const fetchedRef = useRef(false);
     const router = useRouter();
 
     useEffect(() => {
         if (user === null && !isAuthenticated) {
             return;
         }
-        fetchAutomations();
-        fetchStats();
+        if (fetchedRef.current) return;
+        fetchedRef.current = true;
+        fetchDashboardData();
     }, [user, isAuthenticated]);
 
-    const fetchAutomations = async () => {
+    const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/automations?mine=true');
-            if (response.ok) {
-                const data = await response.json();
+            const [automationsResponse, statsResponse] = await Promise.all([
+                timedFetch('/api/automations?mine=true', {}, '/api/automations?mine=true'),
+                timedFetch('/api/automations/stats?days=7', {}, '/api/automations/stats?days=7'),
+            ]);
+
+            if (automationsResponse.ok) {
+                const data = await automationsResponse.json();
                 setAutomations(data);
+            }
+
+            if (statsResponse.ok) {
+                const data = await statsResponse.json();
+                setStats(data);
             }
         } catch (error) {
             // Error handled silently
@@ -44,22 +64,10 @@ export default function Dashboard() {
         }
     };
 
-    const fetchStats = async () => {
-        try {
-            const response = await fetch('/api/automations/stats?days=7');
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data);
-            }
-        } catch (error) {
-            // Error handled silently
-        }
-    };
-
     const handleUploadSuccess = () => {
         setShowAutomationDialog(false);
         toast.success('Automation uploaded successfully!');
-        fetchAutomations();
+        fetchDashboardData();
     };
 
     return (

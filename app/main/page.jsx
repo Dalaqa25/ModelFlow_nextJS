@@ -2,14 +2,19 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import MainInput from '@/app/components/mainComponents/MainInput';
 import Greetings from '@/app/components/mainComponents/Greetings';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
-import AiChat from '@/app/components/mainComponents/aiChat';
 import AutomationsList from '@/app/components/mainComponents/AutomationsList';
 import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
+
+const AiChat = dynamic(() => import('@/app/components/mainComponents/aiChat'), {
+    ssr: false,
+    loading: () => <div className="text-slate-400 text-sm py-4">Loading chat...</div>,
+});
 
 export default function Home() {
     return (

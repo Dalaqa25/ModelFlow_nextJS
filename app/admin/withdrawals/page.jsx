@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, RefreshCw, Send, Users, ArrowLeft } from 'lucide-react';
 
-const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com'];
+const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com', 'g.dalaqishvili01@gmail.com'];
 
 export default function AdminWithdrawalsPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,8 +19,24 @@ export default function AdminWithdrawalsPage() {
   const [actionLoading, setActionLoading] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectingId, setRejectingId] = useState(null);
+  const [activeTab, setActiveTab] = useState('withdrawals');
+  const [recipientCount, setRecipientCount] = useState(0);
+  const [recipientLoading, setRecipientLoading] = useState(false);
+  const [broadcastSubject, setBroadcastSubject] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
 
   const isAdmin = user && ADMIN_EMAILS.includes(user.email);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl === 'broadcast') {
+      setActiveTab('broadcast');
+    } else if (tabFromUrl === 'withdrawals') {
+      setActiveTab('withdrawals');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -27,8 +45,23 @@ export default function AdminWithdrawalsPage() {
         return;
       }
       fetchWithdrawals();
+      fetchRecipientCount();
     }
   }, [authLoading, isAuthenticated, isAdmin]);
+
+  const fetchRecipientCount = async () => {
+    setRecipientLoading(true);
+    try {
+      const res = await fetch('/api/admin/broadcast');
+      if (!res.ok) throw new Error('Failed to fetch recipients');
+      const data = await res.json();
+      setRecipientCount(data.recipientCount || 0);
+    } catch (e) {
+      setRecipientCount(0);
+    } finally {
+      setRecipientLoading(false);
+    }
+  };
 
   const fetchWithdrawals = async () => {
     setLoading(true);
@@ -83,6 +116,45 @@ export default function AdminWithdrawalsPage() {
     }
   };
 
+  const handleBroadcastSend = async () => {
+    if (!broadcastSubject.trim() || !broadcastMessage.trim()) {
+      alert('Please fill subject and message.');
+      return;
+    }
+
+    if (recipientCount === 0) {
+      alert('No recipients found.');
+      return;
+    }
+
+    setBroadcastSending(true);
+    setBroadcastResult(null);
+    try {
+      const res = await fetch('/api/admin/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: broadcastSubject,
+          message: broadcastMessage,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send broadcast');
+
+      setBroadcastResult(data);
+      if (data.success) {
+        setBroadcastSubject('');
+        setBroadcastMessage('');
+      } else {
+        alert('No emails were sent. Check the failure reason shown below.');
+      }
+    } catch (e) {
+      alert(`Broadcast failed: ${e.message}`);
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -99,15 +171,51 @@ export default function AdminWithdrawalsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Withdrawal Requests</h1>
-            <p className="text-gray-400 mt-1">Review and process pending withdrawal requests</p>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-3"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Admin
+            </Link>
+            <h1 className="text-3xl font-bold text-white">
+              {activeTab === 'withdrawals' ? 'Withdrawal Requests' : 'Broadcast Email'}
+            </h1>
+            <p className="text-gray-400 mt-1">
+              {activeTab === 'withdrawals'
+                ? 'Review and process pending withdrawal requests'
+                : 'Send feature updates to all users via Resend'}
+            </p>
           </div>
           <button
-            onClick={fetchWithdrawals}
+            onClick={activeTab === 'withdrawals' ? fetchWithdrawals : fetchRecipientCount}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
+          </button>
+        </div>
+
+        <div className="mb-6 flex gap-2">
+          <button
+            onClick={() => setActiveTab('withdrawals')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'withdrawals'
+                ? 'bg-purple-500 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Withdrawals
+          </button>
+          <button
+            onClick={() => setActiveTab('broadcast')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'broadcast'
+                ? 'bg-purple-500 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Broadcast Email
           </button>
         </div>
 
@@ -117,7 +225,7 @@ export default function AdminWithdrawalsPage() {
           </div>
         )}
 
-        {withdrawals.length === 0 ? (
+        {activeTab === 'withdrawals' && (withdrawals.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500/40" />
             <p className="text-lg font-medium">No pending withdrawals</p>
@@ -331,6 +439,101 @@ export default function AdminWithdrawalsPage() {
                 )}
               </div>
             ))}
+          </div>
+        ))}
+
+        {activeTab === 'broadcast' && (
+          <div className="bg-slate-900 border border-slate-700/60 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Send className="w-5 h-5 text-purple-400" />
+              <h2 className="text-xl font-semibold text-white">Send Product Update</h2>
+            </div>
+            <p className="text-sm text-gray-400 mb-6">
+              Send a feature/update announcement to all users from the `users` table.
+            </p>
+
+            <div className="mb-5 p-4 rounded-lg bg-slate-800/70 border border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-gray-300">Recipients</span>
+              </div>
+              <span className="text-sm font-semibold text-white">
+                {recipientLoading ? 'Loading...' : recipientCount}
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Email subject</label>
+                <input
+                  type="text"
+                  value={broadcastSubject}
+                  onChange={(e) => setBroadcastSubject(e.target.value)}
+                  maxLength={140}
+                  placeholder="e.g. New feature: Scheduled automation monitoring"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Message</label>
+                <textarea
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  maxLength={8000}
+                  rows={8}
+                  placeholder="Write what changed, why it matters, and what users should do next."
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-y"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <p className="text-xs text-gray-500">
+                Emails are sent one-by-one to protect user privacy.
+              </p>
+              <button
+                onClick={handleBroadcastSend}
+                disabled={broadcastSending || recipientCount === 0}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {broadcastSending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {broadcastSending ? 'Sending...' : 'Send to all users'}
+              </button>
+            </div>
+
+            {broadcastResult && (
+              <div
+                className={`mt-5 p-4 rounded-lg border text-sm ${
+                  broadcastResult.sent > 0
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-red-500/10 border-red-500/30'
+                }`}
+              >
+                <p className={`${broadcastResult.sent > 0 ? 'text-emerald-300' : 'text-red-300'} font-medium`}>
+                  Broadcast complete: {broadcastResult.sent} sent, {broadcastResult.failed} failed, {broadcastResult.total} total.
+                </p>
+                {broadcastResult.from && (
+                  <p className="text-xs text-gray-400 mt-2">
+                    Sender: {broadcastResult.from}
+                  </p>
+                )}
+                {Array.isArray(broadcastResult.failureReasons) && broadcastResult.failureReasons.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Failure reasons</p>
+                    {broadcastResult.failureReasons.map((item, index) => (
+                      <p key={index} className="text-xs text-red-300">
+                        {item.count}x — {item.reason}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
