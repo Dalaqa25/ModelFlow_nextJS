@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { Users, LayoutDashboard, Coins, User, X } from 'lucide-react';
+import { Users, LayoutDashboard, Coins, User, X, Workflow, Compass, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
@@ -40,7 +40,10 @@ export default function MobileSidebar() {
 
   const navItems = [
     { icon: Users, path: '/community', label: 'Community', protected: false },
+    { icon: Compass, path: '/explore', label: 'Explore', protected: false },
+    { icon: Trophy, path: '/leaderboard', label: 'Leaderboard', protected: false },
     { icon: LayoutDashboard, path: '/dashboard', label: 'Dashboard', protected: true },
+    { icon: Workflow, path: '/builder', label: 'Builder', protected: true },
     { icon: Coins, path: '/pricing', label: 'Buy Credits', protected: false },
     { icon: User, path: '/profile', label: 'Profile', protected: true },
   ];
@@ -48,6 +51,11 @@ export default function MobileSidebar() {
   const handleNavClick = (item) => {
     if (item.protected && !isAuthenticated) {
       setIsSignInOpen(true);
+      return;
+    }
+    if (item.external) {
+      window.open(item.path, '_blank', 'noopener,noreferrer');
+      setIsMobileOpen(false);
       return;
     }
     router.push(item.path);

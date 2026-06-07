@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com'];
+const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com', 'g.dalaqishvili01@gmail.com'];
 
 /**
  * POST /api/admin/withdrawals/[id]/reject

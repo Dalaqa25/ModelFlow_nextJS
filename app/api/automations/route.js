@@ -3,6 +3,7 @@ import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { encryptKeys } from '@/lib/auth/encryption';
+import { syncActivepiecesSourceAvailability } from '@/lib/activepieces/source-sync';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -60,6 +61,28 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const mineOnly = searchParams.get('mine') === 'true';
+    const automationId = searchParams.get('id');
+
+    if (automationId) {
+      const { data, error } = await supabase
+        .from('automations')
+        .select('*')
+        .eq('id', automationId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
+      }
+
+      const [synced] = await syncActivepiecesSourceAvailability({ supabase, automations: [data] });
+      if (!synced?.is_active) {
+        return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(synced);
+    }
     
     // If requesting user's own automations, show ALL (including inactive/pending)
     // Otherwise, only show active automations to the public
@@ -76,7 +99,8 @@ export async function GET(request) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return NextResponse.json(data);
+      const synced = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
+      return NextResponse.json(synced);
     }
 
     // Public query - only active automations
@@ -87,8 +111,10 @@ export async function GET(request) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return NextResponse.json(data);
+    const synced = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
+    return NextResponse.json(synced.filter((automation) => automation.is_active));
   } catch (error) {
+    console.error('[Automations GET] Error:', error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

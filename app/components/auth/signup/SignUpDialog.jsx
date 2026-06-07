@@ -113,7 +113,8 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const handleSendOtp = async (e) => {
     e.preventDefault();
 
-    const emailValidation = validateEmail(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const emailValidation = validateEmail(cleanEmail);
     const usernameValidation = validateUsername(username);
 
     if (!emailValidation.isValid || !usernameValidation.isValid) {
@@ -131,7 +132,8 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
 
     setLoading(true);
     try {
-      const { error } = await signUpWithOtp(email, { name: username, email });
+      setEmail(cleanEmail);
+      const { error } = await signUpWithOtp(cleanEmail, { name: username, email: cleanEmail });
 
       if (error) {
         if (error.validationErrors) {
@@ -183,7 +185,8 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
 
     setLoading(true);
     try {
-      const { error } = await signUpWithOtp(email, { name: username, email });
+      const cleanEmail = email.trim().toLowerCase();
+      const { error } = await signUpWithOtp(cleanEmail, { name: username, email: cleanEmail });
 
       if (error) {
         toast.error(error.message);

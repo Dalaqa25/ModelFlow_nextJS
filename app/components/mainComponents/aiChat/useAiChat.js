@@ -6,7 +6,64 @@ import { createStreamHandler } from './useStreamHandler';
 import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 import { compressFile } from '@/lib/utils/file-compressor';
 
-export function useAiChat({ onLoadingChange, initialConversationId, onRequireAuth }) {
+function parseJsonList(value) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function normalizeSetupConnector(connector) {
+  const raw = String(connector || '').trim();
+  if (!raw || /^step_\d+$/i.test(raw)) return '';
+  return raw
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function normalizeSetupInput(input) {
+  const raw = typeof input === 'string'
+    ? input
+    : (input?.label || input?.description || input?.name || '');
+
+  return String(raw || '').replace(/_/g, ' ').trim();
+}
+
+function buildSetupWidget(automation) {
+  const connectors = parseJsonList(automation?.required_connectors)
+    .map(normalizeSetupConnector)
+    .filter(Boolean);
+  const inputs = parseJsonList(automation?.required_inputs)
+    .map(normalizeSetupInput)
+    .filter(Boolean);
+
+  return {
+    automationId: automation?.id,
+    name: automation?.name || 'Automation',
+    description: automation?.description || '',
+    connectors,
+    inputs,
+    tokenCost: Number(automation?.token_cost || 0),
+    engine: automation?.activepieces_source_flow_id ? 'activepieces' : (automation?.engine || null),
+  };
+}
+
+function extractSelectedAutomationId(message) {
+  const text = `${message?.content || ''}\n${message?.hiddenContext || ''}`;
+  const explicit = text.match(/\[Selected automation UUID:\s*([^\]\s]+)\]/i);
+  if (explicit?.[1]) return explicit[1];
+
+  const named = text.match(/automation_id=["':\s]+([a-f0-9-]{20,})/i);
+  return named?.[1] || null;
+}
+
+export function useAiChat({ onLoadingChange, initialConversationId, onRequireAuth, onConversationChange }) {
   const [messages, setMessages] = useState([]);
   const [conversationSummary, setConversationSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +97,7 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
       }
 
       setCurrentConversationId(initialConversationId);
+      onConversationChange?.(initialConversationId);
       hasLoadedInitial.current = true;
       setIsLoading(true);
       if (onLoadingChange) onLoadingChange(true);
@@ -56,9 +114,58 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
             role: msg.role,
             content: msg.content,
             timestamp: msg.created_at,
-            hiddenContext: msg.metadata?.hiddenContext || '' // Restore hidden context
+            hiddenContext: msg.metadata?.hiddenContext || '', // Restore hidden context
+            setupWidget: msg.metadata?.setupWidget || null,
+            connectRequest: msg.metadata?.connectRequest || null,
+            configRequest: msg.metadata?.configRequest || null,
+            backgroundActivationPrompt: msg.metadata?.backgroundActivationPrompt || null,
+            videoPreview: msg.metadata?.videoPreview || null,
+            automationInstances: msg.metadata?.automationInstances || null,
           }));
           setMessages(formattedMessages);
+
+          const lastMessage = formattedMessages[formattedMessages.length - 1];
+          const recoveryAutomationId = lastMessage?.role === 'user'
+            ? extractSelectedAutomationId(lastMessage)
+            : null;
+          const alreadyHasSetupWidget = recoveryAutomationId
+            ? formattedMessages.some(message => message.setupWidget?.automationId === recoveryAutomationId)
+            : false;
+
+          if (recoveryAutomationId && !alreadyHasSetupWidget) {
+            try {
+              const automationResponse = await fetch(`/api/automations?id=${encodeURIComponent(recoveryAutomationId)}`, {
+                credentials: 'include'
+              });
+              const automation = automationResponse.ok ? await automationResponse.json() : null;
+
+              if (automation?.id) {
+                const setupWidget = buildSetupWidget(automation);
+                const assistantMessage = {
+                  id: `setup-widget-recovery-${Date.now()}`,
+                  role: 'assistant',
+                  content: "Let's review this workflow before we touch your accounts.",
+                  setupWidget,
+                  timestamp: new Date().toISOString(),
+                };
+
+                setMessages(prev => [...prev, assistantMessage]);
+
+                await fetch('/api/conversations/' + initialConversationId + '/messages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    role: 'assistant',
+                    content: assistantMessage.content,
+                    metadata: { setupWidget }
+                  })
+                });
+              }
+            } catch (recoveryError) {
+              console.error('Failed to recover setup widget:', recoveryError);
+            }
+          }
 
           // Reset setup state since we are loading an old conversation
           setSetupState(null);
@@ -97,6 +204,7 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
   const animationFrameRef = useRef(null);
   const currentAiMessageContentRef = useRef(''); // Track AI response content
   const currentAiMessageHiddenContextRef = useRef(''); // Track hidden context
+  const currentAiMessageMetadataRef = useRef({}); // Track UI cards emitted by the stream
 
 
   const buildContextInfo = useCallback(() => {
@@ -151,7 +259,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     return contextInfo;
   }, [automationContext, setupState, lastFileSearchResults]);
 
-  const processStream = async (response, aiMessageId, userMessageText) => {
+  const processStream = async (response, aiMessageId, userMessageText, persistence = {}) => {
     const reader = response.body.getReader();
     readerRef.current = reader;
     const decoder = new TextDecoder();
@@ -159,6 +267,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     // Reset content tracker for new AI message
     currentAiMessageContentRef.current = '';
     currentAiMessageHiddenContextRef.current = '';
+    currentAiMessageMetadataRef.current = {};
 
     const handler = createStreamHandler({
       aiMessageId,
@@ -178,6 +287,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       // Track hidden context
       onHiddenContextUpdate: (context) => {
         currentAiMessageHiddenContextRef.current += '\n' + context;
+      },
+      onUiMetadataUpdate: (partial) => {
+        currentAiMessageMetadataRef.current = {
+          ...currentAiMessageMetadataRef.current,
+          ...partial
+        };
       }
     });
 
@@ -238,9 +353,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         }
 
         // Save AI response to DB when stream completes
-        if (currentConversationId && userId && currentAiMessageContentRef.current) {
+        const persistConversationId = persistence.conversationId || currentConversationId;
+        const persistUserId = persistence.userId || userId;
+
+        if (persistConversationId && persistUserId && currentAiMessageContentRef.current) {
           try {
-            await fetch('/api/conversations/' + currentConversationId + '/messages', {
+            await fetch('/api/conversations/' + persistConversationId + '/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
@@ -248,7 +366,8 @@ IMPORTANT: When calling collect_text_input, you MUST include:
                 role: 'assistant',
                 content: currentAiMessageContentRef.current,
                 metadata: {
-                  hiddenContext: currentAiMessageHiddenContextRef.current || undefined
+                  hiddenContext: currentAiMessageHiddenContextRef.current || undefined,
+                  ...currentAiMessageMetadataRef.current
                 }
               })
             });
@@ -279,6 +398,102 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
     }
   };
+
+  const ensureConversation = useCallback(async ({ relatedAutomationId } = {}) => {
+    const supabase = createBrowserSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      onRequireAuth?.();
+      return null;
+    }
+
+    setUserId(user.id);
+
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ relatedAutomationId: relatedAutomationId || null })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create conversation.');
+      }
+
+      const conversation = await response.json();
+      conversationId = conversation.id;
+      setCurrentConversationId(conversationId);
+      onConversationChange?.(conversationId);
+    } else if (relatedAutomationId) {
+      fetch(`/api/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ relatedAutomationId })
+      }).catch((error) => console.error('Failed to link conversation automation:', error));
+    }
+
+    return { user, conversationId };
+  }, [currentConversationId, onConversationChange, onRequireAuth]);
+
+  const startAutomationSetupIntro = useCallback(async (automation) => {
+    if (!automation?.id || isLoading) return;
+
+    try {
+      const auth = await ensureConversation({ relatedAutomationId: automation.id });
+      if (!auth) return;
+
+      const widget = buildSetupWidget(automation);
+      const hiddenContext = `\n\n[Selected automation UUID: ${automation.id}]\n[automation_id="${automation.id}", automation_name="${automation.name}"]`;
+      const userMessage = {
+        id: `setup-user-${Date.now()}`,
+        role: 'user',
+        content: `I want to set up the "${automation.name}" automation`,
+        hiddenContext,
+        timestamp: new Date().toISOString(),
+      };
+      const assistantMessage = {
+        id: `setup-widget-${Date.now()}`,
+        role: 'assistant',
+        content: "Let's review this workflow before we touch your accounts.",
+        setupWidget: widget,
+        timestamp: new Date().toISOString(),
+      };
+
+      setSelectedAutomation(automation);
+      setMessages(prev => [...prev, userMessage, assistantMessage]);
+      setIsLoading(false);
+      onLoadingChange?.(false);
+
+      await fetch('/api/conversations/' + auth.conversationId + '/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          role: 'user',
+          content: userMessage.content,
+          metadata: { hiddenContext }
+        })
+      });
+
+      await fetch('/api/conversations/' + auth.conversationId + '/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          role: 'assistant',
+          content: assistantMessage.content,
+          metadata: { setupWidget: widget }
+        })
+      });
+    } catch (error) {
+      console.error('Failed to start setup intro:', error);
+      toast.error(error.message || 'Failed to start setup.');
+    }
+  }, [ensureConversation, isLoading, onLoadingChange]);
 
   const sendMessage = useCallback(async (messageText, extraContext = '') => {
     if (!messageText.trim() || isLoading) return;
@@ -313,6 +528,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           const conversation = await response.json();
           conversationId = conversation.id;
           setCurrentConversationId(conversationId);
+          onConversationChange?.(conversationId);
           setUserId(user.id);
         }
       } catch (error) {
@@ -458,7 +674,10 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         throw new Error(response.status === 401 ? 'Please sign in to use the AI chat feature.' : 'Failed to get response from AI.');
       }
 
-      await processStream(response, aiMessageId, messageText);
+      await processStream(response, aiMessageId, messageText, {
+        conversationId,
+        userId: user?.id || userId,
+      });
 
     } catch (error) {
       if (animationFrameRef.current) {
@@ -477,7 +696,17 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       abortControllerRef.current = null;
       readerRef.current = null;
     }
-  }, [messages, isLoading, onLoadingChange, buildContextInfo, conversationSummary]);
+  }, [
+    messages,
+    isLoading,
+    onLoadingChange,
+    buildContextInfo,
+    conversationSummary,
+    currentConversationId,
+    selectedAutomation,
+    userId,
+    onConversationChange,
+  ]);
 
   const stopGeneration = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -502,6 +731,15 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     setSelectedAutomation(automation);
     sendMessage(`I want to use "${automation.name}"`, `\n\n[Selected automation UUID: ${automation.id}]`);
   }, [sendMessage, onRequireAuth]);
+
+  const handleSetupWidgetStart = useCallback((widget) => {
+    if (!widget?.automationId) return;
+
+    sendMessage(
+      `Start setup for "${widget.name}"`,
+      `\n\n[Selected automation UUID: ${widget.automationId}]\n[automation_id="${widget.automationId}", automation_name="${widget.name}"]`
+    );
+  }, [sendMessage]);
 
   const handleConnectionComplete = useCallback((provider) => {
     // Build context with collected fields to preserve state after OAuth
@@ -827,12 +1065,13 @@ If all fields are collected, proceed with auto_setup tool.`;
     isLoading,
     currentAiMessageId,
     sendMessage,
+    startAutomationSetupIntro,
     stopGeneration,
     handleAutomationSelect,
+    handleSetupWidgetStart,
     handleConnectionComplete,
     handleConfigSubmit,
     handleBackgroundActivate,
-    handleFileUpload,
     handleFileUpload,
     uploadState,
     isAwaitingFileUpload

@@ -1,377 +1,371 @@
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
+import {
+  creditAutomationCreator,
+  recordSuccessfulTokenSpend,
+  runActivepiecesAutomation,
+} from '@/lib/activepieces/provisioning';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const TOKEN_TO_USD = 0.10;
+
+function normalizeConfig(config) {
+  const lowercaseConfig = {};
+  Object.entries(config || {}).forEach(([key, value]) => {
+    lowercaseConfig[key.toLowerCase()] = value;
+  });
+  return lowercaseConfig;
+}
+
+async function resolveAppUser(authUser, userId) {
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, email, name, token_balance')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profile) return profile;
+  }
+
+  if (!authUser) return null;
+
+  const { data: byId } = await supabase
+    .from('users')
+    .select('id, email, name, token_balance')
+    .eq('id', authUser.id)
+    .maybeSingle();
+
+  if (byId) return byId;
+
+  if (authUser.email) {
+    const { data: byEmail } = await supabase
+      .from('users')
+      .select('id, email, name, token_balance')
+      .eq('email', authUser.email)
+      .maybeSingle();
+
+    if (byEmail) return byEmail;
+  }
+
+  return null;
+}
+
+async function assertTokenBalance(userId, tokenCost) {
+  if (!tokenCost || tokenCost <= 0) return null;
+
+  const { data: runner, error } = await supabase
+    .from('users')
+    .select('id, email, token_balance')
+    .eq('id', userId)
+    .single();
+
+  if (error || !runner) {
+    const notFound = new Error('User not found');
+    notFound.status = 404;
+    throw notFound;
+  }
+
+  if (runner.token_balance < tokenCost) {
+    const insufficient = new Error('Insufficient token balance');
+    insufficient.status = 402;
+    insufficient.payload = {
+      error: 'Insufficient token balance',
+      required: tokenCost,
+      available: runner.token_balance,
+      message: `This automation costs ${tokenCost} tokens. You have ${runner.token_balance} tokens. Please purchase more tokens.`,
+    };
+    throw insufficient;
+  }
+
+  return runner;
+}
+
+async function logExecution({ automationId, userEmail, status, startTime, endTime, durationMs, tokenCost = 0, errorMessage = null, metadata = {} }) {
+  await supabase.from('automation_executions').insert({
+    automation_id: automationId,
+    executed_by: userEmail,
+    status,
+    credits_used: status === 'success' ? tokenCost : 0,
+    started_at: new Date(startTime).toISOString(),
+    completed_at: new Date(endTime).toISOString(),
+    duration_ms: durationMs,
+    error_message: errorMessage,
+    metadata,
+  });
+}
+
+async function runLegacyAutomation({ automation, user, automationId, lowercaseConfig, tokenCost, startTime }) {
+  if (tokenCost > 0) {
+    await assertTokenBalance(user.id, tokenCost);
+
+    const { data: runner } = await supabase
+      .from('users')
+      .select('id, email, token_balance')
+      .eq('id', user.id)
+      .single();
+
+    const { error: deductError } = await supabase
+      .from('users')
+      .update({ token_balance: runner.token_balance - tokenCost })
+      .eq('id', user.id);
+
+    if (deductError) throw new Error('Failed to process token payment');
+
+    await supabase.from('token_transactions').insert({
+      user_id: user.id,
+      transaction_type: 'spend',
+      token_amount: -tokenCost,
+      usd_amount: -(tokenCost * TOKEN_TO_USD),
+      status: 'completed',
+      metadata: {
+        automation_id: automationId,
+        automation_name: automation.name,
+        developer_email: automation.author_email,
+        engine: 'legacy-runner',
+      },
+    });
+  }
+
+  const requiredConnectors = Array.isArray(automation.required_connectors)
+    ? automation.required_connectors
+    : (() => {
+      try { return JSON.parse(automation.required_connectors || '[]'); } catch (_) { return []; }
+    })();
+
+  const primaryProvider = requiredConnectors.length > 0
+    ? (requiredConnectors[0].toLowerCase().includes('google') || requiredConnectors[0].toLowerCase().includes('sheets') ? 'google' : requiredConnectors[0].toLowerCase())
+    : 'google';
+
+  const { data: integration } = await supabase
+    .from('user_automations')
+    .select('access_token, refresh_token, token_expiry')
+    .eq('user_id', user.id)
+    .eq('automation_id', automationId)
+    .eq('provider', primaryProvider)
+    .maybeSingle();
+
+  if (integration?.access_token) {
+    lowercaseConfig.access_token = integration.access_token;
+    if (integration.refresh_token) lowercaseConfig.refresh_token = integration.refresh_token;
+  }
+
+  const RUNNER_URL = process.env.AUTOMATION_RUNNER_URL || 'http://localhost:3001';
+  const runnerResponse = await fetch(`${RUNNER_URL}/api/automations/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ automation_id: automationId, user_id: user.id, config: lowercaseConfig }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  const endTime = Date.now();
+  const durationMs = endTime - startTime;
+
+  if (!runnerResponse.ok) {
+    const errorData = await runnerResponse.json().catch(() => ({}));
+    await logExecution({
+      automationId,
+      userEmail: user.email,
+      status: 'failed',
+      startTime,
+      endTime,
+      durationMs,
+      errorMessage: errorData.error || 'Automation runner failed',
+      metadata: { engine: 'legacy-runner' },
+    });
+    return NextResponse.json({ error: 'Automation runner failed', details: errorData }, { status: 500 });
+  }
+
+  const result = await runnerResponse.json();
+  if (!result.success) {
+    const errorMessage = (result.errors && result.errors.length > 0) ? result.errors[0] : 'Workflow execution failed';
+    await logExecution({
+      automationId,
+      userEmail: user.email,
+      status: 'failed',
+      startTime,
+      endTime,
+      durationMs,
+      errorMessage,
+      metadata: { engine: 'legacy-runner' },
+    });
+    return NextResponse.json({ error: 'Workflow execution failed', message: errorMessage, details: result }, { status: 500 });
+  }
+
+  if (automation.requires_background) {
+    await supabase
+      .from('user_automations')
+      .upsert({
+        automation_id: automationId,
+        user_id: user.id,
+        parameters: lowercaseConfig,
+        is_active: true,
+        last_run: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'automation_id,user_id' });
+  }
+
+  await logExecution({
+    automationId,
+    userEmail: user.email,
+    status: 'success',
+    startTime,
+    endTime,
+    durationMs,
+    tokenCost,
+    metadata: { engine: 'legacy-runner' },
+  });
+
+  await supabase.rpc('increment_total_runs', { automation_uuid: automationId });
+
+  if (tokenCost > 0 && automation.author_email !== user.email) {
+    await creditAutomationCreator({ supabase, runnerUser: user, automation, tokenCost });
+  }
+
+  const { data: balance } = await supabase
+    .from('users')
+    .select('token_balance')
+    .eq('id', user.id)
+    .single();
+
+  return NextResponse.json({
+    success: true,
+    message: 'Automation executed successfully',
+    result,
+    tokens_spent: tokenCost,
+    tokens_remaining: balance?.token_balance ?? null,
+    engine: 'legacy-runner',
+  });
+}
+
+async function runActivepiecesBackedAutomation({ automation, user, automationId, lowercaseConfig, tokenCost, startTime }) {
+  await assertTokenBalance(user.id, tokenCost);
+
+  const result = await runActivepiecesAutomation({
+    supabase,
+    user,
+    automation,
+    config: lowercaseConfig,
+  });
+
+  const endTime = Date.now();
+  const durationMs = endTime - startTime;
+
+  if (!result.success) {
+    await logExecution({
+      automationId,
+      userEmail: user.email,
+      status: 'failed',
+      startTime,
+      endTime,
+      durationMs,
+      errorMessage: `Activepieces run status: ${result.activepieces.runStatus}`,
+      metadata: { engine: 'activepieces', activepieces: result.activepieces },
+    });
+
+    return NextResponse.json({
+      error: 'Activepieces workflow execution failed',
+      activepieces: result.activepieces,
+    }, { status: 500 });
+  }
+
+  const spend = await recordSuccessfulTokenSpend({ supabase, user, automation, tokenCost });
+  await creditAutomationCreator({ supabase, runnerUser: user, automation, tokenCost });
+
+  await logExecution({
+    automationId,
+    userEmail: user.email,
+    status: 'success',
+    startTime,
+    endTime,
+    durationMs,
+    tokenCost,
+    metadata: { engine: 'activepieces', activepieces: result.activepieces },
+  });
+
+  await supabase.rpc('increment_total_runs', { automation_uuid: automationId });
+
+  return NextResponse.json({
+    success: true,
+    message: 'Automation executed successfully',
+    result,
+    tokens_spent: tokenCost,
+    tokens_remaining: spend.tokensRemaining,
+    engine: 'activepieces',
+  });
+}
+
 export async function POST(req) {
   try {
-    let user = await getSupabaseUser();
-    console.log('[EXECUTE DEBUG] getSupabaseUser result:', user ? 'found' : 'null');
-
-    // For internal server-to-server calls (from AI stream), user_id may be passed directly
+    const authUser = await getSupabaseUser();
     const body = await req.json();
     const { automation_id, config, user_id } = body;
-    console.log('[EXECUTE DEBUG] Body received:', { automation_id, user_id, hasConfig: !!config });
 
-    // If no session but user_id provided (internal call), validate and use it
-    if (!user && user_id) {
-      console.log('[EXECUTE DEBUG] No session, trying user_id fallback:', user_id);
-      // Verify the user exists in database
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('id', user_id)
-        .single();
-
-      console.log('[EXECUTE DEBUG] User lookup result:', { profile, error });
-
-      if (profile) {
-        user = { id: profile.id, email: profile.email };
-        console.log('[EXECUTE DEBUG] User set from DB:', user);
-      }
-    }
-
+    const user = await resolveAppUser(authUser, user_id);
     if (!user) {
-      console.log('[EXECUTE DEBUG] FINAL: No user, returning 401');
-      return NextResponse.json(
-        { error: 'You must be logged in to execute automations' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'You must be logged in to execute automations' }, { status: 401 });
     }
 
-    console.log('[EXECUTE DEBUG] Auth OK, proceeding with user:', user.id);
-
-    // Validate inputs
     if (!automation_id || !config) {
-      return NextResponse.json(
-        { error: 'automation_id and config are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'automation_id and config are required' }, { status: 400 });
     }
 
-    // Validate automation_id is a UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(automation_id)) {
-      return NextResponse.json(
-        { error: 'Invalid automation ID format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid automation ID format' }, { status: 400 });
     }
 
-    // Fetch automation details including token cost and creator
     const { data: automation, error: automationError } = await supabase
       .from('automations')
-      .select('id, name, requires_background, token_cost, author_email')
+      .select('id, name, is_active, requires_background, token_cost, author_email, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
       .eq('id', automation_id)
       .single();
 
     if (automationError || !automation) {
-      return NextResponse.json(
-        { error: 'Automation not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
     }
 
-    console.log('[EXECUTE DEBUG] Automation type:', automation.requires_background ? 'Background (Continuous)' : 'On-Demand (Run Once)');
-    console.log('[EXECUTE DEBUG] Token cost:', automation.token_cost);
+    if (!automation.is_active) {
+      return NextResponse.json({ error: 'Automation is no longer available' }, { status: 410 });
+    }
 
-    // ============================================
-    // TOKEN ECONOMY: Check and deduct tokens
-    // ============================================
     const tokenCost = automation.token_cost || 0;
-    const TOKEN_TO_USD = 0.10; // 1 token = $0.10 USD
-    
-    if (tokenCost > 0) {
-      console.log('[TOKEN] Automation costs', tokenCost, 'tokens');
-      
-      // Get runner's current token balance
-      const { data: runner, error: runnerError } = await supabase
-        .from('users')
-        .select('id, email, token_balance')
-        .eq('id', user.id)
-        .single();
-      
-      if (runnerError || !runner) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      // Check if runner has enough tokens
-      if (runner.token_balance < tokenCost) {
-        console.log('[TOKEN] Insufficient balance:', runner.token_balance, '<', tokenCost);
-        return NextResponse.json(
-          { 
-            error: 'Insufficient token balance',
-            required: tokenCost,
-            available: runner.token_balance,
-            message: `This automation costs ${tokenCost} tokens. You have ${runner.token_balance} tokens. Please purchase more tokens.`
-          },
-          { status: 402 } // 402 Payment Required
-        );
-      }
-      
-      // Deduct tokens from runner
-      const { error: deductError } = await supabase
-        .from('users')
-        .update({ 
-          token_balance: runner.token_balance - tokenCost 
-        })
-        .eq('id', user.id);
-      
-      if (deductError) {
-        console.error('[TOKEN] Failed to deduct tokens:', deductError);
-        return NextResponse.json(
-          { error: 'Failed to process token payment' },
-          { status: 500 }
-        );
-      }
-      
-      console.log('[TOKEN] Deducted', tokenCost, 'tokens from runner');
-      
-      // Record spend transaction
-      await supabase
-        .from('token_transactions')
-        .insert({
-          user_id: user.id,
-          transaction_type: 'spend',
-          token_amount: -tokenCost,
-          usd_amount: -(tokenCost * TOKEN_TO_USD),
-          status: 'completed',
-          metadata: {
-            automation_id: automation_id,
-            automation_name: automation.name,
-            developer_email: automation.author_email
-          }
-        });
-    } else if (isOwnAutomation) {
-      console.log('[TOKEN] User running own automation - FREE (no deduction, no earning)');
-    } else {
-      console.log('[TOKEN] Free automation (token_cost = 0)');
-    }
-
-    // Convert config keys to lowercase for webhook body compatibility
-    // (Database stores TIKTOK_URL, but workflow expects tiktok_url)
-    const lowercaseConfig = {};
-    Object.entries(config).forEach(([key, value]) => {
-      lowercaseConfig[key.toLowerCase()] = value;
-    });
-
-    // Check for required connectors to fetch the correct token
-    const { data: fullAutomation } = await supabase
-      .from('automations')
-      .select('required_connectors')
-      .eq('id', automation_id)
-      .single();
-
-    const parseConnectors = (connectors) => {
-      if (!connectors) return [];
-      if (Array.isArray(connectors)) return connectors;
-      try { return JSON.parse(connectors); } catch (e) { return [connectors]; }
-    };
-
-    const requiredConnectors = parseConnectors(fullAutomation?.required_connectors);
-    const primaryProvider = requiredConnectors.length > 0
-      ? (requiredConnectors[0].toLowerCase().includes('google') || requiredConnectors[0].toLowerCase().includes('sheets') ? 'google' : requiredConnectors[0].toLowerCase())
-      : 'google';
-
-    // Fetch user's OAuth tokens from user_automations for the correct provider
-    const { data: integration } = await supabase
-      .from('user_automations')
-      .select('access_token, refresh_token, token_expiry')
-      .eq('user_id', user.id)
-      .eq('automation_id', automation_id)
-      .eq('provider', primaryProvider)
-      .maybeSingle();
-
-    // If user has integration, add access_token to config
-    // This allows workflows to use HTTP Request nodes with Bearer tokens
-    if (integration?.access_token) {
-      console.log(`[EXECUTE DEBUG] Adding ${primaryProvider} access_token to workflow payload`);
-      lowercaseConfig.access_token = integration.access_token;
-
-      // Also add refresh_token in case workflow needs to refresh
-      if (integration.refresh_token) {
-        lowercaseConfig.refresh_token = integration.refresh_token;
-      }
-    }
-
-    const runnerPayload = {
-      automation_id,
-      user_id: user.id,
-      config: lowercaseConfig
-    };
-
+    const lowercaseConfig = normalizeConfig(config);
     const startTime = Date.now();
 
-    const RUNNER_URL = process.env.AUTOMATION_RUNNER_URL || 'http://localhost:3001';
-    console.log('[EXECUTE DEBUG] Runner URL:', RUNNER_URL);
-    const runnerResponse = await fetch(`${RUNNER_URL}/api/automations/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(runnerPayload),
-      signal: AbortSignal.timeout(60000) // 60s timeout
-    });
-
-    const endTime = Date.now();
-    const durationMs = endTime - startTime;
-
-    if (!runnerResponse.ok) {
-      const errorData = await runnerResponse.json().catch(() => ({}));
-
-      // Log failed execution
-      await supabase.from('automation_executions').insert({
-        automation_id,
-        executed_by: user.email,
-        status: 'failed',
-        credits_used: 0,
-        started_at: new Date(startTime).toISOString(),
-        completed_at: new Date(endTime).toISOString(),
-        duration_ms: durationMs,
-        error_message: errorData.error || 'Automation runner failed'
+    if (automation.activepieces_source_flow_id) {
+      return runActivepiecesBackedAutomation({
+        automation,
+        user,
+        automationId: automation_id,
+        lowercaseConfig,
+        tokenCost,
+        startTime,
       });
-
-      return NextResponse.json(
-        { error: 'Automation runner failed', details: errorData },
-        { status: 500 }
-      );
     }
 
-    const result = await runnerResponse.json();
-
-    console.log('[EXECUTE DEBUG] Runner result keys:', Object.keys(result));
-    console.log('[EXECUTE DEBUG] Has outputs:', !!result.outputs);
-    if (result.outputs) {
-      console.log('[EXECUTE DEBUG] Output node keys:', Object.keys(result.outputs));
-      const parseNode = result.outputs['Parse AI JSON'] || result.outputs['parse-ai-json'];
-      console.log('[EXECUTE DEBUG] Parse AI JSON node:', JSON.stringify(parseNode)?.substring(0, 500));
-    }
-
-    // The runner might return 200 OK but with success: false in the JSON body
-    if (!result.success) {
-      console.error('[EXECUTE DEBUG] Automation returned success: false', result.errors);
-      
-      // Log failed execution
-      await supabase.from('automation_executions').insert({
-        automation_id,
-        executed_by: user.email,
-        status: 'failed',
-        credits_used: 0,
-        started_at: new Date(startTime).toISOString(),
-        completed_at: new Date(endTime).toISOString(),
-        duration_ms: durationMs,
-        error_message: (result.errors && result.errors.length > 0) ? result.errors[0] : 'Workflow execution failed'
-      });
-
-      return NextResponse.json(
-        { error: 'Workflow execution failed', message: (result.errors && result.errors.length > 0) ? result.errors[0] : 'Unknown error during execution', details: result },
-        { status: 500 }
-      );
-    }
-
-    // SCENARIO 1: On-Demand (Run Once) - Just execute, don't save config
-    // SCENARIO 2: Background (Continuous) - Save config for recurring execution
-    if (automation.requires_background) {
-      console.log('[EXECUTE DEBUG] Background automation - saving config to user_automations');
-
-      await supabase
-        .from('user_automations')
-        .upsert({
-          automation_id,
-          user_id: user.id,
-          parameters: lowercaseConfig,
-          is_active: true,
-          last_run: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'automation_id,user_id' // Update if already exists
-        });
-    } else {
-      console.log('[EXECUTE DEBUG] On-demand automation - config not saved (run once)');
-    }
-
-    // Log successful execution and increment total_runs
-    await supabase.from('automation_executions').insert({
-      automation_id,
-      executed_by: user.email,
-      status: 'success',
-      credits_used: result.credits_used || 0,
-      started_at: new Date(startTime).toISOString(),
-      completed_at: new Date(endTime).toISOString(),
-      duration_ms: durationMs,
-      error_message: null
+    return runLegacyAutomation({
+      automation,
+      user,
+      automationId: automation_id,
+      lowercaseConfig,
+      tokenCost,
+      startTime,
     });
-
-    // Increment total_runs on the automation
-    await supabase.rpc('increment_total_runs', { automation_uuid: automation_id });
-
-    // ============================================
-    // TOKEN ECONOMY: Credit creator if automation costs tokens
-    // Only credit if runner is a DIFFERENT user than the creator
-    // ============================================
-    if (tokenCost > 0 && automation.author_email !== user.email) {
-      console.log('[TOKEN] Crediting creator:', automation.author_email);
-      
-      const usdAmount = tokenCost * TOKEN_TO_USD;
-      
-      // Get creator's user ID from email
-      const { data: creator, error: creatorError } = await supabase
-        .from('users')
-        .select('id, email, token_balance, total_earnings_usd')
-        .eq('email', automation.author_email)
-        .single();
-      
-      if (creator && !creatorError) {
-        // Creator earns USD only — NOT tokens (tokens are only earned by purchasing)
-        await supabase
-          .from('users')
-          .update({
-            total_earnings_usd: creator.total_earnings_usd + usdAmount
-          })
-          .eq('id', creator.id);
-        
-        // Record earning transaction
-        await supabase
-          .from('token_transactions')
-          .insert({
-            user_id: creator.id,
-            transaction_type: 'earning',
-            token_amount: tokenCost,
-            usd_amount: usdAmount,
-            status: 'completed',
-            metadata: {
-              automation_id: automation_id,
-              automation_name: automation.name,
-              runner_id: user.id,
-              runner_email: user.email
-            }
-          });
-        
-        console.log('[TOKEN] Credited', tokenCost, 'tokens and $', usdAmount.toFixed(2), 'to creator');
-      } else {
-        console.error('[TOKEN] Creator not found:', automation.author_email);
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Automation executed successfully',
-      result: result,
-      tokens_spent: tokenCost,
-      tokens_remaining: tokenCost > 0 ? (await supabase.from('users').select('token_balance').eq('id', user.id).single()).data?.token_balance : null
-    });
-
   } catch (error) {
+    if (error.status === 402) {
+      return NextResponse.json(error.payload, { status: 402 });
+    }
+
+    console.error('[Automation Execute] Error:', error);
     return NextResponse.json(
       { error: 'Failed to execute automation', message: error.message },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }

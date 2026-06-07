@@ -14,6 +14,10 @@ const AutomationUpload = dynamic(() => import('../components/automationUpload/Au
     ssr: false,
 });
 
+const PublishFromBuilderDialog = dynamic(() => import('../components/activepieces/PublishFromBuilderDialog'), {
+    ssr: false,
+});
+
 const RunsChart = dynamic(() => import('@/app/components/charts/RunsChart'), {
     ssr: false,
     loading: () => <div className="h-28 rounded bg-slate-800/40 animate-pulse" />,
@@ -25,6 +29,7 @@ export default function Dashboard() {
     const sidebarOffset = !isMobile ? (isExpanded ? 256 : 52) : 0;
     
     const [showAutomationDialog, setShowAutomationDialog] = useState(false);
+    const [showBuilderPublishDialog, setShowBuilderPublishDialog] = useState(false);
     const [automations, setAutomations] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -70,6 +75,11 @@ export default function Dashboard() {
         fetchDashboardData();
     };
 
+    const handleBuilderPublishSuccess = () => {
+        setShowBuilderPublishDialog(false);
+        fetchDashboardData();
+    };
+
     return (
         <AdaptiveBackground variant="content" className="pt-16">
             <div className="min-h-screen" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
@@ -77,15 +87,26 @@ export default function Dashboard() {
                 <div className="max-w-5xl mx-auto">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
                         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                        <button
-                            onClick={() => setShowAutomationDialog(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Upload Automation</span>
-                        </button>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <button
+                                onClick={() => setShowBuilderPublishDialog(true)}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-purple-400/50 bg-slate-900/60 hover:bg-purple-500/15 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 6.75h6.75m0 0V3.75m0 3h8.25M4.5 17.25h6.75m0 0v3m0-3h8.25M15.75 12H19.5m-3.75 0a3.75 3.75 0 1 1-7.5 0m7.5 0a3.75 3.75 0 1 0-7.5 0M4.5 12h3.75" />
+                                </svg>
+                                <span>Publish from Builder</span>
+                            </button>
+                            <button
+                                onClick={() => setShowAutomationDialog(true)}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Upload JSON</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Analytics Chart */}
@@ -176,6 +197,11 @@ export default function Dashboard() {
                         isOpen={showAutomationDialog}
                         onClose={() => setShowAutomationDialog(false)}
                         onUploadSuccess={handleUploadSuccess}
+                    />
+                    <PublishFromBuilderDialog
+                        isOpen={showBuilderPublishDialog}
+                        onClose={() => setShowBuilderPublishDialog(false)}
+                        onPublishSuccess={handleBuilderPublishSuccess}
                     />
                 </div>
             </div>

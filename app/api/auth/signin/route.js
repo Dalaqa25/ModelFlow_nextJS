@@ -77,7 +77,12 @@ export async function POST(request) {
           options: { shouldCreateUser: true },
         });
         if (error) {
-          return NextResponse.json({ error: error.message }, { status: 400 });
+          const isRateLimited = error.message?.toLowerCase().includes('rate limit');
+          return NextResponse.json({
+            error: isRateLimited
+              ? 'Too many OTP requests. Please wait a few minutes before trying again.'
+              : error.message,
+          }, { status: isRateLimited ? 429 : 400 });
         }
         return NextResponse.json({
           message: 'OTP sent to email. Please check your inbox for the verification code.'
@@ -99,9 +104,12 @@ export async function POST(request) {
     });
 
     if (error) {
+      const isRateLimited = error.message?.toLowerCase().includes('rate limit');
       return NextResponse.json({ 
-        error: error.message 
-      }, { status: 400 });
+        error: isRateLimited
+          ? 'Too many OTP requests. Please wait a few minutes before trying again.'
+          : error.message,
+      }, { status: isRateLimited ? 429 : 400 });
     }
 
     // Ensure user record exists in our database (might not exist for older users)

@@ -8,6 +8,7 @@ import ConfigForm from '../ConfigForm';
 import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
 import NoResultsPopup from './NoResultsPopup';
 import VideoPreview from '../VideoPreview';
+import { ArrowRight, CheckCircle2, Plug, WalletCards } from 'lucide-react';
 
 // Renders message content — parses [text](url) into clickable links, strips ** bold markers
 function renderContent(content) {
@@ -37,6 +38,91 @@ function renderContent(content) {
   return parts;
 }
 
+function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
+  const connectors = Array.isArray(widget?.connectors) ? widget.connectors : [];
+  const inputs = Array.isArray(widget?.inputs) ? widget.inputs : [];
+  const tokenCost = Number(widget?.tokenCost || 0);
+
+  return (
+    <div
+      className={`mt-4 w-full max-w-2xl overflow-hidden rounded-[1.75rem] border shadow-2xl ${
+        isDarkMode
+          ? 'border-white/10 bg-slate-950/70 shadow-black/30'
+          : 'border-slate-200 bg-white shadow-slate-200/70'
+      }`}
+    >
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_20%,rgba(168,85,247,0.35),transparent_32%),linear-gradient(135deg,#111827_0%,#26134d_55%,#020617_100%)] p-5 text-white">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-violet-100">
+          Setup preview
+        </div>
+        <h3 className="text-2xl font-black tracking-[-0.04em]">{widget?.name || 'Automation'}</h3>
+        {widget?.description && (
+          <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-slate-200">
+            {widget.description}
+          </p>
+        )}
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-3">
+        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-400">
+            <Plug className="h-4 w-4" />
+            Apps
+          </div>
+          {connectors.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {connectors.slice(0, 4).map((connector) => (
+                <span key={connector} className="rounded-full bg-violet-500/12 px-2.5 py-1 text-xs font-bold text-violet-300 ring-1 ring-violet-400/20">
+                  {connector}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+              No app connection listed.
+            </p>
+          )}
+        </div>
+
+        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-400">
+            <CheckCircle2 className="h-4 w-4" />
+            Inputs
+          </div>
+          <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+            {inputs.length > 0 ? `${inputs.length} thing${inputs.length === 1 ? '' : 's'} to collect` : 'No manual inputs listed'}
+          </p>
+        </div>
+
+        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+          <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
+            <WalletCards className="h-4 w-4" />
+            Cost
+          </div>
+          <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-950'}`}>
+            {tokenCost > 0 ? `${tokenCost} tokens/run` : 'Free'}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+          Next, ModelGrow prepares a private runtime copy and checks what accounts are missing.
+        </p>
+        <button
+          type="button"
+          onClick={() => onStart?.(widget)}
+          disabled={isLoading}
+          className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Prepare setup
+          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MessageRenderer({
   message,
   index,
@@ -47,6 +133,7 @@ export default function MessageRenderer({
   onConnectionComplete,
   onConfigSubmit,
   onBackgroundActivate,
+  onSetupWidgetStart,
   onRequireAuth,
   onNoResultsClose
 }) {
@@ -59,6 +146,17 @@ export default function MessageRenderer({
   if (
     message.role === 'assistant' &&
     !isCurrentStreamingAssistant &&
+    !message.automations?.length &&
+    !message.automationList?.length &&
+    !message.insufficientTokens &&
+    !message.setupWidget &&
+    !message.connectRequest &&
+    !message.configRequest &&
+    !message.backgroundActivationPrompt &&
+    !message.videoPreview &&
+    !message.noResultsPopup &&
+    !message.automationInstances?.length &&
+    !message.fileSearchResults?.length &&
     (!message.content || message.content.trim() === '')
   ) {
     return null;
@@ -105,6 +203,16 @@ export default function MessageRenderer({
           </p>
         </div>
       </div>
+
+      {/* Deterministic setup preview widget */}
+      {message.setupWidget && (
+        <SetupWidget
+          widget={message.setupWidget}
+          isDarkMode={isDarkMode}
+          isLoading={isLoading}
+          onStart={onSetupWidgetStart}
+        />
+      )}
 
       {/* Automation cards (legacy) */}
       {message.automations?.length > 0 && (
@@ -162,6 +270,9 @@ export default function MessageRenderer({
               provider={message.connectRequest.provider}
               automationId={message.connectRequest.automation_id}
               userId={message.connectRequest.user_id}
+              engine={message.connectRequest.engine}
+              activepiecesUrl={message.connectRequest.activepiecesUrl}
+              activepiecesConnections={message.connectRequest.activepiecesConnections}
               onConnect={onConnectionComplete}
             />
           )}

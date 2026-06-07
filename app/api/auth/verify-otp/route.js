@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { userDB } from '@/lib/db/supabase-db';
+import { ensureActivepiecesUserForModelGrowUser } from '@/lib/activepieces/provisioning';
 import { createClient } from '@supabase/supabase-js';
 
 // Create admin client with service role key for auth admin operations
@@ -38,15 +39,29 @@ export async function POST(request) {
     }
 
     // Ensure app-level user row exists after successful verification
+    let userRecord = null;
     if (data?.user?.email) {
       try {
-        const userRecord = await userDB.upsertUser({
+        userRecord = await userDB.upsertUser({
           email: data.user.email,
           name: data.user.user_metadata?.name || data.user.email,
         });
       } catch (e) {
         // Don't fail the entire request if user creation fails
         // The auth session is still valid
+      }
+
+      if (userRecord?.id) {
+        try {
+          await ensureActivepiecesUserForModelGrowUser({
+            supabase: supabaseAdmin,
+            user: userRecord,
+          });
+        } catch (e) {
+          // Activepieces is a runtime dependency, not a signup blocker.
+          // The run endpoint will retry provisioning if this background step fails.
+          console.error('[Activepieces] Failed to provision verified user:', e.message);
+        }
       }
     }
 

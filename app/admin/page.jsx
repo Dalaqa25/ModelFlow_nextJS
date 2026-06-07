@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Mail, Shield, Wallet } from 'lucide-react';
+import { ArrowRight, Mail, Shield, Wallet, Workflow } from 'lucide-react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 
 const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com', 'g.dalaqishvili01@gmail.com'];
@@ -42,7 +42,7 @@ export default function AdminHomePage() {
           <p className="text-gray-400 mt-2">Manage payouts and send product updates to your users.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/admin/withdrawals"
             className="group bg-slate-900 border border-slate-700/60 rounded-xl p-6 hover:border-purple-500/40 transition-colors"
@@ -77,6 +77,25 @@ export default function AdminHomePage() {
             </p>
             <div className="inline-flex items-center gap-2 text-sm text-purple-300 group-hover:text-purple-200">
               Open Broadcast
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/withdrawals?tab=automations"
+            className="group bg-slate-900 border border-slate-700/60 rounded-xl p-6 hover:border-purple-500/40 transition-colors"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                <Workflow className="w-5 h-5" />
+              </div>
+              <h2 className="text-lg font-semibold text-white">Automation Reviews</h2>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              Review newly published builder flows and approve them for the public marketplace.
+            </p>
+            <div className="inline-flex items-center gap-2 text-sm text-purple-300 group-hover:text-purple-200">
+              Open Reviews
               <ArrowRight className="w-4 h-4" />
             </div>
           </Link>

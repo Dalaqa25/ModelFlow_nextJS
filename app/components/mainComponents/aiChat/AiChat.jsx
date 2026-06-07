@@ -6,7 +6,7 @@ import { useAiChat } from './useAiChat';
 import MessageRenderer from './MessageRenderer';
 
 const AiChat = forwardRef((props, ref) => {
-  const { onLoadingChange, onAwaitFileUploadChange, initialConversationId, onRequireAuth } = props;
+  const { onLoadingChange, onAwaitFileUploadChange, initialConversationId, onRequireAuth, onReady, onConversationChange } = props;
   const { isDarkMode } = useThemeAdaptive();
   const messagesEndRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -16,15 +16,17 @@ const AiChat = forwardRef((props, ref) => {
     isLoading,
     currentAiMessageId,
     sendMessage,
+    startAutomationSetupIntro,
     stopGeneration,
     handleAutomationSelect,
+    handleSetupWidgetStart,
     handleConnectionComplete,
     handleConfigSubmit,
     handleBackgroundActivate,
     handleFileUpload,
     uploadState,
     isAwaitingFileUpload
-  } = useAiChat({ onLoadingChange, initialConversationId, onRequireAuth });
+  } = useAiChat({ onLoadingChange, initialConversationId, onRequireAuth, onConversationChange });
 
   // Sync upload state with parent
   useEffect(() => {
@@ -41,11 +43,16 @@ const AiChat = forwardRef((props, ref) => {
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
-    handleNewMessage: (messageText) => sendMessage(messageText),
+    handleNewMessage: (messageText, extraContext = '') => sendMessage(messageText, extraContext),
+    startAutomationSetupIntro: (automation) => startAutomationSetupIntro(automation),
     stopGeneration: () => stopGeneration(),
     handleFileUpload: (file) => handleFileUpload(file),
     isLoading: isLoading,
   }));
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   // Drag and Drop handlers
   const onDragOver = (e) => {
@@ -135,6 +142,7 @@ const AiChat = forwardRef((props, ref) => {
             currentAiMessageId={currentAiMessageId}
             isDarkMode={isDarkMode}
             onAutomationSelect={handleAutomationSelect}
+            onSetupWidgetStart={handleSetupWidgetStart}
             onConnectionComplete={handleConnectionComplete}
             onConfigSubmit={handleConfigSubmit}
             onBackgroundActivate={handleBackgroundActivate}

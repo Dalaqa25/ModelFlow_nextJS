@@ -11,7 +11,8 @@ export function createStreamHandler({
   setIsLoading,
   setCurrentAiMessageId,
   onContentUpdate, // Callback to track full content
-  onHiddenContextUpdate // NEW: Callback to track hidden context
+  onHiddenContextUpdate, // NEW: Callback to track hidden context
+  onUiMetadataUpdate
 }) {
   let textQueue = '';
   let displayedText = '';
@@ -112,10 +113,38 @@ export function createStreamHandler({
     // Handle connection requests
     else if (parsed.type === 'connect_request') {
       flushQueue();
+      const connectRequest = { provider: parsed.provider, automation_id: parsed.automation_id, user_id: parsed.user_id, reason: parsed.reason };
+      onUiMetadataUpdate?.({ connectRequest });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: displayedText, connectRequest: { provider: parsed.provider, automation_id: parsed.automation_id, user_id: parsed.user_id, reason: parsed.reason } }
+            ? { ...msg, content: displayedText, connectRequest }
+            : msg
+        )
+      );
+    }
+    else if (parsed.type === 'activepieces_connect_request') {
+      flushQueue();
+      const connectRequest = {
+        provider: parsed.provider,
+        automation_id: parsed.automation_id,
+        automation_name: parsed.automation_name,
+        reason: parsed.reason,
+        engine: 'activepieces',
+        activepiecesUrl: parsed.activepieces_url,
+        activepiecesProjectId: parsed.activepieces_project_id,
+        activepiecesFlowId: parsed.activepieces_flow_id,
+        activepiecesConnections: parsed.activepieces_connections || [],
+      };
+      onUiMetadataUpdate?.({ connectRequest });
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? {
+                ...msg,
+                content: displayedText,
+                connectRequest
+              }
             : msg
         )
       );
@@ -123,10 +152,12 @@ export function createStreamHandler({
     // Handle config requests
     else if (parsed.type === 'config_request') {
       flushQueue();
+      const configRequest = { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs };
+      onUiMetadataUpdate?.({ configRequest });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, content: displayedText, configRequest: { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs } }
+            ? { ...msg, content: displayedText, configRequest }
             : msg
         )
       );
@@ -241,6 +272,7 @@ export function createStreamHandler({
     // Handle automation instances (user stats)
     else if (parsed.type === 'automation_instances' && parsed.instances) {
       flushQueue();
+      onUiMetadataUpdate?.({ automationInstances: parsed.instances });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
@@ -281,17 +313,19 @@ export function createStreamHandler({
     // Handle background activation prompt
     else if (parsed.type === 'background_activation_prompt') {
       flushQueue();
+      const backgroundActivationPrompt = {
+        automation_id: parsed.automation_id,
+        automation_name: parsed.automation_name,
+        config: parsed.config
+      };
+      onUiMetadataUpdate?.({ backgroundActivationPrompt });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
             ? {
               ...msg,
               content: displayedText,
-              backgroundActivationPrompt: {
-                automation_id: parsed.automation_id,
-                automation_name: parsed.automation_name,
-                config: parsed.config
-              }
+              backgroundActivationPrompt
             }
             : msg
         )
@@ -300,17 +334,19 @@ export function createStreamHandler({
     // Handle video preview
     else if (parsed.type === 'video_preview') {
       flushQueue();
+      const videoPreview = {
+        file_name: parsed.file_name,
+        preview_url: parsed.preview_url,
+        expires_in: parsed.expires_in
+      };
+      onUiMetadataUpdate?.({ videoPreview });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
             ? {
               ...msg,
               content: displayedText,
-              videoPreview: {
-                file_name: parsed.file_name,
-                preview_url: parsed.preview_url,
-                expires_in: parsed.expires_in
-              }
+              videoPreview
             }
             : msg
         )

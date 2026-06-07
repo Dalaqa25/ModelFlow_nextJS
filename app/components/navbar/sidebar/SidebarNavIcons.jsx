@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, LayoutDashboard, Coins, User } from 'lucide-react';
+import { Users, LayoutDashboard, Coins, User, Workflow, Compass, Trophy } from 'lucide-react';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
@@ -19,7 +19,10 @@ export default function SidebarNavIcons() {
 
   const navItems = [
     { icon: Users, path: '/community', label: 'Community', protected: false },
+    { icon: Compass, path: '/explore', label: 'Explore', protected: false },
+    { icon: Trophy, path: '/leaderboard', label: 'Leaderboard', protected: false },
     { icon: LayoutDashboard, path: '/dashboard', label: 'Dashboard', protected: true },
+    { icon: Workflow, path: '/builder', label: 'Builder', protected: true },
     { icon: Coins, path: '/pricing', label: 'Buy Credits', protected: false },
     { icon: User, path: '/profile', label: 'Profile', protected: true },
   ];
@@ -27,6 +30,8 @@ export default function SidebarNavIcons() {
   const handleClick = (item) => {
     if (item.protected && !isAuthenticated) {
       setIsSignInOpen(true);
+    } else if (item.external) {
+      window.open(item.path, '_blank', 'noopener,noreferrer');
     } else {
       router.push(item.path);
     }

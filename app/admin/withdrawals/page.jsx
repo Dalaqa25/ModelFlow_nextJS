@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, RefreshCw, Send, Users, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, RefreshCw, Send, Users, ArrowLeft, Workflow, Power } from 'lucide-react';
 
 const ADMIN_EMAILS = ['modelgrowfinancial01@gmail.com', 'g.dalaqishvili01@gmail.com'];
 
@@ -26,6 +26,10 @@ export default function AdminWithdrawalsPage() {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState(null);
+  const [automations, setAutomations] = useState([]);
+  const [automationsLoading, setAutomationsLoading] = useState(false);
+  const [automationFilter, setAutomationFilter] = useState('pending');
+  const [automationActionLoading, setAutomationActionLoading] = useState(null);
 
   const isAdmin = user && ADMIN_EMAILS.includes(user.email);
 
@@ -33,6 +37,8 @@ export default function AdminWithdrawalsPage() {
     const tabFromUrl = searchParams.get('tab');
     if (tabFromUrl === 'broadcast') {
       setActiveTab('broadcast');
+    } else if (tabFromUrl === 'automations') {
+      setActiveTab('automations');
     } else if (tabFromUrl === 'withdrawals') {
       setActiveTab('withdrawals');
     }
@@ -46,8 +52,15 @@ export default function AdminWithdrawalsPage() {
       }
       fetchWithdrawals();
       fetchRecipientCount();
+      fetchAutomations();
     }
   }, [authLoading, isAuthenticated, isAdmin]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && isAdmin && activeTab === 'automations') {
+      fetchAutomations();
+    }
+  }, [automationFilter, activeTab, authLoading, isAuthenticated, isAdmin]);
 
   const fetchRecipientCount = async () => {
     setRecipientLoading(true);
@@ -75,6 +88,21 @@ export default function AdminWithdrawalsPage() {
       setError('Failed to load withdrawal requests.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAutomations = async () => {
+    setAutomationsLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/automations?status=${automationFilter}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch automations');
+      setAutomations(data.automations || []);
+    } catch (e) {
+      setError(e.message || 'Failed to load automations.');
+    } finally {
+      setAutomationsLoading(false);
     }
   };
 
@@ -155,6 +183,38 @@ export default function AdminWithdrawalsPage() {
     }
   };
 
+  const handleAutomationAction = async (automationId, action) => {
+    setAutomationActionLoading(`${action}:${automationId}`);
+    try {
+      const res = await fetch(`/api/admin/automations/${automationId}/${action}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Failed to ${action} automation`);
+      await fetchAutomations();
+    } catch (e) {
+      alert(`Automation ${action} failed: ${e.message}`);
+    } finally {
+      setAutomationActionLoading(null);
+    }
+  };
+
+  const getPageTitle = () => {
+    if (activeTab === 'broadcast') return 'Broadcast Email';
+    if (activeTab === 'automations') return 'Automation Reviews';
+    return 'Withdrawal Requests';
+  };
+
+  const getPageDescription = () => {
+    if (activeTab === 'broadcast') return 'Send feature updates to all users via Resend';
+    if (activeTab === 'automations') return 'Review builder-published automations before they enter the marketplace';
+    return 'Review and process pending withdrawal requests';
+  };
+
+  const handleRefresh = () => {
+    if (activeTab === 'broadcast') return fetchRecipientCount();
+    if (activeTab === 'automations') return fetchAutomations();
+    return fetchWithdrawals();
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -178,17 +238,11 @@ export default function AdminWithdrawalsPage() {
               <ArrowLeft className="w-4 h-4" />
               Back to Admin
             </Link>
-            <h1 className="text-3xl font-bold text-white">
-              {activeTab === 'withdrawals' ? 'Withdrawal Requests' : 'Broadcast Email'}
-            </h1>
-            <p className="text-gray-400 mt-1">
-              {activeTab === 'withdrawals'
-                ? 'Review and process pending withdrawal requests'
-                : 'Send feature updates to all users via Resend'}
-            </p>
+            <h1 className="text-3xl font-bold text-white">{getPageTitle()}</h1>
+            <p className="text-gray-400 mt-1">{getPageDescription()}</p>
           </div>
           <button
-            onClick={activeTab === 'withdrawals' ? fetchWithdrawals : fetchRecipientCount}
+            onClick={handleRefresh}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
@@ -216,6 +270,16 @@ export default function AdminWithdrawalsPage() {
             }`}
           >
             Broadcast Email
+          </button>
+          <button
+            onClick={() => setActiveTab('automations')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'automations'
+                ? 'bg-purple-500 text-white'
+                : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            Automations
           </button>
         </div>
 
@@ -532,6 +596,157 @@ export default function AdminWithdrawalsPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'automations' && (
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Workflow className="w-5 h-5 text-purple-400" />
+                <h2 className="text-xl font-semibold text-white">Marketplace Queue</h2>
+              </div>
+              <div className="flex gap-2">
+                {['pending', 'active', 'all'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setAutomationFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
+                      automationFilter === status
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {automationsLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin rounded-full h-9 w-9 border-t-2 border-purple-400"></div>
+              </div>
+            ) : automations.length === 0 ? (
+              <div className="text-center py-20 text-gray-500 bg-slate-900 border border-slate-700/60 rounded-xl">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500/40" />
+                <p className="text-lg font-medium">No automations found</p>
+                <p className="text-sm mt-1">The {automationFilter} queue is empty.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {automations.map((automation) => {
+                  const connectors = Array.isArray(automation.required_connectors)
+                    ? automation.required_connectors
+                    : [];
+                  const isApproveLoading = automationActionLoading === `approve:${automation.id}`;
+                  const isDisableLoading = automationActionLoading === `disable:${automation.id}`;
+
+                  return (
+                    <div
+                      key={automation.id}
+                      className="bg-slate-900 border border-slate-700/60 rounded-xl p-5"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-white">{automation.name}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              automation.is_active
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-yellow-500/20 text-yellow-300'
+                            }`}>
+                              {automation.is_active ? 'Active' : 'Pending'}
+                            </span>
+                            {automation.activepieces_source_flow_id && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">
+                                Activepieces
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-sm text-gray-400 leading-6 mb-4">
+                            {automation.description || 'No description provided.'}
+                          </p>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div className="rounded-lg bg-slate-800/60 p-3">
+                              <p className="text-xs text-gray-500 mb-1">Author</p>
+                              <p className="text-sm font-medium text-white break-all">{automation.author_email || 'Unknown'}</p>
+                            </div>
+                            <div className="rounded-lg bg-slate-800/60 p-3">
+                              <p className="text-xs text-gray-500 mb-1">Cost / Runs</p>
+                              <p className="text-sm font-medium text-white">{automation.token_cost || 0} tokens · {automation.total_runs || 0} runs</p>
+                            </div>
+                            <div className="rounded-lg bg-slate-800/60 p-3">
+                              <p className="text-xs text-gray-500 mb-1">Trigger</p>
+                              <p className="text-sm font-medium text-white capitalize">{automation.activepieces_trigger_type || 'Unknown'}</p>
+                            </div>
+                            <div className="rounded-lg bg-slate-800/60 p-3">
+                              <p className="text-xs text-gray-500 mb-1">Created</p>
+                              <p className="text-sm font-medium text-white">
+                                {automation.created_at ? new Date(automation.created_at).toLocaleDateString() : 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Required Connectors</p>
+                            <div className="flex flex-wrap gap-2">
+                              {connectors.length === 0 ? (
+                                <span className="text-xs text-gray-500">None detected</span>
+                              ) : connectors.map((connector) => (
+                                <span key={connector} className="px-2 py-1 rounded-md bg-slate-800 text-xs font-medium text-gray-200">
+                                  {connector}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {automation.activepieces_source_flow_id && (
+                            <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-xs text-gray-400">
+                              <p>Source project: <span className="font-mono text-gray-200">{automation.activepieces_source_project_id || 'Unknown'}</span></p>
+                              <p className="mt-1">Source flow: <span className="font-mono text-gray-200">{automation.activepieces_source_flow_id}</span></p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex shrink-0 gap-2 lg:flex-col">
+                          {!automation.is_active && (
+                            <button
+                              onClick={() => handleAutomationAction(automation.id, 'approve')}
+                              disabled={Boolean(automationActionLoading)}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                            >
+                              {isApproveLoading ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                              Approve
+                            </button>
+                          )}
+                          {automation.is_active && (
+                            <button
+                              onClick={() => handleAutomationAction(automation.id, 'disable')}
+                              disabled={Boolean(automationActionLoading)}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                            >
+                              {isDisableLoading ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <Power className="w-4 h-4" />
+                              )}
+                              Disable
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -119,6 +119,40 @@ export async function POST(request) {
 
     const encoder = new TextEncoder();
     const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
+    const directSetup = extractSelectedAutomationContext(lastUserMessage);
+
+    if (directSetup) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            await executeToolAction(
+              'start_setup',
+              {
+                automation_id: directSetup.automationId,
+                automation_name: directSetup.automationName,
+                hint: 'User clicked Use automation in the marketplace. Start setup for this exact selected automation.',
+              },
+              user,
+              controller,
+              encoder,
+              null,
+              chatMessages
+            );
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('[Direct setup] Error:', error);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Sorry, I could not start setup for that automation. Please try again.' })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      });
+    }
 
     // STEP 1: Ask Llama (the brain) to understand and decide
 
@@ -583,6 +617,24 @@ function buildChatMessages(messages, prompt) {
     return [{ role: "user", content: prompt }];
   }
   return null;
+}
+
+function extractSelectedAutomationContext(content) {
+  if (!content) return null;
+
+  const idMatch = content.match(/\[Selected automation UUID:\s*([A-Za-z0-9_-]{8,})\]/i);
+
+  if (!idMatch) return null;
+
+  const nameMatch =
+    content.match(/automation_name[=:]\s*"([^"]+)"/i) ||
+    content.match(/set up the "([^"]+)" automation/i) ||
+    content.match(/use "([^"]+)"/i);
+
+  return {
+    automationId: idMatch[1],
+    automationName: nameMatch?.[1] || 'Selected automation',
+  };
 }
 
 // Extract setup context from conversation
