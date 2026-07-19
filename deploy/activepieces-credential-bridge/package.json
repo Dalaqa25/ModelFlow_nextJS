@@ -1,0 +1,14 @@
+{
+  "name": "modelgrow-activepieces-credential-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check authEnvelope.js",
+    "test": "node --test *.test.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

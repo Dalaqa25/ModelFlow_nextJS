@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Sparkles, Trophy } from 'lucide-react';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 
 function getNameFromEmail(email = '') {
   const prefix = email.split('@')[0] || 'builder';
@@ -57,30 +58,27 @@ function rankCreators(automations) {
     .sort((a, b) => b.score - a.score);
 }
 
-function CreatorCard({ creator, rank, isDarkMode }) {
-  const cardClasses = isDarkMode 
-    ? "bg-[#1C1C1E] border-[#2A2A2D] hover:border-violet-500/50" 
-    : "bg-white border-slate-200 hover:border-violet-400 hover:shadow-md";
-    
-  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
-  const textSecondary = isDarkMode ? "text-slate-400" : "text-slate-500";
-  
-  const rankColor = rank === 1 ? "text-amber-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-orange-500" : textSecondary;
-  const rankBg = rank === 1 ? (isDarkMode ? "bg-amber-500/10" : "bg-amber-50") : 
-                 rank === 2 ? (isDarkMode ? "bg-slate-400/10" : "bg-slate-100") : 
-                 rank === 3 ? (isDarkMode ? "bg-orange-500/10" : "bg-orange-50") : 
-                 (isDarkMode ? "bg-white/5" : "bg-slate-50");
+function CreatorCard({ creator, rank }) {
+  const textSecondary = 'text-[var(--landing-muted)]';
+  const rankColor = rank === 1 ? 'text-amber-500' : rank === 2 ? 'text-slate-400' : rank === 3 ? 'text-orange-500' : 'text-[var(--landing-muted)]';
+  const rankBg = rank === 1
+    ? 'bg-amber-500/12'
+    : rank === 2
+      ? 'bg-slate-400/12'
+      : rank === 3
+        ? 'bg-orange-500/12'
+        : 'bg-white/30 dark:bg-white/[0.05]';
 
   return (
-    <div className={`flex flex-col rounded-xl border p-5 transition-all duration-200 ${cardClasses}`}>
+    <div className="community-surface flex flex-col rounded-[1.75rem] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--landing-accent-2)]/40">
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-violet-600 text-lg font-bold text-white shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--landing-accent),var(--landing-accent-3))] text-lg font-black text-white shadow-[0_12px_30px_rgba(93,88,255,0.22)]">
             {getInitials(creator.name)}
           </div>
           <div>
-            <h3 className={`text-base font-bold ${textPrimary}`}>{creator.name}</h3>
-            <p className={`text-xs ${textSecondary}`}>{creator.email}</p>
+            <h3 className="text-base font-black text-[var(--landing-ink)]">{creator.name}</h3>
+            <p className={`text-xs font-semibold ${textSecondary}`}>{creator.email}</p>
           </div>
         </div>
         <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${rankColor} ${rankBg}`}>
@@ -89,23 +87,23 @@ function CreatorCard({ creator, rank, isDarkMode }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-5">
-        <div className={`rounded-lg border p-3 ${isDarkMode ? 'border-[#2A2A2D] bg-[#2A2A2D]' : 'border-slate-100 bg-slate-50'}`}>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider ${textSecondary}`}>Score</p>
-          <p className={`mt-1 text-lg font-bold ${textPrimary}`}>{creator.score}</p>
+        <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-3 dark:bg-white/[0.05]">
+          <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${textSecondary}`}>Score</p>
+          <p className="mt-1 text-lg font-black text-[var(--landing-ink)]">{creator.score}</p>
         </div>
-        <div className={`rounded-lg border p-3 ${isDarkMode ? 'border-[#2A2A2D] bg-[#2A2A2D]' : 'border-slate-100 bg-slate-50'}`}>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider ${textSecondary}`}>Runs</p>
-          <p className={`mt-1 text-lg font-bold ${textPrimary}`}>{creator.runs}</p>
+        <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-3 dark:bg-white/[0.05]">
+          <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${textSecondary}`}>Runs</p>
+          <p className="mt-1 text-lg font-black text-[var(--landing-ink)]">{creator.runs}</p>
         </div>
-        <div className={`rounded-lg border p-3 ${isDarkMode ? 'border-[#2A2A2D] bg-[#2A2A2D]' : 'border-slate-100 bg-slate-50'}`}>
-          <p className={`text-[10px] font-semibold uppercase tracking-wider ${textSecondary}`}>Flows</p>
-          <p className={`mt-1 text-lg font-bold ${textPrimary}`}>{creator.automations}</p>
+        <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-3 dark:bg-white/[0.05]">
+          <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${textSecondary}`}>Flows</p>
+          <p className="mt-1 text-lg font-black text-[var(--landing-ink)]">{creator.automations}</p>
         </div>
       </div>
 
-      <div className={`mt-auto pt-4 border-t ${isDarkMode ? 'border-[#2A2A2D]' : 'border-slate-100'}`}>
-        <p className={`text-[10px] font-semibold uppercase tracking-wider ${textSecondary}`}>Top Automation</p>
-        <p className={`mt-1 line-clamp-1 text-sm font-medium ${textPrimary}`}>
+      <div className="mt-auto border-t border-[var(--landing-border)] pt-4">
+        <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${textSecondary}`}>Top Automation</p>
+        <p className="mt-1 line-clamp-1 text-sm font-bold text-[var(--landing-ink)]">
           {creator.topAutomation?.name || 'No automation yet'}
         </p>
       </div>
@@ -148,60 +146,60 @@ export default function LeaderboardPage() {
     ));
   }, [creators, query]);
 
-  if (!mounted) return <div className="min-h-screen bg-[#F8FAFC]" />;
-
-  const bgClass = isDarkMode ? "bg-[#09090B]" : "bg-[#F8FAFC]";
-  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
-  const textSecondary = isDarkMode ? "text-slate-400" : "text-slate-500";
-  const searchBg = isDarkMode ? "bg-[#1C1C1E] border-[#2A2A2D] text-white placeholder-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400";
+  if (!mounted) return <div className="min-h-screen bg-[var(--landing-cream)]" />;
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${bgClass}`}>
+    <AdaptiveBackground variant="content" className="pt-16" showPattern>
       <main
-        className="px-5 py-12 transition-[padding] duration-300 sm:px-8"
+        className="min-h-screen px-5 py-10 transition-[padding] duration-300 sm:px-6 sm:py-12"
         style={{ paddingLeft: sidebarOffset }}
       >
         <div className="mx-auto max-w-6xl">
-          {/* Header */}
-          <div className="mb-10">
-            <h1 className={`text-3xl font-bold sm:text-4xl ${textPrimary}`}>
-              Leaderboard
-            </h1>
-            <p className={`mt-3 max-w-2xl text-base ${textSecondary}`}>
-              The top developers building automations on ModelGrow.
-            </p>
-          </div>
-
-          {/* Search Bar */}
-          <div className="mb-10">
-            <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500 ${searchBg}`}>
-              <Search className="h-5 w-5 opacity-50" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search creators..."
-                className="w-full bg-transparent text-sm font-medium outline-none"
-              />
+          <div className="community-surface rounded-[2rem] p-6 sm:p-7">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white/35 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[var(--landing-muted)] dark:bg-white/[0.06]">
+                  <Sparkles className="h-3.5 w-3.5 text-[var(--landing-accent)]" />
+                  Creator leaderboard
+                </div>
+                <h1 className="text-3xl font-black leading-tight text-[var(--landing-ink)] sm:text-4xl">
+                  See who is actually shipping the best automations.
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[var(--landing-muted)] sm:text-base">
+                  Rankings are based on published flows, total runs, and overall usage momentum across the marketplace.
+                </p>
+              </div>
+              <div className="landing-card-soft flex w-full max-w-md items-center gap-3 rounded-2xl px-4 py-3">
+                <Search className="h-5 w-5 text-[var(--landing-muted)]" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search creators..."
+                  className="w-full bg-transparent text-sm font-bold text-[var(--landing-ink)] outline-none placeholder:text-[var(--landing-muted)]"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Results */}
-          <div>
+          <div className="mt-10">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className={`text-xl font-bold ${textPrimary}`}>Rankings</h2>
-              <span className={`text-sm ${textSecondary}`}>{filteredCreators.length} creators</span>
+              <h2 className="flex items-center gap-2 text-xl font-black text-[var(--landing-ink)]">
+                <Trophy className="h-5 w-5 text-[var(--landing-accent-3)]" />
+                Rankings
+              </h2>
+              <span className="text-sm font-bold text-[var(--landing-muted)]">{filteredCreators.length} creators</span>
             </div>
 
             {loading ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className={`h-48 animate-pulse rounded-xl border ${isDarkMode ? 'border-[#2A2A2D] bg-[#1C1C1E]' : 'border-slate-200 bg-slate-100'}`} />
+                  <div key={i} className="community-surface h-48 animate-pulse rounded-[1.75rem]" />
                 ))}
               </div>
             ) : filteredCreators.length === 0 ? (
-              <div className={`rounded-xl border py-20 text-center ${isDarkMode ? 'border-[#2A2A2D] bg-[#1C1C1E]' : 'border-slate-200 bg-white'}`}>
-                <p className={`text-lg font-semibold ${textPrimary}`}>No creators found</p>
-                <p className={`mt-2 text-sm ${textSecondary}`}>Try adjusting your search.</p>
+              <div className="community-surface rounded-[1.75rem] py-20 text-center">
+                <p className="text-lg font-black text-[var(--landing-ink)]">No creators found</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--landing-muted)]">Try adjusting your search.</p>
               </div>
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -209,8 +207,7 @@ export default function LeaderboardPage() {
                   <CreatorCard 
                     key={creator.email} 
                     creator={creator} 
-                    rank={index + 1} 
-                    isDarkMode={isDarkMode}
+                    rank={index + 1}
                   />
                 ))}
               </div>
@@ -218,6 +215,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
       </main>
-    </div>
+    </AdaptiveBackground>
   );
 }

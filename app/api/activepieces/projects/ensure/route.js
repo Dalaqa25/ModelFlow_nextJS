@@ -31,7 +31,9 @@ export async function POST() {
       workspace: {
         status: link.status,
         email: link.activepieces_email,
-        projectId: link.activepieces_project_id,
+        projectId: link.activepieces_builder_project_id || link.activepieces_project_id,
+        builderProjectId: link.activepieces_builder_project_id || link.activepieces_project_id,
+        runtimeProjectId: link.activepieces_runtime_project_id || null,
         role: link.activepieces_role,
         authManaged: link.metadata?.auth_managed !== false,
         linkedFrom: link.metadata?.linked_from || null,
@@ -41,7 +43,7 @@ export async function POST() {
   } catch (error) {
     console.error('[Activepieces Ensure User] Error:', error);
     return NextResponse.json({
-      error: error.message || 'Failed to ensure Activepieces user/project',
+      error: error.message || 'Failed to prepare ModelGrow Builder workspace',
     }, { status: 500 });
   }
 }

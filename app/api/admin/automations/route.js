@@ -10,8 +10,14 @@ function isAdminEmail(email) {
 }
 
 function normalizeStatus(value) {
-  if (value === 'active' || value === 'pending') return value;
+  if (value === 'active' || value === 'pending' || value === 'rejected') return value;
   return 'all';
+}
+
+function getReviewStatus(automation) {
+  if (automation?.workflow?.review_status === 'rejected') return 'rejected';
+  if (automation?.is_active) return 'active';
+  return 'pending';
 }
 
 export async function GET(request) {
@@ -46,22 +52,26 @@ export async function GET(request) {
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (status === 'active') {
-      query = query.eq('is_active', true);
-    } else if (status === 'pending') {
-      query = query.eq('is_active', false);
-    }
-
     const { data, error } = await query;
     if (error) throw error;
 
-    const automations = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
+    const synced = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
+    const automationsWithStatus = synced.map((automation) => ({
+      ...automation,
+      review_status: getReviewStatus(automation),
+    }));
+    const automations = automationsWithStatus.filter((automation) => {
+      if (status === 'all') return true;
+      return automation.review_status === status;
+    });
+
     return NextResponse.json({
       automations,
       counts: {
-        total: automations.length,
-        active: automations.filter((automation) => automation.is_active).length,
-        pending: automations.filter((automation) => !automation.is_active).length,
+        total: automationsWithStatus.length,
+        active: automationsWithStatus.filter((automation) => automation.review_status === 'active').length,
+        pending: automationsWithStatus.filter((automation) => automation.review_status === 'pending').length,
+        rejected: automationsWithStatus.filter((automation) => automation.review_status === 'rejected').length,
       },
     });
   } catch (error) {

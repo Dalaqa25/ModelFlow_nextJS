@@ -2,13 +2,16 @@
 
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useEffect, useRef, useCallback } from 'react';
+import CursorReactiveGrid from './CursorReactiveGrid';
 
 export default function UnifiedBackground({
   variant = 'default',
   children,
   className = '',
   showParticles = false,
-  showFloatingElements = true
+  showFloatingElements = true,
+  showPattern = false,
+  showReactiveGrid = false,
 }) {
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
@@ -38,70 +41,66 @@ export default function UnifiedBackground({
     }
   }, [handleMouseMove, showFloatingElements]);
 
-  // Different background variants
-  const backgroundVariants = {
-    // Landing page - lighter glassy look
-    landing: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-800 to-slate-800 overflow-hidden relative",
-
-    // Default lighter theme for most pages
-    default: "min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-indigo-900 overflow-hidden relative",
-
-    // Auth pages - lighter and more inviting
-    auth: "min-h-screen bg-gradient-to-br from-slate-700 via-purple-700 to-slate-800 overflow-hidden relative",
-
-    // Content pages - more balanced purple/blue, less pink
-    content: "min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-indigo-900 overflow-hidden relative"
-  };
-
-  const backgroundClass = backgroundVariants[variant] || backgroundVariants.default;
+  const isLandingVariant = variant === 'landing';
+  const shellClass = `${isLandingVariant ? 'landing-shell' : ''} relative min-h-screen overflow-hidden`;
+  const shouldShowPattern = showPattern || variant === 'content';
+  const leftBlobOpacity = isLandingVariant ? '0.24' : '0.14';
+  const rightBlobOpacity = isLandingVariant ? '0.30' : '0.20';
 
   return (
-    <div ref={containerRef} className={`${backgroundClass} ${className}`}>
-      {/* Animated background elements - adjusted for each variant */}
-      <div className="absolute inset-0">
-        {variant === 'landing' ? (
-          // Lighter landing page background elements
-          <>
-            <motion.div
-              style={{
-                x: useTransform(mouseX, [-0.5, 0.5], [-3, 3]),
-                y: useTransform(mouseY, [-0.5, 0.5], [-2, 2]),
-              }}
-              className="absolute top-20 left-20 w-72 h-72 bg-purple-500/25 rounded-full blur-3xl"
-            />
-            <motion.div
-              style={{
-                x: useTransform(mouseX, [-0.5, 0.5], [4, -4]),
-                y: useTransform(mouseY, [-0.5, 0.5], [2, -2]),
-              }}
-              className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/25 rounded-full blur-3xl"
-            />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-purple-500/15 to-transparent rounded-full" />
-          </>
-        ) : (
-          // Subtle background elements for other pages
-          <>
-            <motion.div
-              style={showFloatingElements ? {
-                x: useTransform(mouseX, [-0.5, 0.5], [-2, 2]),
-                y: useTransform(mouseY, [-0.5, 0.5], [-1, 1]),
-              } : {}}
-              className="absolute top-20 left-20 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl"
-            />
-            <motion.div
-              style={showFloatingElements ? {
-                x: useTransform(mouseX, [-0.5, 0.5], [2, -2]),
-                y: useTransform(mouseY, [-0.5, 0.5], [1, -1]),
-              } : {}}
-              className="absolute bottom-20 right-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl"
-            />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-purple-500/8 to-transparent rounded-full" />
-          </>
-        )}
+    <div ref={containerRef} className={`${shellClass} ${className}`}>
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          style={showFloatingElements ? {
+            x: useTransform(mouseX, [-0.5, 0.5], [-6, 6]),
+            y: useTransform(mouseY, [-0.5, 0.5], [-4, 4]),
+          } : {}}
+          className="decorative-blob"
+          aria-hidden="true"
+        >
+          <div
+            className="h-[520px] w-[520px] rounded-full"
+            style={{
+              opacity: leftBlobOpacity,
+              background: 'radial-gradient(circle, rgba(199,125,255,0.24) 0%, transparent 70%)',
+              transform: 'translate(-28%, -28%)',
+            }}
+          />
+        </motion.div>
+        <motion.div
+          style={showFloatingElements ? {
+            x: useTransform(mouseX, [-0.5, 0.5], [8, -8]),
+            y: useTransform(mouseY, [-0.5, 0.5], [5, -5]),
+          } : {}}
+          className="decorative-blob absolute right-0 top-0"
+          aria-hidden="true"
+        >
+          <div
+            className="h-[560px] w-[560px] rounded-full"
+            style={{
+              opacity: rightBlobOpacity,
+              background: 'radial-gradient(circle, rgba(93,88,255,0.24) 0%, transparent 70%)',
+              transform: 'translate(24%, -16%)',
+            }}
+          />
+        </motion.div>
+        <div
+          className="decorative-blob absolute left-1/2 top-[44%] h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2"
+          aria-hidden="true"
+          style={{
+            opacity: isLandingVariant ? 0.18 : 0.12,
+            background: 'radial-gradient(circle, rgba(244,243,255,0.14) 0%, transparent 72%)',
+          }}
+        />
       </div>
 
-      {/* Floating particles - only for landing page */}
-      {showParticles && variant === 'landing' && (
+      {shouldShowPattern && (
+        <div className="landing-pattern absolute inset-0" aria-hidden="true" />
+      )}
+
+      <CursorReactiveGrid enabled={showReactiveGrid && variant === 'content'} theme="dark" />
+
+      {showParticles && isLandingVariant && (
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(30)].map((_, i) => (
             <motion.div

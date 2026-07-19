@@ -24,7 +24,7 @@ async function requireAdmin() {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
   if (!isActivepiecesConfigured()) {
-    return { error: NextResponse.json({ error: 'Activepieces is not configured' }, { status: 500 }) };
+    return { error: NextResponse.json({ error: 'ModelGrow Builder is not configured' }, { status: 500 }) };
   }
   return { user };
 }
@@ -157,6 +157,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error('[Activepieces Backfill POST] Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to backfill Activepieces users' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to backfill builder users' }, { status: 500 });
   }
 }

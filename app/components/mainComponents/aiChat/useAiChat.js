@@ -17,6 +17,75 @@ function parseJsonList(value) {
   }
 }
 
+function hasSetupValue(value) {
+  return value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
+}
+
+function normalizeSetupLookupKey(value) {
+  return String(value || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+}
+
+function getSetupInputCandidates(input) {
+  if (typeof input === 'string') return [input];
+
+  const candidates = [
+    input?.name,
+    input?.fieldKey,
+    input?.propName,
+    input?.label,
+  ];
+
+  for (const candidate of [...candidates]) {
+    if (!candidate) continue;
+    const parts = String(candidate).split('.');
+    if (parts.length > 1) candidates.push(parts.at(-1));
+  }
+
+  return candidates.filter(Boolean);
+}
+
+function hasCollectedSetupValue(config, input) {
+  if (!config || typeof config !== 'object') return false;
+
+  const exactConfig = {};
+  const normalizedConfig = {};
+  for (const [key, value] of Object.entries(config)) {
+    exactConfig[String(key).toUpperCase()] = value;
+    normalizedConfig[normalizeSetupLookupKey(key)] = value;
+  }
+
+  return getSetupInputCandidates(input).some(candidate => {
+    const exactKey = String(candidate).toUpperCase();
+    if (Object.prototype.hasOwnProperty.call(exactConfig, exactKey)) {
+      return hasSetupValue(exactConfig[exactKey]);
+    }
+
+    const normalizedKey = normalizeSetupLookupKey(candidate);
+    if (Object.prototype.hasOwnProperty.call(normalizedConfig, normalizedKey)) {
+      return hasSetupValue(normalizedConfig[normalizedKey]);
+    }
+
+    return false;
+  });
+}
+
+function getSetupInputDisplayName(input) {
+  return String(
+    typeof input === 'string'
+      ? input
+      : input?.fieldKey || input?.name || input?.propName || input?.label || ''
+  );
+}
+
+function formatSetupContextValue(value) {
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value);
+  } catch (_) {
+    return String(value);
+  }
+}
+
 function normalizeSetupConnector(connector) {
   const raw = String(connector || '').trim();
   if (!raw || /^step_\d+$/i.test(raw)) return '';
@@ -63,16 +132,95 @@ function extractSelectedAutomationId(message) {
   return named?.[1] || null;
 }
 
+function getMessageFingerprint(message) {
+  const setupAutomationId = message?.setupWidget?.automationId || '';
+  const connectProvider = message?.connectRequest?.provider || '';
+  const configAutomationId = message?.configRequest?.automation_id || '';
+  const backgroundAutomationId = message?.backgroundActivationPrompt?.automation_id || '';
+  const runtimeAutomationId = message?.runtimeStatus?.automation_id || '';
+  const videoPreviewUrl = message?.videoPreview?.preview_url || '';
+  const content = String(message?.content || '').trim();
+
+  return [
+    message?.role || '',
+    content,
+    setupAutomationId,
+    connectProvider,
+    configAutomationId,
+    backgroundAutomationId,
+    runtimeAutomationId,
+    videoPreviewUrl,
+  ].join('::');
+}
+
+function mergeLoadedMessages(existingMessages, loadedMessages) {
+  if (!Array.isArray(existingMessages) || existingMessages.length === 0) {
+    return loadedMessages;
+  }
+  if (!Array.isArray(loadedMessages) || loadedMessages.length === 0) {
+    return existingMessages;
+  }
+
+  const merged = [...existingMessages];
+  const seen = new Set(existingMessages.map(getMessageFingerprint));
+
+  for (const message of loadedMessages) {
+    const fingerprint = getMessageFingerprint(message);
+    if (!seen.has(fingerprint)) {
+      merged.push(message);
+      seen.add(fingerprint);
+    }
+  }
+
+  return merged.sort((a, b) => {
+    const aTime = new Date(a?.timestamp || 0).getTime();
+    const bTime = new Date(b?.timestamp || 0).getTime();
+    return aTime - bTime;
+  });
+}
+
 export function useAiChat({ onLoadingChange, initialConversationId, onRequireAuth, onConversationChange }) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [messages, setMessages] = useState([]);
-  const [conversationSummary, setConversationSummary] = useState(null);
+  const messagesRef = useRef([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentAiMessageId, setCurrentAiMessageId] = useState(null);
   const [selectedAutomation, setSelectedAutomation] = useState(null);
   const [automationContext, setAutomationContext] = useState(null);
   const [setupState, setSetupState] = useState(null);
   const setupStateRef = useRef(null);
+  const setupIntroStartedRef = useRef(new Set());
   const [lastFileSearchResults, setLastFileSearchResults] = useState(null);
+  const codexSessionIdRef = useRef(null);
+  const codexBoundConversationIdRef = useRef(initialConversationId || null);
+
+  useEffect(() => {
+    const nextConversationId = initialConversationId || null;
+    if (!codexSessionIdRef.current || codexBoundConversationIdRef.current !== nextConversationId) {
+      codexSessionIdRef.current = globalThis.crypto?.randomUUID?.()
+        || `codex-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      codexBoundConversationIdRef.current = nextConversationId;
+    }
+
+    const controller = new AbortController();
+    fetch('/api/ai/warm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      signal: controller.signal,
+      body: JSON.stringify({ sessionId: codexSessionIdRef.current }),
+    }).catch(error => {
+      if (error.name !== 'AbortError') {
+        console.debug('[AI] Codex prewarm skipped:', error.message);
+      }
+    });
+
+    return () => controller.abort();
+  }, [initialConversationId]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     setupStateRef.current = setupState;
@@ -82,21 +230,25 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
   const [currentConversationId, setCurrentConversationId] = useState(initialConversationId || null);
   const [userId, setUserId] = useState(null);
   const hasLoadedInitial = useRef(false);
+  const optimisticConversationIdRef = useRef(null);
 
   // Load existing conversation messages
   useEffect(() => {
     async function loadConversation() {
       if (!initialConversationId) return;
       if (hasLoadedInitial.current && currentConversationId === initialConversationId) return;
+      const isSameConversationReload =
+        currentConversationId === initialConversationId ||
+        optimisticConversationIdRef.current === initialConversationId;
 
       // FIX: Set userId when loading existing conversations so AI responses get saved to DB
-      const supabase = createBrowserSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
       }
 
       setCurrentConversationId(initialConversationId);
+      codexBoundConversationIdRef.current = initialConversationId;
       onConversationChange?.(initialConversationId);
       hasLoadedInitial.current = true;
       setIsLoading(true);
@@ -119,17 +271,27 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
             connectRequest: msg.metadata?.connectRequest || null,
             configRequest: msg.metadata?.configRequest || null,
             backgroundActivationPrompt: msg.metadata?.backgroundActivationPrompt || null,
+            runtimeStatus: msg.metadata?.runtimeStatus || null,
             videoPreview: msg.metadata?.videoPreview || null,
             automationInstances: msg.metadata?.automationInstances || null,
           }));
-          setMessages(formattedMessages);
+          setMessages(prev => (
+            isSameConversationReload
+              ? mergeLoadedMessages(prev, formattedMessages)
+              : formattedMessages
+          ));
+          if (optimisticConversationIdRef.current === initialConversationId) {
+            optimisticConversationIdRef.current = null;
+          }
 
           const lastMessage = formattedMessages[formattedMessages.length - 1];
           const recoveryAutomationId = lastMessage?.role === 'user'
             ? extractSelectedAutomationId(lastMessage)
             : null;
           const alreadyHasSetupWidget = recoveryAutomationId
-            ? formattedMessages.some(message => message.setupWidget?.automationId === recoveryAutomationId)
+            ? [...formattedMessages, ...messagesRef.current].some(
+                (message) => message.setupWidget?.automationId === recoveryAutomationId
+              )
             : false;
 
           if (recoveryAutomationId && !alreadyHasSetupWidget) {
@@ -142,7 +304,7 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
               if (automation?.id) {
                 const setupWidget = buildSetupWidget(automation);
                 const assistantMessage = {
-                  id: `setup-widget-recovery-${Date.now()}`,
+                  id: `setup-widget-${automation.id}`,
                   role: 'assistant',
                   content: "Let's review this workflow before we touch your accounts.",
                   setupWidget,
@@ -215,17 +377,21 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
     if (setupState && setupState.automationId) {
       const requiredFields = setupState.requiredFields || [];
       const collectedFields = setupState.collectedFields || {};
-      const remaining = requiredFields.filter(f => !collectedFields[f.name || f]);
-      const collectedEntries = Object.entries(collectedFields);
+      const collectedConfig = setupState.collectedConfig || {};
+      const combinedCollectedConfig = {
+        ...collectedConfig,
+        ...collectedFields,
+      };
+      const remaining = requiredFields.filter(f => !hasCollectedSetupValue(combinedCollectedConfig, f));
+      const collectedEntries = Object.entries(combinedCollectedConfig);
       const collectedStr = collectedEntries.length > 0
-        ? collectedEntries.map(([k, v]) => `${k}="${v}"`).join(', ')
+        ? collectedEntries.map(([k, v]) => `${k}="${formatSetupContextValue(v)}"`).join(', ')
         : 'none yet';
       const remainingStr = remaining.length > 0
-        ? remaining.map(f => f.name || f).join(', ')
+        ? remaining.map(getSetupInputDisplayName).join(', ')
         : (setupState.missingFields?.length > 0 ? setupState.missingFields.join(', ') : 'NONE - all fields collected, ready to execute');
 
       // Include collected config as JSON for AI to pass to collect_text_input
-      const collectedConfig = setupState.collectedConfig || {};
       const configJson = Object.keys(collectedConfig).length > 0
         ? JSON.stringify(collectedConfig)
         : '{}';
@@ -310,7 +476,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           
           const stillMissing = missingFields.filter(fieldName => {
             const currentCollected = currentSetupState.collectedFields || {};
-            return !currentCollected[fieldName];
+            return !hasSetupValue(currentCollected[fieldName]);
           });
 
           // Check both field_collected AND existing_config (which collect_text_input also emits)
@@ -358,6 +524,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
         if (persistConversationId && persistUserId && currentAiMessageContentRef.current) {
           try {
+            await persistence.beforeAssistantSave;
             await fetch('/api/conversations/' + persistConversationId + '/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -400,7 +567,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   };
 
   const ensureConversation = useCallback(async ({ relatedAutomationId } = {}) => {
-    const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -425,7 +591,9 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
       const conversation = await response.json();
       conversationId = conversation.id;
+      optimisticConversationIdRef.current = conversationId;
       setCurrentConversationId(conversationId);
+      codexBoundConversationIdRef.current = conversationId;
       onConversationChange?.(conversationId);
     } else if (relatedAutomationId) {
       fetch(`/api/conversations/${conversationId}`, {
@@ -441,43 +609,30 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
   const startAutomationSetupIntro = useCallback(async (automation) => {
     if (!automation?.id || isLoading) return;
+    if (setupIntroStartedRef.current.has(automation.id)) return;
+
+    setupIntroStartedRef.current.add(automation.id);
+    const widget = buildSetupWidget(automation);
+    const assistantMessage = {
+      id: `setup-widget-${automation.id}`,
+      role: 'assistant',
+      content: "Let's review this workflow before we touch your accounts.",
+      setupWidget: widget,
+      timestamp: new Date().toISOString(),
+    };
+
+    setSelectedAutomation(automation);
+    setMessages(prev => (
+      prev.some((message) => message.setupWidget?.automationId === automation.id)
+        ? prev
+        : [...prev, assistantMessage]
+    ));
+    setIsLoading(false);
+    onLoadingChange?.(false);
 
     try {
       const auth = await ensureConversation({ relatedAutomationId: automation.id });
       if (!auth) return;
-
-      const widget = buildSetupWidget(automation);
-      const hiddenContext = `\n\n[Selected automation UUID: ${automation.id}]\n[automation_id="${automation.id}", automation_name="${automation.name}"]`;
-      const userMessage = {
-        id: `setup-user-${Date.now()}`,
-        role: 'user',
-        content: `I want to set up the "${automation.name}" automation`,
-        hiddenContext,
-        timestamp: new Date().toISOString(),
-      };
-      const assistantMessage = {
-        id: `setup-widget-${Date.now()}`,
-        role: 'assistant',
-        content: "Let's review this workflow before we touch your accounts.",
-        setupWidget: widget,
-        timestamp: new Date().toISOString(),
-      };
-
-      setSelectedAutomation(automation);
-      setMessages(prev => [...prev, userMessage, assistantMessage]);
-      setIsLoading(false);
-      onLoadingChange?.(false);
-
-      await fetch('/api/conversations/' + auth.conversationId + '/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          role: 'user',
-          content: userMessage.content,
-          metadata: { hiddenContext }
-        })
-      });
 
       await fetch('/api/conversations/' + auth.conversationId + '/messages', {
         method: 'POST',
@@ -499,7 +654,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     if (!messageText.trim() || isLoading) return;
 
     // Get or create conversation
-    const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     // Only block if we need to persist (create conversation) — for unauthed users
@@ -511,6 +665,32 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     if (isAuthed) {
       setUserId(user.id);
     }
+
+    // Render both sides of the conversation before any persistence work. Creating
+    // a conversation and saving its first message can take over a second, and the
+    // user should see progress during that time instead of an empty chat surface.
+    const userMessage = {
+      role: 'user',
+      content: messageText,
+      hiddenContext: extraContext,
+      timestamp: new Date().toISOString(),
+    };
+    const aiMessageId = Date.now();
+    const aiMessage = {
+      id: aiMessageId,
+      role: 'assistant',
+      content: '',
+      isThinking: true,
+      automations: null,
+      connectRequest: null,
+      configRequest: null,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, userMessage, aiMessage]);
+    setCurrentAiMessageId(aiMessageId);
+    setIsLoading(true);
+    if (onLoadingChange) onLoadingChange(true);
 
     // Create conversation if this is the first message (and user is signed in)
     let conversationId = currentConversationId;
@@ -528,6 +708,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           const conversation = await response.json();
           conversationId = conversation.id;
           setCurrentConversationId(conversationId);
+          codexBoundConversationIdRef.current = conversationId;
           onConversationChange?.(conversationId);
           setUserId(user.id);
         }
@@ -536,23 +717,11 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
     }
 
-    // CRITICAL FIX: Save extraContext as hiddenContext so it persists in conversation history
-    const userMessage = {
-      role: 'user',
-      content: messageText,
-      hiddenContext: extraContext,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Update state with new message
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
-    if (onLoadingChange) onLoadingChange(true);
-
-    // Save user message to DB only when authenticated
+    // Save the user message alongside the AI request. processStream waits for this
+    // promise before saving the assistant message, preserving database ordering.
+    let userMessageSavePromise = Promise.resolve();
     if (isAuthed && conversationId) {
-      try {
-        await fetch('/api/conversations/' + conversationId + '/messages', {
+      userMessageSavePromise = fetch('/api/conversations/' + conversationId + '/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -563,24 +732,14 @@ IMPORTANT: When calling collect_text_input, you MUST include:
               hiddenContext: extraContext || undefined // Save hidden context in metadata
             }
           })
-        });
-      } catch (error) {
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to save user message (${response.status})`);
+        })
+        .catch(error => {
         console.error('Failed to save user message:', error);
-      }
+        });
     }
-
-    const aiMessageId = Date.now();
-    const aiMessage = {
-      id: aiMessageId,
-      role: 'assistant',
-      content: '',
-      automations: null,
-      connectRequest: null,
-      configRequest: null,
-      timestamp: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, aiMessage]);
-    setCurrentAiMessageId(aiMessageId);
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -605,50 +764,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         conversationHistory[conversationHistory.length - 1].content += contextInfo;
       }
 
-      // Summarize if needed
-      if (conversationHistory.length >= 10 && conversationHistory.length % 10 === 0) {
-        try {
-          const summaryResponse = await fetch('/api/ai/stream', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              messages: [
-                { role: 'system', content: 'Summarize this conversation in 2-3 sentences.' },
-                ...conversationHistory.slice(0, -5)
-              ],
-              temperature: 0.3,
-            }),
-          });
-          if (summaryResponse.ok) {
-            const reader = summaryResponse.body.getReader();
-            const decoder = new TextDecoder();
-            let summary = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value);
-              for (const line of chunk.split('\n')) {
-                if (line.startsWith('data: ') && line.slice(6) !== '[DONE]') {
-                  try {
-                    const parsed = JSON.parse(line.slice(6));
-                    if (parsed.content) summary += parsed.content;
-                  } catch (e) { }
-                }
-              }
-            }
-            setConversationSummary(summary);
-          }
-        } catch (e) { }
-      }
-
-      // Trim history
-      // FIX: Increased from 15 to 30 — the old limit was far too aggressive
-      // and caused the AI to lose context mid-conversation
-      if (conversationHistory.length > 30) {
-        conversationHistory = conversationSummary
-          ? [{ role: 'system', content: `Previous conversation summary: ${conversationSummary}` }, ...conversationHistory.slice(-25)]
-          : conversationHistory.slice(-25);
+      // The backend receives authoritative setup state separately and Codex uses
+      // only the latest eight conversational turns. Avoid a second AI request just
+      // to summarize history; it delayed every tenth message without improving
+      // action selection.
+      if (conversationHistory.length > 12) {
+        conversationHistory = conversationHistory.slice(-12);
       }
 
       const response = await fetch('/api/ai/stream', {
@@ -660,6 +781,8 @@ IMPORTANT: When calling collect_text_input, you MUST include:
           messages: conversationHistory, 
           temperature: 0.7, 
           maxTokens: 2000,
+          conversationId,
+          codexSessionId: codexSessionIdRef.current,
           frontendSetupState: setupStateRef.current
         }),
       });
@@ -677,6 +800,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       await processStream(response, aiMessageId, messageText, {
         conversationId,
         userId: user?.id || userId,
+        beforeAssistantSave: userMessageSavePromise,
       });
 
     } catch (error) {
@@ -686,7 +810,11 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
       if (error.name !== 'AbortError') {
         setMessages(prev =>
-          prev.map(msg => msg.id === aiMessageId ? { ...msg, content: `❌ ${error.message}` } : msg)
+          prev.map(msg => msg.id === aiMessageId ? { ...msg, content: `❌ ${error.message}`, isThinking: false } : msg)
+        );
+      } else {
+        setMessages(prev =>
+          prev.map(msg => msg.id === aiMessageId ? { ...msg, isThinking: false } : msg)
         );
       }
       setIsLoading(false);
@@ -701,7 +829,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     isLoading,
     onLoadingChange,
     buildContextInfo,
-    conversationSummary,
     currentConversationId,
     selectedAutomation,
     userId,
@@ -715,14 +842,18 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === currentAiMessageId ? { ...msg, isThinking: false } : msg
+      )
+    );
     setIsLoading(false);
     if (onLoadingChange) onLoadingChange(false);
     setCurrentAiMessageId(null);
-  }, [onLoadingChange]);
+  }, [currentAiMessageId, onLoadingChange]);
 
   const handleAutomationSelect = useCallback(async (automation) => {
     // Require auth before running any automation
-    const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       if (onRequireAuth) onRequireAuth();
@@ -744,6 +875,7 @@ IMPORTANT: When calling collect_text_input, you MUST include:
   const handleConnectionComplete = useCallback((provider) => {
     // Build context with collected fields to preserve state after OAuth
     let contextStr = '';
+    const escapeMarkerValue = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
     if (setupState) {
       const collectedConfig = setupState.collectedConfig || {};
@@ -752,10 +884,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         contextStr += `\n[IMPORTANT: These fields were already collected BEFORE OAuth. Do NOT ask for them again!]`;
       }
       if (setupState.automationId) {
+        contextStr += `\n[ACTIVEPIECES_CONNECTION_COMPLETED automation_id="${escapeMarkerValue(setupState.automationId)}", automation_name="${escapeMarkerValue(setupState.automationName)}", provider="${escapeMarkerValue(provider)}"]`;
         contextStr += `\n[automation_id: ${setupState.automationId}, automation_name: "${setupState.automationName}"]`;
       }
     } else if (selectedAutomation) {
-      contextStr += `\n\n[Selected automation UUID: ${selectedAutomation.id}]`;
+      contextStr += `\n\n[ACTIVEPIECES_CONNECTION_COMPLETED automation_id="${escapeMarkerValue(selectedAutomation.id)}", automation_name="${escapeMarkerValue(selectedAutomation.name)}", provider="${escapeMarkerValue(provider)}"]`;
+      contextStr += `\n[Selected automation UUID: ${selectedAutomation.id}]`;
     }
 
     const message = setupState
@@ -767,31 +901,53 @@ IMPORTANT: When calling collect_text_input, you MUST include:
     sendMessage(message, contextStr);
   }, [selectedAutomation, setupState, sendMessage]);
 
-  const handleConfigSubmit = useCallback(async (configData, automationId) => {
+  const handleConfigSubmit = useCallback(async (configData, automationId, meta = {}) => {
     // Require auth before executing
-    const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       if (onRequireAuth) onRequireAuth();
       return;
     }
-    try {
-      const response = await fetch('/api/automations/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ automation_id: automationId, config: configData })
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        sendMessage(`Failed to start automation: ${result.error || 'Unknown error'}`);
-        return;
-      }
-      let successMessage = `Automation executed successfully!\n\n`;
-      if (result.result) successMessage += `Results:\n${JSON.stringify(result.result, null, 2)}`;
-      sendMessage(successMessage);
-    } catch (error) {
-      sendMessage(`Failed to start automation: ${error.message}`);
-    }
+
+    const normalizeKey = (key) => String(key || '').toUpperCase();
+    const submittedConfig = Object.entries(configData || {}).reduce((acc, [key, value]) => {
+      acc[normalizeKey(key)] = value;
+      return acc;
+    }, {});
+
+    const activeSetup = setupStateRef.current || {};
+    const mergedConfig = {
+      ...(activeSetup.collectedConfig || {}),
+      ...submittedConfig
+    };
+    const requiredFields = meta.requiredInputs || activeSetup.requiredFields || [];
+    const missingFields = requiredFields
+      .map(field => normalizeKey(typeof field === 'string' ? field : field?.name))
+      .filter(fieldName => fieldName && !hasSetupValue(mergedConfig[fieldName]));
+
+    const nextSetupState = {
+      ...activeSetup,
+      automationId: automationId || activeSetup.automationId,
+      automationName: meta.automationName || activeSetup.automationName,
+      requiredFields,
+      collectedFields: {
+        ...(activeSetup.collectedFields || {}),
+        ...submittedConfig
+      },
+      collectedConfig: mergedConfig,
+      missingFields,
+      isAwaitingInput: missingFields.length > 0
+    };
+
+    setupStateRef.current = nextSetupState;
+    setSetupState(nextSetupState);
+
+    const configJson = JSON.stringify(mergedConfig);
+    const automationName = nextSetupState.automationName || 'this automation';
+    sendMessage(
+      `I filled the setup details for "${automationName}". Continue setup.`,
+      `\n\n[CONFIG_FORM_SUBMITTED automation_id="${nextSetupState.automationId}", automation_name="${automationName}"]\nexisting_config=${configJson}`
+    );
   }, [sendMessage, onRequireAuth]);
 
   const handleBackgroundActivate = useCallback(async (automationId, config) => {
@@ -803,7 +959,6 @@ IMPORTANT: When calling collect_text_input, you MUST include:
 
     try {
       // Get auth session from Supabase
-      const supabase = createBrowserSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {

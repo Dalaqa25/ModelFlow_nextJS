@@ -2,6 +2,15 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 export async function middleware(request) {
+  const pathname = request.nextUrl.pathname;
+
+  // API routes authenticate inside their own handlers. Running the Supabase
+  // browser-session refresh middleware for API requests can rewrite cookies
+  // and repeatedly re-dispatch the same request in development.
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -32,8 +41,7 @@ export async function middleware(request) {
 
   // Get the current pathname
   const url = request.nextUrl.clone();
-  const pathname = url.pathname;
-  
+
   // Get user session for route protection checks
   let user = null;
   
@@ -45,11 +53,6 @@ export async function middleware(request) {
       pathname.startsWith('/main')) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
-  }
-
-  // Skip auth logic entirely for API routes to prevent breaking API handlers
-  if (pathname.startsWith('/api/')) {
-    return supabaseResponse;
   }
 
   // If user is authenticated and trying to access auth routes, redirect to main
@@ -84,6 +87,6 @@ export const config = {
      * - robots.txt (SEO robots)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api(?:/|$)|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

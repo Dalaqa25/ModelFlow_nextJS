@@ -87,7 +87,7 @@ const AiChat = forwardRef((props, ref) => {
 
   return (
     <div
-      className="w-full h-full flex flex-col relative"
+      className="relative w-full"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -130,12 +130,12 @@ const AiChat = forwardRef((props, ref) => {
       )}
 
       <div
-        className="flex-1 overflow-y-auto px-6 py-1 space-y-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        style={{ maxHeight: 'calc(100vh - 2rem)', paddingBottom: '12rem' }}
+        className="w-full px-6 py-6 space-y-10"
+        style={{ paddingBottom: '2rem' }}
       >
         {messages.filter(msg => !msg.isHidden).map((message, index) => (
           <MessageRenderer
-            key={`${message.timestamp}-${index}`}
+            key={message.id || `${message.role}-${message.timestamp}-${index}`}
             message={message}
             index={index}
             isLoading={isLoading}

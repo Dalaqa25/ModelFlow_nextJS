@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 async function getAutomationOrThrow(supabase, automationId) {
   const { data, error } = await supabase
     .from('automations')
-    .select('id, name, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
+    .select('id, name, workflow, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
     .eq('id', automationId)
     .single();
 
@@ -18,12 +18,6 @@ async function getAutomationOrThrow(supabase, automationId) {
     const notFound = new Error('Automation not found');
     notFound.status = 404;
     throw notFound;
-  }
-
-  if (!data.activepieces_source_flow_id) {
-    const invalid = new Error('Automation is not powered by Activepieces');
-    invalid.status = 400;
-    throw invalid;
   }
 
   return data;
@@ -37,7 +31,7 @@ export async function POST(request) {
     }
 
     if (!isActivepiecesConfigured()) {
-      return NextResponse.json({ error: 'Activepieces is not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'ModelGrow Builder is not configured' }, { status: 500 });
     }
 
     const body = await request.json().catch(() => ({}));
@@ -60,7 +54,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('[Activepieces Connection Start] Failed:', error);
     return NextResponse.json({
-      error: error.message || 'Failed to start Activepieces connection',
+      error: error.message || 'Failed to start app connection',
     }, { status: error.status || 500 });
   }
 }

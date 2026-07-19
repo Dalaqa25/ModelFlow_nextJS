@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { encryptKeys } from '@/lib/auth/encryption';
 import { syncActivepiecesSourceAvailability } from '@/lib/activepieces/source-sync';
+import { notifyAutomationReviewRequested } from '@/lib/email/admin-review-notifications';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -308,6 +309,14 @@ export async function POST(req) {
         { status: 500 }
       );
     }
+
+    notifyAutomationReviewRequested({
+      automation: data,
+      authorEmail: user.email,
+      source: 'JSON upload',
+    }).catch((emailError) => {
+      console.error('[POST /api/automations] Failed to send review notification email:', emailError);
+    });
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

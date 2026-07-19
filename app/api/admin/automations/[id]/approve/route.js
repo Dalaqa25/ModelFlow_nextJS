@@ -17,9 +17,34 @@ export async function POST(_request, { params }) {
 
     const { id } = await params;
     const supabase = createAdminClient();
+    const { data: existing, error: existingError } = await supabase
+      .from('automations')
+      .select('id, name, workflow')
+      .eq('id', id)
+      .single();
+
+    if (existingError || !existing) {
+      return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
+    }
+
+    if (existing.workflow?.engine === 'activepieces' && existing.workflow?.publish_test?.status !== 'passed') {
+      return NextResponse.json({
+        error: 'This automation cannot be approved until its required builder publish test passes.',
+        reason: 'missing_passed_publish_test',
+      }, { status: 409 });
+    }
+
     const { data, error } = await supabase
       .from('automations')
-      .update({ is_active: true })
+      .update({
+        is_active: true,
+        workflow: {
+          ...(existing.workflow || {}),
+          review_status: 'approved',
+          approved_by: user.email,
+          approved_at: new Date().toISOString(),
+        },
+      })
       .eq('id', id)
       .select('id, name, is_active')
       .single();

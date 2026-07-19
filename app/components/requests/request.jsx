@@ -32,10 +32,10 @@ export default function Request() {
         return (
             <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="bg-slate-800/30 border border-slate-700/20 rounded-xl p-5 animate-pulse h-[140px] flex flex-col justify-center">
-                        <div className="h-4 bg-slate-700/40 rounded w-1/2 mb-4" />
-                        <div className="h-3 bg-slate-700/30 rounded w-full mb-3" />
-                        <div className="h-3 bg-slate-700/30 rounded w-3/4" />
+                    <div key={i} className="community-surface h-[150px] animate-pulse rounded-lg p-5">
+                        <div className="mb-4 h-4 w-1/2 rounded bg-[var(--landing-border)]" />
+                        <div className="mb-3 h-3 w-full rounded bg-[var(--landing-border)]" />
+                        <div className="h-3 w-3/4 rounded bg-[var(--landing-border)]" />
                     </div>
                 ))}
             </div>
@@ -44,11 +44,11 @@ export default function Request() {
 
     if (error) {
         return (
-            <div className="col-span-1 md:col-span-2 bg-red-500/8 border border-red-500/15 rounded-xl p-8 text-center">
-                <p className="text-red-300 text-sm font-medium mb-1">{error.message}</p>
+            <div className="col-span-1 md:col-span-2 rounded-lg border border-red-500/20 bg-red-500/10 p-8 text-center">
+                <p className="text-sm font-bold text-red-400 mb-1">{error.message}</p>
                 <button
                     onClick={() => refetch()}
-                    className="text-xs text-red-400/70 hover:text-red-300 mt-2 transition-colors"
+                    className="mt-2 text-xs font-bold text-red-400 hover:text-red-300"
                 >
                     Try again
                 </button>
@@ -58,9 +58,9 @@ export default function Request() {
 
     if (requests.length === 0) {
         return (
-            <div className="col-span-1 md:col-span-2 border border-slate-700/20 border-dashed rounded-xl p-10 text-center">
-                <p className="text-slate-300 font-medium mb-1">No suggestions yet</p>
-                <p className="text-slate-500 text-sm">Be the first to suggest an automation!</p>
+            <div className="col-span-1 md:col-span-2 rounded-lg border border-dashed border-[var(--landing-border)] bg-white/20 p-10 text-center dark:bg-white/[0.03]">
+                <p className="mb-1 font-black text-[var(--landing-ink)]">No suggestions yet</p>
+                <p className="text-sm font-semibold text-[var(--landing-muted)]">Be the first to suggest an automation.</p>
             </div>
         );
     }
@@ -103,16 +103,16 @@ export default function Request() {
                 <div
                     key={req.id}
                     onClick={() => setSelectedRequestId(req.id)}
-                    className="group bg-slate-800/25 hover:bg-slate-800/45 border border-slate-700/20 hover:border-slate-600/30 rounded-xl cursor-pointer transition-all duration-200"
+                    className="community-surface group cursor-pointer rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--landing-accent-2)]/35"
                 >
                     <div className="p-4 sm:p-5">
                         {/* Title */}
-                        <h2 className="text-[15px] sm:text-base font-semibold text-white mb-1.5 group-hover:text-purple-100 transition-colors">
+                        <h2 className="text-[15px] sm:text-base font-black text-[var(--landing-ink)] mb-1.5 transition-colors">
                             {req.title}
                         </h2>
 
                         {/* Description */}
-                        <p className="text-sm text-slate-400 leading-relaxed mb-3 line-clamp-2">
+                        <p className="text-sm font-medium text-[var(--landing-muted)] leading-relaxed mb-3 line-clamp-2">
                             {req.description}
                         </p>
 
@@ -122,7 +122,7 @@ export default function Request() {
                                 {req.tags.map((tag, i) => (
                                     <span
                                         key={i}
-                                        className="text-xs text-purple-300/70 bg-purple-500/8 border border-purple-500/10 rounded-md px-2 py-0.5 font-medium"
+                                        className="rounded-md border border-[var(--landing-border)] bg-white/30 px-2 py-0.5 text-xs font-bold text-[var(--landing-accent-3)] dark:bg-white/[0.05]"
                                     >
                                         #{tag}
                                     </span>
@@ -132,23 +132,23 @@ export default function Request() {
 
                         {/* Footer: Author · Time · Comments */}
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--landing-muted)]">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                     }}
-                                    className="flex items-center gap-1.5 text-slate-500"
+                                    className="flex items-center gap-1.5 text-[var(--landing-muted)]"
                                 >
                                     <div className={`w-[18px] h-[18px] rounded-full bg-gradient-to-br ${getAvatarColor(getAvatarSeed(req))} flex items-center justify-center`}>
                                         <span className="text-[8px] font-bold text-white leading-none">{getInitial(getDisplayName(req))}</span>
                                     </div>
                                     <span className="truncate max-w-[150px]">{getDisplayName(req)}</span>
                                 </button>
-                                <span className="text-slate-600">·</span>
+                                <span className="text-[var(--landing-border)]">·</span>
                                 <span>{getTimeAgo(req.created_at)}</span>
                             </div>
 
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--landing-muted)]">
                                 <FaRegComment className="text-[11px]" />
                                 <span>{req.commentsCount || 0}</span>
                             </div>

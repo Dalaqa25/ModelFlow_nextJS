@@ -1,0 +1,38 @@
+activepieces.modelgrow.com {
+  handle /__modelgrow/runner/* {
+    respond "Legacy ModelGrow runner removed" 410
+  }
+
+  handle_path /__modelgrow/native-n8n/* {
+    reverse_proxy native-n8n-runtime:3001
+  }
+
+  @blocked_pages path /sign-in /sign-up /forgot-password /explore* /impact* /leaderboard* /community* /templates* /platform*
+  respond @blocked_pages 403
+
+  @managed_auth_api {
+    path /api/v1/authentication/sign-in /api/v1/authentication/sign-up
+    header X-ModelGrow-Proxy-Secret {$ACTIVEPIECES_PROXY_SHARED_SECRET}
+  }
+  handle @managed_auth_api {
+    reverse_proxy app:80
+  }
+
+  @blocked_auth_api path /api/v1/authentication/sign-in /api/v1/authentication/sign-up
+  respond @blocked_auth_api 403
+
+  @authenticate path /authenticate
+  handle @authenticate {
+    forward_auth https://www.modelgrow.com {
+      uri /api/activepieces/launch/verify
+      header_up Host www.modelgrow.com
+      header_up X-Original-URI {uri}
+      header_up Cookie {header.Cookie}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto https
+    }
+    reverse_proxy app:80
+  }
+
+  reverse_proxy app:80
+}

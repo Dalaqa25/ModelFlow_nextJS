@@ -151,10 +151,13 @@ await check('execute handler uses upsert for user_automations save', async () =>
   }
 });
 
-await check('activate-background route uses upsert not update', async () => {
+await check('activate-background provisions native n8n before reporting success', async () => {
   const content = readFileSync('./app/api/automations/[id]/activate-background/route.js', 'utf8');
-  if (!content.includes('.upsert(')) {
-    throw new Error('activate-background should use .upsert() not .update()');
+  if (!content.includes('activateNativeAutomation(')) {
+    throw new Error('activate-background must call the native n8n runtime');
+  }
+  if (content.includes(".update({ is_active: true")) {
+    throw new Error('activate-background must not report active from a database-only flag');
   }
 });
 

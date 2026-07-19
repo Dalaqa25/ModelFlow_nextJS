@@ -1,50 +1,60 @@
 'use client';
 
 import { useRef } from 'react';
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import CursorReactiveGrid from './CursorReactiveGrid';
 
 export default function LightBackground({
   variant = 'default',
   children,
   className = '',
   showParticles = false,
+  showPattern = false,
+  showReactiveGrid = false,
 }) {
   const containerRef = useRef(null);
-  const { isDarkMode } = useThemeAdaptive();
-
-  // Light mode optimized background variants
-  const backgroundVariants = {
-    landing: isDarkMode
-      ? "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative"
-      : "min-h-screen bg-gradient-to-br from-purple-50/40 via-purple-100/30 to-purple-50/40 overflow-hidden relative",
-
-    default: isDarkMode
-      ? "min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-purple-900 overflow-hidden relative"
-      : "min-h-screen bg-gradient-to-br from-white via-slate-50 to-purple-50/20 overflow-hidden relative",
-
-    auth: isDarkMode
-      ? "min-h-screen bg-gradient-to-br from-slate-800 via-purple-800 to-slate-900 overflow-hidden relative"
-      : "min-h-screen bg-gradient-to-br from-slate-100 via-purple-50/40 to-slate-50 overflow-hidden relative",
-
-    content: isDarkMode
-      ? "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-purple-900 overflow-hidden relative"
-      : "min-h-screen bg-gradient-to-br from-white via-slate-50 to-purple-50/30 overflow-hidden relative"
-  };
-
-  const backgroundClass = backgroundVariants[variant] || backgroundVariants.default;
-
-  // Light mode optimized decorative elements
-  const blobColor = isDarkMode ? 'bg-purple-500/20' : 'bg-purple-400/15';
-  const blobColor2 = isDarkMode ? 'bg-purple-600/20' : 'bg-purple-500/15';
-  const gradientColor = isDarkMode ? 'from-purple-500/10' : 'from-purple-400/8';
+  const isLandingVariant = variant === 'landing';
+  const shouldShowPattern = showPattern || variant === 'content';
 
   return (
-    <div ref={containerRef} className={`${backgroundClass} ${className}`}>
-      {/* Content */}
+    <div
+      ref={containerRef}
+      className={`${isLandingVariant ? 'landing-shell' : ''} relative min-h-screen overflow-hidden ${className}`}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="decorative-blob"
+          aria-hidden="true"
+          style={{
+            width: '520px',
+            height: '520px',
+            background: 'radial-gradient(circle, rgba(199,125,255,0.18) 0%, transparent 70%)',
+            top: '-250px',
+            right: '-150px',
+            opacity: 0.22,
+          }}
+        />
+        <div
+          className="decorative-blob"
+          aria-hidden="true"
+          style={{
+            width: '560px',
+            height: '560px',
+            background: 'radial-gradient(circle, rgba(93,88,255,0.16) 0%, transparent 70%)',
+            top: '8%',
+            left: '-170px',
+            opacity: 0.3,
+          }}
+        />
+      </div>
+
+      {shouldShowPattern && (
+        <div className="landing-pattern absolute inset-0" aria-hidden="true" />
+      )}
+
+      <CursorReactiveGrid enabled={showReactiveGrid && variant === 'content'} theme="light" />
       <div className="relative z-10">
         {children}
       </div>
     </div>
   );
 }
-

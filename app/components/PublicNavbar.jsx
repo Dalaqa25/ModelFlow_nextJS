@@ -19,41 +19,41 @@ export default function PublicNavbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-6 bg-transparent">
+      <nav className="absolute top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-5 sm:px-10 bg-transparent">
         {/* Left: Logo */}
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <Image src="/logo.png" alt="ModelGrow" width={28} height={28} className="object-contain" />
-          <span className="text-white font-semibold text-base tracking-tight">
-            ModelGrow<span className="text-purple-400">.</span>
+        <Link href="/" className="landing-card-soft flex items-center gap-2.5 rounded-2xl px-3 py-2 hover:-translate-y-0.5 transition-all">
+          <Image src="/logo.png" alt="ModelGrow" width={30} height={30} className="object-contain" />
+          <span className="text-[var(--landing-ink)] font-black text-lg tracking-tight">
+            ModelGrow
           </span>
         </Link>
 
-        {/* Center: Legal links */}
-        <div className="hidden md:flex items-center gap-1">
-          <Link href="/privacy" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all">
+        {/* Center: Legal links (hidden on very small screens to keep Scrimba style clean) */}
+        <div className="landing-card-soft hidden md:flex items-center gap-1 rounded-2xl px-2 py-1.5 text-sm font-bold">
+          <Link href="/privacy" className="landing-copy hover:text-[var(--landing-ink)] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/30">
             Privacy
           </Link>
-          <Link href="/terms" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all">
+          <Link href="/terms" className="landing-copy hover:text-[var(--landing-ink)] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/30">
             Terms
           </Link>
-          <Link href="/refund" className="px-4 py-1.5 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all">
+          <Link href="/refund" className="landing-copy hover:text-[var(--landing-ink)] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/30">
             Refund
           </Link>
         </div>
 
         {/* Right: Auth buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => setIsSignInOpen(true)}
-            className="px-4 py-1.5 text-sm text-gray-300 hover:text-white rounded-lg hover:bg-white/5 transition-all"
+            className="auth-link-button rounded-lg px-4 py-2 text-sm font-black transition-all"
           >
-            Sign in
+            Sign In
           </button>
           <button
             onClick={() => setIsSignUpOpen(true)}
-            className="px-4 py-1.5 text-sm font-medium text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-all"
+            className="auth-primary-button rounded-lg px-5 py-2.5 text-sm font-black transition-all"
           >
-            Sign up
+            Start Building
           </button>
         </div>
       </nav>

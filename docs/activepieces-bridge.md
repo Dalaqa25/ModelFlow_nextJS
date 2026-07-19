@@ -1,13 +1,17 @@
 # Activepieces Bridge
 
-ModelGrow uses Activepieces as the hidden OAuth + execution engine.
+ModelGrow uses Activepieces as the OAuth vault and as the execution engine for
+workflows authored in ModelGrow Builder. Imported n8n workflows execute in the
+private native n8n runtime.
 
 ## Target Architecture
 
 - `modelgrow.com`: marketplace, users, tokens, dashboard, chat UX.
-- Activepieces/Railway instance: builder, OAuth credentials, flow execution, run logs.
-- One ModelGrow user maps to one Activepieces account/project.
-- Runtime flows are per-user copies of developer/source flows.
+- Activepieces/Azure instance: builder, OAuth vault, builder-flow execution, run logs.
+- One ModelGrow user maps to one Activepieces account with two project roles.
+- The builder project is visible and contains flows the user creates and can publish to ModelGrow.
+- The runtime project is hidden and contains only ModelGrow-managed marketplace copies.
+- Runtime flows are per-user copies of developer/source flows and must live only in the hidden runtime project.
 - Users spend ModelGrow tokens per run; they do not buy/own automations by default.
 
 ## Runtime Flow
@@ -15,8 +19,8 @@ ModelGrow uses Activepieces as the hidden OAuth + execution engine.
 ```txt
 User clicks Run in ModelGrow
 -> ModelGrow checks token balance
--> ModelGrow ensures linked Activepieces user/project
--> ModelGrow copies source flow into user's project if needed
+-> ModelGrow ensures linked Activepieces user and hidden runtime project
+-> ModelGrow copies source flow into the hidden runtime project if needed
 -> ModelGrow triggers /api/v1/webhooks/{runtimeFlowId}
 -> ModelGrow reads Activepieces run status
 -> If successful, ModelGrow deducts tokens and records execution
@@ -26,8 +30,9 @@ User clicks Run in ModelGrow
 
 `activepieces_user_links`
 
-- Stores one linked Activepieces user/project per ModelGrow user.
-- Key fields: `user_id`, `activepieces_user_id`, `activepieces_project_id`, `status`.
+- Stores one linked Activepieces user plus builder/runtime project ids per ModelGrow user.
+- Key fields: `user_id`, `activepieces_user_id`, `activepieces_builder_project_id`, `activepieces_runtime_project_id`, `status`.
+- `activepieces_project_id` is the legacy builder project id and is kept for compatibility.
 
 `activepieces_runtime_flows`
 
@@ -47,9 +52,13 @@ ACTIVEPIECES_MCP_URL=https://activepieces-production-d3ff.up.railway.app/...
 ACTIVEPIECES_OWNER_EMAIL=...
 ACTIVEPIECES_OWNER_PASSWORD=...
 ACTIVEPIECES_USER_PASSWORD_SECRET=long-random-secret
+ACTIVEPIECES_SHARED_COOKIE_DOMAIN=.modelgrow.com
+ACTIVEPIECES_LAUNCH_SECRET=long-random-secret
 ```
 
 `ACTIVEPIECES_USER_PASSWORD_SECRET` lets ModelGrow deterministically create/sign into linked Activepieces accounts without storing plaintext passwords.
+
+See [docs/activepieces-access-control.md](./activepieces-access-control.md) for the reverse-proxy barrier that blocks public standalone access to the Activepieces subdomain.
 
 ## Safe Rollout
 
@@ -60,8 +69,14 @@ ACTIVEPIECES_USER_PASSWORD_SECRET=long-random-secret
 5. Link one test automation by setting `automations.activepieces_source_flow_id`.
 6. Run that automation from ModelGrow.
 
-## Fallback Behavior
+## Engine Boundary
 
-`/api/automations/execute` uses Activepieces only when `automations.activepieces_source_flow_id` is set.
+`/api/automations/execute` dispatches by immutable source type:
 
-Automations without that field still use the legacy `automation-runner` path.
+- `activepieces_source_flow_id` present: isolated Activepieces runtime copy.
+- `activepieces_source_flow_id` absent: imported n8n JSON in the private native
+  n8n runtime.
+
+There is no custom executor or legacy credential fallback. Imported workflows
+resolve user credentials through the Activepieces bridge immediately before
+execution or credential rotation.

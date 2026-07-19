@@ -23,8 +23,8 @@ export default function ClientProviders({ children }) {
             <ThemeProvider>
                 <ThemeAdaptiveProvider>
                     <NavigationLoadingProvider>
-                        <SplashProvider>
-                            <AuthProvider>
+                        <AuthProvider>
+                            <SplashProvider>
                                 <SidebarProvider>
                                     <MessagesDockProvider>
                                     <AppShell />
@@ -32,8 +32,8 @@ export default function ClientProviders({ children }) {
                                     <NavigationLoader />
                                     </MessagesDockProvider>
                                 </SidebarProvider>
-                            </AuthProvider>
-                        </SplashProvider>
+                            </SplashProvider>
+                        </AuthProvider>
                     </NavigationLoadingProvider>
                     <Toaster position="top-right" />
                     <SpeedInsights />

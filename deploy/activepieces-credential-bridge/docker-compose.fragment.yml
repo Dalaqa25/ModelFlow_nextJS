@@ -1,0 +1,19 @@
+services:
+  credential-bridge:
+    build: ./credential-bridge
+    container_name: modelgrow-credential-bridge
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PORT=8090
+      - AP_POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+    networks:
+      - activepieces
+
+# Add this route before the catch-all reverse_proxy in Caddyfile:
+#
+#   handle_path /__modelgrow/credential-bridge/* {
+#     reverse_proxy credential-bridge:8090
+#   }

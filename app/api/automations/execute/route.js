@@ -6,6 +6,10 @@ import {
   recordSuccessfulTokenSpend,
   runActivepiecesAutomation,
 } from '@/lib/activepieces/provisioning';
+import {
+  activateNativeAutomation,
+  runNativeAutomation,
+} from '@/lib/automation-runtime/client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -100,7 +104,7 @@ async function logExecution({ automationId, userEmail, status, startTime, endTim
   });
 }
 
-async function runLegacyAutomation({ automation, user, automationId, lowercaseConfig, tokenCost, startTime }) {
+async function runImportedN8nAutomation({ automation, user, automationId, lowercaseConfig, tokenCost, startTime }) {
   if (tokenCost > 0) {
     await assertTokenBalance(user.id, tokenCost);
 
@@ -127,87 +131,47 @@ async function runLegacyAutomation({ automation, user, automationId, lowercaseCo
         automation_id: automationId,
         automation_name: automation.name,
         developer_email: automation.author_email,
-        engine: 'legacy-runner',
+        engine: 'n8n-native',
       },
     });
   }
 
-  const requiredConnectors = Array.isArray(automation.required_connectors)
-    ? automation.required_connectors
-    : (() => {
-      try { return JSON.parse(automation.required_connectors || '[]'); } catch (_) { return []; }
-    })();
-
-  const primaryProvider = requiredConnectors.length > 0
-    ? (requiredConnectors[0].toLowerCase().includes('google') || requiredConnectors[0].toLowerCase().includes('sheets') ? 'google' : requiredConnectors[0].toLowerCase())
-    : 'google';
-
-  const { data: integration } = await supabase
-    .from('user_automations')
-    .select('access_token, refresh_token, token_expiry')
-    .eq('user_id', user.id)
-    .eq('automation_id', automationId)
-    .eq('provider', primaryProvider)
-    .maybeSingle();
-
-  if (integration?.access_token) {
-    lowercaseConfig.access_token = integration.access_token;
-    if (integration.refresh_token) lowercaseConfig.refresh_token = integration.refresh_token;
+  let result;
+  try {
+    result = await runNativeAutomation({
+      automationId,
+      userId: user.id,
+      config: lowercaseConfig,
+    });
+  } catch (error) {
+    const endTime = Date.now();
+    await logExecution({
+      automationId,
+      userEmail: user.email,
+      status: 'failed',
+      startTime,
+      endTime,
+      durationMs: endTime - startTime,
+      errorMessage: error.message,
+      metadata: { engine: 'n8n-native', code: error.code },
+    });
+    return NextResponse.json({
+      error: 'Native n8n execution failed',
+      message: error.message,
+      details: error.data,
+    }, { status: error.status || 500 });
   }
-
-  const RUNNER_URL = process.env.AUTOMATION_RUNNER_URL || 'http://localhost:3001';
-  const runnerResponse = await fetch(`${RUNNER_URL}/api/automations/run`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ automation_id: automationId, user_id: user.id, config: lowercaseConfig }),
-    signal: AbortSignal.timeout(60000),
-  });
 
   const endTime = Date.now();
   const durationMs = endTime - startTime;
-
-  if (!runnerResponse.ok) {
-    const errorData = await runnerResponse.json().catch(() => ({}));
-    await logExecution({
-      automationId,
-      userEmail: user.email,
-      status: 'failed',
-      startTime,
-      endTime,
-      durationMs,
-      errorMessage: errorData.error || 'Automation runner failed',
-      metadata: { engine: 'legacy-runner' },
-    });
-    return NextResponse.json({ error: 'Automation runner failed', details: errorData }, { status: 500 });
-  }
-
-  const result = await runnerResponse.json();
-  if (!result.success) {
-    const errorMessage = (result.errors && result.errors.length > 0) ? result.errors[0] : 'Workflow execution failed';
-    await logExecution({
-      automationId,
-      userEmail: user.email,
-      status: 'failed',
-      startTime,
-      endTime,
-      durationMs,
-      errorMessage,
-      metadata: { engine: 'legacy-runner' },
-    });
-    return NextResponse.json({ error: 'Workflow execution failed', message: errorMessage, details: result }, { status: 500 });
-  }
+  const executionEngine = result.engine || 'n8n-native';
 
   if (automation.requires_background) {
-    await supabase
-      .from('user_automations')
-      .upsert({
-        automation_id: automationId,
-        user_id: user.id,
-        parameters: lowercaseConfig,
-        is_active: true,
-        last_run: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'automation_id,user_id' });
+    await activateNativeAutomation({
+      automationId,
+      userId: user.id,
+      config: lowercaseConfig,
+    });
   }
 
   await logExecution({
@@ -218,7 +182,7 @@ async function runLegacyAutomation({ automation, user, automationId, lowercaseCo
     endTime,
     durationMs,
     tokenCost,
-    metadata: { engine: 'legacy-runner' },
+    metadata: { engine: executionEngine },
   });
 
   await supabase.rpc('increment_total_runs', { automation_uuid: automationId });
@@ -239,7 +203,7 @@ async function runLegacyAutomation({ automation, user, automationId, lowercaseCo
     result,
     tokens_spent: tokenCost,
     tokens_remaining: balance?.token_balance ?? null,
-    engine: 'legacy-runner',
+    engine: executionEngine,
   });
 }
 
@@ -257,19 +221,33 @@ async function runActivepiecesBackedAutomation({ automation, user, automationId,
   const durationMs = endTime - startTime;
 
   if (!result.success) {
+    const runStatus = String(result.activepieces.runStatus || '').toUpperCase();
+    const isStillProcessing = result.pending || ['QUEUED', 'RUNNING'].includes(runStatus);
+    const errorMessage = result.errorMessage || `Automation run status: ${result.activepieces.runStatus}`;
+
     await logExecution({
       automationId,
       userEmail: user.email,
-      status: 'failed',
+      status: isStillProcessing ? 'running' : 'failed',
       startTime,
       endTime,
       durationMs,
-      errorMessage: `Activepieces run status: ${result.activepieces.runStatus}`,
+      errorMessage,
       metadata: { engine: 'activepieces', activepieces: result.activepieces },
     });
 
+    if (isStillProcessing) {
+      return NextResponse.json({
+        success: false,
+        pending: true,
+        message: `ModelGrow accepted the run, but it is still ${runStatus.toLowerCase()}.`,
+        activepieces: result.activepieces,
+      }, { status: 202 });
+    }
+
     return NextResponse.json({
-      error: 'Activepieces workflow execution failed',
+      error: 'Automation workflow execution failed',
+      message: errorMessage,
       activepieces: result.activepieces,
     }, { status: 500 });
   }
@@ -322,7 +300,7 @@ export async function POST(req) {
 
     const { data: automation, error: automationError } = await supabase
       .from('automations')
-      .select('id, name, is_active, requires_background, token_cost, author_email, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
+      .select('id, name, is_active, requires_background, token_cost, author_email, workflow, required_inputs, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
       .eq('id', automation_id)
       .single();
 
@@ -349,7 +327,7 @@ export async function POST(req) {
       });
     }
 
-    return runLegacyAutomation({
+    return runImportedN8nAutomation({
       automation,
       user,
       automationId: automation_id,

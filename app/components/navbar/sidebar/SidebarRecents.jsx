@@ -1,51 +1,116 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Trash2, Plus } from 'lucide-react';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { safeApiFetch } from '@/lib/http/safe-api-fetch';
+
+const LIMIT = 20;
+
+async function fetchConversations(offset, signal) {
+  const response = await safeApiFetch(`/api/conversations?limit=${LIMIT}&offset=${offset}`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    let responseBody = '';
+    try {
+      responseBody = await response.text();
+    } catch {}
+
+    const error = new Error(`Conversation request failed (${response.status})`);
+    error.status = response.status;
+    error.body = responseBody.slice(0, 500);
+    throw error;
+  }
+
+  return response.json();
+}
 
 export default function SidebarRecents() {
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [loadError, setLoadError] = useState('');
   const router = useRouter();
   const { isDarkMode } = useThemeAdaptive();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const listRef = useRef(null);
-  const LIMIT = 20;
+  const isLoadingRef = useRef(false);
+  const activeRequestRef = useRef(null);
+  const requestIdRef = useRef(0);
+
+  const loadConversations = useCallback(async (currentOffset) => {
+    if (isLoadingRef.current) return;
+
+    const requestId = ++requestIdRef.current;
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    isLoadingRef.current = true;
+    setIsLoading(true);
+    setLoadError('');
+
+    try {
+      const data = await fetchConversations(currentOffset, controller.signal);
+      if (requestId !== requestIdRef.current) return;
+
+      if (currentOffset === 0) {
+        setConversations(data);
+      } else {
+        setConversations(prev => [...prev, ...data]);
+      }
+      setHasMore(data.length === LIMIT);
+      setOffset(currentOffset + data.length);
+    } catch (error) {
+      if (error.name !== 'AbortError' && requestId === requestIdRef.current) {
+        console.error('[SidebarRecents] Failed to load conversations', {
+          status: error.status,
+          location: error.location,
+          body: error.body,
+          message: error.message,
+        });
+        if (error.status === 401 || error.status === 403) {
+          setLoadError('');
+          setConversations([]);
+        } else {
+          setLoadError('Could not load conversations.');
+        }
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        isLoadingRef.current = false;
+        activeRequestRef.current = null;
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      loadConversations(0);
+    if (authLoading) {
+      return;
     }
-  }, [isAuthenticated, user]);
 
-  const loadConversations = async (currentOffset) => {
-    if (isLoading) return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/conversations?limit=${LIMIT}&offset=${currentOffset}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (currentOffset === 0) {
-          setConversations(data);
-        } else {
-          setConversations(prev => [...prev, ...data]);
-        }
-        setHasMore(data.length === LIMIT);
-        setOffset(currentOffset + data.length);
-      }
-    } catch (error) {
-      console.error('Failed to load conversations:', error);
-    } finally {
+    if (!isAuthenticated || !user?.id) {
+      setConversations([]);
+      setOffset(0);
+      setHasMore(true);
       setIsLoading(false);
+      setLoadError('');
+      return;
     }
-  };
+
+    loadConversations(0);
+
+    return () => {
+      requestIdRef.current += 1;
+      activeRequestRef.current?.abort();
+      activeRequestRef.current = null;
+      isLoadingRef.current = false;
+    };
+  }, [authLoading, isAuthenticated, user?.id, loadConversations]);
 
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -143,12 +208,13 @@ export default function SidebarRecents() {
             </span>
             <button
               onClick={(e) => handleDelete(conversation.id, e)}
-              className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all duration-150 flex-shrink-0 ${
+              className={`opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded transition-all duration-150 flex-shrink-0 ${
                 isDarkMode
                   ? 'hover:bg-red-500/20 text-red-400'
                   : 'hover:bg-red-50 text-red-400'
               }`}
-              title="Delete"
+              title="Delete conversation"
+              aria-label={`Delete ${conversation.title || 'conversation'}`}
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -181,12 +247,29 @@ export default function SidebarRecents() {
       {/* Scrollable Recents */}
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto min-h-0 pb-2"
+        className="sidebar-recents-scrollbar flex-1 overflow-y-auto min-h-0 pb-2"
         onScroll={handleScroll}
       >
         {isLoading && conversations.length === 0 ? (
           <div className="flex items-center justify-center py-6">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-400" />
+          </div>
+        ) : loadError && conversations.length === 0 ? (
+          <div className="text-center py-6 px-4">
+            <p className={`text-xs mb-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              {loadError}
+            </p>
+            <button
+              type="button"
+              onClick={() => loadConversations(0)}
+              className={`text-xs font-medium rounded-md px-2.5 py-1.5 ${
+                isDarkMode
+                  ? 'bg-white/8 text-gray-300 hover:bg-white/12'
+                  : 'bg-black/5 text-gray-600 hover:bg-black/8'
+              }`}
+            >
+              Retry
+            </button>
           </div>
         ) : !hasConversations ? (
           <div className="text-center py-6 px-4">

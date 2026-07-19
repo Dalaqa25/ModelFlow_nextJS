@@ -9,19 +9,16 @@ import SidebarExpandButton from './actions/SidebarExpandButton';
 import SidebarCollapseButton from './actions/SidebarCollapseButton';
 import UploadTooltip from './UploadTooltip';
 
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
-
 export default function Sidebar() {
   const { isExpanded } = useSidebar();
-  const { isDarkMode } = useThemeAdaptive();
 
   return (
     <>
       <div 
-        className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-all duration-300 border-r border-purple-500/20 ${
+        className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-all duration-300 border-r app-sidebar ${
           isExpanded 
-            ? `w-64 ${isDarkMode ? 'bg-slate-800/70 backdrop-blur-xl' : 'bg-white'}`
-            : 'w-14 bg-transparent'
+            ? 'w-64'
+            : 'w-14 app-sidebar-collapsed'
         }`}
       >
         <SidebarToggle />

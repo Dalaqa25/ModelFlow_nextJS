@@ -1,0 +1,109 @@
+server {
+  listen 80;
+  server_name ${ACTIVEPIECES_SERVER_NAME};
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ${ACTIVEPIECES_SERVER_NAME};
+
+  ssl_certificate /etc/letsencrypt/live/${ACTIVEPIECES_SERVER_NAME}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/${ACTIVEPIECES_SERVER_NAME}/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_tickets off;
+
+  add_header X-Frame-Options SAMEORIGIN always;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+  location = /_modelgrow/brand.js {
+    alias /usr/share/nginx/modelgrow-brand/modelgrow-brand.js;
+    default_type application/javascript;
+    add_header Cache-Control "public, max-age=300" always;
+  }
+
+  location = /_modelgrow/logo.png {
+    alias /usr/share/nginx/modelgrow-public/logo.png;
+    default_type image/png;
+    add_header Cache-Control "public, max-age=86400" always;
+  }
+
+  location = /favicon.ico {
+    alias /usr/share/nginx/modelgrow-public/favicon.ico;
+    default_type image/x-icon;
+    add_header Cache-Control "public, max-age=86400" always;
+  }
+
+  location = /manifest.json {
+    default_type application/manifest+json;
+    add_header Cache-Control "no-store" always;
+    return 200 '{"name":"ModelGrow Builder","short_name":"ModelGrow","icons":[{"src":"/_modelgrow/logo.png","sizes":"128x128","type":"image/png"}],"theme_color":"#6d28d9","background_color":"#ffffff","display":"standalone"}';
+  }
+
+  location = /_modelgrow_launch_verify {
+    internal;
+    proxy_pass ${MODELGROW_VERIFY_URL};
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header Cookie $http_cookie;
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+
+  location = /authenticate {
+    auth_request /_modelgrow_launch_verify;
+    error_page 401 403 = @blocked;
+    proxy_pass ${ACTIVEPIECES_UPSTREAM};
+    proxy_http_version 1.1;
+    proxy_hide_header Content-Security-Policy;
+    proxy_set_header Accept-Encoding "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+    sub_filter_once off;
+    sub_filter_types text/html;
+    sub_filter 'Activepieces' 'ModelGrow';
+    sub_filter '</head>' '<script defer src="/_modelgrow/brand.js"></script></head>';
+  }
+
+  location = /sign-up { return 403; }
+  location = /sign-in { return 403; }
+  location = /forgot-password { return 403; }
+  location ~ ^/(explore|impact|leaderboard|community|templates|platform)(/|$) { return 302 https://modelgrow.com; }
+
+  location = /api/v1/authentication/sign-up { return 403; }
+  location = /api/v1/authentication/sign-in { return 403; }
+
+  location @blocked {
+    return 302 https://modelgrow.com;
+  }
+
+  location / {
+    proxy_pass ${ACTIVEPIECES_UPSTREAM};
+    proxy_http_version 1.1;
+    proxy_hide_header Content-Security-Policy;
+    proxy_set_header Accept-Encoding "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+    sub_filter_once off;
+    sub_filter_types text/html;
+    sub_filter 'Activepieces' 'ModelGrow';
+    sub_filter '</head>' '<script defer src="/_modelgrow/brand.js"></script></head>';
+  }
+}

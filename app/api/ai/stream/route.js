@@ -1,11 +1,17 @@
-// Multi-model AI stream endpoint
-// Llama (Groq) as orchestrator/brain, GPT-4o-mini (GitHub) as tool executor
-// Supports multiple Groq API keys with automatic rotation on rate limits
+// Multi-model AI stream endpoint.
+// The conversational orchestrator is selected with AI_ORCHESTRATOR_PROVIDER.
+// Existing deterministic handlers remain authoritative for automation actions.
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { AI_TOOLS, ORCHESTRATOR_PROMPT, TOOL_EXECUTOR_PROMPT } from '@/lib/ai/tools';
+import {
+  createCodexOrchestratorDecision,
+  getOrchestratorProvider,
+  shouldFallbackToGroq,
+} from '@/lib/ai/orchestrator-provider';
+import { extractAvailableAutomationDiscoveryRequest } from '@/lib/ai/intent-routing';
 import {
   handleSearchAutomations,
   handleStartSetup,
@@ -36,12 +42,12 @@ const GROQ_API_KEYS = [
   process.env.GROQ_API_KEY_8,
 ].filter(Boolean); // Remove undefined keys
 
-console.log(`[AI] Loaded ${GROQ_API_KEYS.length} Groq API keys`);
-// API key details hidden for security
-
-if (GROQ_API_KEYS.length === 0) {
-  console.error('[AI] ERROR: No Groq API keys found! Check your .env.local file.');
-}
+const ORCHESTRATOR_PROVIDER = getOrchestratorProvider();
+const GROQ_ENABLED = ORCHESTRATOR_PROVIDER === 'groq' || shouldFallbackToGroq();
+console.log(`[AI] Orchestrator provider: ${ORCHESTRATOR_PROVIDER}`);
+console.log(GROQ_ENABLED
+  ? `[AI] Groq enabled with ${GROQ_API_KEYS.length} configured key(s)`
+  : '[AI] Groq disabled');
 
 let currentKeyIndex = 0;
 
@@ -72,6 +78,41 @@ const toolExecutorClient = new OpenAI({
 
 const ORCHESTRATOR_MODEL = "llama-3.3-70b-versatile";
 const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
+
+export const runtime = 'nodejs';
+
+async function createGroqOrchestratorDecision(orchestratorMessages) {
+  if (GROQ_API_KEYS.length === 0) {
+    throw new Error('No Groq API keys configured');
+  }
+
+  let retryCount = 0;
+  const maxRetries = GROQ_API_KEYS.length;
+  while (retryCount < maxRetries) {
+    try {
+      const orchestratorClient = createGroqClient();
+      console.log(`[AI] Using Groq fallback key ${currentKeyIndex}/${GROQ_API_KEYS.length}`);
+      const response = await orchestratorClient.chat.completions.create({
+        messages: orchestratorMessages,
+        model: ORCHESTRATOR_MODEL,
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      });
+      const output = response.choices[0].message.content;
+      try {
+        return JSON.parse(output);
+      } catch {
+        return { response: output, action: null };
+      }
+    } catch (error) {
+      retryCount += 1;
+      if (error.status !== 429 || retryCount >= maxRetries) throw error;
+      console.warn(`[AI] Groq rate limit hit; trying fallback key ${retryCount + 1}/${maxRetries}`);
+    }
+  }
+
+  throw new Error('No AI orchestrator produced a decision');
+}
 
 export async function POST(request) {
   try {
@@ -104,33 +145,42 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { prompt, messages, temperature = 0.7, frontendSetupState } = body;
+    const {
+      prompt,
+      messages,
+      temperature = 0.7,
+      frontendSetupState,
+      conversationId,
+      codexSessionId,
+    } = body;
 
     const chatMessages = buildChatMessages(messages, prompt);
     if (!chatMessages) {
       return NextResponse.json({ error: "Either 'prompt' or 'messages' is required" }, { status: 400 });
     }
     
-    // TEMPORARY DEBUG LOGGING: Dump exactly what we receive to a file so the AI can read it
-    try {
-      const fs = require('fs');
-      fs.writeFileSync('/tmp/nextjs_ai_chat_debug.json', JSON.stringify(chatMessages, null, 2));
-    } catch(e) {}
-
     const encoder = new TextEncoder();
     const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
+    const connectionCompleted = extractActivepiecesConnectionCompleted(lastUserMessage);
     const directSetup = extractSelectedAutomationContext(lastUserMessage);
+    const configSubmission = mergeConfigSubmissions(
+      extractConfigFormSubmission(lastUserMessage),
+      extractFrontendConfigSubmission(lastUserMessage, frontendSetupState)
+    );
 
-    if (directSetup) {
+    if (connectionCompleted || directSetup) {
+      const setupRequest = connectionCompleted || directSetup;
       const stream = new ReadableStream({
         async start(controller) {
           try {
             await executeToolAction(
               'start_setup',
               {
-                automation_id: directSetup.automationId,
-                automation_name: directSetup.automationName,
-                hint: 'User clicked Use automation in the marketplace. Start setup for this exact selected automation.',
+                automation_id: setupRequest.automationId,
+                automation_name: setupRequest.automationName,
+                hint: connectionCompleted
+                  ? `User just connected ${connectionCompleted.provider || 'a required app'} through ModelGrow. Resume setup for this exact selected automation and show the next required setup widget if fields remain.`
+                  : 'User clicked Use automation in the marketplace. Start setup for this exact selected automation.',
               },
               user,
               controller,
@@ -154,7 +204,145 @@ export async function POST(request) {
       });
     }
 
-    // STEP 1: Ask Llama (the brain) to understand and decide
+    if (configSubmission) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            await executeToolAction(
+              'auto_setup',
+              {
+                automation_id: configSubmission.automationId,
+                automation_name: configSubmission.automationName,
+                existing_config: configSubmission.config,
+              },
+              user,
+              controller,
+              encoder,
+              {
+                automationId: configSubmission.automationId,
+                automationName: configSubmission.automationName,
+                collectedConfig: configSubmission.config,
+                missingFields: [],
+              },
+              chatMessages
+            );
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('[Direct config submission] Error:', error);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Sorry, I could not finish configuring this automation. Please try again.' })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      });
+    }
+
+    const initialSetupContext = extractSetupContext(chatMessages);
+    const availableAutomationDiscoveryRequest = !frontendSetupState?.automationId && !initialSetupContext?.automationId
+      ? extractAvailableAutomationDiscoveryRequest(lastUserMessage, chatMessages)
+      : null;
+
+    // Catalog discovery is deterministic. Do not ask the model to distinguish
+    // "what automations do you have?" from "what automations do I have?".
+    if (availableAutomationDiscoveryRequest) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            await executeToolAction(
+              'search_automations',
+              { query: lastUserMessage, browse_all: true },
+              user,
+              controller,
+              encoder,
+              null,
+              chatMessages
+            );
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('[Direct automation discovery] Error:', error);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Sorry, I could not load the available automations right now. Please try again.' })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'X-ModelGrow-Path': 'automation-catalog',
+        },
+      });
+    }
+
+    const userAutomationStatusRequest = extractUserAutomationStatusRequest(lastUserMessage);
+    if (userAutomationStatusRequest) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            if (!user) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Please sign in first so I can check your automations.' })}\n\n`));
+            } else {
+              await executeToolAction(
+                'show_user_automations',
+                { status_filter: userAutomationStatusRequest.statusFilter },
+                user,
+                controller,
+                encoder,
+                null,
+                chatMessages
+              );
+            }
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('[Direct user automations status] Error:', error);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Sorry, I could not check your automations right now. Please try again.' })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      });
+    }
+
+    const instantResponse = !frontendSetupState?.automationId && !initialSetupContext?.automationId
+      ? getInstantConversationalResponse(lastUserMessage)
+      : null;
+
+    // Do not spend a full agent turn on greetings and tiny acknowledgements that
+    // cannot require a tool or change automation state.
+    if (instantResponse) {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: instantResponse })}\n\n`));
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'X-ModelGrow-Path': 'instant',
+        },
+      });
+    }
+
+    // STEP 1: Ask the selected orchestrator to understand and decide.
 
     let currentPrompt = ORCHESTRATOR_PROMPT;
     if (!user) {
@@ -166,123 +354,129 @@ export async function POST(request) {
       ...chatMessages.filter(m => m.role !== 'system')
     ];
 
-    let orchestratorResponse;
-    let retryCount = 0;
-    const maxRetries = GROQ_API_KEYS.length; // Try all available keys
-    
-    while (retryCount < maxRetries) {
-      try {
-        const orchestratorClient = createGroqClient(); // Get client with next key
-        console.log(`[AI] Using Groq key ${currentKeyIndex}/${GROQ_API_KEYS.length}`);
-        
-        orchestratorResponse = await orchestratorClient.chat.completions.create({
-          messages: orchestratorMessages,
-          model: ORCHESTRATOR_MODEL,
-          temperature: 0.7,
-          response_format: { type: "json_object" },
-        });
-        
-        break; // Success! Exit retry loop
-      } catch (rateLimitError) {
-        retryCount++;
-        
-        if (rateLimitError.status === 429) {
-          console.log(`[AI] Rate limit hit on key ${currentKeyIndex}, trying next key...`);
-          
-          // If we've tried all keys, return error
-          if (retryCount >= maxRetries) {
-            const retryAfter = rateLimitError.headers?.['retry-after'];
-            const waitTime = retryAfter ? `${Math.ceil(retryAfter / 60)} minutes` : 'a few minutes';
+    const provider = getOrchestratorProvider();
+    const canStreamCodexEarly = !frontendSetupState?.automationId && !initialSetupContext?.automationId;
 
-            return new Response(
-              JSON.stringify({
-                error: 'Rate limit exceeded',
-                message: `All AI service keys are rate limited. Please try again in ${waitTime}.`,
-                retryAfter: retryAfter
-              }),
-              {
-                status: 429,
-                headers: { 'Content-Type': 'application/json' }
-              }
-            );
-          }
-          
-          // Try next key
-          continue;
-        }
-        
-        // Not a rate limit error, throw it
-        throw rateLimitError;
-      }
-    }
-
-    const llamaOutput = orchestratorResponse.choices[0].message.content;
-
-    let decision;
-    try {
-      decision = JSON.parse(llamaOutput);
-    } catch (e) {
-      decision = { response: llamaOutput, action: null };
-    }
-
-    const conversationalResponse = decision.response || '';
-    let actionNeeded = decision.action;
-
-    // GUARD: If we're in an active setup and the AI called search_automations,
-    // redirect to collect_text_input — the user is answering setup questions, not searching.
-    if (actionNeeded?.tool === 'search_automations') {
-      const setupContext = extractSetupContext(chatMessages);
-      const activeSetupId = setupContext?.automationId || frontendSetupState?.automationId;
-      if (activeSetupId) {
-        console.log('[AI] Intercepted search_automations during active setup — redirecting to collect_text_input');
-        actionNeeded = { tool: 'collect_text_input', hint: 'user provided setup data during active setup' };
-      }
-    }
-
-    // GUARD: If we're in an active setup with missing fields and the AI did NOT
-    // call collect_text_input (action is null), force it. This prevents the AI from
-    // saying "Got it!" in its text response without actually saving the user's input.
-    if (!actionNeeded || !actionNeeded.tool) {
-      const guardSetupCtx = extractSetupContext(chatMessages);
-      const activeSetupId = guardSetupCtx?.automationId || frontendSetupState?.automationId;
-      const missingFields = frontendSetupState?.missingFields || guardSetupCtx?.missingFields || [];
-
-      if (activeSetupId && missingFields.length > 0) {
-        // Only force collect if the user's message looks like an answer (not a question or filler)
-        const msg = lastUserMessage.trim();
-        const isQuestion = msg.endsWith('?') || /^(what|how|why|when|where|who|which|can|do|does|is|are|will|should)\b/i.test(msg);
-        const isFiller = /^(yes|no|ok|sure|hi|hello|hey|thanks|thank you|cool|great|perfect|nice|sounds good|go ahead)$/i.test(msg);
-
-        if (!isQuestion && !isFiller && msg.length > 0) {
-          console.log(`[AI] SAFETY NET: AI returned action=null during active setup with missing fields [${missingFields.join(', ')}]. Forcing collect_text_input.`);
-          actionNeeded = {
-            tool: 'collect_text_input',
-            hint: `user provided data for setup field. Missing fields: ${missingFields.join(', ')}`
-          };
-        }
-      }
-    }
-
-    // STEP 2: Stream response to user
+    // STEP 2: Start the browser stream before the orchestrator finishes. Codex app-server
+    // deltas are forwarded immediately for ordinary chat; setup turns remain buffered so
+    // deterministic setup guards can validate the action before anything is shown.
     const stream = new ReadableStream({
       async start(controller) {
+        let streamedResponse = '';
+        let thinking = true;
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'thinking', status: 'start' })}\n\n`));
+
+        const finishThinking = () => {
+          if (!thinking) return;
+          thinking = false;
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'thinking', status: 'end' })}\n\n`));
+        };
+        const emitContent = content => {
+          if (!content) return;
+          finishThinking();
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+        };
+
         try {
-          // First, stream Llama's conversational response
+          let decision;
+          if (provider === 'codex') {
+            try {
+              decision = await createCodexOrchestratorDecision({
+                messages: chatMessages,
+                isAuthenticated: Boolean(user),
+                setupContext: mergeOrchestratorSetupContext(initialSetupContext, frontendSetupState),
+                sessionKey: (authUser?.id || user?.id)
+                  && typeof (codexSessionId || conversationId) === 'string'
+                  && (codexSessionId || conversationId).length > 0
+                  && (codexSessionId || conversationId).length <= 128
+                  ? `${authUser?.id || user?.id}:${codexSessionId || conversationId}`
+                  : null,
+                onResponseDelta: delta => {
+                  if (!canStreamCodexEarly) return;
+                  streamedResponse += delta;
+                  emitContent(delta);
+                },
+              });
+            } catch (error) {
+              console.error('[AI] Codex orchestrator failed:', error.message);
+              if (!shouldFallbackToGroq()) throw error;
+              console.warn('[AI] Falling back to Groq for this request');
+            }
+          }
+
+          if (!decision) {
+            decision = await createGroqOrchestratorDecision(orchestratorMessages);
+          }
+
+          let conversationalResponse = decision.response || '';
+          let actionNeeded = decision.action;
+
+          if (actionNeeded?.tool === 'request_file_upload') {
+            const setupContext = initialSetupContext || {};
+            const missingFields = frontendSetupState?.missingFields || setupContext.missingFields || [];
+            const explicitFileField = missingFields.find(field => /file|upload|video|image|document/i.test(
+              typeof field === 'string' ? field : field?.name || ''
+            ));
+            if (!explicitFileField) {
+              console.warn('[AI] Blocked hallucinated file upload: no explicit customer-owned file field is missing.');
+              actionNeeded = null;
+              conversationalResponse = 'No upload is required by the current setup. Files supplied by the automation trigger should not be uploaded manually.';
+            }
+          }
+
+          // GUARD: If we're in an active setup and the AI called search_automations,
+          // redirect to collect_text_input — the user is answering setup questions, not searching.
+          if (actionNeeded?.tool === 'search_automations') {
+            const activeSetupId = initialSetupContext?.automationId || frontendSetupState?.automationId;
+            if (activeSetupId) {
+              console.log('[AI] Intercepted search_automations during active setup — redirecting to collect_text_input');
+              actionNeeded = { tool: 'collect_text_input', hint: 'user provided setup data during active setup' };
+            }
+          }
+
+          // GUARD: If we're in an active setup with missing fields and the AI did NOT
+          // call collect_text_input, force it so the user's answer is actually saved.
+          if (!actionNeeded || !actionNeeded.tool) {
+            const activeSetupId = initialSetupContext?.automationId || frontendSetupState?.automationId;
+            const missingFields = frontendSetupState?.missingFields || initialSetupContext?.missingFields || [];
+
+            if (activeSetupId && missingFields.length > 0) {
+              const msg = lastUserMessage.trim();
+              const isQuestion = msg.endsWith('?') || /^(what|how|why|when|where|who|which|can|do|does|is|are|will|should)\b/i.test(msg);
+              const isFiller = /^(yes|no|ok|sure|hi|hello|hey|thanks|thank you|cool|great|perfect|nice|sounds good|go ahead)$/i.test(msg);
+
+              if (!isQuestion && !isFiller && msg.length > 0) {
+                console.log(`[AI] SAFETY NET: AI returned action=null during active setup with missing fields [${missingFields.join(', ')}]. Forcing collect_text_input.`);
+                actionNeeded = {
+                  tool: 'collect_text_input',
+                  hint: `user provided data for setup field. Missing fields: ${missingFields.join(', ')}`
+                };
+              }
+            }
+          }
+
+          // First, stream the orchestrator's conversational response.
           // SKIP orchestrator text when collect_text_input is the action —
           // the handler already generates "Got it!" so streaming both causes a
           // doubled acknowledgment ("Got it! Got it! I just need one more thing...")
           if (conversationalResponse && actionNeeded?.tool !== 'collect_text_input') {
-            // Stream character by character for typewriter effect (or in chunks)
-            const chunks = conversationalResponse.match(/.{1,10}/g) || [];
+            let remainingResponse = conversationalResponse;
+            if (streamedResponse && conversationalResponse.startsWith(streamedResponse)) {
+              remainingResponse = conversationalResponse.slice(streamedResponse.length);
+            } else if (streamedResponse) {
+              console.warn('[AI] Final Codex response differed from its streamed prefix; suppressing duplicate final text.');
+              remainingResponse = '';
+            }
+            const chunks = remainingResponse.match(/[\s\S]{1,10}/g) || [];
             for (const chunk of chunks) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
-              // Small delay for natural feel (optional, can remove for speed)
+              emitContent(chunk);
             }
           }
 
           // STEP 3: If action needed, execute it
           if (actionNeeded && actionNeeded.tool) {
-            let setupContext = extractSetupContext(chatMessages) || {};
+            finishThinking();
+            let setupContext = initialSetupContext || {};
 
             // CRITICAL FIX: Merge explicit frontend state into the context
             // This prevents lost fields from regex parsing failures
@@ -337,9 +531,11 @@ export async function POST(request) {
             }
           }
 
+          finishThinking();
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
+          finishThinking();
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "Sorry, something went wrong. Please try again." })}\n\n`));
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
@@ -361,6 +557,34 @@ export async function POST(request) {
 // Use GPT-4o-mini to generate proper tool arguments
 async function generateToolArguments(toolName, hint, userMessage, chatMessages, setupContext) {
   try {
+    const localFallback = buildLocalToolArgumentFallback({ toolName, userMessage, setupContext });
+    if (localFallback) {
+      return localFallback;
+    }
+
+    if (toolName === 'request_file_upload' && setupContext?.automationId) {
+      const missingFields = setupContext.missingFields || [];
+      const field = missingFields.find(candidate => /file|upload|video|image|document/i.test(
+        typeof candidate === 'string' ? candidate : candidate?.name || ''
+      ));
+      const fieldName = typeof field === 'string' ? field : field?.name;
+      if (!fieldName) return null;
+      const normalized = fieldName.toLowerCase();
+      const fileType = normalized.includes('video')
+        ? 'video'
+        : normalized.includes('image')
+          ? 'image'
+          : normalized.includes('document') || normalized.includes('pdf')
+            ? 'document'
+            : 'any';
+      return {
+        file_type: fileType,
+        field_name: fieldName,
+        automation_id: setupContext.automationId,
+        automation_name: setupContext.automationName || 'Automation',
+      };
+    }
+
     // SHORTCUT: If executing and we have ready-to-execute config, use it directly!
     // This ensures the config doesn't get lost when GPT tries to generate arguments
     if (toolName === 'execute_automation' && setupContext?.readyToExecute && setupContext?.collectedConfig) {
@@ -474,8 +698,36 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
     return null;
   } catch (e) {
     console.error("[AI] Failed to generate tool arguments:", e);
+    const localFallback = buildLocalToolArgumentFallback({ toolName, userMessage, setupContext });
+    if (localFallback) {
+      console.warn(`[AI] Using local tool argument fallback for ${toolName}`);
+      return localFallback;
+    }
     return null;
   }
+}
+
+function buildLocalToolArgumentFallback({ toolName, userMessage, setupContext }) {
+  if (toolName === 'show_user_automations') {
+    return {
+      status_filter: extractUserAutomationStatusRequest(userMessage)?.statusFilter || 'all',
+    };
+  }
+
+  if (toolName === 'search_automations' && typeof userMessage === 'string' && userMessage.trim()) {
+    return {
+      query: userMessage.trim(),
+    };
+  }
+
+  if (toolName === 'start_setup' && setupContext?.automationId) {
+    return {
+      automation_id: setupContext.automationId,
+      automation_name: setupContext.automationName || 'Automation',
+    };
+  }
+
+  return null;
 }
 
 // Execute the tool action
@@ -635,6 +887,259 @@ function extractSelectedAutomationContext(content) {
     automationId: idMatch[1],
     automationName: nameMatch?.[1] || 'Selected automation',
   };
+}
+
+function extractActivepiecesConnectionCompleted(content) {
+  if (!content) return null;
+
+  const marker = content.match(
+    /\[ACTIVEPIECES_CONNECTION_COMPLETED\s+automation_id="([^"]+)",\s*automation_name="([^"]*)",\s*provider="([^"]*)"\]/i
+  );
+  if (!marker) return null;
+
+  return {
+    automationId: marker[1],
+    automationName: marker[2] || 'Selected automation',
+    provider: marker[3] || '',
+  };
+}
+
+function extractConfigFormSubmission(content) {
+  if (!content) return null;
+  const marker = content.match(/\[CONFIG_FORM_SUBMITTED\s+automation_id="([^"]+)",\s*automation_name="([^"]+)"\]/i);
+  if (!marker) return null;
+
+  const configStart = content.lastIndexOf('existing_config=');
+  if (configStart < 0) return null;
+
+  const objectStart = content.indexOf('{', configStart);
+  if (objectStart < 0) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let objectEnd = -1;
+  for (let index = objectStart; index < content.length; index += 1) {
+    const character = content[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === '\\' && inString) {
+      escaped = true;
+      continue;
+    }
+    if (character === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (character === '{') depth += 1;
+    if (character === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        objectEnd = index + 1;
+        break;
+      }
+    }
+  }
+  if (objectEnd < 0) return null;
+
+  try {
+    return {
+      automationId: marker[1],
+      automationName: marker[2],
+      config: JSON.parse(content.slice(objectStart, objectEnd)),
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function extractFrontendConfigSubmission(lastUserMessage, frontendSetupState) {
+  if (!frontendSetupState || typeof frontendSetupState !== 'object') return null;
+  if (!/filled\s+the\s+setup\s+details|continue\s+setup/i.test(lastUserMessage || '')) return null;
+
+  const collectedConfig = frontendSetupState.collectedConfig || frontendSetupState.collectedFields || {};
+  if (!collectedConfig || typeof collectedConfig !== 'object' || Object.keys(collectedConfig).length === 0) {
+    return null;
+  }
+
+  const automationId = frontendSetupState.automationId;
+  if (!automationId || String(automationId) === 'undefined') return null;
+
+  return {
+    automationId,
+    automationName: frontendSetupState.automationName || 'Selected automation',
+    config: collectedConfig,
+  };
+}
+
+function mergeConfigSubmissions(parsedSubmission, frontendSubmission) {
+  if (!parsedSubmission) return frontendSubmission;
+  if (!frontendSubmission) return parsedSubmission;
+
+  return {
+    automationId: parsedSubmission.automationId || frontendSubmission.automationId,
+    automationName: parsedSubmission.automationName || frontendSubmission.automationName,
+    config: {
+      ...(parsedSubmission.config || {}),
+      ...(frontendSubmission.config || {}),
+    },
+  };
+}
+
+function mergeOrchestratorSetupContext(parsedContext, frontendState) {
+  const parsed = parsedContext && typeof parsedContext === 'object' ? parsedContext : {};
+  const frontend = frontendState && typeof frontendState === 'object' ? frontendState : {};
+  const collectedConfig = {
+    ...(parsed.collectedConfig || {}),
+    ...(frontend.collectedConfig || {}),
+    ...(frontend.collectedFields || {}),
+  };
+  const missingFields = frontend.missingFields || parsed.missingFields || [];
+
+  if (!parsed.automationId && !frontend.automationId) return null;
+
+  return {
+    automationId: frontend.automationId || parsed.automationId || null,
+    automationName: frontend.automationName || parsed.automationName || null,
+    collectedConfig,
+    missingFields,
+    readyToExecute: Boolean(
+      frontend.isReadyToExecute ||
+      parsed.readyToExecute ||
+      (frontend.readyConfig && Object.keys(frontend.readyConfig).length > 0)
+    ),
+    isBackgroundPrompt: Boolean(parsed.isBackgroundPrompt || frontend.isBackgroundPrompt),
+  };
+}
+
+function extractUserAutomationStatusRequest(content) {
+  if (!content || typeof content !== 'string') return null;
+
+  const normalized = content
+    .toLowerCase()
+    .replace(/[^\w\s'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return null;
+
+  const tokens = normalized.split(' ').filter(Boolean);
+  const mentionsAutomation = hasSimilarKeyword(tokens, ['automation', 'automations', 'workflow', 'workflows']);
+  const asksToInspect = hasSimilarKeyword(tokens, ['show', 'list', 'check', 'view', 'what', 'which', 'tell']);
+  const mentionsOwnership =
+    hasSimilarKeyword(tokens, ['my', 'mine']) ||
+    normalized.includes("i'm") ||
+    normalized.includes('i am') ||
+    normalized.includes('i have');
+  const mentionsRunState = hasSimilarKeyword(tokens, [
+    'running',
+    'active',
+    'paused',
+    'status',
+    'enabled',
+    'disabled',
+    'inactive',
+    'currently',
+    'current',
+    'existing',
+    'already',
+  ]);
+
+  if (!mentionsAutomation) return null;
+  if (!mentionsRunState && !(mentionsOwnership && asksToInspect)) return null;
+
+  let statusFilter = 'all';
+  const wantsActive = hasSimilarKeyword(tokens, ['active', 'running', 'enabled', 'currently', 'current']);
+  const wantsPaused = hasSimilarKeyword(tokens, ['paused', 'disabled', 'inactive']);
+  if (wantsActive && !wantsPaused) {
+    statusFilter = 'active';
+  } else if (wantsPaused && !wantsActive) {
+    statusFilter = 'paused';
+  }
+
+  return { statusFilter };
+}
+
+function getInstantConversationalResponse(content) {
+  if (!content || typeof content !== 'string') return null;
+
+  const normalized = content
+    .toLowerCase()
+    .replace(/[.!?,;:]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (/^(hi|hello|hey|hey there|hi there|yo|sup|good morning|good afternoon|good evening)$/.test(normalized)) {
+    return "Hey! Tell me what you'd like to automate, and I'll find an available workflow for you.";
+  }
+
+  if (/^(thanks|thank you|thank you very much|thx)$/.test(normalized)) {
+    return "You're welcome! What would you like to do next?";
+  }
+
+  if (/^(bye|goodbye|see you|see you later)$/.test(normalized)) {
+    return 'See you soon!';
+  }
+
+  if (/^(ok|okay|got it|sounds good)$/.test(normalized)) {
+    return 'Got it. What would you like to do next?';
+  }
+
+  return null;
+}
+
+function hasSimilarKeyword(tokens, keywords) {
+  return tokens.some((token) => keywords.some((keyword) => tokenLooksLikeKeyword(token, keyword)));
+}
+
+function tokenLooksLikeKeyword(token, keyword) {
+  if (!token || !keyword) return false;
+  if (token === keyword) return true;
+
+  const trimmedToken = token.replace(/^'+|'+$/g, '');
+  if (trimmedToken === keyword) return true;
+
+  const sharedPrefixLength = Math.min(trimmedToken.length, keyword.length, 4);
+  if (sharedPrefixLength >= 3 && trimmedToken.slice(0, sharedPrefixLength) === keyword.slice(0, sharedPrefixLength)) {
+    const lengthDelta = Math.abs(trimmedToken.length - keyword.length);
+    if (lengthDelta <= 2) return true;
+  }
+
+  if (Math.abs(trimmedToken.length - keyword.length) > 2) return false;
+  return getLevenshteinDistance(trimmedToken, keyword, 2) <= 2;
+}
+
+function getLevenshteinDistance(source, target, maxDistance) {
+  if (source === target) return 0;
+  if (!source.length) return target.length;
+  if (!target.length) return source.length;
+  if (Math.abs(source.length - target.length) > maxDistance) return maxDistance + 1;
+
+  let previous = Array.from({ length: target.length + 1 }, (_, index) => index);
+
+  for (let row = 0; row < source.length; row += 1) {
+    const current = [row + 1];
+    let smallest = current[0];
+
+    for (let column = 0; column < target.length; column += 1) {
+      const cost = source[row] === target[column] ? 0 : 1;
+      const value = Math.min(
+        previous[column + 1] + 1,
+        current[column] + 1,
+        previous[column] + cost
+      );
+      current.push(value);
+      if (value < smallest) smallest = value;
+    }
+
+    if (smallest > maxDistance) return maxDistance + 1;
+    previous = current;
+  }
+
+  return previous[target.length];
 }
 
 // Extract setup context from conversation

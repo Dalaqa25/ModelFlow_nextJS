@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { activateNativeAutomation } from '@/lib/automation-runtime/client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,7 +9,7 @@ const supabase = createClient(
 
 export async function POST(request, { params }) {
   try {
-    const { id: automationId } = params;
+    const { id: automationId } = await params;
     const { config } = await request.json();
 
     // Get user from session
@@ -39,35 +40,28 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'This automation does not require background execution' }, { status: 400 });
     }
 
-    // Upsert user_automations: create the row if it doesn't exist yet,
-    // or update it if it does. Using plain .update() silently no-ops when
-    // no row exists, which is the root cause of "failed to save" errors.
-    const { error: updateError } = await supabase
-      .from('user_automations')
-      .upsert({
-        user_id: user.id,
-        automation_id: automationId,
-        is_active: true,
-        parameters: config,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,automation_id',
-        ignoreDuplicates: false
-      });
-
-    if (updateError) {
-      console.error('[activate-background] Error:', updateError);
-      return NextResponse.json({ error: 'Failed to activate background execution' }, { status: 500 });
-    }
+    // The native runtime owns activation and updates is_active only after n8n
+    // has successfully provisioned the persistent workflow. Never claim an
+    // automation is active based on a database flag alone.
+    const activation = await activateNativeAutomation({
+      automationId,
+      userId: user.id,
+      config,
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Background execution activated successfully',
-      automation_name: automation.name
+      automation_name: automation.name,
+      engine: activation.engine,
+      native_workflow_id: activation.native_workflow_id,
     });
 
   } catch (error) {
     console.error('[activate-background] Exception:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Failed to activate background execution',
+      message: error.message,
+    }, { status: error.status || 500 });
   }
 }

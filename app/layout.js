@@ -10,8 +10,8 @@ const inter = Inter({
 
 export const metadata = {
     title: "ModelGrow – Run Powerful Automations with AI",
-    description: "Discover community-built workflows, launch them through chat, and earn when others use the automations you publish.",
-    keywords: ["ModelGrow", "AI automation marketplace", "workflow automation", "automation marketplace", "pre-built automations", "AI search", "no-code automations", "creator marketplace"],
+    description: "Discover workflows, launch them through chat, and publish automations that others can use.",
+    keywords: ["ModelGrow", "workflow automation", "pre-built automations", "AI search", "no-code automations", "automation builder"],
     authors: [{ name: "ModelGrow" }],
     creator: "ModelGrow",
     publisher: "ModelGrow",
@@ -36,7 +36,7 @@ export const metadata = {
         url: "https://modelgrow.com",
         siteName: "ModelGrow",
         title: "ModelGrow – Run Powerful Automations with AI",
-        description: "Discover community-built workflows, launch them through chat, and earn when others use the automations you publish.",
+        description: "Discover workflows, launch them through chat, and publish automations that others can use.",
         images: [
             {
                 url: '/logo.png',
@@ -49,7 +49,7 @@ export const metadata = {
     twitter: {
         card: "summary_large_image",
         title: "ModelGrow – Run Powerful Automations with AI",
-        description: "Discover community-built workflows, launch them through chat, and earn when others use the automations you publish.",
+        description: "Discover workflows, launch them through chat, and publish automations that others can use.",
         images: ['/logo.png'],
     },
 };
@@ -59,9 +59,9 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'ModelGrow',
-    alternateName: 'ModelGrow AI Automation Marketplace',
+    alternateName: 'ModelGrow AI Automation Platform',
     url: 'https://modelgrow.com',
-    description: 'Discover community-built workflows, launch them through chat, and earn when others use the automations you publish.',
+    description: 'Discover workflows, launch them through chat, and publish automations that others can use.',
     potentialAction: {
         '@type': 'SearchAction',
         target: 'https://modelgrow.com/community?search={search_term_string}',
@@ -71,8 +71,13 @@ const jsonLd = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){try{var mode=localStorage.getItem('themeMode')||'system';var dark=mode==='dark'||(mode==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var root=document.documentElement;root.classList.toggle('dark',dark);root.classList.toggle('light',!dark);root.style.colorScheme=dark?'dark':'light';}catch(e){}})();`,
+                    }}
+                />
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

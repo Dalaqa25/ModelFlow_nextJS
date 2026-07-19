@@ -6,11 +6,11 @@ import { useAuth } from "@/lib/auth/supabase-auth-context";
 import RequestBox from "@/app/components/requests/requestBox";
 import Request from "@/app/components/requests/request";
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
-import { FaPlus } from 'react-icons/fa';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import SignInDialog from '@/app/components/auth/login/SignInDialog';
 import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 import { toast } from 'react-hot-toast';
+import { Lightbulb, Plus, Search, Sparkles } from 'lucide-react';
 
 export default function RequestsClient() {
     const [isClicked, setIsClicked] = useState(false);
@@ -43,40 +43,54 @@ export default function RequestsClient() {
             />
 
             <div className="min-h-screen pb-20" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
-                {/* Compact Header */}
                 <div className="max-w-5xl lg:max-w-6xl mx-auto px-5 sm:px-6 pt-10 sm:pt-14 pb-8 sm:pb-10">
-                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-                        <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-1.5">
-                                Community
-                            </h1>
-                            <p className="text-sm sm:text-base text-slate-400">
-                                Suggest automations and share ideas with the community.
-                            </p>
+                    <div className="community-surface rounded-lg p-5 sm:p-6">
+                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-2xl">
+                                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white/35 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[var(--landing-muted)] dark:bg-white/[0.06]">
+                                    <Sparkles className="h-3.5 w-3.5 text-[var(--landing-accent)]" />
+                                    Community requests
+                                </div>
+                                <h1 className="text-3xl font-black leading-tight text-[var(--landing-ink)] sm:text-4xl">
+                                    Ask builders for the automation you need.
+                                </h1>
+                                <p className="mt-3 text-sm font-semibold leading-6 text-[var(--landing-muted)] sm:text-base">
+                                    Browse ideas, request missing workflows, and turn repeated manual work into reusable automations.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleNewRequestClick}
+                                disabled={loading}
+                                className="auth-primary-button inline-flex w-fit shrink-0 items-center gap-2 rounded-lg px-5 py-3 text-sm font-black transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
+                                        Loading
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="h-4 w-4" />
+                                        New Request
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <button
-                            onClick={handleNewRequestClick}
-                            disabled={loading}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 w-fit"
-                        >
-                            {loading ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/30 border-t-white" />
-                                    Loading...
-                                </>
-                            ) : (
-                                <>
-                                    <FaPlus className="text-xs" />
-                                    New Request
-                                </>
-                            )}
-                        </button>
+                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                            <div className="flex items-center gap-3 rounded-lg border border-[var(--landing-border)] bg-white/30 px-4 py-3 dark:bg-white/[0.05]">
+                                <Search className="h-4 w-4 text-[var(--landing-accent-3)]" />
+                                <span className="text-sm font-bold text-[var(--landing-ink)]">Discover ideas</span>
+                            </div>
+                            <div className="flex items-center gap-3 rounded-lg border border-[var(--landing-border)] bg-white/30 px-4 py-3 dark:bg-white/[0.05]">
+                                <Lightbulb className="h-4 w-4 text-[var(--landing-accent)]" />
+                                <span className="text-sm font-bold text-[var(--landing-ink)]">Request missing tools</span>
+                            </div>
+                            <div className="flex items-center gap-3 rounded-lg border border-[var(--landing-border)] bg-white/30 px-4 py-3 dark:bg-white/[0.05]">
+                                <Plus className="h-4 w-4 text-[var(--landing-accent-2)]" />
+                                <span className="text-sm font-bold text-[var(--landing-ink)]">Builders can respond</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                {/* Divider */}
-                <div className="max-w-5xl lg:max-w-6xl mx-auto px-5 sm:px-6">
-                    <div className="border-t border-slate-700/30" />
                 </div>
 
                 {/* Feed */}

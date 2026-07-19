@@ -17,23 +17,64 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createBrowserSupabaseClient();
+  const [supabase] = useState(() => createBrowserSupabaseClient());
   const router = useRouter();
+
+  const clearBrokenLocalSession = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {}
+    setUser(null);
+  };
+
+  const validateServerSession = async () => {
+    try {
+      const response = await fetch('/api/user', {
+        credentials: 'include',
+        redirect: 'manual',
+        cache: 'no-store',
+      });
+
+      if (response.type === 'opaqueredirect') {
+        return false;
+      }
+
+      if (response.status >= 300 && response.status < 400) {
+        return false;
+      }
+
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
 
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error) {
-          await supabase.auth.signOut({ scope: 'local' });
-          setUser(null);
+        // Reading the local session first avoids two unnecessary network requests
+        // for signed-out visitors. Authenticated sessions are still verified by
+        // both Supabase and ModelGrow before they are trusted.
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session?.user) {
+          if (sessionError) await clearBrokenLocalSession();
+          else setUser(null);
+          return;
+        }
+
+        const [userResult, isServerSessionValid] = await Promise.all([
+          supabase.auth.getUser(),
+          validateServerSession(),
+        ]);
+        const verifiedUser = userResult.data?.user;
+
+        if (userResult.error || !verifiedUser || !isServerSessionValid) {
+          await clearBrokenLocalSession();
         } else {
-          setUser(user ?? null);
+          setUser(verifiedUser);
         }
       } catch (error) {
-        await supabase.auth.signOut({ scope: 'local' });
-        setUser(null);
+        await clearBrokenLocalSession();
       } finally {
         setLoading(false);
       }
@@ -43,13 +84,28 @@ export const AuthProvider = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
+        // getInitialSession owns the first validation. Repeating it here adds a
+        // second /api/user round trip and delays the initial app reveal.
+        if (event === 'INITIAL_SESSION') return;
+
+        if (!session?.user) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const isServerSessionValid = await validateServerSession();
+        if (!isServerSessionValid) {
+          await clearBrokenLocalSession();
+        } else {
+          setUser(session.user);
+        }
         setLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const signUpWithOtp = async (email, userData = {}) => {
     try {

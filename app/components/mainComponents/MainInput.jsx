@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FiSend, FiSquare, FiUpload, FiMic, FiMicOff, FiZap, FiBriefcase } from 'react-icons/fi';
 import { FaLinkedinIn, FaTiktok, FaCar } from 'react-icons/fa';
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import Link from 'next/link';
 
 const PLACEHOLDER_HINTS = [
     "I want to automate my YouTube uploads...",
@@ -77,7 +75,6 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
     const [hasInteracted, setHasInteracted] = useState(false);
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
-    const { isDarkMode } = useThemeAdaptive();
     const { isMobile, isExpanded } = useSidebar();
     const { isAuthenticated } = useAuth();
 
@@ -250,10 +247,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 onFocus={handleScopeOn}
                 onBlur={handleScopeOff}
             >
-                <div className={`flex items-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] border shadow-md transition-all duration-500 ${isDarkMode
-                    ? 'border-white/10 bg-slate-800 shadow-black/30 hover:border-purple-500/40 focus-within:border-purple-500/40'
-                    : 'border-slate-200 bg-white shadow-slate-300/50 hover:border-indigo-300/80 focus-within:border-indigo-300/80'
-                    }`}
+                <div className="landing-input-card flex items-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-300 hover:-translate-y-0.5 focus-within:-translate-y-0.5 focus-within:border-[var(--landing-accent)]"
                     onMouseEnter={handleInteraction}
                 >
                     <input
@@ -267,7 +261,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                         <button
                             type="button"
                             onClick={handleUploadClick}
-                            className="p-2 -ml-2 rounded-xl text-purple-500 hover:bg-purple-500/10 transition-colors animate-pulse"
+                            className="p-2 -ml-2 rounded-xl text-[var(--landing-accent-3)] hover:bg-white/30 transition-colors animate-pulse"
                             title="Upload File"
                         >
                             <FiUpload className="w-6 h-6" />
@@ -283,13 +277,11 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             onFocus={handleInteraction}
                             placeholder={hasInteracted ? "I want to automate..." : ""}
                             rows={1}
-                            className={`w-full bg-transparent !border-0 !outline-0 !ring-0 !shadow-none text-sm sm:text-base font-normal transition-opacity duration-300 resize-none overflow-y-auto ${isDarkMode ? 'text-gray-100 placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-400'
-                                }`}
+                            className="w-full bg-transparent !border-0 !outline-0 !ring-0 !shadow-none text-sm sm:text-base font-bold transition-opacity duration-300 resize-none overflow-y-auto text-[var(--landing-ink)] placeholder:text-[var(--landing-muted)]"
                             style={{ maxHeight: isMobile ? '120px' : '150px', outline: 'none !important', border: 'none !important', boxShadow: 'none !important' }}
                         />
                         {showAnimatedPlaceholder && (
-                            <div className={`absolute top-0 left-0 right-[40px] pointer-events-none flex items-center text-sm sm:text-base font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                                }`}>
+                            <div className="absolute top-0 left-0 right-[40px] pointer-events-none flex items-center text-sm sm:text-base font-bold text-[var(--landing-muted)]">
                                 <span className="whitespace-nowrap overflow-hidden text-ellipsis block max-w-full">
                                     {animatedPlaceholder}
                                 </span>
@@ -313,10 +305,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                     onClick={toggleRecording}
                                     className={`flex items-center justify-center p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all ${
                                         isRecording
-                                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30 animate-pulse'
-                                            : isDarkMode
-                                                ? 'text-gray-400 hover:text-white hover:bg-white/8'
-                                                : 'text-gray-400 hover:text-gray-700 hover:bg-black/5'
+                                            ? 'bg-[var(--landing-accent-2)] text-white shadow-[0_8px_24px_rgba(41,185,154,0.28)] animate-pulse'
+                                            : 'text-[var(--landing-muted)] hover:text-[var(--landing-ink)] hover:bg-white/30'
                                     }`}
                                     title={isRecording ? 'Stop recording' : 'Voice input'}
                                 >
@@ -329,10 +319,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 className={`
                                     flex items-center justify-center p-2 sm:p-2.5 rounded-xl sm:rounded-2xl transition-all
                                     ${inputValue.trim()
-                                        ? 'bg-gradient-to-br from-violet-400 to-indigo-500 hover:from-violet-300 hover:to-indigo-400 text-white shadow-lg shadow-purple-500/30 hover:scale-105'
-                                        : isDarkMode
-                                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                        ? 'landing-button hover:-translate-y-0.5'
+                                        : 'bg-white/40 text-[var(--landing-muted)] cursor-not-allowed border border-[var(--landing-border)]'
                                     }
                                 `}
                             >
@@ -343,13 +331,13 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 </div>
             </form>
             {!chatStarted && !isAtBottomInternal && !scrolledDown && (
-                <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
-                    {[
-                        { icon: <FiBriefcase className="w-3 h-3 flex-shrink-0 text-purple-400" />, label: 'Auto Job Matcher', prompt: 'I want to use the Auto Job Matcher automation' },
-                        { icon: <FaLinkedinIn className="w-3 h-3 flex-shrink-0 text-[#0A66C2]" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
-                        { icon: <FaCar className="w-3 h-3 flex-shrink-0 text-orange-400" />, label: 'Auto Parts Search', prompt: 'I want to use the Auto Parts Search Engine automation' },
-                        { icon: <FaTiktok className="w-3 h-3 flex-shrink-0 text-white" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation', mobileHide: true },
-                        { icon: <FiZap className="w-3 h-3 flex-shrink-0 hidden sm:block" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation', mobileHide: true },
+                    <div className="flex gap-2 sm:gap-3 mt-4 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap max-w-4xl mx-auto px-4">
+                        {[
+                            { icon: <FiBriefcase className="w-3.5 h-3.5 flex-shrink-0" />, label: 'Auto Job Matcher', prompt: 'I want to use the Auto Job Matcher automation' },
+                            { icon: <FaLinkedinIn className="w-3.5 h-3.5 flex-shrink-0" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
+                            { icon: <FaCar className="w-3.5 h-3.5 flex-shrink-0" />, label: 'Auto Parts Search', prompt: 'I want to use the Auto Parts Search Engine automation' },
+                            { icon: <FaTiktok className="w-3.5 h-3.5 flex-shrink-0" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation', mobileHide: true },
+                            { icon: <FiZap className="w-3.5 h-3.5 flex-shrink-0 hidden sm:block" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation', mobileHide: true },
                     ].map(({ icon, label, prompt, mobileHide }) => (
                         <button
                             key={label}
@@ -364,15 +352,7 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                                 handleInteraction();
                                 textareaRef.current?.focus();
                             }}
-                            className={`pointer-events-auto flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-1.5 rounded-[2rem] border transition-all duration-200 ${mobileHide && isAuthenticated ? 'hidden sm:flex' : 'flex'} ${
-                                label === 'Auto Parts Search'
-                                    ? isDarkMode
-                                        ? 'border-orange-400/50 text-orange-300 shadow-[0_0_6px_1px_rgba(251,146,60,0.25)] animate-pulse hover:shadow-[0_0_8px_2px_rgba(251,146,60,0.35)] hover:text-orange-200'
-                                        : 'border-orange-400/50 text-orange-500 shadow-[0_0_6px_1px_rgba(251,146,60,0.2)] animate-pulse hover:shadow-[0_0_8px_2px_rgba(251,146,60,0.3)] hover:text-orange-600'
-                                    : isDarkMode
-                                        ? 'border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5'
-                                        : 'border-slate-200 text-gray-500 hover:text-gray-800 hover:border-indigo-300 hover:bg-black/5'
-                            }`}
+                            className={`landing-card-soft pointer-events-auto items-center gap-2 whitespace-nowrap text-xs sm:text-sm font-bold px-4 py-2 rounded-2xl text-[var(--landing-ink)] hover:-translate-y-0.5 transition-all duration-200 ${mobileHide && isAuthenticated ? 'hidden sm:flex' : 'flex'}`}
                         >
                             {icon}
                             {label}
@@ -384,4 +364,3 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
         </div>
     );
 }
-

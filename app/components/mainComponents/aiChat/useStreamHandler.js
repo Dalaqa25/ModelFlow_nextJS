@@ -75,8 +75,19 @@ export function createStreamHandler({
   };
 
   const handleParsedEvent = (parsed) => {
+    // Thinking is explicit per message so the indicator is not coupled to unrelated
+    // page loading state. The server ends it immediately before real content/UI arrives.
+    if (parsed.type === 'thinking') {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, isThinking: parsed.status === 'start' }
+            : msg
+        )
+      );
+    }
     // Handle automation results (legacy cards)
-    if (parsed.type === 'automations' && parsed.automations) {
+    else if (parsed.type === 'automations' && parsed.automations) {
       setAutomationContext(null);
       flushQueue();
       setMessages(prev =>
@@ -150,9 +161,15 @@ export function createStreamHandler({
       );
     }
     // Handle config requests
-    else if (parsed.type === 'config_request') {
+    else if (parsed.type === 'config_request' || parsed.type === 'customization_request') {
       flushQueue();
-      const configRequest = { automation_id: parsed.automation_id, required_inputs: parsed.required_inputs };
+      const configRequest = {
+        automation_id: parsed.automation_id,
+        automation_name: parsed.automation_name,
+        required_inputs: parsed.required_inputs || [],
+        optional_inputs: parsed.optional_inputs || [],
+        collected_config: parsed.collected_config || {},
+      };
       onUiMetadataUpdate?.({ configRequest });
       setMessages(prev =>
         prev.map(msg =>
@@ -205,6 +222,7 @@ export function createStreamHandler({
         automationId: parsed.automation_id,
         automationName: parsed.automation_name,
         requiredFields: parsed.required_inputs || [],
+        optionalFields: parsed.optional_inputs || [],
         collectedFields: parsed.collected_fields || prev?.collectedFields || {}
       }));
       setSelectedAutomation({
@@ -243,6 +261,27 @@ export function createStreamHandler({
     }
     // Handle automation complete
     else if (parsed.type === 'automation_complete') {
+      const automationId = parsed.automation_id || parsed.result?.automation_id || parsed.result?.automationId || null;
+      const runtimeStatus = automationId
+        ? {
+            automation_id: automationId,
+            automation_name: parsed.automation_name || parsed.result?.automation_name || parsed.result?.automationName || null,
+            result: parsed.result || null,
+          }
+        : null;
+
+      if (runtimeStatus) {
+        flushQueue();
+        onUiMetadataUpdate?.({ runtimeStatus });
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, content: displayedText, runtimeStatus }
+              : msg
+          )
+        );
+      }
+
       setSelectedAutomation(null);
       setSetupState(null);
     }
@@ -258,16 +297,33 @@ export function createStreamHandler({
     }
     // Handle awaiting input - preserve automation context AND collected config for next AI call
     else if (parsed.type === 'awaiting_input') {
+      const configRequest = {
+        automation_id: parsed.automation_id,
+        automation_name: parsed.automation_name,
+        required_inputs: parsed.required_inputs || [],
+        optional_inputs: parsed.optional_inputs || [],
+        missing_fields: parsed.missing_fields || [],
+        collected_config: parsed.collected_config || {}
+      };
+      onUiMetadataUpdate?.({ configRequest });
       setSetupState(prev => ({
         automationId: parsed.automation_id,
         automationName: parsed.automation_name,
-        requiredFields: prev?.requiredFields || parsed.missing_fields.map(f => ({ name: f })),
+        requiredFields: parsed.required_inputs || prev?.requiredFields || (parsed.missing_fields || []).map(f => ({ name: f })),
+        optionalFields: parsed.optional_inputs || prev?.optionalFields || [],
         collectedFields: prev?.collectedFields || {},
         // MERGE: never wipe previously collected fields — incoming config wins for new keys only
         collectedConfig: { ...(prev?.collectedConfig || {}), ...(parsed.collected_config || {}) },
-        missingFields: parsed.missing_fields,
+        missingFields: parsed.missing_fields || [],
         isAwaitingInput: true
       }));
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId
+            ? { ...msg, content: displayedText, configRequest }
+            : msg
+        )
+      );
     }
     // Handle automation instances (user stats)
     else if (parsed.type === 'automation_instances' && parsed.instances) {
@@ -354,6 +410,11 @@ export function createStreamHandler({
     }
     // Handle regular content
     else if (parsed.content) {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId ? { ...msg, isThinking: false } : msg
+        )
+      );
       textQueue += parsed.content;
       startTypewriterAnimation();
     }
@@ -362,8 +423,13 @@ export function createStreamHandler({
   return {
     handleParsedEvent,
     startTypewriterAnimation,
-    markStreamEnded: () => { 
+    markStreamEnded: () => {
       streamEnded = true;
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId ? { ...msg, isThinking: false } : msg
+        )
+      );
       // Final content update when stream ends
       if (onContentUpdate) onContentUpdate(displayedText + textQueue);
     },

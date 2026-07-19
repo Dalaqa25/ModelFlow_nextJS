@@ -4,7 +4,23 @@ import { userDB } from '@/lib/db/supabase-db';
 import { createAdminClient } from '@/lib/db/supabase-server';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { getActivepiecesBrowserAuthForModelGrowUser } from '@/lib/activepieces/provisioning';
-import { getFlow, getFlowTemplate, isActivepiecesConfigured } from '@/lib/activepieces/client';
+import { getFlow, getFlowTemplate, isActivepiecesConfigured, publishFlow } from '@/lib/activepieces/client';
+import { getLegacyTriggerTypeFromWorkflow } from '@/lib/activepieces/lifecycle';
+import {
+  getFlowDisplayName,
+  getSourceFlowBlockMessage,
+  getSourceFlowBlockReason,
+} from '@/lib/activepieces/flow-guards';
+import {
+  analyzeActivepiecesWorkflow,
+  getRequiredConnectorsFromContract,
+  getRequiredInputsFromContract,
+} from '@/lib/activepieces/workflow-analyzer';
+import {
+  buildRuntimePublishTestResult,
+  verifyPublishTestToken,
+} from '@/lib/activepieces/publish-test';
+import { notifyAutomationReviewRequested } from '@/lib/email/admin-review-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,58 +38,36 @@ function normalizeTokenCost(value) {
   return Math.min(Math.round(parsed), MAX_TOKEN_COST);
 }
 
-function getPieceSlug(pieceName) {
-  if (!pieceName || typeof pieceName !== 'string') return null;
-  return pieceName
-    .replace(/^@activepieces\/piece-/, '')
-    .replace(/^piece-/, '')
-    .trim()
-    .toLowerCase();
-}
+async function pausePublishedSourceFlow({ token, projectId, flowId }) {
+  if (!token || !projectId || !flowId) return false;
 
-function collectPiecesFromStep(step, pieces = new Set()) {
-  if (!step || typeof step !== 'object') return pieces;
+  try {
+    const flow = await getFlow({ token, projectId, flowId });
+    if (String(flow?.status || flow?.version?.status || '').toUpperCase() !== 'ENABLED') {
+      return false;
+    }
 
-  const pieceName = step.settings?.pieceName || step.pieceName || step.name;
-  const slug = getPieceSlug(pieceName);
-  if (slug && !['manual', 'webhook', 'schedule'].includes(slug)) {
-    pieces.add(slug);
+    await publishFlow({
+      token,
+      projectId,
+      flowId,
+      status: 'DISABLED',
+    });
+
+    console.info('[Activepieces Publish] Paused source builder flow after publishing to prevent duplicate live triggers', {
+      projectId,
+      flowId,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Activepieces Publish] Could not pause source builder flow after publishing', {
+      projectId,
+      flowId,
+      message: error?.message,
+      status: error?.status,
+    });
+    return false;
   }
-
-  if (step.nextAction) collectPiecesFromStep(step.nextAction, pieces);
-  if (Array.isArray(step.branches)) {
-    for (const branch of step.branches) collectPiecesFromStep(branch, pieces);
-  }
-  if (Array.isArray(step.children)) {
-    for (const child of step.children) collectPiecesFromStep(child, pieces);
-  }
-
-  return pieces;
-}
-
-function getTemplateFlow(template) {
-  if (Array.isArray(template?.flows)) return template.flows[0];
-  if (template?.template?.trigger) return template.template;
-  return template;
-}
-
-function getTriggerFromTemplate(template) {
-  const flow = getTemplateFlow(template);
-  return flow?.trigger || flow?.version?.trigger || template?.trigger || null;
-}
-
-function detectRequiredConnectors(template) {
-  const trigger = getTriggerFromTemplate(template);
-  return Array.from(collectPiecesFromStep(trigger)).sort();
-}
-
-function detectTriggerType(template) {
-  const trigger = getTriggerFromTemplate(template);
-  const pieceSlug = getPieceSlug(trigger?.settings?.pieceName || trigger?.pieceName || trigger?.name);
-  if (pieceSlug === 'schedule') return 'schedule';
-  if (pieceSlug === 'webhook') return 'webhook';
-  if (pieceSlug === 'manual') return 'manual';
-  return 'webhook';
 }
 
 export async function POST(request) {
@@ -83,7 +77,7 @@ export async function POST(request) {
   }
 
   if (!isActivepiecesConfigured()) {
-    return NextResponse.json({ error: 'Activepieces is not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'ModelGrow Builder is not configured' }, { status: 500 });
   }
 
   try {
@@ -92,6 +86,7 @@ export async function POST(request) {
     const title = normalizeText(body?.title);
     const description = normalizeText(body?.description);
     const tokenCost = normalizeTokenCost(body?.tokenCost);
+    const publishTestToken = normalizeText(body?.publishTestToken);
 
     if (!flowId) {
       return NextResponse.json({ error: 'Flow is required' }, { status: 400 });
@@ -116,10 +111,61 @@ export async function POST(request) {
     if (!flow?.id) {
       return NextResponse.json({ error: 'Flow not found in your builder workspace' }, { status: 404 });
     }
+    const blockReason = getSourceFlowBlockReason(flow);
+    if (blockReason) {
+      return NextResponse.json({
+        error: getSourceFlowBlockMessage(blockReason),
+        reason: blockReason,
+      }, { status: blockReason === 'runtime_copy' ? 403 : 409 });
+    }
 
     const template = await getFlowTemplate({ token: authResponse.token, flowId, projectId });
-    const requiredConnectors = detectRequiredConnectors(template);
-    const triggerType = detectTriggerType(template);
+    const analyzedContract = await analyzeActivepiecesWorkflow({
+      template,
+      token: authResponse.token,
+      projectId,
+    });
+
+    const publishTestVerification = verifyPublishTestToken({
+      token: publishTestToken,
+      userEmail: authUser.email,
+      projectId,
+      flow,
+    });
+    if (!publishTestVerification.valid) {
+      return NextResponse.json({
+        error: 'Run and pass the required publish test before publishing this automation.',
+        reason: publishTestVerification.reason,
+      }, { status: 409 });
+    }
+
+    const publishTest = buildRuntimePublishTestResult({
+      flow,
+      contract: analyzedContract,
+      template,
+      requireRuntimeRun: false,
+    });
+    if (publishTest.status !== 'passed') {
+      return NextResponse.json({
+        error: 'The required publish test no longer passes. Fix the listed issues and run the test again.',
+        result: publishTest,
+      }, { status: 422 });
+    }
+
+    if (analyzedContract.unresolved.length > 0) {
+      return NextResponse.json({
+        error: 'This workflow contains requirements ModelGrow could not classify.',
+        unresolved: analyzedContract.unresolved,
+      }, { status: 422 });
+    }
+
+    const setupContract = {
+      ...analyzedContract,
+      confirmedAt: new Date().toISOString(),
+    };
+    const requiredConnectors = getRequiredConnectorsFromContract(setupContract);
+    const requiredInputs = getRequiredInputsFromContract(setupContract);
+    const triggerType = getLegacyTriggerTypeFromWorkflow({ template });
 
     let embedding = null;
     try {
@@ -136,45 +182,76 @@ export async function POST(request) {
       .eq('activepieces_source_flow_id', flowId)
       .maybeSingle();
 
-    if (existing) {
-      return NextResponse.json({ error: 'This builder flow is already published to ModelGrow' }, { status: 409 });
+    if (existing?.id) {
+      return NextResponse.json({
+        error: 'This builder flow is already published in ModelGrow. Edit the existing listing instead of publishing it again.',
+        reason: 'already_published',
+        automationId: existing.id,
+      }, { status: 409 });
     }
 
-    const { data: automation, error: insertError } = await supabase
-      .from('automations')
-      .insert({
-        name: title,
-        description,
-        author_email: authUser.email,
-        token_cost: tokenCost,
-        workflow: {
-          engine: 'activepieces',
-          source_project_id: projectId,
-          source_flow_id: flowId,
-          source_flow_name: flow.displayName || flow.version?.displayName || title,
-          template,
+    const automationPayload = {
+      name: title,
+      description,
+      author_email: authUser.email,
+      token_cost: tokenCost,
+      workflow: {
+        engine: 'activepieces',
+        source_project_id: projectId,
+        source_flow_id: flowId,
+        source_flow_name: getFlowDisplayName(flow) || title,
+        template,
+        setup_contract_version: setupContract.version,
+        setup_contract: setupContract,
+        publish_test: {
+          ...publishTest,
+          token_verified_at: new Date().toISOString(),
         },
-        embedding,
-        required_connectors: requiredConnectors,
-        required_inputs: [],
-        developer_keys: {},
-        required_scopes: [],
-        is_active: false,
-        activepieces_source_project_id: projectId,
-        activepieces_source_flow_id: flowId,
-        activepieces_trigger_type: triggerType,
-      })
+      },
+      embedding,
+      required_connectors: requiredConnectors,
+      required_inputs: requiredInputs,
+      developer_keys: {},
+      required_scopes: [],
+      // A changed workflow must pass marketplace review again.
+      is_active: false,
+      activepieces_source_project_id: projectId,
+      activepieces_source_flow_id: flowId,
+      activepieces_trigger_type: triggerType,
+    };
+
+    const { data: automation, error: publicationError } = await supabase
+      .from('automations')
+      .insert(automationPayload)
       .select()
       .single();
 
-    if (insertError) throw insertError;
+    if (publicationError) throw publicationError;
+
+    const sourceFlowPaused = await pausePublishedSourceFlow({
+      token: authResponse.token,
+      projectId,
+      flowId,
+    });
+
+    notifyAutomationReviewRequested({
+      automation,
+      authorEmail: authUser.email,
+      source: 'ModelGrow Builder',
+    }).catch((emailError) => {
+      console.error('[Activepieces Publish] Failed to send review notification email:', emailError);
+    });
 
     return NextResponse.json({
       success: true,
+      updated: false,
       automation,
+      sourceFlowPaused,
       detected: {
         requiredConnectors,
+        requiredInputs,
         triggerType,
+        setupContract,
       },
     }, { status: 201 });
   } catch (error) {

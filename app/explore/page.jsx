@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Bot, Briefcase, CalendarDays, Database, Mail, Search, TrendingUp, Workflow } from 'lucide-react';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 
 const CATEGORIES = [
   { label: 'All', keywords: [] },
@@ -51,68 +52,57 @@ function getCreatedAtTime(automation) {
   return Number.isFinite(time) ? time : 0;
 }
 
-function AutomationCard({ automation, onUse, featured = false, isDarkMode }) {
+function AutomationCard({ automation, onUse, featured = false }) {
   const Icon = getAutomationIcon(automation);
   const connectors = parseConnectors(automation.required_connectors);
   const tokenCost = automation.token_cost || 0;
 
-  // Clean, SaaS-style classes based on theme
-  const cardClasses = isDarkMode 
-    ? "bg-[#1C1C1E] border-[#2A2A2D] hover:border-violet-500/50" 
-    : "bg-white border-slate-200 hover:border-violet-400 hover:shadow-md";
-    
-  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
-  const textSecondary = isDarkMode ? "text-slate-400" : "text-slate-500";
-  
-  const iconBg = isDarkMode ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700";
-  
-  const badgeClasses = isDarkMode 
-    ? "bg-[#2A2A2D] border border-transparent text-slate-300" 
-    : "bg-slate-50 border border-slate-200 text-slate-600";
-
   return (
     <div 
       onClick={() => onUse(automation)}
-      className={`group flex flex-col cursor-pointer rounded-xl border p-5 transition-all duration-200 ${cardClasses}`}
+      className={`community-surface group flex cursor-pointer flex-col rounded-[1.75rem] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--landing-accent-2)]/40 ${featured ? 'lg:min-h-[320px]' : ''}`}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${iconBg}`}>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--landing-border)] bg-white/35 text-[var(--landing-accent-3)] dark:bg-white/[0.07]">
           <Icon className="h-5 w-5" />
         </div>
-        <div className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-          tokenCost > 0 
-            ? (isDarkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700')
-            : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')
+        <div className={`rounded-full border px-2.5 py-1 text-xs font-black ${
+          tokenCost > 0
+            ? 'border-[var(--landing-accent-2)]/20 bg-[var(--landing-accent-2)]/12 text-[var(--landing-accent-2)]'
+            : 'border-[var(--landing-border)] bg-white/30 text-[var(--landing-muted)] dark:bg-white/[0.05]'
         }`}>
           {tokenCost > 0 ? `${tokenCost} tokens` : 'Free'}
         </div>
       </div>
 
-      <h3 className={`text-lg font-bold leading-tight mb-2 line-clamp-1 ${textPrimary}`}>
+      <h3 className="mb-2 line-clamp-1 text-lg font-black leading-tight text-[var(--landing-ink)]">
         {automation.name}
       </h3>
-      <p className={`text-sm leading-relaxed line-clamp-2 flex-grow ${textSecondary}`}>
+      <p className="flex-grow text-sm font-semibold leading-relaxed text-[var(--landing-muted)] line-clamp-2">
         {automation.description || 'No description provided.'}
       </p>
 
       <div className="mt-5 flex flex-wrap gap-1.5">
         {connectors.slice(0, 3).map((connector) => (
-          <span key={connector} className={`px-2 py-1 text-[11px] font-medium rounded-md ${badgeClasses}`}>
+          <span
+            key={connector}
+            className="rounded-full border border-[var(--landing-border)] bg-white/30 px-2.5 py-1 text-[11px] font-bold text-[var(--landing-muted)] dark:bg-white/[0.05]"
+          >
             {connector}
           </span>
         ))}
         {connectors.length > 3 && (
-          <span className={`px-2 py-1 text-[11px] font-medium rounded-md ${badgeClasses}`}>
+          <span className="rounded-full border border-[var(--landing-border)] bg-white/30 px-2.5 py-1 text-[11px] font-bold text-[var(--landing-muted)] dark:bg-white/[0.05]">
             +{connectors.length - 3}
           </span>
         )}
       </div>
 
-      <div className={`mt-6 pt-4 border-t flex items-center justify-between ${isDarkMode ? 'border-[#2A2A2D]' : 'border-slate-100'}`}>
-        <span className={`text-xs font-medium ${textSecondary}`}>
+      <div className="mt-6 flex items-center justify-between border-t border-[var(--landing-border)] pt-4">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--landing-muted)]">
           {automation.total_runs || 0} runs
         </span>
-        <span className="flex items-center gap-1 text-sm font-semibold text-violet-600 transition-colors group-hover:text-violet-500">
+        <span className="flex items-center gap-1 text-sm font-black text-[var(--landing-accent-3)] transition-colors group-hover:text-[var(--landing-ink)]">
           Setup
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </span>
@@ -173,73 +163,64 @@ export default function ExplorePage() {
     router.push(`/main?preview=${encodeURIComponent(automation.id)}`);
   };
 
-  if (!mounted) return <div className="min-h-screen bg-[#F8FAFC]" />;
+  if (!mounted) return <div className="min-h-screen bg-[var(--landing-cream)]" />;
 
-  const bgClass = isDarkMode ? "bg-[#09090B]" : "bg-[#F8FAFC]";
-  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
-  const textSecondary = isDarkMode ? "text-slate-400" : "text-slate-500";
-  
-  const searchBg = isDarkMode 
-    ? "bg-[#1C1C1E] border-[#2A2A2D] text-white placeholder-slate-500" 
-    : "bg-white border-slate-200 text-slate-900 placeholder-slate-400";
-    
-  const tabActive = isDarkMode 
-    ? "bg-white text-black" 
-    : "bg-slate-900 text-white";
-    
-  const tabInactive = isDarkMode 
-    ? "text-slate-400 hover:bg-[#1C1C1E] hover:text-white" 
-    : "text-slate-600 hover:bg-slate-200 hover:text-slate-900";
+  const tabActive = isDarkMode
+    ? 'bg-white/14 text-[var(--landing-ink)] border-[var(--landing-accent-2)]/30'
+    : 'bg-white/65 text-[var(--landing-ink)] border-[var(--landing-border)]';
+
+  const tabInactive = 'text-[var(--landing-muted)] hover:bg-white/30 hover:text-[var(--landing-ink)] dark:hover:bg-white/[0.06]';
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${bgClass}`}>
+    <AdaptiveBackground variant="content" className="pt-16" showPattern>
       <main
-        className="px-5 py-12 transition-[padding] duration-300 sm:px-8"
+        className="min-h-screen px-5 py-10 transition-[padding] duration-300 sm:px-6 sm:py-12"
         style={{ paddingLeft: sidebarOffset }}
       >
         <div className="mx-auto max-w-6xl">
-          {/* Header */}
-          <div className="mb-10">
-            <h1 className={`text-3xl font-bold sm:text-4xl ${textPrimary}`}>
-              Explore Automations
-            </h1>
-            <p className={`mt-3 max-w-2xl text-base ${textSecondary}`}>
-              Find and launch community-built workflows for your everyday tasks.
-            </p>
-          </div>
+          <div className="community-surface rounded-[2rem] p-6 sm:p-7">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white/35 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[var(--landing-muted)] dark:bg-white/[0.06]">
+                  <Workflow className="h-3.5 w-3.5 text-[var(--landing-accent)]" />
+                  Explore automations
+                </div>
+                <h1 className="text-3xl font-black leading-tight text-[var(--landing-ink)] sm:text-4xl">
+                  Find workflows that feel native to ModelGrow.
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[var(--landing-muted)] sm:text-base">
+                  Browse community-built automations, filter by use case, and launch the ones that match your workflow.
+                </p>
+              </div>
+              <div className="landing-card-soft flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3">
+                <Search className="h-5 w-5 text-[var(--landing-muted)]" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search templates, apps, or use cases..."
+                  className="w-full bg-transparent text-sm font-bold text-[var(--landing-ink)] outline-none placeholder:text-[var(--landing-muted)]"
+                />
+              </div>
+            </div>
 
-          {/* Search Bar */}
-          <div className="mb-8">
-            <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500 ${searchBg}`}>
-              <Search className="h-5 w-5 opacity-50" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search templates, apps, or use cases..."
-                className="w-full bg-transparent text-sm font-medium outline-none"
-              />
+            <div className="mt-6 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {CATEGORIES.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setCategory(item.label)}
+                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-black transition-colors ${
+                    category === item.label ? tabActive : tabInactive
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Categories */}
-          <div className="mb-10 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATEGORIES.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => setCategory(item.label)}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  category === item.label ? tabActive : tabInactive
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Featured Section */}
           {!query && (category === 'All' || category === 'Latest') && featured.length > 0 && (
-            <div className="mb-12">
-              <h2 className={`mb-5 text-xl font-bold ${textPrimary}`}>Featured</h2>
+            <div className="mt-10 mb-12">
+              <h2 className="mb-5 text-xl font-black text-[var(--landing-ink)]">Featured</h2>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {featured.map((automation) => (
                   <AutomationCard 
@@ -247,32 +228,30 @@ export default function ExplorePage() {
                     automation={automation} 
                     onUse={handleUse} 
                     featured 
-                    isDarkMode={isDarkMode} 
                   />
                 ))}
               </div>
             </div>
           )}
 
-          {/* All Results */}
           <div>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className={`text-xl font-bold ${textPrimary}`}>
+              <h2 className="text-xl font-black text-[var(--landing-ink)]">
                 {category === 'All' ? 'All Templates' : category}
               </h2>
-              <span className={`text-sm ${textSecondary}`}>{filtered.length} results</span>
+              <span className="text-sm font-bold text-[var(--landing-muted)]">{filtered.length} results</span>
             </div>
 
             {loading ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className={`h-48 animate-pulse rounded-xl border ${isDarkMode ? 'border-[#2A2A2D] bg-[#1C1C1E]' : 'border-slate-200 bg-slate-100'}`} />
+                  <div key={i} className="community-surface h-48 animate-pulse rounded-[1.75rem]" />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className={`rounded-xl border py-20 text-center ${isDarkMode ? 'border-[#2A2A2D] bg-[#1C1C1E]' : 'border-slate-200 bg-white'}`}>
-                <p className={`text-lg font-semibold ${textPrimary}`}>No automations found</p>
-                <p className={`mt-2 text-sm ${textSecondary}`}>Try adjusting your search or category filter.</p>
+              <div className="community-surface rounded-[1.75rem] py-20 text-center">
+                <p className="text-lg font-black text-[var(--landing-ink)]">No automations found</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--landing-muted)]">Try adjusting your search or category filter.</p>
               </div>
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -281,7 +260,6 @@ export default function ExplorePage() {
                     key={automation.id} 
                     automation={automation} 
                     onUse={handleUse} 
-                    isDarkMode={isDarkMode}
                   />
                 ))}
               </div>
@@ -289,6 +267,6 @@ export default function ExplorePage() {
           </div>
         </div>
       </main>
-    </div>
+    </AdaptiveBackground>
   );
 }

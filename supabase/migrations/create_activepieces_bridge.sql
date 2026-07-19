@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS activepieces_user_links (
     user_email TEXT NOT NULL,
     activepieces_user_id TEXT,
     activepieces_project_id TEXT,
+    activepieces_builder_project_id TEXT,
+    activepieces_runtime_project_id TEXT,
     activepieces_platform_id TEXT,
     activepieces_email TEXT NOT NULL,
     activepieces_role TEXT NOT NULL DEFAULT 'MEMBER',
@@ -45,6 +47,15 @@ ALTER TABLE automations
 
 ALTER TABLE automation_executions
     ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}';
+
+ALTER TABLE activepieces_user_links
+    ADD COLUMN IF NOT EXISTS activepieces_builder_project_id TEXT,
+    ADD COLUMN IF NOT EXISTS activepieces_runtime_project_id TEXT;
+
+UPDATE activepieces_user_links
+SET activepieces_builder_project_id = activepieces_project_id
+WHERE activepieces_builder_project_id IS NULL
+  AND activepieces_project_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_activepieces_user_links_user_id
     ON activepieces_user_links(user_id);
@@ -94,3 +105,5 @@ CREATE POLICY "Users can view own Activepieces runtime flows"
 COMMENT ON TABLE activepieces_user_links IS 'Maps one ModelGrow user to one linked Activepieces user/project';
 COMMENT ON TABLE activepieces_runtime_flows IS 'Per-user Activepieces flow copies used when running ModelGrow automations';
 COMMENT ON COLUMN automations.activepieces_source_flow_id IS 'Developer/source Activepieces flow copied into each user project at runtime';
+COMMENT ON COLUMN activepieces_user_links.activepieces_builder_project_id IS 'Visible Activepieces project used for the user builder workspace';
+COMMENT ON COLUMN activepieces_user_links.activepieces_runtime_project_id IS 'Hidden Activepieces project used only for ModelGrow marketplace runtime copies';

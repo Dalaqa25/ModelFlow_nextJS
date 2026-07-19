@@ -3,24 +3,32 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import AutomationUpload from '@/app/components/automationUpload/AutomationUpload';
+import UploadChoiceModal from '@/app/components/automationUpload/UploadChoiceModal';
+import PublishFromBuilderDialog from '@/app/components/activepieces/PublishFromBuilderDialog';
 
 export default function SidebarUploadIcon({ isMobileExpanded = false }) {
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showUploadChoice, setShowUploadChoice] = useState(false);
+  const [showJsonUpload, setShowJsonUpload] = useState(false);
+  const [showBuilderPublish, setShowBuilderPublish] = useState(false);
   const { isExpanded } = useSidebar();
-  const { isDarkMode } = useThemeAdaptive();
   const showLabel = isExpanded || isMobileExpanded;
+
+  const openBuilderPublish = () => {
+    setShowUploadChoice(false);
+    setShowBuilderPublish(true);
+  };
+
+  const openJsonUpload = () => {
+    setShowUploadChoice(false);
+    setShowJsonUpload(true);
+  };
 
   return (
     <>
       <button
-        onClick={() => setShowUploadDialog(true)}
-        className={`flex items-center rounded-lg transition-colors ${
-          isDarkMode
-            ? 'text-gray-400 hover:text-white hover:bg-white/8'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-        } ${showLabel
+        onClick={() => setShowUploadChoice(true)}
+        className={`sidebar-nav-button flex items-center rounded-lg transition-colors ${showLabel
           ? 'w-full gap-3 px-3 py-2'
           : 'w-10 h-10 justify-center'
         }`}
@@ -32,10 +40,23 @@ export default function SidebarUploadIcon({ isMobileExpanded = false }) {
         )}
       </button>
 
+      <UploadChoiceModal
+        isOpen={showUploadChoice}
+        onClose={() => setShowUploadChoice(false)}
+        onChooseBuilder={openBuilderPublish}
+        onChooseJson={openJsonUpload}
+      />
+
       <AutomationUpload
-        isOpen={showUploadDialog}
-        onClose={() => setShowUploadDialog(false)}
-        onUploadSuccess={() => setShowUploadDialog(false)}
+        isOpen={showJsonUpload}
+        onClose={() => setShowJsonUpload(false)}
+        onUploadSuccess={() => setShowJsonUpload(false)}
+      />
+
+      <PublishFromBuilderDialog
+        isOpen={showBuilderPublish}
+        onClose={() => setShowBuilderPublish(false)}
+        onPublishSuccess={() => setShowBuilderPublish(false)}
       />
     </>
   );

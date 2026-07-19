@@ -4,24 +4,43 @@ import { userDB } from '@/lib/db/supabase-db';
 import { createAdminClient } from '@/lib/db/supabase-server';
 import { getActivepiecesBrowserAuthForModelGrowUser } from '@/lib/activepieces/provisioning';
 import { isActivepiecesConfigured, listFlows } from '@/lib/activepieces/client';
+import {
+  getFlowDisplayName,
+  getSourceFlowBlockMessage,
+  getSourceFlowBlockReason,
+  isModelGrowRuntimeFlow,
+} from '@/lib/activepieces/flow-guards';
 
 export const dynamic = 'force-dynamic';
 
-function normalizeFlows(response) {
+function normalizeFlows(response, existingByFlowId = new Map()) {
   const flows = Array.isArray(response?.data)
     ? response.data
     : Array.isArray(response)
       ? response
       : [];
 
-  return flows.map((flow) => ({
+  return flows.filter((flow) => !isModelGrowRuntimeFlow(flow)).map((flow) => {
+    const publishBlockReason = getSourceFlowBlockReason(flow);
+    const existing = existingByFlowId.get(flow.id) || null;
+    const existingBlockMessage = existing
+      ? 'This builder flow is already published in ModelGrow. Open the existing listing instead of publishing it again.'
+      : '';
+    return {
     id: flow.id,
-    displayName: flow.displayName || flow.version?.displayName || 'Untitled flow',
+    displayName: getFlowDisplayName(flow),
     status: flow.status || flow.version?.status || null,
     created: flow.created || null,
     updated: flow.updated || null,
     publishedVersionId: flow.publishedVersionId || null,
-  })).filter((flow) => flow.id);
+    publishedToModelGrow: Boolean(existing),
+    modelgrowAutomationId: existing?.id || null,
+    modelgrowIsActive: existing?.is_active ?? null,
+    publishable: !existing && !publishBlockReason,
+    publishBlockReason: existing ? 'already_published' : publishBlockReason,
+    publishBlockMessage: existingBlockMessage || getSourceFlowBlockMessage(publishBlockReason),
+  };
+  }).filter((flow) => flow.id);
 }
 
 export async function GET() {
@@ -31,7 +50,7 @@ export async function GET() {
   }
 
   if (!isActivepiecesConfigured()) {
-    return NextResponse.json({ error: 'Activepieces is not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'ModelGrow Builder is not configured' }, { status: 500 });
   }
 
   try {
@@ -48,10 +67,31 @@ export async function GET() {
       projectId,
       limit: 100,
     });
+    const rawFlows = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : [];
+    const flowIds = rawFlows.map((flow) => flow?.id).filter(Boolean);
+    let existingByFlowId = new Map();
+
+    if (flowIds.length > 0) {
+      const { data: existingAutomations, error: existingError } = await supabase
+        .from('automations')
+        .select('id, activepieces_source_flow_id, is_active')
+        .eq('author_email', authUser.email)
+        .eq('activepieces_source_project_id', projectId)
+        .in('activepieces_source_flow_id', flowIds);
+
+      if (existingError) throw existingError;
+      existingByFlowId = new Map(
+        (existingAutomations || []).map((automation) => [automation.activepieces_source_flow_id, automation])
+      );
+    }
 
     return NextResponse.json({
       projectId,
-      flows: normalizeFlows(response),
+      flows: normalizeFlows(response, existingByFlowId),
     });
   } catch (error) {
     console.error('[Activepieces Flows] Failed to list flows:', error);

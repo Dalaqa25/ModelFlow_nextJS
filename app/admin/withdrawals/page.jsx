@@ -184,9 +184,24 @@ export default function AdminWithdrawalsPage() {
   };
 
   const handleAutomationAction = async (automationId, action) => {
+    let body;
+    if (action === 'reject') {
+      const reason = window.prompt('Why are you rejecting this automation?');
+      if (reason === null) return;
+      body = JSON.stringify({ reason: reason.trim() || 'No reason provided' });
+    }
+
     setAutomationActionLoading(`${action}:${automationId}`);
     try {
-      const res = await fetch(`/api/admin/automations/${automationId}/${action}`, { method: 'POST' });
+      const res = await fetch(`/api/admin/automations/${automationId}/${action}`, {
+        method: 'POST',
+        ...(body
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body,
+            }
+          : {}),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Failed to ${action} automation`);
       await fetchAutomations();
@@ -609,7 +624,7 @@ export default function AdminWithdrawalsPage() {
                 <h2 className="text-xl font-semibold text-white">Marketplace Queue</h2>
               </div>
               <div className="flex gap-2">
-                {['pending', 'active', 'all'].map((status) => (
+                {['pending', 'active', 'rejected', 'all'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setAutomationFilter(status)}
@@ -643,6 +658,8 @@ export default function AdminWithdrawalsPage() {
                     : [];
                   const isApproveLoading = automationActionLoading === `approve:${automation.id}`;
                   const isDisableLoading = automationActionLoading === `disable:${automation.id}`;
+                  const isRejectLoading = automationActionLoading === `reject:${automation.id}`;
+                  const reviewStatus = automation.review_status || (automation.is_active ? 'active' : 'pending');
 
                   return (
                     <div
@@ -654,15 +671,17 @@ export default function AdminWithdrawalsPage() {
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <h3 className="text-lg font-semibold text-white">{automation.name}</h3>
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              automation.is_active
+                              reviewStatus === 'active'
                                 ? 'bg-green-500/20 text-green-300'
-                                : 'bg-yellow-500/20 text-yellow-300'
+                                : reviewStatus === 'rejected'
+                                  ? 'bg-red-500/20 text-red-300'
+                                  : 'bg-yellow-500/20 text-yellow-300'
                             }`}>
-                              {automation.is_active ? 'Active' : 'Pending'}
+                              {reviewStatus === 'active' ? 'Active' : reviewStatus === 'rejected' ? 'Rejected' : 'Pending'}
                             </span>
                             {automation.activepieces_source_flow_id && (
                               <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300">
-                                Activepieces
+                                ModelGrow Builder
                               </span>
                             )}
                           </div>
@@ -711,10 +730,17 @@ export default function AdminWithdrawalsPage() {
                               <p className="mt-1">Source flow: <span className="font-mono text-gray-200">{automation.activepieces_source_flow_id}</span></p>
                             </div>
                           )}
+
+                          {reviewStatus === 'rejected' && automation.workflow?.rejection_reason && (
+                            <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-200">
+                              <p className="font-semibold text-red-100">Rejected reason</p>
+                              <p className="mt-1 leading-5">{automation.workflow.rejection_reason}</p>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex shrink-0 gap-2 lg:flex-col">
-                          {!automation.is_active && (
+                          {reviewStatus === 'pending' && (
                             <button
                               onClick={() => handleAutomationAction(automation.id, 'approve')}
                               disabled={Boolean(automationActionLoading)}
@@ -728,7 +754,21 @@ export default function AdminWithdrawalsPage() {
                               Approve
                             </button>
                           )}
-                          {automation.is_active && (
+                          {reviewStatus === 'pending' && (
+                            <button
+                              onClick={() => handleAutomationAction(automation.id, 'reject')}
+                              disabled={Boolean(automationActionLoading)}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                            >
+                              {isRejectLoading ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4" />
+                              )}
+                              Reject
+                            </button>
+                          )}
+                          {reviewStatus === 'active' && (
                             <button
                               onClick={() => handleAutomationAction(automation.id, 'disable')}
                               disabled={Boolean(automationActionLoading)}

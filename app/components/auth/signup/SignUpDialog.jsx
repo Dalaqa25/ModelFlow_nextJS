@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -18,9 +19,15 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const [validationErrors, setValidationErrors] = useState({});
   const [usernameAvailable, setUsernameAvailable] = useState(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { signUpWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -204,10 +211,12 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const hasValidationErrors = Object.values(validationErrors).some(errors => errors?.length > 0);
   const isFormValid = email && username && usernameAvailable !== false && !hasValidationErrors;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+        <div className="fixed inset-0 z-[2147483647] flex items-center justify-center">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -413,6 +422,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

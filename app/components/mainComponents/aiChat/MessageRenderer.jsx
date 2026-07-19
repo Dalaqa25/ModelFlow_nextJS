@@ -7,6 +7,7 @@ import ConnectButton from '../ConnectButton';
 import ConfigForm from '../ConfigForm';
 import BackgroundActivationPrompt from '../BackgroundActivationPrompt';
 import NoResultsPopup from './NoResultsPopup';
+import RuntimeStatusCard from './RuntimeStatusCard';
 import VideoPreview from '../VideoPreview';
 import { ArrowRight, CheckCircle2, Plug, WalletCards } from 'lucide-react';
 
@@ -38,33 +39,79 @@ function renderContent(content) {
   return parts;
 }
 
+function ThinkingIndicator({ isDarkMode }) {
+  const mutedText = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+  const dotColor = isDarkMode ? 'bg-violet-300' : 'bg-violet-600';
+
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      aria-label="ModelGrow is thinking"
+      className="inline-flex min-h-10 items-center gap-3 py-1"
+    >
+      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+        <span className="absolute inset-1 rounded-xl bg-violet-500/25 blur-md animate-pulse" />
+        <Image
+          src="/logo.png"
+          alt=""
+          aria-hidden="true"
+          width={30}
+          height={30}
+          priority
+          className="relative drop-shadow-[0_0_8px_rgba(139,92,246,0.45)]"
+          style={{ animation: 'float 1.6s ease-in-out infinite' }}
+        />
+        <span className="absolute -right-0.5 top-0 h-2 w-2 rounded-full bg-fuchsia-400 animate-ping" />
+      </span>
+
+      <span className={`text-sm font-medium ${mutedText}`}>ModelGrow is thinking</span>
+      <span className="inline-flex items-end gap-1" aria-hidden="true">
+        {[0, 1, 2].map((dot) => (
+          <span
+            key={dot}
+            className={`h-1.5 w-1.5 rounded-full ${dotColor} animate-bounce`}
+            style={{ animationDelay: `${dot * 140}ms` }}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
   const connectors = Array.isArray(widget?.connectors) ? widget.connectors : [];
   const inputs = Array.isArray(widget?.inputs) ? widget.inputs : [];
   const tokenCost = Number(widget?.tokenCost || 0);
+  const panelClass = isDarkMode
+    ? 'bg-white/5'
+    : 'border border-slate-200 bg-white shadow-sm';
+  const chipClass = isDarkMode
+    ? 'bg-violet-500/12 text-violet-300 ring-1 ring-violet-400/20'
+    : 'bg-violet-50 text-violet-700 ring-1 ring-violet-100';
 
   return (
     <div
-      className={`mt-4 w-full max-w-2xl overflow-hidden rounded-[1.75rem] border shadow-2xl ${
+      className={`mt-4 w-full max-w-2xl overflow-hidden rounded-2xl border shadow-2xl ${
         isDarkMode
           ? 'border-white/10 bg-slate-950/70 shadow-black/30'
-          : 'border-slate-200 bg-white shadow-slate-200/70'
+          : 'border-slate-200 bg-slate-50 shadow-slate-200/70'
       }`}
     >
-      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_20%,rgba(168,85,247,0.35),transparent_32%),linear-gradient(135deg,#111827_0%,#26134d_55%,#020617_100%)] p-5 text-white">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-violet-100">
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_20%,rgba(168,85,247,0.35),transparent_32%),linear-gradient(135deg,#111827_0%,#26134d_55%,#020617_100%)] p-5">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#ede9fe]">
           Setup preview
         </div>
-        <h3 className="text-2xl font-black tracking-[-0.04em]">{widget?.name || 'Automation'}</h3>
+        <h3 className="text-2xl font-black text-[#ffffff]">{widget?.name || 'Automation'}</h3>
         {widget?.description && (
-          <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-slate-200">
+          <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-[#e2e8f0]">
             {widget.description}
           </p>
         )}
       </div>
 
       <div className="grid gap-3 p-4 sm:grid-cols-3">
-        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-4 ${panelClass}`}>
           <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-400">
             <Plug className="h-4 w-4" />
             Apps
@@ -72,7 +119,7 @@ function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
           {connectors.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {connectors.slice(0, 4).map((connector) => (
-                <span key={connector} className="rounded-full bg-violet-500/12 px-2.5 py-1 text-xs font-bold text-violet-300 ring-1 ring-violet-400/20">
+                <span key={connector} className={`rounded-full px-2.5 py-1 text-xs font-bold ${chipClass}`}>
                   {connector}
                 </span>
               ))}
@@ -84,7 +131,7 @@ function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
           )}
         </div>
 
-        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-4 ${panelClass}`}>
           <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-400">
             <CheckCircle2 className="h-4 w-4" />
             Inputs
@@ -94,18 +141,18 @@ function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
           </p>
         </div>
 
-        <div className={`rounded-2xl p-4 ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-4 ${panelClass}`}>
           <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-cyan-400">
             <WalletCards className="h-4 w-4" />
             Cost
           </div>
-          <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-950'}`}>
+          <p className={`text-sm font-black ${isDarkMode ? 'text-[#ffffff]' : 'text-slate-950'}`}>
             {tokenCost > 0 ? `${tokenCost} tokens/run` : 'Free'}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between ${isDarkMode ? 'border-white/10' : 'border-slate-200 bg-white'}`}>
         <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
           Next, ModelGrow prepares a private runtime copy and checks what accounts are missing.
         </p>
@@ -113,7 +160,7 @@ function SetupWidget({ widget, isDarkMode, isLoading, onStart }) {
           type="button"
           onClick={() => onStart?.(widget)}
           disabled={isLoading}
-          className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-slate-950 px-5 py-3 text-sm font-black text-[#ffffff] shadow-lg shadow-violet-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Prepare setup
           <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -141,11 +188,15 @@ export default function MessageRenderer({
     message.role === 'assistant' &&
     isLoading &&
     message.id === currentAiMessageId;
+  const showThinking =
+    message.role === 'assistant' &&
+    !message.content &&
+    (message.isThinking || isCurrentStreamingAssistant);
 
   // Don't render empty assistant messages except streaming one
   if (
     message.role === 'assistant' &&
-    !isCurrentStreamingAssistant &&
+    !showThinking &&
     !message.automations?.length &&
     !message.automationList?.length &&
     !message.insufficientTokens &&
@@ -153,6 +204,7 @@ export default function MessageRenderer({
     !message.connectRequest &&
     !message.configRequest &&
     !message.backgroundActivationPrompt &&
+    !message.runtimeStatus &&
     !message.videoPreview &&
     !message.noResultsPopup &&
     !message.automationInstances?.length &&
@@ -195,11 +247,7 @@ export default function MessageRenderer({
           )}
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {renderContent(message.content)}
-            {message.role === 'assistant' && isCurrentStreamingAssistant && message.content === '' && (
-              <span className="inline-flex items-center justify-center mt-1">
-                <Image src="/logo.png" alt="AI thinking" width={28} height={28} className="animate-spin" />
-              </span>
-            )}
+            {showThinking && <ThinkingIndicator isDarkMode={isDarkMode} />}
           </p>
         </div>
       </div>
@@ -284,7 +332,11 @@ export default function MessageRenderer({
         <div className="mt-4">
           <ConfigForm
             requiredInputs={message.configRequest.required_inputs}
+            optionalInputs={message.configRequest.optional_inputs}
             automationId={message.configRequest.automation_id}
+            automationName={message.configRequest.automation_name}
+            missingFields={message.configRequest.missing_fields}
+            collectedConfig={message.configRequest.collected_config}
             onSubmit={onConfigSubmit}
           />
         </div>
@@ -298,6 +350,16 @@ export default function MessageRenderer({
             automationName={message.backgroundActivationPrompt.automation_name}
             config={message.backgroundActivationPrompt.config}
             onActivate={onBackgroundActivate}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+      )}
+
+      {/* Runtime status after setup / activation */}
+      {message.runtimeStatus?.automation_id && (
+        <div className="mt-4 max-w-2xl">
+          <RuntimeStatusCard
+            automationId={message.runtimeStatus.automation_id}
             isDarkMode={isDarkMode}
           />
         </div>
@@ -351,13 +413,13 @@ export default function MessageRenderer({
               }}
               onRunNow={async (automation, config) => {
                 try {
-                  // Send automation data to localhost:3001 backend
-                  const response = await fetch('http://localhost:3001/api/automations/run', {
+                  // Keep runner credentials server-side; the authenticated API
+                  // resolves the current user and forwards the request safely.
+                  const response = await fetch('/api/automations/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       automation_id: automation.automation_id,
-                      user_id: automation.user_id,
                       config: config // Use the config from the form
                     })
                   });

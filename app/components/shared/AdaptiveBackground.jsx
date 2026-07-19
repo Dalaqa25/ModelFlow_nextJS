@@ -9,7 +9,9 @@ export default function AdaptiveBackground({
   children, 
   className = '',
   showParticles = false,
-  showFloatingElements = true 
+  showFloatingElements = true,
+  showPattern = false,
+  showReactiveGrid = false,
 }) {
   const { isDarkMode, mounted } = useThemeAdaptive();
 
@@ -22,6 +24,8 @@ export default function AdaptiveBackground({
         className={className}
         showParticles={showParticles}
         showFloatingElements={showFloatingElements}
+        showPattern={showPattern}
+        showReactiveGrid={showReactiveGrid}
       >
         {children}
       </UnifiedBackground>
@@ -37,9 +41,10 @@ export default function AdaptiveBackground({
       className={className}
       showParticles={showParticles}
       showFloatingElements={showFloatingElements}
+      showPattern={showPattern}
+      showReactiveGrid={showReactiveGrid}
     >
       {children}
     </BackgroundComponent>
   );
 }
-

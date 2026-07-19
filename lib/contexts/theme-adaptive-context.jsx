@@ -5,6 +5,7 @@ import { useTheme } from './theme-context';
 
 const ThemeAdaptiveContext = createContext({
   isDarkMode: true,
+  mounted: false,
   textColors: {
     primary: 'text-white',
     secondary: 'text-gray-300',

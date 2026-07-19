@@ -27,10 +27,13 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
   const [manualRequest, setManualRequest] = useState(null);
   const [manualValues, setManualValues] = useState({});
   const [localActivepiecesConnections, setLocalActivepiecesConnections] = useState(activepiecesConnections);
-  const [runResult, setRunResult] = useState(null);
 
   useEffect(() => {
-    setLocalActivepiecesConnections(activepiecesConnections);
+    setLocalActivepiecesConnections((current) => {
+      const currentSignature = JSON.stringify(current || []);
+      const nextSignature = JSON.stringify(activepiecesConnections || []);
+      return currentSignature === nextSignature ? current : activepiecesConnections;
+    });
   }, [activepiecesConnections]);
 
   const providerConfig = {
@@ -57,9 +60,13 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     // Add more providers as needed
   };
 
+  const inferredActivepiecesEngine = engine === 'activepieces'
+    || localActivepiecesConnections.length > 0
+    || (automationId && /[-\s]|sheet|notion|slack|gmail|calendar|hubspot|drive|discord|stripe|salesforce|clickup|trello|airtable/i.test(String(provider || '')));
+
   const activepiecesTarget = getNextActivepiecesConnection(localActivepiecesConnections);
   const activepiecesLabel = activepiecesTarget?.displayName || provider || 'App';
-  const providerKey = engine === 'activepieces' ? getProviderKey(activepiecesLabel) : provider;
+  const providerKey = inferredActivepiecesEngine ? getProviderKey(activepiecesLabel) : provider;
   const config = providerConfig[providerKey] || providerConfig.activepieces;
   const connectedCount = useMemo(
     () => localActivepiecesConnections.filter((connection) => connection.connected).length,
@@ -67,15 +74,15 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
   );
   const allActivepiecesConnected = useMemo(
     () => (
-      engine === 'activepieces' &&
+      inferredActivepiecesEngine &&
       localActivepiecesConnections.length > 0 &&
       localActivepiecesConnections.every((connection) => connection.connected)
     ),
-    [engine, localActivepiecesConnections]
+    [inferredActivepiecesEngine, localActivepiecesConnections]
   );
 
   const refreshActivepiecesRequirements = async ({ setBusy = false } = {}) => {
-    if (engine !== 'activepieces' || !automationId) return null;
+    if (!inferredActivepiecesEngine || !automationId) return null;
 
     if (setBusy) setIsConnecting(true);
     try {
@@ -98,11 +105,11 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
   };
 
   useEffect(() => {
-    if (engine !== 'activepieces' || !automationId) return;
+    if (!inferredActivepiecesEngine || !automationId) return;
     refreshActivepiecesRequirements().catch((error) => {
-      console.error('Failed to refresh Activepieces requirements:', error);
+      console.error('Failed to refresh app connection requirements:', error);
     });
-  }, [engine, automationId]);
+  }, [inferredActivepiecesEngine, automationId]);
 
   const applyActivepiecesCompletion = (completedLabel, result) => {
     const nextRequirements = Array.isArray(result?.requirements) ? result.requirements : [];
@@ -118,6 +125,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     }
 
     setConnectionSuccess(`${completedLabel} connected. All required apps are ready.`);
+    onConnect?.(completedLabel);
   };
 
   const openOAuthPopup = (authorizationUrl, redirectUrl) => {
@@ -127,7 +135,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     const top = window.screen.height / 2 - height / 2;
     const popup = window.open(
       authorizationUrl,
-      'activepieces-oauth',
+      'modelgrow-oauth',
       `width=${width},height=${height},left=${left},top=${top},resizable=no,toolbar=no,menubar=no,status=no`
     );
 
@@ -137,13 +145,35 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
         return;
       }
 
-      const handleMessage = (event) => {
-        if (redirectUrl && redirectUrl.startsWith(event.origin) && event.data?.code) {
-          window.removeEventListener('message', handleMessage);
-          clearInterval(checkPopup);
-          popup.close();
-          resolve(decodeURIComponent(event.data.code));
+      const expectedOrigin = (() => {
+        try {
+          return redirectUrl ? new URL(redirectUrl).origin : null;
+        } catch (_) {
+          return null;
         }
+      })();
+
+      const handleMessage = (event) => {
+        if (expectedOrigin && event.origin !== expectedOrigin) return;
+
+        const isModelGrowCallback = event.data?.type === 'modelgrow_activepieces_oauth';
+        if (!isModelGrowCallback && !event.data?.code) return;
+
+        window.removeEventListener('message', handleMessage);
+        clearInterval(checkPopup);
+        popup.close();
+
+        if (event.data?.error) {
+          reject(new Error(event.data.errorDescription || event.data.error || 'Connection authorization failed.'));
+          return;
+        }
+
+        if (!event.data?.code) {
+          reject(new Error('Connection authorization did not return a code.'));
+          return;
+        }
+
+        resolve(decodeURIComponent(event.data.code));
       };
 
       const checkPopup = setInterval(() => {
@@ -192,6 +222,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
         if (Array.isArray(data.requirements) && data.requirements.length > 0) {
           setLocalActivepiecesConnections(data.requirements);
         }
+        onConnect?.(activepiecesLabel);
         return;
       }
 
@@ -266,7 +297,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
   };
 
   const handleConnect = async () => {
-    if (engine === 'activepieces') {
+    if (inferredActivepiecesEngine) {
       await handleActivepiecesConnect();
       return;
     }
@@ -319,43 +350,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     }
   };
 
-  const handleRunActivepiecesAutomation = async () => {
-    setIsConnecting(true);
-    setConnectionError('');
-    setRunResult(null);
-
-    try {
-      const latestRequirements = await refreshActivepiecesRequirements();
-      const missing = latestRequirements?.find((connection) => !connection.connected);
-
-      if (missing) {
-        throw new Error(`Please reconnect ${getConnectionLabel(missing)} before running this automation.`);
-      }
-
-      const response = await fetch('/api/automations/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          automation_id: automationId,
-          config: {},
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || data.error || 'Failed to run automation');
-      }
-
-      setRunResult(data);
-      setConnectionSuccess(data.message || 'Automation started successfully.');
-    } catch (error) {
-      setConnectionError(error.message || 'Failed to run automation');
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const showConnectButton = engine !== 'activepieces' || !allActivepiecesConnected;
+  const showConnectButton = !inferredActivepiecesEngine || !allActivepiecesConnected;
 
   return (
     <div className="space-y-3">
@@ -372,21 +367,10 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
         >
           <span className="text-xl">{config.icon}</span>
           <span>
-            {engine === 'activepieces'
+            {inferredActivepiecesEngine
               ? isConnecting ? `Connecting ${activepiecesLabel}...` : `Connect ${activepiecesLabel}`
               : isConnecting ? `Connecting to ${config.name}...` : `Connect ${config.name}`}
           </span>
-        </button>
-      )}
-
-      {allActivepiecesConnected && (
-        <button
-          onClick={handleRunActivepiecesAutomation}
-          disabled={isConnecting}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-950/25 transition hover:-translate-y-0.5 hover:shadow-purple-900/35 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <FaPlug size={16} />
-          <span>{isConnecting ? 'Starting automation...' : 'Run automation'}</span>
         </button>
       )}
 
@@ -394,7 +378,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
         <form onSubmit={handleManualSubmit} className="max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
           <div className="mb-3">
             <p className="text-sm font-semibold text-slate-900">Connect {manualRequest.displayName}</p>
-            <p className="text-xs text-slate-500">Stored encrypted inside the user&apos;s Activepieces project.</p>
+            <p className="text-xs text-slate-500">Stored securely for this ModelGrow automation.</p>
           </div>
           <div className="space-y-3">
             {(manualRequest.auth?.fields || []).map((field) => (
@@ -429,12 +413,6 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
       {connectionSuccess && (
         <div className="max-w-md rounded-xl border border-emerald-300/40 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">
           {connectionSuccess}
-        </div>
-      )}
-
-      {runResult && (
-        <div className="max-w-md rounded-xl border border-purple-300/30 bg-purple-500/10 px-4 py-3 text-sm font-medium text-purple-100">
-          Activepieces run status: {runResult?.result?.activepieces?.runStatus || 'started'}
         </div>
       )}
 

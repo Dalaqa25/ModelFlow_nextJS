@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
+import { activateNativeAutomation } from '@/lib/automation-runtime/client';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -30,7 +31,7 @@ export async function POST(req) {
     // Fetch the automation template from database
     const { data: automation, error: automationError } = await supabase
       .from('automations')
-      .select('id, name')
+      .select('id, name, activepieces_source_flow_id')
       .eq('id', automationId)
       .single();
 
@@ -41,14 +42,22 @@ export async function POST(req) {
       );
     }
 
-    // Create or update user_automations record (consolidated)
+    if (automation.activepieces_source_flow_id) {
+      return NextResponse.json({
+        error: 'ModelGrow Builder automations are activated through their isolated setup flow',
+      }, { status: 400 });
+    }
+
+    // Persist setup data as inactive first. The native runtime is the only
+    // component allowed to flip is_active after n8n activation succeeds.
     const { error: upsertError } = await supabase
       .from('user_automations')
       .upsert({
         user_id: user.id,
         automation_id: automationId,
         parameters: parameters || {},
-        is_active: true,
+        provider: 'activepieces-bridge',
+        is_active: false,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id,automation_id',
@@ -63,10 +72,18 @@ export async function POST(req) {
       );
     }
 
+    const activation = await activateNativeAutomation({
+      automationId,
+      userId: user.id,
+      config: parameters || {},
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Automation activated successfully!',
       automationName: automation.name,
+      engine: activation.engine,
+      native_workflow_id: activation.native_workflow_id,
     });
 
   } catch (error) {

@@ -19,7 +19,7 @@ export async function GET(request) {
       configured,
       probed: false,
       message: configured
-        ? 'Activepieces env vars are configured. Add ?probe=true to test API reachability.'
+        ? 'ModelGrow Builder env vars are configured. Add ?probe=true to test API reachability.'
         : 'Set ACTIVEPIECES_MCP_URL, ACTIVEPIECES_OWNER_EMAIL, and ACTIVEPIECES_OWNER_PASSWORD.',
     });
   }

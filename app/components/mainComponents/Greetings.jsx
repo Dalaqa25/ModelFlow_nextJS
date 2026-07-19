@@ -1,14 +1,13 @@
 'use client';
 
 import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { safeApiFetch } from '@/lib/http/safe-api-fetch';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 import { useState, useEffect } from 'react';
 
 export default function Greetings() {
     const { user } = useAuth();
-    const { textColors } = useThemeAdaptive();
 
     // Get cached username from localStorage immediately
     const [cachedUserName, setCachedUserName] = useState(() => {
@@ -21,14 +20,15 @@ export default function Greetings() {
     const { data: userData, isLoading } = useQuery({
         queryKey: ['userData', user?.email],
         queryFn: async () => {
-            const response = await fetch('/api/user', { credentials: 'include' });
+            const response = await safeApiFetch('/api/user');
             if (!response.ok) {
-                throw new Error('Failed to fetch user data');
+                return null;
             }
             const data = await response.json();
             return data;
         },
         enabled: !!user,
+        retry: false,
         staleTime: 5 * 60 * 1000,
     });
 
@@ -52,17 +52,17 @@ export default function Greetings() {
                 /* Authenticated: logo + "Hey there, Name." */
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-3 mb-3">
                     <Image src="/logo.png" alt="Cube" width={60} height={60} className="w-12 h-12 sm:w-[60px] sm:h-[60px] object-contain flex-shrink-0" />
-                    <h1 className={`text-3xl sm:text-4xl lg:text-5xl ${textColors.primary} font-medium tracking-tight text-center`}>
-                        Hey there, <span className="font-semibold text-purple-400">{displayName}</span>.
+                    <h1 className="landing-title text-3xl sm:text-4xl lg:text-5xl font-black text-center">
+                        Hey there, <span className="landing-gradient-text">{displayName}</span>.
                     </h1>
                 </div>
             ) : (
-                /* Unauthenticated: two-line value prop */
-                <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className={`text-2xl sm:text-3xl ${textColors.primary} font-semibold tracking-tight leading-snug`}>
-                        Run powerful automations with AI
+                /* Unauthenticated: value prop */
+                <div className="flex flex-col items-center gap-4 text-center mt-6">
+                    <h1 className="landing-title text-4xl sm:text-5xl md:text-7xl font-black leading-[0.98] max-w-4xl">
+                        Run powerful <span className="landing-gradient-text">delightful</span> automations <br className="hidden sm:block"/> with AI
                     </h1>
-                    <p className={`text-xs sm:text-sm ${textColors.secondary} font-normal`}>
+                    <p className="landing-copy text-base sm:text-lg font-semibold max-w-xl mt-1">
                         Discover community-built workflows, launch them through chat, and publish your own to earn.
                     </p>
                 </div>

@@ -703,3 +703,96 @@ html.light body {
 .light .focus-within\:ring-purple-500\/20:focus-within {
   --tw-ring-color: rgba(139, 92, 246, 0.2) !important;
 }
+
+/* Upload / publisher modals use a clean light skin in light mode. */
+.light .modelgrow-upload-modal {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+  color: #172033 !important;
+  box-shadow: 0 28px 70px rgba(37, 42, 79, 0.18) !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-white, .text-slate-100, .text-slate-200) {
+  color: #172033 !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-slate-300, .text-slate-400, .text-slate-500) {
+  color: #64748b !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-purple-100, .text-purple-200, .text-purple-300) {
+  color: #8b5cf6 !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-emerald-200, .text-emerald-300) {
+  color: #059669 !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-amber-200, .text-amber-300) {
+  color: #b45309 !important;
+}
+
+.light .modelgrow-upload-modal :is(.text-red-200, .text-red-300, .text-red-400) {
+  color: #dc2626 !important;
+}
+
+.light .modelgrow-upload-modal :is(
+  .bg-slate-950,
+  .bg-slate-950\/30,
+  .bg-slate-950\/60,
+  .bg-slate-900,
+  .bg-slate-900\/90,
+  .bg-slate-800,
+  .bg-slate-800\/40,
+  .bg-slate-800\/50,
+  .bg-slate-800\/60,
+  .bg-slate-800\/70
+) {
+  background-color: rgba(248, 250, 252, 0.92) !important;
+}
+
+.light .modelgrow-upload-modal :is(.bg-purple-500\/10, .bg-purple-500\/15, .bg-purple-500\/20) {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+.light .modelgrow-upload-modal :is(.bg-emerald-500\/10) {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.light .modelgrow-upload-modal :is(.bg-amber-500\/10) {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.light .modelgrow-upload-modal :is(.bg-red-500\/10, .bg-red-500\/20) {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.light .modelgrow-upload-modal :is(
+  .border-slate-600\/60,
+  .border-slate-700,
+  .border-slate-700\/60,
+  .border-slate-700\/80
+) {
+  border-color: rgba(148, 163, 184, 0.42) !important;
+}
+
+.light .modelgrow-upload-modal :is(.border-purple-300\/20, .border-purple-400\/30, .border-purple-400) {
+  border-color: rgba(139, 92, 246, 0.45) !important;
+}
+
+.light .modelgrow-upload-modal input,
+.light .modelgrow-upload-modal textarea,
+.light .modelgrow-upload-modal select {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  color: #172033 !important;
+}
+
+.light .modelgrow-upload-modal input::placeholder,
+.light .modelgrow-upload-modal textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.light .modelgrow-upload-modal button:not(:disabled):hover {
+  filter: brightness(1.06);
+}

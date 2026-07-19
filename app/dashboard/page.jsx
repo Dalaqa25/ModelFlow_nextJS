@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-hot-toast';
+import { BarChart3, UploadCloud, Workflow } from 'lucide-react';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import AdaptiveBackground from '@/app/components/shared/AdaptiveBackground';
 import UnifiedCard from '@/app/components/shared/UnifiedCard';
@@ -20,7 +20,7 @@ const PublishFromBuilderDialog = dynamic(() => import('../components/activepiece
 
 const RunsChart = dynamic(() => import('@/app/components/charts/RunsChart'), {
     ssr: false,
-    loading: () => <div className="h-28 rounded bg-slate-800/40 animate-pulse" />,
+    loading: () => <div className="landing-card-soft h-28 animate-pulse rounded-2xl" />,
 });
 
 export default function Dashboard() {
@@ -34,8 +34,6 @@ export default function Dashboard() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const fetchedRef = useRef(false);
-    const router = useRouter();
-
     useEffect(() => {
         if (user === null && !isAuthenticated) {
             return;
@@ -83,40 +81,46 @@ export default function Dashboard() {
     return (
         <AdaptiveBackground variant="content" className="pt-16">
             <div className="min-h-screen" style={{ paddingLeft: sidebarOffset, transition: 'padding-left 300ms' }}>
-                <div className="pt-10 pb-10 px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
-                        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                        <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="px-5 pb-10 pt-10 sm:px-6">
+                <div className="mx-auto max-w-6xl">
+                    <div className="community-surface mb-8 rounded-[2rem] p-6 sm:p-7">
+                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-2xl">
+                                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white/35 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[var(--landing-muted)] dark:bg-white/[0.06]">
+                                    <BarChart3 className="h-3.5 w-3.5 text-[var(--landing-accent)]" />
+                                    Workspace dashboard
+                                </div>
+                                <h1 className="text-3xl font-black leading-tight text-[var(--landing-ink)] sm:text-4xl">Track your published automations.</h1>
+                                <p className="mt-3 text-sm font-semibold leading-6 text-[var(--landing-muted)] sm:text-base">
+                                    Monitor runs, publish from Builder, and keep your marketplace inventory in one place.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row">
                             <button
                                 onClick={() => setShowBuilderPublishDialog(true)}
-                                className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-purple-400/50 bg-slate-900/60 hover:bg-purple-500/15 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
+                                className="landing-card-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black text-[var(--landing-ink)] hover:-translate-y-0.5"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 6.75h6.75m0 0V3.75m0 3h8.25M4.5 17.25h6.75m0 0v3m0-3h8.25M15.75 12H19.5m-3.75 0a3.75 3.75 0 1 1-7.5 0m7.5 0a3.75 3.75 0 1 0-7.5 0M4.5 12h3.75" />
-                                </svg>
+                                <Workflow className="h-4 w-4 text-[var(--landing-accent-3)]" />
                                 <span>Publish from Builder</span>
                             </button>
                             <button
                                 onClick={() => setShowAutomationDialog(true)}
-                                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 font-semibold"
+                                className="auth-primary-button inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                </svg>
+                                <UploadCloud className="h-4 w-4" />
                                 <span>Upload JSON</span>
                             </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Analytics Chart */}
                     {!loading && automations.length > 0 && stats && (
                         <UnifiedCard variant="solid" className="mb-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-white">Runs (Last 7 Days)</h2>
+                                <h2 className="text-lg font-black text-[var(--landing-ink)]">Runs (Last 7 Days)</h2>
                                 <div className="flex items-center gap-4 text-sm">
-                                    <div className="text-gray-400">
-                                        Success Rate: <span className="text-green-400 font-medium">{stats.successRate}%</span>
+                                    <div className="font-semibold text-[var(--landing-muted)]">
+                                        Success Rate: <span className="font-black text-[var(--landing-accent-2)]">{stats.successRate}%</span>
                                     </div>
                                 </div>
                             </div>
@@ -125,66 +129,65 @@ export default function Dashboard() {
                     )}
 
                     <UnifiedCard variant="solid" className="flex-1">
-                        <div className="flex items-center justify-between mb-4 border-b border-purple-500/30 pb-2">
-                            <h2 className="text-xl font-semibold text-white">Your Automations</h2>
+                        <div className="mb-5 flex items-center justify-between border-b border-[var(--landing-border)] pb-3">
+                            <h2 className="text-xl font-black text-[var(--landing-ink)]">Your Automations</h2>
                         </div>
 
-                        {/* Stats Summary */}
                         {!loading && automations.length > 0 && (
                             <div className="grid grid-cols-3 gap-4 mb-6">
-                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-white">{automations.length}</p>
-                                    <p className="text-xs text-gray-400">Total Automations</p>
+                                <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-4 text-center dark:bg-white/[0.05]">
+                                    <p className="text-2xl font-black text-[var(--landing-ink)]">{automations.length}</p>
+                                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--landing-muted)]">Total Automations</p>
                                 </div>
-                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-green-400">
+                                <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-4 text-center dark:bg-white/[0.05]">
+                                    <p className="text-2xl font-black text-[var(--landing-accent-2)]">
                                         {automations.filter(a => a.is_active).length}
                                     </p>
-                                    <p className="text-xs text-gray-400">Active</p>
+                                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--landing-muted)]">Active</p>
                                 </div>
-                                <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-purple-400">
+                                <div className="rounded-2xl border border-[var(--landing-border)] bg-white/30 p-4 text-center dark:bg-white/[0.05]">
+                                    <p className="text-2xl font-black text-[var(--landing-accent)]">
                                         {automations.reduce((sum, a) => sum + (a.total_runs || 0), 0)}
                                     </p>
-                                    <p className="text-xs text-gray-400">Total Runs</p>
+                                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--landing-muted)]">Total Runs</p>
                                 </div>
                             </div>
                         )}
                         
                         {loading ? (
                             <div className="flex justify-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+                                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--landing-accent)]"></div>
                             </div>
                         ) : automations.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400">
+                            <div className="py-8 text-center text-[var(--landing-muted)]">
                                 <p>No automations yet. Upload your first automation to get started!</p>
                             </div>
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {automations.map((automation) => (
-                                    <div key={automation.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-purple-500/50 transition-colors">
+                                    <div key={automation.id} className="landing-card-soft rounded-[1.5rem] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--landing-accent-2)]/35">
                                         <div className="flex items-start justify-between mb-2">
-                                            <h3 className="font-semibold text-white">{automation.name}</h3>
-                                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                                automation.is_active 
-                                                    ? 'bg-green-500/20 text-green-400' 
-                                                    : 'bg-yellow-500/20 text-yellow-400'
+                                            <h3 className="font-black text-[var(--landing-ink)]">{automation.name}</h3>
+                                            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${
+                                                automation.is_active
+                                                    ? 'bg-[var(--landing-accent-2)]/12 text-[var(--landing-accent-2)]'
+                                                    : 'bg-[var(--landing-accent)]/12 text-[var(--landing-accent)]'
                                             }`}>
                                                 {automation.is_active ? 'Active' : 'Pending'}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">{automation.description}</p>
+                                        <p className="mb-3 line-clamp-2 text-sm font-semibold text-[var(--landing-muted)]">{automation.description}</p>
                                         <div className="flex items-center justify-between text-xs">
-                                            <div className="flex items-center gap-1 text-gray-500">
+                                            <div className="flex items-center gap-1 font-bold text-[var(--landing-muted)]">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
                                                 </svg>
                                                 <span>{automation.total_runs || 0} runs</span>
                                             </div>
                                             {(automation.total_runs || 0) === 0 ? (
-                                                <span className="text-yellow-500">Never used</span>
+                                                <span className="font-black text-[var(--landing-accent)]">Never used</span>
                                             ) : (
-                                                <span className="text-purple-400">Used</span>
+                                                <span className="font-black text-[var(--landing-accent-3)]">Used</span>
                                             )}
                                         </div>
                                     </div>

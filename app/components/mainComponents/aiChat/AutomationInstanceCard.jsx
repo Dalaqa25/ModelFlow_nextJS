@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import RuntimeStatusCard from './RuntimeStatusCard';
 
 export default function AutomationInstanceCard({ automation, onToggleEnabled, onViewDetails }) {
   const { isDarkMode } = useThemeAdaptive();
@@ -89,6 +90,8 @@ export default function AutomationInstanceCard({ automation, onToggleEnabled, on
           </div>
         </div>
       </div>
+
+      <RuntimeStatusCard automationId={automation.automation_id} isDarkMode={isDarkMode} />
 
       <div className="flex gap-2 mt-3">
         <button

@@ -11,9 +11,11 @@ import SignUpDialog from '@/app/components/auth/signup/SignUpDialog';
 import MessagesInbox from '@/app/components/messages/MessagesInbox';
 import MessageThreadPanel from '@/app/components/messages/MessageThreadPanel';
 import Notifications from '@/app/components/notifications';
+import AutomationMonitorDropdown from './AutomationMonitorDropdown';
 import { FaBars } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import { Coins, MessageCircle, Bell } from 'lucide-react';
+import { safeApiFetch } from '@/lib/http/safe-api-fetch';
 
 export default function TopBar() {
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
@@ -42,12 +44,13 @@ export default function TopBar() {
     queryKey: ['tokenBalance', user?.id],
     queryFn: async () => {
       if (!user?.email) return 0;
-      const res = await fetch('/api/user');
+      const res = await safeApiFetch('/api/user');
       if (!res.ok) return 0;
       const data = await res.json();
       return data?.token_balance || 0;
     },
     enabled: !!user?.email && isAuthenticated,
+    retry: false,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
   });
@@ -56,11 +59,12 @@ export default function TopBar() {
   const { data: unread } = useQuery({
     queryKey: ['messageUnread'],
     queryFn: async () => {
-      const res = await fetch('/api/messages/unread-count', { credentials: 'include' });
+      const res = await safeApiFetch('/api/messages/unread-count');
       if (!res.ok) return { count: 0, incoming_requests: 0, unread_messages: 0 };
       return res.json();
     },
     enabled: !!user && isAuthenticated,
+    retry: false,
     refetchInterval: 30000,
   });
 
@@ -68,11 +72,12 @@ export default function TopBar() {
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const response = await fetch('/api/notifications', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch notifications');
+      const response = await safeApiFetch('/api/notifications');
+      if (!response.ok) return [];
       return response.json();
     },
     enabled: !!user && isAuthenticated,
+    retry: false,
     staleTime: 60 * 1000,
     refetchInterval: 60000,
   });
@@ -162,6 +167,9 @@ export default function TopBar() {
               {tokenBalance.toLocaleString()}
             </span>
           </div>
+
+          {/* Automation Monitor */}
+          <AutomationMonitorDropdown />
 
           {/* Chat / Messages Icon */}
           <div className="relative" ref={chatRef}>
@@ -253,17 +261,13 @@ export default function TopBar() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSignInOpen(true)}
-            className={`px-5 py-2 text-base font-medium rounded-[2rem] transition-all ${
-              isDarkMode
-                ? 'text-gray-300 hover:text-white hover:bg-white/8'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'
-            }`}
+            className="auth-link-button rounded-lg px-4 py-2 text-sm font-black transition-all"
           >
             Log in
           </button>
           <button
             onClick={() => setIsSignUpOpen(true)}
-            className="px-5 py-2 text-base font-normal !text-white bg-gradient-to-br from-violet-400 to-indigo-500 hover:from-violet-300 hover:to-indigo-400 rounded-[2rem] transition-all"
+            className="auth-primary-button rounded-lg px-5 py-2 text-sm font-black transition-all"
           >
             Sign up
           </button>

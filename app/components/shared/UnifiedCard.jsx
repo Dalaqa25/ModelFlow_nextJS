@@ -9,22 +9,12 @@ export default function UnifiedCard({
   hover = true,
   padding = 'default'
 }) {
-  // Different card variants for different contexts
   const cardVariants = {
-    // Default card - semi-transparent with subtle backdrop blur
-    default: "bg-slate-800/20 backdrop-blur-[2px] border border-slate-700/20 shadow-sm",
-    
-    // Solid card - for content that needs better readability
-    solid: "bg-slate-800/20 backdrop-blur-[4px] border border-slate-700/20 shadow-sm",
-    
-    // Glass card - more transparent, for overlays
-    glass: "bg-slate-800/20 backdrop-blur-[6px] border border-slate-600/20 shadow-sm",
-    
-    // Content card - best for text-heavy content
-    content: "bg-slate-800/20 backdrop-blur-[2px] border border-slate-600/20 shadow-sm",
-    
-    // Feature card - for highlighting important content
-    feature: "bg-gradient-to-br from-slate-800/20 to-purple-900/30 backdrop-blur-[4px] border border-purple-500/30 shadow-sm"
+    default: "landing-card-soft border border-[var(--landing-border)]",
+    solid: "community-surface border border-[var(--landing-border)]",
+    glass: "bg-white/30 dark:bg-white/[0.05] backdrop-blur-xl border border-[var(--landing-border)] shadow-[0_10px_28px_rgba(38,51,79,0.08)]",
+    content: "community-surface border border-[var(--landing-border)]",
+    feature: "border border-[var(--landing-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.7),rgba(127,140,255,0.18))] dark:bg-[linear-gradient(135deg,rgba(31,36,74,0.9),rgba(123,114,255,0.18))] backdrop-blur-xl shadow-[0_18px_50px_rgba(38,51,79,0.12)]"
   };
 
   const paddingVariants = {
@@ -36,7 +26,7 @@ export default function UnifiedCard({
   };
 
   const baseClasses = "rounded-2xl transition-all duration-300";
-  const hoverClasses = hover ? "hover:shadow-purple-500/10 hover:border-purple-500/30 hover:scale-[1.005] hover:bg-slate-800/60" : "";
+  const hoverClasses = hover ? "hover:-translate-y-0.5 hover:border-[var(--landing-accent-2)]/35 hover:shadow-[0_20px_56px_rgba(38,51,79,0.16)]" : "";
   const cardClass = cardVariants[variant] || cardVariants.default;
   const paddingClass = paddingVariants[padding] || paddingVariants.default;
 
