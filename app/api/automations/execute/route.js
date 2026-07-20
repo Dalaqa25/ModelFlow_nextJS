@@ -16,8 +16,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const TOKEN_TO_USD = 0.10;
-
 function normalizeConfig(config) {
   const lowercaseConfig = {};
   Object.entries(config || {}).forEach(([key, value]) => {
@@ -105,36 +103,7 @@ async function logExecution({ automationId, userEmail, status, startTime, endTim
 }
 
 async function runImportedN8nAutomation({ automation, user, automationId, lowercaseConfig, tokenCost, startTime }) {
-  if (tokenCost > 0) {
-    await assertTokenBalance(user.id, tokenCost);
-
-    const { data: runner } = await supabase
-      .from('users')
-      .select('id, email, token_balance')
-      .eq('id', user.id)
-      .single();
-
-    const { error: deductError } = await supabase
-      .from('users')
-      .update({ token_balance: runner.token_balance - tokenCost })
-      .eq('id', user.id);
-
-    if (deductError) throw new Error('Failed to process token payment');
-
-    await supabase.from('token_transactions').insert({
-      user_id: user.id,
-      transaction_type: 'spend',
-      token_amount: -tokenCost,
-      usd_amount: -(tokenCost * TOKEN_TO_USD),
-      status: 'completed',
-      metadata: {
-        automation_id: automationId,
-        automation_name: automation.name,
-        developer_email: automation.author_email,
-        engine: 'n8n-native',
-      },
-    });
-  }
+  await assertTokenBalance(user.id, tokenCost);
 
   let result;
   try {
@@ -174,6 +143,21 @@ async function runImportedN8nAutomation({ automation, user, automationId, lowerc
     });
   }
 
+  const spend = await recordSuccessfulTokenSpend({
+    supabase,
+    user,
+    automation,
+    tokenCost,
+    engine: 'n8n-native',
+  });
+  await creditAutomationCreator({
+    supabase,
+    runnerUser: user,
+    automation,
+    tokenCost,
+    engine: 'n8n-native',
+  });
+
   await logExecution({
     automationId,
     userEmail: user.email,
@@ -182,27 +166,20 @@ async function runImportedN8nAutomation({ automation, user, automationId, lowerc
     endTime,
     durationMs,
     tokenCost,
-    metadata: { engine: executionEngine },
+    metadata: {
+      engine: executionEngine,
+      executionId: result.executionId || null,
+    },
   });
 
   await supabase.rpc('increment_total_runs', { automation_uuid: automationId });
-
-  if (tokenCost > 0 && automation.author_email !== user.email) {
-    await creditAutomationCreator({ supabase, runnerUser: user, automation, tokenCost });
-  }
-
-  const { data: balance } = await supabase
-    .from('users')
-    .select('token_balance')
-    .eq('id', user.id)
-    .single();
 
   return NextResponse.json({
     success: true,
     message: 'Automation executed successfully',
     result,
     tokens_spent: tokenCost,
-    tokens_remaining: balance?.token_balance ?? null,
+    tokens_remaining: spend.tokensRemaining,
     engine: executionEngine,
   });
 }
@@ -282,9 +259,12 @@ export async function POST(req) {
   try {
     const authUser = await getSupabaseUser();
     const body = await req.json();
-    const { automation_id, config, user_id } = body;
+    const { automation_id, config } = body;
 
-    const user = await resolveAppUser(authUser, user_id);
+    // Browser callers may never select an arbitrary runner by ID. The private
+    // runtime accepts user IDs server-to-server, but this public route must bind
+    // execution to the authenticated ModelGrow account.
+    const user = await resolveAppUser(authUser, null);
     if (!user) {
       return NextResponse.json({ error: 'You must be logged in to execute automations' }, { status: 401 });
     }

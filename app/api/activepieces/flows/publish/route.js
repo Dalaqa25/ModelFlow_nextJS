@@ -197,6 +197,11 @@ export async function POST(request) {
       token_cost: tokenCost,
       workflow: {
         engine: 'activepieces',
+        modelgrow_submission: {
+          user_id: authUser.id,
+          submitted_at: new Date().toISOString(),
+          source: 'modelgrow_builder',
+        },
         source_project_id: projectId,
         source_flow_id: flowId,
         source_flow_name: getFlowDisplayName(flow) || title,

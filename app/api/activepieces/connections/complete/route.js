@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 async function getAutomationOrThrow(supabase, automationId) {
   const { data, error } = await supabase
     .from('automations')
-    .select('id, name, workflow, required_connectors, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
+    .select('id, name, workflow, required_connectors, developer_keys, activepieces_source_flow_id, activepieces_source_project_id, activepieces_trigger_type')
     .eq('id', automationId)
     .single();
 

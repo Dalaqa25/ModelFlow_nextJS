@@ -5,6 +5,7 @@ import { generateEmbedding } from '@/lib/ai/embeddings';
 import { encryptKeys } from '@/lib/auth/encryption';
 import { syncActivepiecesSourceAvailability } from '@/lib/activepieces/source-sync';
 import { notifyAutomationReviewRequested } from '@/lib/email/admin-review-notifications';
+import { detectImportedWorkflowCredentialRequirements } from '@/lib/credentials/workflow-requirements';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -214,6 +215,13 @@ export async function POST(req) {
     // inputTypes contains ALL detected inputs including FILE_INPUT
     const requiredInputs = [];
     const developerKeyNames = Object.keys(developerKeys);
+
+    // Treat the uploaded JSON as the source of truth. The browser may offer a
+    // preview, but the server must discover every user-owned connection itself.
+    const detectedConnectorIds = detectImportedWorkflowCredentialRequirements(workflow, {
+      developerKeyNames,
+    }).map((requirement) => requirement.connectorId);
+    requiredConnectors = Array.from(new Set(detectedConnectorIds));
     
     // Credential patterns to exclude from required_inputs
     const credentialPatterns = /token|key|secret|oauth|bearer|auth|credential/i;
@@ -291,7 +299,14 @@ export async function POST(req) {
         description: description.trim(),
         author_email: user.email,
         token_cost: estimatedPrice ? parseFloat(estimatedPrice) : null,
-        workflow: workflow,
+        workflow: {
+          ...workflow,
+          modelgrow_submission: {
+            user_id: user.id,
+            submitted_at: new Date().toISOString(),
+            source: 'json_upload',
+          },
+        },
         embedding: embedding,
         required_connectors: requiredConnectors,
         required_inputs: requiredInputs,

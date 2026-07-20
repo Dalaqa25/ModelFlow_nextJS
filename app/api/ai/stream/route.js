@@ -11,7 +11,12 @@ import {
   getOrchestratorProvider,
   shouldFallbackToGroq,
 } from '@/lib/ai/orchestrator-provider';
-import { extractAvailableAutomationDiscoveryRequest } from '@/lib/ai/intent-routing';
+import {
+  extractAvailableAutomationDiscoveryRequest,
+  extractCatalogAutomationSelection,
+  isReadyToExecuteConfirmation,
+} from '@/lib/ai/intent-routing';
+import { findLatestSetupMarker } from '@/lib/ai/setup-context';
 import {
   handleSearchAutomations,
   handleStartSetup,
@@ -162,13 +167,17 @@ export async function POST(request) {
     const encoder = new TextEncoder();
     const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
     const connectionCompleted = extractActivepiecesConnectionCompleted(lastUserMessage);
-    const directSetup = extractSelectedAutomationContext(lastUserMessage);
+    const directSetup = extractSelectedAutomationContext(lastUserMessage)
+      || extractCatalogAutomationSelection(lastUserMessage);
     const configSubmission = mergeConfigSubmissions(
       extractConfigFormSubmission(lastUserMessage),
       extractFrontendConfigSubmission(lastUserMessage, frontendSetupState)
     );
 
-    if (connectionCompleted || directSetup) {
+    // A config submission can carry the earlier catalog context that originally
+    // selected this automation. Never let that stale selection restart setup;
+    // the newly submitted form is the authoritative action for this turn.
+    if ((connectionCompleted || directSetup) && !configSubmission) {
       const setupRequest = connectionCompleted || directSetup;
       const stream = new ReadableStream({
         async start(controller) {
@@ -243,6 +252,52 @@ export async function POST(request) {
     }
 
     const initialSetupContext = extractSetupContext(chatMessages);
+
+    // A confirmation after READY_TO_RUN is an application state transition,
+    // not an open-ended language decision. Execute it deterministically so an
+    // orchestrator cannot accidentally route "run it" to an unrelated tool.
+    if (initialSetupContext?.readyToExecute && isReadyToExecuteConfirmation(lastUserMessage)) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            if (!user) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Please sign in first so I can run this automation.' })}\n\n`));
+            } else {
+              await executeToolAction(
+                'execute_automation',
+                {
+                  automation_id: initialSetupContext.automationId,
+                  config: initialSetupContext.collectedConfig || {},
+                },
+                user,
+                controller,
+                encoder,
+                initialSetupContext,
+                chatMessages
+              );
+            }
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (error) {
+            console.error('[Direct ready-to-run execution] Error:', error);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Sorry, I could not run this automation. Please try again.' })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no',
+          'X-ModelGrow-Path': 'ready-to-run',
+        },
+      });
+    }
+
     const availableAutomationDiscoveryRequest = !frontendSetupState?.automationId && !initialSetupContext?.automationId
       ? extractAvailableAutomationDiscoveryRequest(lastUserMessage, chatMessages)
       : null;
@@ -255,7 +310,10 @@ export async function POST(request) {
           try {
             await executeToolAction(
               'search_automations',
-              { query: lastUserMessage, browse_all: true },
+              {
+                query: lastUserMessage,
+                browse_all: availableAutomationDiscoveryRequest.browseAll,
+              },
               user,
               controller,
               encoder,
@@ -364,17 +422,46 @@ export async function POST(request) {
       async start(controller) {
         let streamedResponse = '';
         let thinking = true;
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'thinking', status: 'start' })}\n\n`));
+        let streamClosed = false;
+        const enqueue = (payload) => {
+          if (streamClosed) return false;
+          try {
+            controller.enqueue(encoder.encode(payload));
+            return true;
+          } catch (error) {
+            streamClosed = true;
+            console.warn('[AI Stream] Browser connection closed while a response was being generated:', error.message);
+            return false;
+          }
+        };
+        const close = () => {
+          if (streamClosed) return;
+          streamClosed = true;
+          try {
+            controller.close();
+          } catch (_) {
+            // The browser may have already closed the response.
+          }
+        };
+
+        // Codex can spend several seconds deciding which deterministic ModelGrow
+        // action to call. Keep the SSE connection active during that quiet period
+        // so browsers and development proxies do not interpret it as a dead request.
+        const keepAlive = setInterval(() => {
+          enqueue(`: keep-alive ${Date.now()}\n\n`);
+        }, 2_500);
+
+        enqueue(`data: ${JSON.stringify({ type: 'thinking', status: 'start' })}\n\n`);
 
         const finishThinking = () => {
           if (!thinking) return;
           thinking = false;
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'thinking', status: 'end' })}\n\n`));
+          enqueue(`data: ${JSON.stringify({ type: 'thinking', status: 'end' })}\n\n`);
         };
         const emitContent = content => {
           if (!content) return;
           finishThinking();
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+          enqueue(`data: ${JSON.stringify({ content })}\n\n`);
         };
 
         try {
@@ -431,6 +518,21 @@ export async function POST(request) {
             if (activeSetupId) {
               console.log('[AI] Intercepted search_automations during active setup — redirecting to collect_text_input');
               actionNeeded = { tool: 'collect_text_input', hint: 'user provided setup data during active setup' };
+            }
+          }
+
+          // start_setup requires an authoritative automation UUID. A model may infer
+          // that a named catalog item was selected, but a name alone is not safe to
+          // execute. Search first so the deterministic catalog handler can return the
+          // real automation record and the user can select that exact result.
+          if (actionNeeded?.tool === 'start_setup') {
+            const selectedAutomationId = initialSetupContext?.automationId || frontendSetupState?.automationId;
+            if (!selectedAutomationId) {
+              console.log('[AI] Intercepted start_setup without an automation id — resolving through catalog search');
+              actionNeeded = {
+                tool: 'search_automations',
+                hint: actionNeeded.hint || 'resolve the named automation from the published catalog',
+              };
             }
           }
 
@@ -532,19 +634,27 @@ export async function POST(request) {
           }
 
           finishThinking();
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
+          enqueue('data: [DONE]\n\n');
+          close();
         } catch (error) {
+          console.error('[AI Stream] Failed while generating or executing a response:', error);
           finishThinking();
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "Sorry, something went wrong. Please try again." })}\n\n`));
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
+          enqueue(`data: ${JSON.stringify({ content: "Sorry, something went wrong. Please try again." })}\n\n`);
+          enqueue('data: [DONE]\n\n');
+          close();
+        } finally {
+          clearInterval(keepAlive);
         }
       },
     });
 
     return new Response(stream, {
-      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      },
     });
 
   } catch (error) {
@@ -1153,16 +1263,16 @@ function extractSetupContext(messages) {
   const automationNameMatch = allContent.match(/(?:Setting up |automation_name[=:]\s*)"([^"]+)"/i);
 
   // PRIORITY 1: Look for BACKGROUND_PROMPT marker (user is being asked about background execution)
-  const backgroundPromptMatch = allContent.match(/\[BACKGROUND_PROMPT automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
+  const backgroundPromptMatch = findLatestSetupMarker(allContent, 'BACKGROUND_PROMPT');
 
   console.log('[extractSetupContext] Found BACKGROUND_PROMPT:', !!backgroundPromptMatch);
 
   if (backgroundPromptMatch) {
     try {
-      const config = JSON.parse(backgroundPromptMatch[2]);
+      const config = backgroundPromptMatch.config;
       console.log('[extractSetupContext] Background prompt config:', config);
       return {
-        automationId: backgroundPromptMatch[1],
+        automationId: backgroundPromptMatch.automationId,
         automationName: automationNameMatch?.[1] || null,
         collectedConfig: config,
         isBackgroundPrompt: true  // Flag that we're in background activation flow
@@ -1173,16 +1283,16 @@ function extractSetupContext(messages) {
   }
 
   // PRIORITY 2: Look for READY_TO_RUN marker (has full config ready to execute)
-  const readyToRunMatch = allContent.match(/\[READY_TO_RUN automation_id="([^"]+)" config=(\{[\s\S]*?\})\]/);
+  const readyToRunMatch = findLatestSetupMarker(allContent, 'READY_TO_RUN');
 
   console.log('[extractSetupContext] Found READY_TO_RUN:', !!readyToRunMatch);
 
   if (readyToRunMatch) {
     try {
-      const config = JSON.parse(readyToRunMatch[2]);
+      const config = readyToRunMatch.config;
       console.log('[extractSetupContext] Parsed config:', config);
       return {
-        automationId: readyToRunMatch[1],
+        automationId: readyToRunMatch.automationId,
         automationName: automationNameMatch?.[1] || null,
         collectedConfig: config,
         readyToExecute: true  // Flag that setup is complete

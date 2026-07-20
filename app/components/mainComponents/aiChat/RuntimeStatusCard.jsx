@@ -98,6 +98,14 @@ function getStatePresentation(status) {
     };
   }
 
+  if (state === 'ready') {
+    return {
+      label: 'Ready to run',
+      icon: CheckCircle2,
+      className: 'border-violet-300/40 bg-violet-500/10 text-violet-200',
+    };
+  }
+
   if (status?.active) {
     return {
       label: 'Active and waiting',
@@ -233,19 +241,24 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
   const triggerCriteria = Array.isArray(status?.trigger?.criteria) ? status.trigger.criteria : [];
   const latestDuration = formatDurationMs(latestRun?.durationMs);
   const triggerDelayHint = getTriggerDelayHint(status?.trigger);
+  const isOnDemand = status?.runMode === 'on_demand';
   const trackingSteps = [
     {
-      label: 'Runtime enabled',
+      label: isOnDemand ? 'Setup ready' : 'Runtime enabled',
       detail: status?.runtimeFlow?.activatedAt
         ? `Prepared ${formatRelativeTime(status.runtimeFlow.activatedAt)}`
-        : status?.active ? 'Runtime copy is enabled' : 'Runtime is not enabled yet',
-      done: Boolean(status?.active),
+        : isOnDemand
+          ? 'Ready for an on-demand run'
+          : status?.active ? 'Runtime copy is enabled' : 'Runtime is not enabled yet',
+      done: isOnDemand ? Boolean(status?.runtimeFlow) : Boolean(status?.active),
       danger: false,
     },
     {
-      label: latestRun ? 'Trigger received' : 'Waiting for trigger',
+      label: latestRun ? (isOnDemand ? 'Run started' : 'Trigger received') : (isOnDemand ? 'Waiting for a run' : 'Waiting for trigger'),
       detail: latestRun
         ? `${latestRun.status} run created ${formatRelativeTime(latestRun.createdAt)}`
+        : isOnDemand
+          ? 'Run this automation whenever you need it'
         : triggerText
           ? `Waiting for ${triggerText}`
           : 'Waiting for the connected app event',
@@ -259,7 +272,7 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
         : latestRun?.success
           ? `Completed${latestDuration ? ` in ${latestDuration}` : ''}`
           : latestRun?.processing
-            ? 'Activepieces is processing this run'
+            ? `${status?.engine === 'n8n-native' ? 'n8n' : 'ModelGrow Builder'} is processing this run`
             : 'No completed run since setup',
       done: Boolean(latestRun?.success),
       danger: Boolean(latestRun?.errorMessage || latestRun?.status === 'FAILED'),
@@ -469,7 +482,7 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
       )}
 
       <p className={`mt-3 text-[11px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-        Engine: {status?.engine || 'activepieces'} · Status: {compactStatus(status) || 'checking'}
+        Engine: {status?.engine || 'activepieces'} · Status: {compactStatus(currentStatus) || 'checking'}
       </p>
     </div>
   );

@@ -462,10 +462,35 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
     });
 
+    // A network read can end in the middle of an SSE line. Preserve that tail
+    // and prepend it to the next read; otherwise structured UI events such as
+    // automation cards can be silently discarded or parsed as invalid JSON.
+    let sseLineBuffer = '';
+    let receivedDoneEvent = false;
+    const processSseLine = (line) => {
+      if (!line.startsWith('data: ')) return;
+
+      const data = line.slice(6);
+      if (data === '[DONE]') {
+        receivedDoneEvent = true;
+        handler.markStreamEnded();
+        handler.startTypewriterAnimation();
+        return;
+      }
+
+      try {
+        handler.handleParsedEvent(JSON.parse(data));
+      } catch (error) {
+        console.warn('[AI Stream] Ignored malformed SSE event:', error.message);
+      }
+    };
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        handler.markStreamEnded();
+        sseLineBuffer += decoder.decode();
+        if (sseLineBuffer.trim()) processSseLine(sseLineBuffer.replace(/\r$/, ''));
+        if (!receivedDoneEvent) handler.markStreamEnded();
 
         // SAFETY NET BEFORE DB SAVE:
         // Detect when AI acknowledged a field value but forgot to call collect_text_input
@@ -546,22 +571,12 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         break;
       }
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
+      sseLineBuffer += decoder.decode(value, { stream: true });
+      const lines = sseLineBuffer.split('\n');
+      sseLineBuffer = lines.pop() || '';
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            handler.markStreamEnded();
-            handler.startTypewriterAnimation();
-            break;
-          }
-          try {
-            const parsed = JSON.parse(data);
-            handler.handleParsedEvent(parsed);
-          } catch (e) { }
-        }
+        processSseLine(line.replace(/\r$/, ''));
       }
     }
   };
