@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-    title: "ModelGrow – Run Powerful Automations with AI",
-    description: "Discover workflows, launch them through chat, and publish automations that others can use.",
+    title: "ModelGrow — Ready-made automations for everyday work",
+    description: "Choose a ready-made automation, connect the apps you already use, and let ModelGrow handle the repetitive work in the background.",
     keywords: ["ModelGrow", "workflow automation", "pre-built automations", "AI search", "no-code automations", "automation builder"],
     authors: [{ name: "ModelGrow" }],
     creator: "ModelGrow",
@@ -35,8 +35,8 @@ export const metadata = {
         locale: "en_US",
         url: "https://modelgrow.com",
         siteName: "ModelGrow",
-        title: "ModelGrow – Run Powerful Automations with AI",
-        description: "Discover workflows, launch them through chat, and publish automations that others can use.",
+        title: "ModelGrow — Ready-made automations for everyday work",
+        description: "Choose a ready-made automation and let ModelGrow handle the repetitive work in the background.",
         images: [
             {
                 url: '/logo.png',
@@ -48,8 +48,8 @@ export const metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "ModelGrow – Run Powerful Automations with AI",
-        description: "Discover workflows, launch them through chat, and publish automations that others can use.",
+        title: "ModelGrow — Ready-made automations for everyday work",
+        description: "Choose a ready-made automation and let ModelGrow handle the repetitive work in the background.",
         images: ['/logo.png'],
     },
 };
@@ -61,10 +61,10 @@ const jsonLd = {
     name: 'ModelGrow',
     alternateName: 'ModelGrow AI Automation Platform',
     url: 'https://modelgrow.com',
-    description: 'Discover workflows, launch them through chat, and publish automations that others can use.',
+    description: 'Choose a ready-made automation, connect the apps you already use, and let ModelGrow handle repetitive work in the background.',
     potentialAction: {
         '@type': 'SearchAction',
-        target: 'https://modelgrow.com/community?search={search_term_string}',
+        target: 'https://modelgrow.com/explore?search={search_term_string}',
         'query-input': 'required name=search_term_string',
     },
 };

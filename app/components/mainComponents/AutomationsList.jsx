@@ -6,6 +6,7 @@ import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { FaTiktok, FaLinkedinIn, FaYoutube } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { FiTrendingUp, FiZap, FiEdit2, FiBriefcase } from 'react-icons/fi';
+import { getAutomationCreator, getCreatorInitials } from '@/lib/automations/public-creator';
 
 const FEATURED_NAMES = [
     'Auto Job Matcher',
@@ -115,7 +116,9 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                     className="h-full overflow-y-auto p-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
                     <div className="grid grid-cols-2 gap-3">
-                        {automations.map((automation, index) => (
+                        {automations.map((automation, index) => {
+                            const creator = getAutomationCreator(automation);
+                            return (
                             <div
                                 key={`${automation.id}-${index}`}
                                 onClick={() => onSelect?.(automation)}
@@ -145,6 +148,18 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                                 <p className={`text-xs mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                     {automation.description}
                                 </p>
+                                <div className="mb-3 flex items-center gap-2">
+                                    <span
+                                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cover bg-center text-[8px] font-black ${isDarkMode ? 'bg-slate-700 text-purple-300' : 'bg-purple-50 text-purple-700'}`}
+                                        style={creator.profile_image_url ? { backgroundImage: `url(${creator.profile_image_url})` } : undefined}
+                                        aria-hidden="true"
+                                    >
+                                        {!creator.profile_image_url && getCreatorInitials(creator.display_name)}
+                                    </span>
+                                    <span className={`truncate text-[11px] font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        By <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>{creator.display_name}</span>
+                                    </span>
+                                </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-medium text-purple-400">
                                         {automation.price_per_run ? `${automation.price_per_run}` : 'Free'}
@@ -154,7 +169,8 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                                     </span>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     {loading && (
                         <div className="p-4 flex items-center justify-center">

@@ -6,6 +6,7 @@ import { encryptKeys } from '@/lib/auth/encryption';
 import { syncActivepiecesSourceAvailability } from '@/lib/activepieces/source-sync';
 import { notifyAutomationReviewRequested } from '@/lib/email/admin-review-notifications';
 import { detectImportedWorkflowCredentialRequirements } from '@/lib/credentials/workflow-requirements';
+import { attachPublicAutomationCreators } from '@/lib/automations/public-creator';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -83,7 +84,8 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
       }
 
-      return NextResponse.json(synced);
+      const [withCreator] = await attachPublicAutomationCreators(supabase, [synced]);
+      return NextResponse.json(withCreator);
     }
     
     // If requesting user's own automations, show ALL (including inactive/pending)
@@ -102,7 +104,7 @@ export async function GET(request) {
 
       if (error) throw error;
       const synced = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
-      return NextResponse.json(synced);
+      return NextResponse.json(await attachPublicAutomationCreators(supabase, synced));
     }
 
     // Public query - only active automations
@@ -114,7 +116,8 @@ export async function GET(request) {
 
     if (error) throw error;
     const synced = await syncActivepiecesSourceAvailability({ supabase, automations: data || [] });
-    return NextResponse.json(synced.filter((automation) => automation.is_active));
+    const activeAutomations = synced.filter((automation) => automation.is_active);
+    return NextResponse.json(await attachPublicAutomationCreators(supabase, activeAutomations));
   } catch (error) {
     console.error('[Automations GET] Error:', error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

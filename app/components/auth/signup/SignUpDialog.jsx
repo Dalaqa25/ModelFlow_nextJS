@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { IoClose } from 'react-icons/io5';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { validateEmail, validateUsername } from '@/lib/auth/validation-utils';
+import AuthDialogFrame from '../AuthDialogFrame';
 
 export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   const [email, setEmail] = useState('');
@@ -214,65 +214,28 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[2147483647] flex items-center justify-center">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-
-          {/* Dialog */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-md mx-4 bg-slate-900/95 border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/20 backdrop-blur-xl p-8 max-h-[90vh] overflow-y-auto"
-          >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
-            >
-              <IoClose className="w-5 h-5" />
-            </button>
-
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-6">
-                <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-                Get Started
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-2">
-                Create your account
-              </h2>
-              <p className="text-gray-400">
-                Join the AI automation platform
-              </p>
-            </div>
-
+    <AuthDialogFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      eyebrow="Get started"
+      title="Put the repeated work in motion."
+      description="Create your ModelGrow account, then choose the first task you want handled in the background."
+      labelledBy="signup-dialog-title"
+    >
             {!otpSent ? (
-              // Step 1: Signup form
               <form className="space-y-4" onSubmit={handleSendOtp}>
-                {/* Username */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-[0.09em] text-[#4e5568]">Username</label>
                   <div className="relative">
                     <input
                       type="text"
                       required
                       autoFocus
-                      className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${validationErrors.username?.length > 0 ? 'border-red-500' :
-                          usernameAvailable === true ? 'border-green-500' :
-                            usernameAvailable === false ? 'border-red-500' : 'border-slate-700/50'
+                      className={`auth-landing-input pr-11 ${validationErrors.username?.length > 0 ? '!border-[#ca5968] !ring-[#ca5968]/10' :
+                          usernameAvailable === true ? '!border-[#2e9f73]' :
+                            usernameAvailable === false ? '!border-[#ca5968]' : ''
                         }`}
-                      placeholder="Choose a username (5-20 characters)"
+                      placeholder="Choose a username"
                       value={username}
                       onChange={(e) => {
                         setUsername(e.target.value);
@@ -281,36 +244,35 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                     />
                     {checkingUsername && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#7041d6]/20 border-t-[#7041d6]" />
                       </div>
                     )}
                     {!checkingUsername && usernameAvailable === true && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400">✓</div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-[#218461]">✓</div>
                     )}
                     {!checkingUsername && usernameAvailable === false && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400">✗</div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-[#bd4a5a]">✗</div>
                     )}
                   </div>
                   {validationErrors.username?.map((err, i) => (
-                    <p key={i} className="mt-1 text-sm text-red-400">{err}</p>
+                    <p key={i} className="mt-1 text-xs font-semibold text-[#bd4a5a]">{err}</p>
                   ))}
                   {usernameAvailable === true && !validationErrors.username?.length && (
-                    <p className="mt-1 text-sm text-green-400">Username is available!</p>
+                    <p className="mt-1 text-xs font-semibold text-[#218461]">Username is available</p>
                   )}
                   {usernameAvailable === false && (
-                    <p className="mt-1 text-sm text-red-400">Username is already taken</p>
+                    <p className="mt-1 text-xs font-semibold text-[#bd4a5a]">Username is already taken</p>
                   )}
                 </div>
 
-                {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email address</label>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-[0.09em] text-[#4e5568]">Email address</label>
                   <input
                     type="email"
                     required
-                    className={`w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${validationErrors.email?.length > 0 ? 'border-red-500' : 'border-slate-700/50'
+                    className={`auth-landing-input ${validationErrors.email?.length > 0 ? '!border-[#ca5968] !ring-[#ca5968]/10' : ''
                       }`}
-                    placeholder="Enter your email"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -318,41 +280,39 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                     }}
                   />
                   {validationErrors.email?.map((err, i) => (
-                    <p key={i} className="mt-1 text-sm text-red-400">{err}</p>
+                    <p key={i} className="mt-1 text-xs font-semibold text-[#bd4a5a]">{err}</p>
                   ))}
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading || !isFormValid}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="auth-landing-submit mt-2"
                 >
                   {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Sending OTP...
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Sending code…
                     </div>
                   ) : (
-                    'Send OTP Code'
+                    <span className="flex items-center justify-center gap-2">Create account <ArrowRight className="h-4 w-4" /></span>
                   )}
                 </button>
               </form>
             ) : (
-              // Step 2: OTP verification
               <form className="space-y-6" onSubmit={handleVerifyOtp}>
-                <div className="text-center mb-4">
-                  <p className="text-gray-400">We sent a verification code to</p>
-                  <p className="text-white font-medium">{email}</p>
+                <div className="rounded-[18px] border border-[#6f4bc4]/10 bg-[#f3effb] px-4 py-3 text-sm text-[#6d6580]">
+                  We sent a verification code to <span className="font-black text-[#3e3459]">{email}</span>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Verification Code</label>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-[0.09em] text-[#4e5568]">Verification Code</label>
                   <input
                     type="text"
                     required
                     maxLength="6"
                     autoFocus
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-center text-2xl tracking-widest"
+                    className="auth-landing-input text-center text-2xl tracking-[0.35em]"
                     placeholder="000000"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
@@ -362,12 +322,12 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                 <button
                   type="submit"
                   disabled={loading || otpCode.length !== 6}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="auth-landing-submit"
                 >
                   {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Verifying...
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Verifying…
                     </div>
                   ) : (
                     'Verify & Create Account'
@@ -379,7 +339,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                     type="button"
                     onClick={handleResendOtp}
                     disabled={resendCooldown > 0 || loading}
-                    className="text-purple-400 hover:text-purple-300 font-medium transition-colors disabled:opacity-50"
+                    className="text-sm font-black text-[#7041d6] transition-colors hover:text-[#4e2aa7] disabled:opacity-50"
                   >
                     {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                   </button>
@@ -387,7 +347,7 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
                     <button
                       type="button"
                       onClick={() => setOtpSent(false)}
-                      className="text-gray-500 hover:text-gray-400 text-sm transition-colors"
+                      className="text-xs font-bold text-[#8b91a0] transition-colors hover:text-[#4e5568]"
                     >
                       Change details
                     </button>
@@ -396,33 +356,29 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
               </form>
             )}
 
-            {/* Footer */}
-            <div className="text-center mt-6 pt-6 border-t border-white/10">
-              <p className="text-gray-400">
+            <div className="mt-7 border-t border-[#25204f]/8 pt-5 text-center">
+              <p className="text-sm font-medium text-[#777e90]">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={onSwitchToSignIn}
-                  className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
+                  className="font-black text-[#7041d6] transition-colors hover:text-[#4e2aa7]"
                 >
                   Sign in
                 </button>
               </p>
-              <p className="text-gray-600 text-xs mt-3">
+              <p className="mt-3 text-[10px] font-semibold leading-5 text-[#9a9fad]">
                 By creating an account, you agree to our{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 underline hover:text-purple-400 transition-colors">
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#747b8d] underline transition-colors hover:text-[#7041d6]">
                   Terms of Service
                 </a>
                 {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gray-400 underline hover:text-purple-400 transition-colors">
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#747b8d] underline transition-colors hover:text-[#7041d6]">
                   Privacy Policy
                 </a>
               </p>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
+    </AuthDialogFrame>,
     document.body
   );
 }

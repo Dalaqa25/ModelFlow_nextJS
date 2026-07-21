@@ -320,15 +320,7 @@ export default function AutomationMonitorDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
-        className={`relative p-2 rounded-lg transition-all ${
-          isOpen
-            ? isDarkMode
-              ? 'bg-slate-700/80 text-white'
-              : 'bg-gray-200 text-gray-900'
-            : isDarkMode
-              ? 'text-gray-400 hover:text-white hover:bg-slate-800/60'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-        }`}
+        className={`workspace-icon-button relative p-2 rounded-lg transition-all ${isOpen ? 'workspace-icon-button-active' : ''}`}
         aria-label="Automation monitor"
         title="Automation monitor"
       >

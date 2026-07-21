@@ -10,6 +10,7 @@ import NoResultsPopup from './NoResultsPopup';
 import RuntimeStatusCard from './RuntimeStatusCard';
 import VideoPreview from '../VideoPreview';
 import { ArrowRight, CheckCircle2, Plug, WalletCards } from 'lucide-react';
+import { getCreatorInitials } from '@/lib/automations/public-creator';
 
 // Renders message content — parses [text](url) into clickable links, strips ** bold markers
 function renderContent(content) {
@@ -464,6 +465,20 @@ function AutomationList({ automations, isDarkMode }) {
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             {automation.description}
           </p>
+          {automation.creator?.display_name && (
+            <div className="flex items-center gap-2 py-1">
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cover bg-center text-[8px] font-black ${isDarkMode ? 'bg-slate-700 text-purple-300' : 'bg-purple-50 text-purple-700'}`}
+                style={automation.creator.profile_image_url ? { backgroundImage: `url(${automation.creator.profile_image_url})` } : undefined}
+                aria-hidden="true"
+              >
+                {!automation.creator.profile_image_url && getCreatorInitials(automation.creator.display_name)}
+              </span>
+              <span className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                By <span className={isDarkMode ? 'text-slate-200' : 'text-slate-700'}>{automation.creator.display_name}</span>
+              </span>
+            </div>
+          )}
           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
             Requires: {automation.requires.join(', ')}
           </p>

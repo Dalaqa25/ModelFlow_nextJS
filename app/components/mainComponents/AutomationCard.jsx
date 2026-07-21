@@ -1,9 +1,11 @@
 'use client';
 
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
+import { getAutomationCreator, getCreatorInitials } from '@/lib/automations/public-creator';
 
 export default function AutomationCard({ automation, onSelect }) {
   const { isDarkMode } = useThemeAdaptive();
+  const creator = getAutomationCreator(automation);
 
   const priceDisplay = automation.price_per_run 
     ? `$${automation.price_per_run.toFixed(2)}`
@@ -53,6 +55,19 @@ export default function AutomationCard({ automation, onSelect }) {
       <p className={`text-sm mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
         {automation.description}
       </p>
+
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cover bg-center text-[9px] font-black ${isDarkMode ? 'bg-slate-700 text-purple-300' : 'bg-purple-50 text-purple-700'}`}
+          style={creator.profile_image_url ? { backgroundImage: `url(${creator.profile_image_url})` } : undefined}
+          aria-hidden="true"
+        >
+          {!creator.profile_image_url && getCreatorInitials(creator.display_name)}
+        </span>
+        <span className={`truncate text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+          By <span className={isDarkMode ? 'text-slate-200' : 'text-slate-700'}>{creator.display_name}</span>
+        </span>
+      </div>
 
       {/* Required Connectors */}
       {requiredConnectors.length > 0 && (

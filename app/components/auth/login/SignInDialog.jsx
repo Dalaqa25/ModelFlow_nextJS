@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { IoClose } from 'react-icons/io5';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+import AuthDialogFrame from '../AuthDialogFrame';
 
 export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, customMessage }) {
   const [email, setEmail] = useState('');
@@ -136,61 +136,19 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[2147483647] flex items-center justify-center">
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          
-          {/* Dialog */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-md mx-4 bg-slate-900/95 border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/20 backdrop-blur-xl p-8"
-          >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
-            >
-              <IoClose className="w-5 h-5" />
-            </button>
-
-            {/* Header */}
-            <div className="text-center mb-8">
-              {customMessage ? (
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-sm font-medium mb-6">
-                  <span className="w-2 h-2 bg-orange-400 rounded-full mr-2 animate-pulse"></span>
-                  Authentication Required
-                </div>
-              ) : (
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-medium mb-6">
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></span>
-                  Welcome Back
-                </div>
-              )}
-              <h2 className="text-3xl font-bold text-white mb-2">
-                Sign in to your account
-              </h2>
-              <p className="text-gray-400">
-                {customMessage || 'Access your AI automation platform'}
-              </p>
-            </div>
-
+    <AuthDialogFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      eyebrow={customMessage ? 'Sign in required' : 'Welcome back'}
+      title="Return to the work already in motion."
+      description={customMessage || 'Sign in with your email. We will send a secure one-time code—no password to remember.'}
+      labelledBy="signin-dialog-title"
+      compact
+    >
             {!otpSent ? (
-              // Step 1: Email input
               <form className="space-y-6" onSubmit={handleSendOtp}>
                 <div>
-                  <label htmlFor="dialog-email" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="dialog-email" className="mb-2 block text-xs font-black uppercase tracking-[0.09em] text-[#4e5568]">
                     Email address
                   </label>
                   <input
@@ -200,8 +158,8 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                     autoComplete="email"
                     required
                     autoFocus
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="Enter your email"
+                    className="auth-landing-input"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -210,30 +168,27 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="auth-landing-submit"
                 >
                   {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Sending OTP...
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Sending code…
                     </div>
                   ) : (
-                    'Send OTP Code'
+                    <span className="flex items-center justify-center gap-2">Continue with email <ArrowRight className="h-4 w-4" /></span>
                   )}
                 </button>
+                <p className="text-center text-[11px] font-semibold leading-5 text-[#9298a7]">We use a one-time code to keep access simple and secure.</p>
               </form>
             ) : (
-              // Step 2: OTP verification
               <form className="space-y-6" onSubmit={handleVerifyOtp}>
-                <div className="text-center mb-4">
-                  <p className="text-gray-400">
-                    We sent a verification code to
-                  </p>
-                  <p className="text-white font-medium">{email}</p>
+                <div className="rounded-[18px] border border-[#6f4bc4]/10 bg-[#f3effb] px-4 py-3 text-sm text-[#6d6580]">
+                  We sent a verification code to <span className="font-black text-[#3e3459]">{email}</span>
                 </div>
                 
                 <div>
-                  <label htmlFor="dialog-otp" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="dialog-otp" className="mb-2 block text-xs font-black uppercase tracking-[0.09em] text-[#4e5568]">
                     Verification Code
                   </label>
                   <input
@@ -243,7 +198,7 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                     required
                     maxLength="6"
                     autoFocus
-                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-center text-2xl tracking-widest"
+                    className="auth-landing-input text-center text-2xl tracking-[0.35em]"
                     placeholder="000000"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
@@ -253,12 +208,12 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                 <button
                   type="submit"
                   disabled={loading || otpCode.length !== 6}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="auth-landing-submit"
                 >
                   {loading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Verifying...
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Verifying…
                     </div>
                   ) : (
                     'Verify & Sign In'
@@ -270,7 +225,7 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                     type="button"
                     onClick={handleResendOtp}
                     disabled={resendCooldown > 0 || loading}
-                    className="text-purple-400 hover:text-purple-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-sm font-black text-[#7041d6] transition-colors hover:text-[#4e2aa7] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                   </button>
@@ -279,7 +234,7 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
                     <button
                       type="button"
                       onClick={() => setOtpSent(false)}
-                      className="text-gray-500 hover:text-gray-400 text-sm transition-colors"
+                      className="text-xs font-bold text-[#8b91a0] transition-colors hover:text-[#4e5568]"
                     >
                       Change email
                     </button>
@@ -288,23 +243,19 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
               </form>
             )}
 
-            {/* Footer */}
-            <div className="text-center mt-6 pt-6 border-t border-white/10">
-              <p className="text-gray-400">
+            <div className="mt-8 border-t border-[#25204f]/8 pt-6 text-center">
+              <p className="text-sm font-medium text-[#777e90]">
                 Don't have an account?{' '}
                 <button
                   type="button"
                   onClick={onSwitchToSignUp}
-                  className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
+                  className="font-black text-[#7041d6] transition-colors hover:text-[#4e2aa7]"
                 >
                   Sign up
                 </button>
               </p>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
+    </AuthDialogFrame>,
     document.body
   );
 }

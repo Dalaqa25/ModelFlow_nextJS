@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Coins, MessageCircle, Bell } from 'lucide-react';
 import { safeApiFetch } from '@/lib/http/safe-api-fetch';
 
-export default function TopBar() {
+export default function TopBar({ tone = 'workspace' }) {
   const { isExpanded, isMobile, setIsMobileOpen } = useSidebar();
   const { isDarkMode, textColors } = useThemeAdaptive();
   const { isAuthenticated, loading: authLoading, user } = useAuth();
@@ -128,27 +128,23 @@ export default function TopBar() {
 
   return (
     <>
-    <div className={`fixed top-0 right-0 h-14 bg-transparent z-50 flex items-center justify-between px-5 transition-all duration-300 ${isMobile ? 'left-0' : isExpanded ? 'left-64' : 'left-13'}`}>
+    <div className={`app-topbar app-shell-${tone} fixed top-0 right-0 h-14 z-50 flex items-center justify-between px-5 transition-all duration-300 ${isMobile ? 'left-0' : isExpanded ? 'left-64' : 'left-13'}`}>
       {/* Left: ModelGrow (only when sidebar collapsed) or hamburger on mobile */}
       <div className="flex items-center gap-2">
         {isMobile ? (
           <button
             onClick={() => setIsMobileOpen(true)}
-            className={`p-2 rounded-lg transition-colors ${
-              isDarkMode
-                ? 'hover:bg-slate-800/60 text-white'
-                : 'hover:bg-black/5 text-gray-700'
-            }`}
+            className="workspace-icon-button p-2 rounded-lg transition-colors"
             aria-label="Open menu"
           >
             <FaBars className="w-5 h-5" />
           </button>
         ) : !isExpanded ? (
           <div className="flex items-center gap-2 px-2">
-            <span className={`text-base font-semibold tracking-tight ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+            <span className="workspace-brand-name text-base font-black tracking-tight">
               ModelGrow
             </span>
-            <span className="text-xs font-medium px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400">beta</span>
+            <span className="workspace-beta-badge text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-[0.08em]">beta</span>
           </div>
         ) : null}
       </div>
@@ -157,13 +153,9 @@ export default function TopBar() {
       {authLoading ? null : isAuthenticated ? (
         <div className="flex items-center gap-2">
           {/* Token Balance Display */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
-            isDarkMode 
-              ? 'bg-slate-800/60 border-purple-500/30 hover:bg-slate-700/60' 
-              : 'bg-white/60 border-purple-200/50 hover:bg-white/80'
-          }`}>
-            <Coins className={`w-4 h-4 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-            <span className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+          <div className="workspace-token-pill flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all">
+            <Coins className="w-4 h-4" />
+            <span className="text-sm font-black">
               {tokenBalance.toLocaleString()}
             </span>
           </div>
@@ -175,15 +167,7 @@ export default function TopBar() {
           <div className="relative" ref={chatRef}>
             <button
               onClick={handleChatToggle}
-              className={`relative p-2 rounded-lg transition-all ${
-                isChatOpen
-                  ? isDarkMode
-                    ? 'bg-slate-700/80 text-white'
-                    : 'bg-gray-200 text-gray-900'
-                  : isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-slate-800/60'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`workspace-icon-button relative p-2 rounded-lg transition-all ${isChatOpen ? 'workspace-icon-button-active' : ''}`}
               aria-label="Open chat"
               title="Open chat"
             >
@@ -239,11 +223,7 @@ export default function TopBar() {
           {/* Notification Bell */}
           <button
             onClick={() => setShowNotifications(true)}
-            className={`relative p-2 rounded-lg transition-all ${
-              isDarkMode
-                ? 'text-gray-400 hover:text-white hover:bg-slate-800/60'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+            className="workspace-icon-button relative p-2 rounded-lg transition-all"
             aria-label="Notifications"
             title="Notifications"
           >
