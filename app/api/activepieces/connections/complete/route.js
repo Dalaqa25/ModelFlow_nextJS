@@ -45,7 +45,6 @@ export async function POST(request) {
     const clientId = String(body?.clientId || '').trim();
     const code = String(body?.code || '').trim();
     const codeVerifier = body?.codeVerifier ? String(body.codeVerifier).trim() : null;
-    const scope = String(body?.scope || '').trim();
     const authorizationMethod = body?.authorizationMethod ? String(body.authorizationMethod).trim() : null;
     const props = body?.props && typeof body.props === 'object' ? body.props : {};
     const manualValues = body?.values && typeof body.values === 'object' ? body.values : null;
@@ -71,7 +70,6 @@ export async function POST(request) {
           clientId,
           code,
           codeVerifier,
-          scope,
           authorizationMethod,
           props,
         })
