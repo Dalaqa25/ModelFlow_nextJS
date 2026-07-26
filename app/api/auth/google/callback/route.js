@@ -6,12 +6,58 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function activepiecesOAuthCallbackResponse({ code, error, errorDescription }) {
+  const payload = {
+    type: 'modelgrow_activepieces_oauth',
+    code: code || null,
+    error: error || null,
+    errorDescription: errorDescription || null,
+  };
+  const targetOrigin = new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 'https://www.modelgrow.com',
+  ).origin;
+  const html = `<!doctype html>
+    <html lang="en">
+      <head><meta charset="utf-8"><title>ModelGrow connection</title></head>
+      <body>
+        <p>${error ? 'Connection did not finish.' : 'Connection finished. You can close this window.'}</p>
+        <script>
+          const payload = ${JSON.stringify(payload).replace(/</g, '\\u003c')};
+          const targetOrigin = ${JSON.stringify(targetOrigin)};
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage(payload, targetOrigin);
+            window.setTimeout(() => window.close(), 250);
+          }
+        </script>
+      </body>
+    </html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     const state = searchParams.get('state');
+
+    if (state === 'modelgrow_activepieces_v1') {
+      return activepiecesOAuthCallbackResponse({
+        code,
+        error,
+        errorDescription:
+          searchParams.get('error_description') ||
+          searchParams.get('errorDescription') ||
+          '',
+      });
+    }
 
     // Parse state to get automation_id and user_id if provided
     let automationId = null;
