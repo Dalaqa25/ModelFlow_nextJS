@@ -51,25 +51,25 @@ const tokenPackages = [
 
 const included = [
   'Use any automation in the marketplace',
-  'See the token cost before setup',
-  'Tokens stay in your account until used',
+  'See the credit cost before setup',
+  'Credits are used only after a successful run',
+  'Credits stay in your account until used',
   'No monthly subscription required',
-  'Pause or remove your automations anytime',
   'Secure checkout powered by Paddle',
 ];
 
 const faqs = [
   {
-    question: 'What is a token?',
-    answer: 'A token is ModelGrow credit used when an automation runs. Every automation shows its token cost before you set it up.',
+    question: 'What is a credit?',
+    answer: 'A credit pays for completed automation work. Every automation shows its credit cost before you set it up.',
   },
   {
-    question: 'Do my tokens expire?',
-    answer: 'No. Purchased tokens remain in your account until you use them.',
+    question: 'Do my credits expire?',
+    answer: 'No. Purchased credits remain in your account until you use them.',
   },
   {
     question: 'Do I need a monthly plan?',
-    answer: 'No. Buy a token pack when you need one and use it across the automations you choose.',
+    answer: 'No. Buy a credit pack once, top up only when you choose, and use it across any automation.',
   },
 ];
 
@@ -123,7 +123,7 @@ export default function PricingPage() {
           token_amount: pack.tokens,
         },
         onSuccess: () => {
-          alert(`Success! ${pack.tokens} tokens will be added to your account shortly.`);
+          alert(`Success! ${pack.tokens} credits will be added to your account shortly.`);
           setLoading(null);
           window.location.reload();
         },
@@ -156,11 +156,11 @@ export default function PricingPage() {
               Pay for the work<br />that gets done.
             </h1>
             <p className="mx-auto mt-7 max-w-[690px] text-lg font-medium leading-8 text-[#646d82] sm:text-xl sm:leading-9">
-              No complicated plans. Choose an automation, see its cost before setup, and use tokens only when it runs.
+              Buy credits once, see every cost before setup, and use credits only after an automation finishes successfully.
             </p>
             <div className="mx-auto mt-9 flex max-w-fit flex-wrap justify-center gap-x-6 gap-y-3 rounded-full border border-[#17203a]/9 bg-white/70 px-6 py-3 text-sm font-bold text-[#596176] shadow-[0_14px_40px_rgba(34,30,71,0.06)] backdrop-blur-sm">
               <span className="flex items-center gap-2"><Check className="h-4 w-4 text-[#13845a]" /> No subscription</span>
-              <span className="flex items-center gap-2"><Check className="h-4 w-4 text-[#13845a]" /> Tokens do not expire</span>
+              <span className="flex items-center gap-2"><Check className="h-4 w-4 text-[#13845a]" /> Credits do not expire</span>
               <span className="flex items-center gap-2"><Check className="h-4 w-4 text-[#13845a]" /> Cost shown first</span>
             </div>
           </div>
@@ -184,18 +184,21 @@ export default function PricingPage() {
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: pack.tint, color: pack.accent }}>
                       <Icon className="h-6 w-6" />
                     </span>
-                    {pack.bonus > 0 && (
-                      <span className="rounded-full bg-[#e5f8ef] px-3 py-1.5 text-[11px] font-black text-[#13845a]">+{pack.bonusPercent}% bonus</span>
-                    )}
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="rounded-full bg-[#f1eef8] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.08em] text-[#6b5d8d]">One-time purchase</span>
+                      {pack.bonus > 0 && (
+                        <span className="rounded-full bg-[#e5f8ef] px-3 py-1.5 text-[11px] font-black text-[#13845a]">+{pack.bonusPercent}% bonus</span>
+                      )}
+                    </div>
                   </div>
                   <h2 className="mt-7 text-2xl font-black tracking-[-0.04em] text-[#151b2d]">{pack.name}</h2>
                   <p className="mt-2 min-h-12 text-sm font-medium leading-6 text-[#6a7286]">{pack.description}</p>
                   <div className="mt-9">
                     <div className="flex items-end gap-2">
                       <strong className="marketing-display text-[4.6rem] font-black leading-none tracking-[-0.06em]" style={{ color: pack.accent }}>{pack.tokens}</strong>
-                      <span className="pb-2 text-xs font-black uppercase tracking-[0.13em] text-[#9aa0af]">tokens</span>
+                      <span className="pb-2 text-xs font-black uppercase tracking-[0.13em] text-[#9aa0af]">credits</span>
                     </div>
-                    {pack.bonus > 0 && <p className="mt-2 text-xs font-bold text-[#13845a]">Includes {pack.bonus} bonus tokens</p>}
+                    {pack.bonus > 0 && <p className="mt-2 text-xs font-bold text-[#13845a]">Includes {pack.bonus} bonus credits</p>}
                   </div>
                   <div className="mt-auto border-t border-[#17203a]/8 pt-7">
                     <div className="flex items-end justify-between">
@@ -208,7 +211,7 @@ export default function PricingPage() {
                       disabled={loading === pack.name}
                       className={`mt-6 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black transition-all hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60 ${pack.popular ? 'marketing-primary-button bg-[#7041d6] text-white shadow-[0_12px_30px_rgba(112,65,214,0.25)]' : 'bg-[#151a2d] text-white'}`}
                     >
-                      {loading === pack.name ? 'Opening checkout…' : `Choose ${pack.name}`}
+                      {loading === pack.name ? 'Opening one-time checkout…' : `Buy ${pack.tokens} credits once`}
                       {loading !== pack.name && <ArrowRight className="h-4 w-4" />}
                     </button>
                   </div>

@@ -82,6 +82,20 @@ export default function AdminHomePage() {
           </Link>
 
           <Link
+            href="/admin/review-sandbox"
+            className="group bg-slate-900 border border-slate-700/60 rounded-xl p-6 hover:border-emerald-500/40 transition-colors"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                <Workflow className="w-5 h-5" />
+              </div>
+              <h2 className="text-lg font-semibold text-white">Review Sandbox</h2>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">Conversationally inspect pending imports and run safe readiness tests before approval.</p>
+            <div className="inline-flex items-center gap-2 text-sm text-emerald-300 group-hover:text-emerald-200">Open Sandbox <ArrowRight className="w-4 h-4" /></div>
+          </Link>
+
+          <Link
             href="/admin/withdrawals?tab=automations"
             className="group bg-slate-900 border border-slate-700/60 rounded-xl p-6 hover:border-purple-500/40 transition-colors"
           >

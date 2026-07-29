@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { createStreamHandler } from './useStreamHandler';
+import { createStreamHandler, recoverAutomationContext } from './useStreamHandler';
 import { createBrowserSupabaseClient } from '@/lib/db/supabase';
 import { compressFile } from '@/lib/utils/file-compressor';
 
@@ -274,6 +274,9 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
             runtimeStatus: msg.metadata?.runtimeStatus || null,
             videoPreview: msg.metadata?.videoPreview || null,
             automationInstances: msg.metadata?.automationInstances || null,
+            automationList: msg.metadata?.automationList || null,
+            automationContext: msg.metadata?.automationContext || null,
+            catalogResolved: Boolean(msg.metadata?.catalogResolved),
           }));
           setMessages(prev => (
             isSameConversationReload
@@ -329,9 +332,20 @@ export function useAiChat({ onLoadingChange, initialConversationId, onRequireAut
             }
           }
 
-          // Reset setup state since we are loading an old conversation
-          setSetupState(null);
-          setAutomationContext(null);
+          const recoveredAutomationContext = recoverAutomationContext(formattedMessages);
+
+          // Creating the first message updates the URL with its new chat id.
+          // That same-conversation transition must not erase live catalog/setup
+          // state. Real conversation navigation restores the persisted catalog
+          // context and resets setup state.
+          if (isSameConversationReload) {
+            if (recoveredAutomationContext) {
+              setAutomationContext(recoveredAutomationContext);
+            }
+          } else {
+            setSetupState(null);
+            setAutomationContext(recoveredAutomationContext);
+          }
         }
       } catch (err) {
         console.error('Failed to load conversation messages:', err);
@@ -768,15 +782,22 @@ IMPORTANT: When calling collect_text_input, you MUST include:
         .filter(msg => msg.content?.trim() && !msg.isToolOutput && !msg.isHidden)
         .map(msg => ({
           role: msg.role,
-          // Append hidden context (like file uploads, READY_TO_RUN configs) if present
-          content: msg.content + (msg.hiddenContext || '')
+          content: msg.content,
+          metadata: msg.hiddenContext
+            ? { hiddenContext: msg.hiddenContext }
+            : undefined,
         }));
 
       const contextInfo = buildContextInfo();
-      // The last message already has extraContext in hiddenContext, so don't add it again
-      // Just add the buildContextInfo
+      // Private state travels separately from user-authored text. The backend
+      // consumes it for deterministic state transitions, but intent detection
+      // and the conversational model receive only the visible message.
       if (contextInfo) {
-        conversationHistory[conversationHistory.length - 1].content += contextInfo;
+        const latestMessage = conversationHistory[conversationHistory.length - 1];
+        latestMessage.metadata = {
+          ...(latestMessage.metadata || {}),
+          hiddenContext: `${latestMessage.metadata?.hiddenContext || ''}${contextInfo}`,
+        };
       }
 
       // The backend receives authoritative setup state separately and Codex uses

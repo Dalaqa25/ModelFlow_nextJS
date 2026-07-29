@@ -14,7 +14,6 @@ import {
   ChevronRight,
   CircleCheck,
   Clock3,
-  Code2,
   FileCheck2,
   FileText,
   Inbox,
@@ -30,6 +29,7 @@ import {
   Sparkles,
   Table2,
   UsersRound,
+  X,
   Zap,
 } from 'lucide-react';
 import MarketingFooter from './MarketingFooter';
@@ -84,6 +84,29 @@ const useCases = [
     tone: 'cyan',
   },
 ];
+
+const automationLibraryGroups = {
+  Everyday: [
+    { name: 'Invoice Organizer', apps: [Mail, Table2], time: '32 hrs/yr', trigger: 'A new invoice arrives', result: 'A clean row appears in Sheets', credits: 2 },
+    { name: 'Inbox Brief', apps: [Inbox, FileText], time: '52 hrs/yr', trigger: 'Your morning starts', result: 'Important emails are summarized', credits: 1 },
+    { name: 'Meeting Notes', apps: [CalendarDays, FileText], time: '40 hrs/yr', trigger: 'A meeting ends', result: 'Notes and next steps are ready', credits: 2 },
+  ],
+  Sales: [
+    { name: 'Lead Follow-up', apps: [UsersRound, Mail], time: '64 hrs/yr', trigger: 'A new lead comes in', result: 'A personal follow-up is sent', credits: 3 },
+    { name: 'CRM Cleanup', apps: [UsersRound, Table2], time: '36 hrs/yr', trigger: 'A deal changes stage', result: 'The customer record stays current', credits: 2 },
+    { name: 'Proposal Reminder', apps: [BriefcaseBusiness, CalendarDays], time: '24 hrs/yr', trigger: 'A proposal waits too long', result: 'The right reminder goes out', credits: 1 },
+  ],
+  Marketing: [
+    { name: 'Weekly Report', apps: [Table2, FileCheck2], time: '48 hrs/yr', trigger: 'Friday morning arrives', result: 'The weekly report is ready', credits: 2 },
+    { name: 'Content Brief', apps: [MessageSquare, FileText], time: '30 hrs/yr', trigger: 'A topic is approved', result: 'A clear content brief appears', credits: 2 },
+    { name: 'Campaign Digest', apps: [Mail, FileCheck2], time: '42 hrs/yr', trigger: 'A campaign finishes', result: 'Results arrive in one digest', credits: 2 },
+  ],
+  Support: [
+    { name: 'Priority Inbox', apps: [Inbox, Mail], time: '52 hrs/yr', trigger: 'A customer needs help', result: 'Urgent messages move to the top', credits: 1 },
+    { name: 'Ticket Digest', apps: [MessageSquare, FileText], time: '38 hrs/yr', trigger: 'The support day closes', result: 'Open issues are summarized', credits: 2 },
+    { name: 'SLA Reminder', apps: [Clock3, MessageSquare], time: '28 hrs/yr', trigger: 'A deadline gets close', result: 'The owner gets a reminder', credits: 1 },
+  ],
+};
 
 const statusRows = [
   { label: 'Invoice received', meta: 'Gmail · 9:41 AM', state: 'done' },
@@ -273,6 +296,46 @@ function HeroProductStage() {
   );
 }
 
+function HeroBackdrop() {
+  return (
+    <div className="marketing-hero-artwork absolute inset-0" aria-hidden="true">
+      <svg viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid slice" role="presentation">
+        <defs>
+          <linearGradient id="hero-sky" x1="0" x2="0.85" y1="0" y2="1">
+            <stop offset="0%" stopColor="#10184d" />
+            <stop offset="48%" stopColor="#473f94" />
+            <stop offset="100%" stopColor="#191e58" />
+          </linearGradient>
+          <radialGradient id="hero-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#f5b4d1" stopOpacity="0.82" />
+            <stop offset="48%" stopColor="#ad75e8" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#ad75e8" stopOpacity="0" />
+          </radialGradient>
+          <filter id="hero-soften" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="32" />
+          </filter>
+        </defs>
+        <rect width="1600" height="1200" fill="url(#hero-sky)" />
+        <ellipse cx="800" cy="530" rx="510" ry="370" fill="url(#hero-glow)" filter="url(#hero-soften)" />
+        <ellipse cx="180" cy="1090" rx="590" ry="300" fill="#27a89e" opacity="0.28" filter="url(#hero-soften)" />
+        <ellipse cx="1430" cy="1040" rx="520" ry="310" fill="#2b7088" opacity="0.27" filter="url(#hero-soften)" />
+        <path d="M-40 980C230 820 443 1100 698 951s440-140 942 27v222H-40Z" fill="#153d54" opacity="0.48" />
+        <path d="M-40 1070c230-119 432 29 686-91 281-132 503 91 994-13v234H-40Z" fill="#102b48" opacity="0.62" />
+        <g fill="#fff" opacity="0.68">
+          <circle cx="129" cy="231" r="1.4" /><circle cx="280" cy="122" r="1" /><circle cx="415" cy="310" r="1.4" />
+          <circle cx="654" cy="154" r="1.2" /><circle cx="895" cy="236" r="1.5" /><circle cx="1073" cy="102" r="1" />
+          <circle cx="1281" cy="287" r="1.5" /><circle cx="1489" cy="170" r="1.1" /><circle cx="1518" cy="428" r="1.4" />
+          <circle cx="86" cy="475" r="1" /><circle cx="339" cy="515" r="1.3" /><circle cx="1190" cy="513" r="1.1" />
+        </g>
+        <g fill="none" stroke="#d5c7ff" strokeLinecap="round" opacity="0.16">
+          <path d="M55 804C269 667 406 744 570 650s308-19 512-147 311-100 480-17" strokeWidth="1.5" />
+          <path d="M-50 714c227-133 355 37 600-76s424-112 634-33 302-18 470-142" strokeWidth="1" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 function SearchBox() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -295,7 +358,7 @@ function SearchBox() {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="What should ModelGrow handle?"
+          placeholder="Tell ModelGrow what you repeat…"
           aria-label="Search for an automation"
           className="min-w-0 flex-1 border-0 bg-transparent px-1 py-3 text-[15px] font-bold text-[#161c2e] outline-none placeholder:text-[#9299aa] sm:text-base"
         />
@@ -368,62 +431,87 @@ const manualInvoiceSteps = [
   'Double-check the row and repeat next time',
 ];
 
+function AboutModelGrowSection() {
+  return (
+    <section id="what-is-modelgrow" className="marketing-anchor relative overflow-hidden border-b border-[#17203a]/7 bg-[#fbfaf7] py-16 sm:py-20">
+      <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#bba1ff]/18 blur-[100px]" aria-hidden="true" />
+      <div className="relative mx-auto grid max-w-[1240px] items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
+        <div>
+          <p className="marketing-kicker">What is ModelGrow?</p>
+          <h2 className="marketing-display mt-4 max-w-[600px] text-[clamp(2.5rem,4.4vw,4.5rem)] font-black leading-[0.94] tracking-[-0.05em] text-[#151b2d]">
+            Give the repetitive part away.
+          </h2>
+          <p className="mt-5 max-w-[480px] text-base font-medium leading-7 text-[#656e83]">
+            Pick a job. Connect your apps. ModelGrow handles the handoff.
+          </p>
+          <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-[#7041d6]/12 bg-[#f0eaff] px-4 py-2.5 text-sm font-black text-[#6741bd]">
+            <Sparkles className="h-4 w-4" />
+            Built for people who have work to do
+          </div>
+        </div>
+
+        <div className="relative min-h-[430px] overflow-hidden rounded-[34px] border border-[#17203a]/8 bg-gradient-to-br from-[#f0ecff] via-white to-[#e9f5ff] p-5 shadow-[0_30px_80px_rgba(45,39,95,0.1)] sm:p-8">
+          <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'linear-gradient(rgba(112,65,214,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(112,65,214,0.07) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.17em] text-[#8d78bc]">Your workday</p>
+              <p className="mt-1 text-sm font-black text-[#25204f]">The same small jobs, every day</p>
+            </div>
+            <span className="flex items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-black text-[#6c5a99] shadow-sm"><span className="h-2 w-2 rounded-full bg-[#f1b45f]" /> Waiting</span>
+          </div>
+
+          <div className="relative mt-7 grid gap-3 sm:grid-cols-2">
+            <AppBadge icon={Mail} name="New invoice in Gmail" color="#d94235" background="#fff0ed" />
+            <AppBadge icon={Inbox} name="Inbox needs sorting" color="#5c63d8" background="#eef0ff" />
+            <AppBadge icon={FileText} name="Weekly report due" color="#3974b7" background="#edf6ff" />
+            <AppBadge icon={CalendarDays} name="Follow-up tomorrow" color="#168452" background="#eaf9f1" />
+          </div>
+
+          <div className="relative mx-auto mt-7 max-w-[470px] rounded-[26px] border border-[#7041d6]/15 bg-[#171c30] p-5 text-white shadow-[0_24px_55px_rgba(32,24,77,0.2)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#7b5ce0]"><Sparkles className="h-4 w-4" /></span><span className="text-sm font-black">ModelGrow is handling it</span></div>
+              <span className="text-[10px] font-black uppercase tracking-[0.13em] text-[#8ff1cf]">Active</span>
+            </div>
+            <div className="mt-5 flex items-center gap-2 text-xs font-bold text-white/65">
+              <span className="rounded-full bg-white/10 px-2.5 py-1.5">Gmail</span><ArrowRight className="h-3.5 w-3.5 text-[#8ff1cf]" /><span className="rounded-full bg-white/10 px-2.5 py-1.5">ModelGrow</span><ArrowRight className="h-3.5 w-3.5 text-[#8ff1cf]" /><span className="rounded-full bg-white/10 px-2.5 py-1.5">Sheets</span>
+            </div>
+            <p className="mt-4 text-xs font-semibold leading-5 text-white/55">The useful details are captured, checked, and placed where they belong.</p>
+          </div>
+
+          <div className="relative mt-5 flex items-center justify-between rounded-2xl bg-white/75 px-4 py-3 text-xs font-black text-[#3f4960] shadow-sm">
+            <span className="flex items-center gap-2"><CircleCheck className="h-4 w-4 text-[#16a16b]" /> Your attention is free</span>
+            <span className="text-[#7041d6]">See the result →</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function WhyModelGrowSection() {
   return (
-    <section
-      id="why-modelgrow"
-      className="marketing-anchor relative overflow-hidden border-b border-white/10 py-24 text-white sm:py-32"
-      style={{
-        background: 'radial-gradient(circle at 12% 18%, rgba(180, 83, 255, 0.34), transparent 30%), radial-gradient(circle at 84% 24%, rgba(76, 126, 255, 0.28), transparent 31%), linear-gradient(135deg, #17123f 0%, #21185c 48%, #101a38 100%)',
-      }}
-    >
-      <div className="marketing-signal-field absolute inset-0 opacity-35" aria-hidden="true" />
-      <div className="absolute -left-32 bottom-[-18rem] h-[34rem] w-[34rem] rounded-full bg-[#ea63c9]/20 blur-[110px]" aria-hidden="true" />
-      <div className="absolute -right-36 top-[-16rem] h-[34rem] w-[34rem] rounded-full bg-[#6d8cff]/20 blur-[110px]" aria-hidden="true" />
-
-      <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:gap-20">
+    <section id="why-modelgrow" className="marketing-anchor border-b border-[#17203a]/7 bg-[#171c30] py-20 text-white sm:py-24">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.17em] text-[#aeece3]">Why ModelGrow</p>
-            <h2 className="marketing-display mt-5 max-w-[720px] text-[clamp(3.2rem,6.2vw,6.6rem)] font-black leading-[0.9] tracking-[-0.052em] text-white marketing-white-copy">
-              Give the busywork back to software.
-            </h2>
+            <h2 className="marketing-display mt-4 max-w-[700px] text-[clamp(2.5rem,4.4vw,4.5rem)] font-black leading-[0.94] tracking-[-0.05em] text-white marketing-white-copy">Less busywork. More room to think.</h2>
           </div>
-          <div className="max-w-[590px] lg:justify-self-end">
-            <p className="text-xl font-semibold leading-9 text-white/82 sm:text-2xl sm:leading-10">
-              Your time should go into judgment, creativity, and people—not copying the same information between apps again and again.
-            </p>
-            <p className="mt-5 text-base font-medium leading-7 text-white/58">
-              ModelGrow handles the predictable steps, keeps the result visible, and brings you back in when a real decision is required.
-            </p>
-          </div>
+          <p className="max-w-[320px] text-sm font-semibold leading-6 text-white/55">Ready-made. Clear. Under your control.</p>
         </div>
 
-        <div className="mt-16 grid border-y border-white/14 md:grid-cols-3 sm:mt-20">
+        <div className="mt-12 grid gap-px overflow-hidden rounded-[26px] border border-white/10 bg-white/10 md:grid-cols-3">
           {[
-            [Clock3, 'Save time', 'The repeated clicks disappear, so every task gives a little time back instead of taking another piece of your day.'],
-            [BadgeDollarSign, 'Spend less on repetition', 'Routine work no longer consumes paid hours that could be used for customers, growth, or higher-value work.'],
-            [FileCheck2, 'Decide with cleaner information', 'The same useful details arrive in the same place, giving you a consistent record when it is time to act.'],
-          ].map(([Icon, title, text], index) => (
-            <article key={title} className="relative border-b border-white/14 px-1 py-9 last:border-b-0 md:border-b-0 md:px-8 md:first:pl-0 md:last:pr-0 md:[&:not(:last-child)]:border-r">
-              <div className="flex items-center justify-between">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/14 bg-white/[0.08] text-[#bba7ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md">
-                  <Icon className="h-5 w-5" strokeWidth={2.1} />
-                </span>
-                <span className="marketing-display text-3xl font-bold text-white/15">0{index + 1}</span>
-              </div>
-              <h3 className="marketing-display mt-8 text-3xl font-bold tracking-[-0.035em] text-white marketing-white-copy">{title}</h3>
-              <p className="mt-4 max-w-[340px] text-sm font-medium leading-7 text-white/62">{text}</p>
+            [Zap, 'Ready-made', 'Start with the result—not a blank canvas.'],
+            [MousePointerClick, 'Easy to start', 'Connect the apps you already know.'],
+            [ShieldCheck, 'Still yours', 'Pause, review, or remove it anytime.'],
+          ].map(([Icon, title, text]) => (
+            <article key={title} className="bg-[#202642] p-6 sm:p-7">
+              <Icon className="h-5 w-5 text-[#8ff1cf]" />
+              <h3 className="mt-8 text-xl font-black text-white marketing-white-copy">{title}</h3>
+              <p className="mt-2 text-sm font-medium leading-6 text-white/55">{text}</p>
             </article>
           ))}
-        </div>
-
-        <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-[670px] text-sm font-semibold leading-6 text-[#c8c4e4]">The value grows every time the same task returns. Start with one workflow, see the result, then decide what else deserves to run without you.</p>
-          <a href="#savings-example" className="inline-flex w-fit items-center gap-2 rounded-full border border-white/16 bg-white/[0.08] px-5 py-3 text-sm font-black text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/[0.13]">
-            See a real example
-            <ArrowRight className="h-4 w-4" />
-          </a>
         </div>
       </div>
     </section>
@@ -667,6 +755,34 @@ function OutcomeEffectSection() {
   );
 }
 
+function SimpleUseCasesSection() {
+  return (
+    <section id="use-cases" className="marketing-anchor border-b border-[#17203a]/7 bg-[#f7f6f1] py-20 sm:py-24">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="marketing-kicker">Start with one thing</p>
+            <h2 className="marketing-display mt-3 max-w-[660px] text-[clamp(2.8rem,5vw,5rem)] font-black leading-[0.92] tracking-[-0.045em] text-[#25204f]">Pick the work you want off your plate.</h2>
+          </div>
+          <Link href="/explore" className="inline-flex w-fit items-center gap-2 rounded-full border border-[#6540ba]/16 bg-white px-5 py-3 text-sm font-black text-[#6540ba] shadow-[0_10px_24px_rgba(54,41,91,0.06)] transition-transform hover:-translate-y-0.5">Browse all <ArrowRight className="h-4 w-4" /></Link>
+        </div>
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {useCases.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.title} href={`/explore?search=${encodeURIComponent(item.title)}`} className="group flex items-center gap-4 rounded-[22px] border border-[#17203a]/8 bg-white p-4 transition-all hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,32,58,0.08)] sm:p-5">
+                <span className={`marketing-use-case-icon marketing-use-case--${item.tone} flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl`}><Icon className="h-5 w-5" /></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-black text-[#25204f]">{item.title}</span><span className="mt-1 block truncate text-xs font-semibold text-[#858c9d]">{item.result}</span></span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-[#a1a7b5] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#7143d4]" />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const flowDemoSteps = [
   { icon: Mail, eyebrow: 'Trigger', title: 'Invoice arrives', detail: 'Gmail notices one new PDF' },
   { icon: Sparkles, eyebrow: 'Understand', title: 'Details captured', detail: 'The useful fields are organized' },
@@ -710,14 +826,14 @@ function FlowDemoSection() {
   };
 
   return (
-    <section ref={sectionRef} className="marketing-flow-story relative overflow-hidden bg-[#4b3baa] px-5 py-24 text-white sm:px-8 sm:py-32">
+    <section ref={sectionRef} className="marketing-flow-story relative overflow-hidden bg-[#4b3baa] px-5 py-20 text-white sm:px-8 sm:py-24">
       <div className="marketing-flow-orb marketing-flow-orb--one" />
       <div className="marketing-flow-orb marketing-flow-orb--two" />
       <div className="relative mx-auto max-w-[1240px]">
         <div className="mx-auto max-w-[820px] text-center">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c9bdff]">See the whole job move</p>
-          <h2 className="marketing-display mt-5 text-[clamp(3rem,6vw,6.2rem)] font-black leading-[0.9] tracking-[-0.045em] text-white marketing-white-copy">One small trigger. Every step handled.</h2>
-          <p className="mx-auto mt-6 max-w-[650px] text-lg font-medium leading-8 text-white/70">This is what “running in the background” actually means—visible, understandable, and easy to trust.</p>
+          <h2 className="marketing-display mt-5 text-[clamp(2.7rem,4.8vw,4.8rem)] font-black leading-[0.94] tracking-[-0.045em] text-white marketing-white-copy">One small trigger. Every step handled.</h2>
+          <p className="mx-auto mt-5 max-w-[560px] text-base font-medium leading-7 text-white/70">Watch one invoice move from inbox to spreadsheet.</p>
         </div>
 
         <div className="marketing-flow-window mt-14 overflow-hidden rounded-[30px] border border-white/24 bg-[#f9f8ff] text-[#171c30] shadow-[0_48px_110px_rgba(13,9,54,0.34)]">
@@ -762,24 +878,417 @@ function FlowDemoSection() {
   );
 }
 
-export default function MarketingLanding() {
-  const [heroLoaded, setHeroLoaded] = useState(false);
+function HandoffStorySection() {
+  return (
+    <section id="what-is-modelgrow" className="marketing-anchor mg-chapter mg-handoff-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading mx-auto text-center">
+          <p className="marketing-kicker">What is ModelGrow?</p>
+          <h2 className="marketing-display">One request. The whole handoff.</h2>
+          <p>It notices the work, handles the middle, and puts the result where it belongs.</p>
+        </div>
+
+        <div className="mg-handoff-scene">
+          <div className="mg-handoff-glow" aria-hidden="true" />
+          <div className="mg-handoff-path" aria-hidden="true"><span /></div>
+
+          <article className="mg-window mg-window--source">
+            <div className="mg-window-bar">
+              <span className="mg-app-mark mg-app-mark--mail"><Mail className="h-4 w-4" /></span>
+              <span>Gmail</span>
+              <span className="mg-window-time">9:41</span>
+            </div>
+            <div className="mg-mail-preview">
+              <span className="mg-avatar">AS</span>
+              <div>
+                <strong>Invoice #1042</strong>
+                <small>Acme Supplies · PDF attached</small>
+              </div>
+            </div>
+            <div className="mg-attachment"><FileText className="h-4 w-4" /><span>invoice-1042.pdf</span><strong>$2,480</strong></div>
+          </article>
+
+          <div className="mg-agent-core">
+            <div className="mg-agent-rings" aria-hidden="true"><span /><span /></div>
+            <span className="mg-agent-logo"><Image src="/logo.png" alt="" width={42} height={42} /></span>
+            <strong>Handling it</strong>
+            <div className="mg-agent-actions">
+              {['Read', 'Check', 'Move'].map((label) => <span key={label}><Check className="h-3 w-3" />{label}</span>)}
+            </div>
+          </div>
+
+          <article className="mg-window mg-window--result">
+            <div className="mg-window-bar">
+              <span className="mg-app-mark mg-app-mark--sheets"><Table2 className="h-4 w-4" /></span>
+              <span>Google Sheets</span>
+              <span className="mg-done-pill"><CircleCheck className="h-3 w-3" /> Added</span>
+            </div>
+            <div className="mg-sheet-head"><span>Vendor</span><span>Invoice</span><span>Total</span></div>
+            <div className="mg-sheet-row"><strong>Acme Supplies</strong><span>#1042</span><strong>$2,480</strong></div>
+            <div className="mg-sheet-row mg-sheet-row--ghost"><span>Northstar</span><span>#1041</span><span>$860</span></div>
+          </article>
+
+          <div className="mg-handoff-status">
+            <span><span className="mg-live-dot" /> Ready for the next one</span>
+            <span>12 seconds</span>
+            <span>No copy-paste</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyVisualSection() {
+  return (
+    <section id="why-modelgrow" className="marketing-anchor mg-chapter mg-why-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading mg-section-heading--light">
+          <p>Why ModelGrow?</p>
+          <h2 className="marketing-display">Five little steps. Every single time.</h2>
+        </div>
+
+        <div className="mg-compare-stage">
+          <div className="mg-compare-side mg-compare-side--builder">
+            <div className="mg-compare-label"><span>Without ModelGrow</span><small>Every invoice</small></div>
+            <div className="mg-manual-loop">
+              <div className="mg-manual-summary">
+                <span><Clock3 className="h-5 w-5" /></span>
+                <div><small>Manual routine</small><strong>About 8 minutes</strong></div>
+                <em>again</em>
+              </div>
+
+              <div className="mg-manual-steps" aria-label="Five manual steps repeated for every invoice">
+                <div className="mg-manual-step"><i>1</i><Mail className="h-4 w-4" /><strong>Open the email</strong><small>1 min</small></div>
+                <div className="mg-manual-step"><i>2</i><FileText className="h-4 w-4" /><strong>Download the invoice</strong><small>1 min</small></div>
+                <div className="mg-manual-step"><i>3</i><Search className="h-4 w-4" /><strong>Find the right details</strong><small>2 min</small></div>
+                <div className="mg-manual-step"><i>4</i><Table2 className="h-4 w-4" /><strong>Copy them into Sheets</strong><small>3 min</small></div>
+                <div className="mg-manual-step"><i>5</i><CircleCheck className="h-4 w-4" /><strong>Check it again</strong><small>1 min</small></div>
+              </div>
+
+              <div className="mg-manual-repeat"><RefreshCw className="h-4 w-4" /><span>Then repeat for the next one</span></div>
+            </div>
+          </div>
+
+          <div className="mg-compare-vs">vs</div>
+
+          <div className="mg-compare-side mg-compare-side--modelgrow">
+            <div className="mg-compare-label"><span>With ModelGrow</span><small>Connect once</small></div>
+            <div className="mg-ready-flow">
+              <div className="mg-ready-request"><Search className="h-4 w-4" /><span>Save invoices to my spreadsheet</span></div>
+              <span className="mg-ready-arrow"><ArrowRight className="h-4 w-4" /></span>
+              <div className="mg-ready-result">
+                <div><span className="mg-agent-logo mg-agent-logo--small"><Image src="/logo.png" alt="" width={30} height={30} /></span><div><small>Automation found</small><strong>Invoice to spreadsheet</strong></div></div>
+                <div className="mg-ready-apps"><span><Mail className="h-4 w-4" />Gmail</span><ArrowRight className="h-4 w-4" /><span><Table2 className="h-4 w-4" />Sheets</span></div>
+                <div className="mg-ready-footer"><CircleCheck className="h-4 w-4" /> Ready to connect</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mg-no-list" aria-label="Manual busywork removed">
+          <span>No copy-paste</span><span>No retyping</span><span>No repeat routine</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SavingsPainSection() {
+  const [monthlyRuns, setMonthlyRuns] = useState(20);
+  const minutesPerTask = 8;
+  const hourlyValue = 30;
+  const annualHours = Math.round((monthlyRuns * minutesPerTask * 12) / 60);
+  const annualValue = annualHours * hourlyValue;
+  const workdays = Math.round(annualHours / 8);
+  const rangeProgress = ((monthlyRuns - 5) / 55) * 100;
+  const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
   return (
+    <section id="savings" className="marketing-anchor mg-chapter mg-savings-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading">
+          <p className="marketing-kicker">The hidden cost</p>
+          <h2 className="marketing-display">“Only eight minutes” adds up.</h2>
+        </div>
+
+        <div className="mg-savings-stage">
+          <div className="mg-savings-input">
+            <div className="mg-savings-control-head">
+              <span>How often does it repeat?</span>
+              <strong>{monthlyRuns}<small> / month</small></strong>
+            </div>
+
+            <input
+              className="mg-savings-range"
+              type="range"
+              min="5"
+              max="60"
+              step="5"
+              value={monthlyRuns}
+              aria-label="Repeated tasks per month"
+              style={{ '--mg-range-progress': `${rangeProgress}%` }}
+              onChange={(event) => setMonthlyRuns(Number(event.target.value))}
+            />
+            <div className="mg-savings-range-labels"><span>5 times</span><span>60 times</span></div>
+
+            <div className="mg-year-visual" aria-hidden="true">
+              <div className="mg-year-visual-title"><span>The same task</span><strong>all year</strong></div>
+              <div className="mg-year-bars">
+                {months.map((month, index) => (
+                  <span key={`${month}-${index}`}><i style={{ height: `${24 + monthlyRuns * 0.8}px` }} /><small>{month}</small></span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mg-savings-equation" aria-label={`${minutesPerTask} minutes, ${monthlyRuns} times per month, for 12 months`}>
+              <span><strong>{minutesPerTask} min</strong><small>each time</small></span>
+              <b>×</b>
+              <span><strong>{monthlyRuns}</strong><small>each month</small></span>
+              <b>×</b>
+              <span><strong>12</strong><small>months</small></span>
+            </div>
+          </div>
+
+          <div className="mg-savings-output" aria-live="polite">
+            <p>Potentially reclaimed each year</p>
+            <div className="mg-savings-main-result">
+              <span><Clock3 className="h-7 w-7" /></span>
+              <div><strong>{annualHours}</strong><small>hours back</small></div>
+            </div>
+
+            <div className="mg-savings-secondary-results">
+              <div><BadgeDollarSign className="h-5 w-5" /><span><strong>${annualValue.toLocaleString('en-US')}</strong><small>value of your time</small></span></div>
+              <div><CalendarDays className="h-5 w-5" /><span><strong>{workdays} workdays</strong><small>at 8 hours a day</small></span></div>
+            </div>
+
+            <div className="mg-savings-callout"><Sparkles className="h-4 w-4" />One tiny repeat. One very real yearly cost.</div>
+          </div>
+        </div>
+
+        <p className="mg-savings-note">Illustrative estimate using 8 minutes per task and $30/hour. Actual savings vary.</p>
+      </div>
+    </section>
+  );
+}
+
+function HowVisualSection() {
+  return (
+    <section id="how-it-works" className="marketing-anchor mg-chapter mg-how-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading mx-auto text-center">
+          <p className="marketing-kicker">How it works</p>
+          <h2 className="marketing-display">Choose it. Connect it. Let it run.</h2>
+        </div>
+
+        <div className="mg-setup-stage">
+          <div className="mg-setup-progress" aria-hidden="true"><span /><span /><span /></div>
+
+          <article className="mg-setup-step">
+            <span className="mg-step-number">01</span>
+            <div className="mg-step-visual mg-step-visual--search"><Search className="h-5 w-5" /><span>invoices → spreadsheet</span></div>
+            <h3>Pick the outcome</h3>
+            <p>Start with what you want done.</p>
+          </article>
+
+          <article className="mg-setup-step">
+            <span className="mg-step-number">02</span>
+            <div className="mg-step-visual mg-step-visual--connect">
+              <span className="mg-app-mark mg-app-mark--mail"><Mail className="h-5 w-5" /></span>
+              <span className="mg-connect-line"><span /></span>
+              <span className="mg-app-mark mg-app-mark--sheets"><Table2 className="h-5 w-5" /></span>
+            </div>
+            <h3>Connect the apps</h3>
+            <p>Approve only what the job needs.</p>
+          </article>
+
+          <article className="mg-setup-step">
+            <span className="mg-step-number">03</span>
+            <div className="mg-step-visual mg-step-visual--running"><span className="mg-live-dot" /><strong>Running</strong><small>18 jobs completed</small></div>
+            <h3>Keep the result</h3>
+            <p>Each run stays visible.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AutomationLibrarySection() {
+  const [activeCategory, setActiveCategory] = useState('Everyday');
+  const [activeAutomationIndex, setActiveAutomationIndex] = useState(0);
+  const activeAutomations = automationLibraryGroups[activeCategory];
+  const activeAutomation = activeAutomations[activeAutomationIndex];
+
+  const chooseCategory = (category) => {
+    setActiveCategory(category);
+    setActiveAutomationIndex(0);
+  };
+
+  return (
+    <section id="use-cases" className="marketing-anchor mg-chapter mg-library-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading mg-section-heading--light mx-auto text-center">
+          <p>What can it handle?</p>
+          <h2 className="marketing-display">Pick a job. See it run.</h2>
+        </div>
+
+        <div className="mg-chooser-shell">
+          <div className="mg-chooser-board">
+            <div className="mg-chooser-toolbar">
+              <div><span className="mg-agent-logo mg-agent-logo--small"><Image src="/logo.png" alt="" width={30} height={30} /></span><strong>Automation library</strong></div>
+              <span><span className="mg-live-dot" /> Always ready</span>
+            </div>
+
+            <div className="mg-chooser-layout">
+              <div className="mg-chooser-picker">
+                <div className="mg-chooser-tabs" role="tablist" aria-label="Automation categories">
+                  {Object.keys(automationLibraryGroups).map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeCategory === category}
+                      className={activeCategory === category ? 'is-active btn-white-text' : ''}
+                      onClick={() => chooseCategory(category)}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mg-chooser-cards">
+                  {activeAutomations.map((automation, index) => (
+                    <button
+                      key={automation.name}
+                      type="button"
+                      className={activeAutomationIndex === index ? 'mg-chooser-card is-active' : 'mg-chooser-card'}
+                      aria-pressed={activeAutomationIndex === index}
+                      onClick={() => setActiveAutomationIndex(index)}
+                    >
+                      <span className="mg-chooser-card-apps">
+                        {automation.apps.map((AppIcon, appIndex) => <i key={`${automation.name}-${appIndex}`}><AppIcon className="h-4 w-4" /></i>)}
+                      </span>
+                      <span className="mg-chooser-card-copy"><strong>{automation.name}</strong><small>{automation.trigger}</small></span>
+                      <span className="mg-chooser-card-value"><strong>≈ {automation.time}</strong><small>potentially returned</small></span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <aside key={activeAutomation.name} className="mg-chooser-preview">
+                <div className="mg-chooser-preview-top">
+                  <span className="mg-chooser-preview-apps">
+                    {activeAutomation.apps.map((AppIcon, appIndex) => <i key={`preview-${activeAutomation.name}-${appIndex}`}><AppIcon className="h-5 w-5" /></i>)}
+                  </span>
+                  <span className="mg-chooser-live"><span className="mg-live-dot" /> Automatic</span>
+                </div>
+
+                <p>{activeCategory} automation</p>
+                <h3>{activeAutomation.name}</h3>
+
+                <div className="mg-chooser-timeline">
+                  <div><span>1</span><p><small>When this happens</small><strong>{activeAutomation.trigger}</strong></p></div>
+                  <i />
+                  <div><span>2</span><p><small>ModelGrow</small><strong>Runs automatically</strong></p></div>
+                  <i />
+                  <div><span>3</span><p><small>Your result</small><strong>{activeAutomation.result}</strong></p></div>
+                </div>
+
+                <div className="mg-chooser-charge">
+                  <div><CircleCheck className="h-4 w-4" /><span><small>Completed</small><strong>{activeAutomation.credits} credits</strong></span></div>
+                  <div><X className="h-4 w-4" /><span><small>Failed</small><strong>0 credits</strong></span></div>
+                </div>
+
+                <div className="mg-chooser-return"><Clock3 className="h-4 w-4" /> Potentially returns {activeAutomation.time}</div>
+              </aside>
+            </div>
+          </div>
+        </div>
+
+        <p className="mg-library-note">Illustrative time estimates. Your result depends on how often the work repeats.</p>
+      </div>
+    </section>
+  );
+}
+
+function PayAsYouGoSection() {
+  return (
+    <section id="pricing-explained" className="marketing-anchor mg-chapter mg-pay-section">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div className="mg-section-heading mx-auto text-center">
+          <p className="marketing-kicker">Simple pay-as-you-go</p>
+          <h2 className="marketing-display">Buy credits once. Spend them only on success.</h2>
+        </div>
+
+        <div className="mg-credit-story">
+          <article className="mg-credit-pack">
+            <div className="mg-credit-pack-top"><span><BadgeDollarSign className="h-5 w-5" /></span><small>One-time purchase</small></div>
+            <p>Starter credit pack</p>
+            <div className="mg-credit-count"><strong>50</strong><span>credits</span></div>
+            <div className="mg-credit-price"><strong>$5</strong><span>paid once</span></div>
+            <div className="mg-credit-pack-points"><span><CircleCheck className="h-4 w-4" /> No subscription</span><span><CircleCheck className="h-4 w-4" /> Never expires</span></div>
+          </article>
+
+          <div className="mg-credit-path" aria-hidden="true"><span /><ArrowRight className="h-5 w-5" /></div>
+
+          <div className="mg-credit-outcomes">
+            <p>Example automation · 2 credits per run</p>
+            <article className="mg-credit-outcome mg-credit-outcome--success">
+              <span><CircleCheck className="h-5 w-5" /></span>
+              <div><small>Run completed</small><strong>The result was delivered</strong></div>
+              <div className="mg-credit-balance"><small>Balance</small><strong>50 → 48</strong><span>2 credits used</span></div>
+            </article>
+            <article className="mg-credit-outcome mg-credit-outcome--failed">
+              <span><X className="h-5 w-5" /></span>
+              <div><small>Run failed</small><strong>Nothing was delivered</strong></div>
+              <div className="mg-credit-balance"><small>Balance</small><strong>50 → 50</strong><span>0 credits used</span></div>
+            </article>
+            <div className="mg-credit-rule"><ShieldCheck className="h-4 w-4" /> Your balance moves only after successful work.</div>
+          </div>
+        </div>
+
+        <div className="mg-pay-actions">
+          <Link href="/pricing">See one-time credit packs <ArrowRight className="h-4 w-4" /></Link>
+          <Link href="/explore">See automation costs first</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ControlFinaleSection() {
+  return (
+    <section className="mg-control-finale">
+      <div className="mx-auto grid max-w-[1240px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
+        <div>
+          <p className="mg-dark-kicker">Still your work. Still your call.</p>
+          <h2 className="marketing-display">Always visible. Always yours.</h2>
+          <div className="mg-control-points">
+            <span><CircleCheck className="h-4 w-4" /> Every run logged</span>
+            <span><Pause className="h-4 w-4" /> Pause anytime</span>
+            <span><ShieldCheck className="h-4 w-4" /> App access visible</span>
+          </div>
+          <div className="mg-finale-actions">
+            <Link href="/explore">Explore automations <ArrowRight className="h-4 w-4" /></Link>
+            <button type="button" onClick={openSignUp}>Get started</button>
+          </div>
+        </div>
+        <div className="mg-tracking-wrap">
+          <span className="mg-tracking-float"><span className="mg-live-dot" /> Live activity</span>
+          <TrackingPanel />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default function MarketingLanding() {
+  return (
     <main className="marketing-page overflow-hidden text-[#151b2d]">
-      <section className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[76px]">
-        <div className="marketing-hero-placeholder absolute inset-0" aria-hidden="true" />
-        <Image
-          src="/marketing/modelgrow-automation-garden-v2.png"
-          alt="An illustrated automation garden with glowing paths connecting completed tasks"
-          fill
-          priority
-          quality={96}
-          sizes="100vw"
-          onLoad={() => setHeroLoaded(true)}
-          data-loaded={heroLoaded}
-          className="marketing-hero-image object-cover object-center"
-        />
+      <section className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[104px]">
+        <HeroBackdrop />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,15,61,0.42)_0%,rgba(24,24,80,0.04)_52%,rgba(9,16,56,0.4)_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#101746]/65 to-transparent" />
         <div className="marketing-signal-field absolute inset-0" aria-hidden="true">
@@ -794,10 +1303,10 @@ export default function MarketingLanding() {
             Ready-made automations for everyday work
           </div>
           <h1 className="marketing-display mt-7 max-w-[1050px] text-[clamp(3.5rem,7vw,7.4rem)] font-black leading-[0.88] tracking-[-0.055em] text-white marketing-white-copy">
-            Make the work you repeat run itself.
+            What did you do three times today?
           </h1>
           <p className="mt-7 max-w-[760px] text-lg font-medium leading-8 text-white/78 sm:text-[22px] sm:leading-9">
-            Pick a proven automation, connect the apps already in your day, and watch the busywork disappear into the background.
+            Make the work you repeat run itself—without learning a workflow builder.
           </p>
           <div className="marketing-hero-search mt-9 w-full max-w-[660px] text-left">
             <SearchBox />
@@ -841,98 +1350,13 @@ export default function MarketingLanding() {
         </div>
       </section>
 
-      <WhyModelGrowSection />
-
-      <section id="how-it-works" className="marketing-anchor mx-auto max-w-[1240px] px-5 py-24 sm:px-8 sm:py-32">
-        <div className="grid items-end gap-8 lg:grid-cols-[1fr_0.72fr]">
-          <div>
-            <p className="marketing-kicker">How it works</p>
-            <h2 className="marketing-display mt-4 max-w-[760px] text-[clamp(2.8rem,5vw,5.1rem)] font-black leading-[0.98] tracking-[-0.045em] text-[#12182b]">From “I keep doing this” to “it is already handled.”</h2>
-          </div>
-          <p className="max-w-[520px] text-lg font-medium leading-8 text-[#656e83] lg:justify-self-end">
-            You do not need to learn a builder or create a workflow. ModelGrow guides you through the few choices that matter.
-          </p>
-        </div>
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
-          <StepCard number="1" icon={Search} title="Tell us what repeats" description="Describe the work in plain language or browse by the result you want." detail="Start with the problem, not a builder" />
-          <StepCard number="2" icon={MousePointerClick} title="Connect what the job needs" description="Choose the destination, approve the required apps, and review the setup before anything runs." detail="Every connection is visible" />
-          <StepCard number="3" icon={Play} title="Let it run—and see the result" description="ModelGrow handles each matching task and shows you what completed or what needs attention." detail="The outcome stays visible" />
-        </div>
-      </section>
-
-      <SavingsExampleSection />
-
-      <OutcomeEffectSection />
-
-      <FlowDemoSection />
-
-      <section className="bg-[#0f1425] py-24 sm:py-32">
-        <div className="mx-auto grid max-w-[1240px] items-center gap-16 px-5 sm:px-8 lg:grid-cols-[0.9fr_1.1fr]">
-          <TrackingPanel />
-          <div className="max-w-[610px]">
-            <p className="text-xs font-black uppercase tracking-[0.15em] text-[#ad8cff]">Know what happened</p>
-            <h2 className="marketing-display mt-5 text-[clamp(2.9rem,5vw,5.2rem)] font-black leading-[0.95] tracking-[-0.04em] text-white marketing-white-copy">You never have to wonder if it worked.</h2>
-            <p className="mt-6 text-lg font-medium leading-8 text-[#aab3c7]">
-              See when an automation is waiting, when it ran, what it completed, and whether anything needs your attention.
-            </p>
-            <div className="mt-9 space-y-5">
-              {[
-                [CircleCheck, 'Clear run history', 'See successful and failed runs without opening a technical dashboard.'],
-                [RefreshCw, 'Useful status updates', 'Know when the next event arrives and when the work is complete.'],
-                [Pause, 'Simple controls', 'Pause or remove an automation directly from ModelGrow.'],
-              ].map(([Icon, title, text]) => (
-                <div key={title} className="flex gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.07] text-[#b596ff]"><Icon className="h-4 w-4" /></span>
-                  <div>
-                    <h3 className="text-sm font-black text-white marketing-white-copy">{title}</h3>
-                    <p className="mt-1 text-sm font-medium leading-6 text-[#8f9ab3]">{text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <ControlStorySection />
-
-      <section id="for-developers" className="marketing-anchor py-20 sm:py-24">
-        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
-          <div className="relative overflow-hidden rounded-[34px] border border-[#6f48c8]/10 bg-[#ece5ff] px-6 py-10 sm:px-12 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-10 lg:px-16 lg:py-12">
-            <div className="absolute -right-20 -top-28 h-80 w-80 rounded-full bg-[#c8b5ff]/55 blur-3xl" />
-            <div className="relative">
-              <p className="marketing-kicker">Build automations?</p>
-              <h2 className="marketing-display mt-4 max-w-[720px] text-[clamp(2.25rem,4vw,3.7rem)] font-black leading-[0.98] tracking-[-0.04em] text-[#151b2d]">There is a complete creator platform behind ModelGrow.</h2>
-              <p className="mt-5 max-w-[680px] text-base font-medium leading-7 text-[#655b7d]">See how to build, test, publish, and maintain automations people can set up without learning a workflow builder.</p>
-            </div>
-            <Link href="/developers" className="relative mt-8 inline-flex w-fit items-center gap-2 rounded-full border border-[#5b369e]/18 bg-white px-6 py-3.5 text-sm font-black text-[#4d2b91] shadow-[0_12px_30px_rgba(77,43,145,0.1)] transition-transform hover:-translate-y-0.5 lg:mt-0">
-              <Code2 className="h-4 w-4" />
-              Explore the developer platform
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 pb-24 sm:px-8 sm:pb-32">
-        <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] bg-[#151a2d] px-6 py-16 text-center shadow-[0_30px_80px_rgba(21,26,45,0.2)] sm:px-10 sm:py-20">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.08]">
-            <Image src="/logo.png" alt="" width={38} height={38} />
-          </div>
-          <h2 className="marketing-display mx-auto mt-7 max-w-[830px] text-[clamp(2.8rem,5vw,5.3rem)] font-black leading-[0.94] tracking-[-0.04em] text-white marketing-white-copy">What would you like to stop doing manually?</h2>
-          <p className="mx-auto mt-5 max-w-[620px] text-lg font-medium leading-8 text-[#aeb6c8]">There may already be an automation ready to handle it.</p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-black text-[#171c30] transition-transform hover:-translate-y-0.5">
-              Explore automations
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <button onClick={openSignUp} className="marketing-primary-button inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-6 py-3.5 text-sm font-black transition-all hover:-translate-y-0.5 hover:bg-white/[0.1]">
-              Create your account
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </section>
+      <HandoffStorySection />
+      <WhyVisualSection />
+      <SavingsPainSection />
+      <HowVisualSection />
+      <AutomationLibrarySection />
+      <PayAsYouGoSection />
+      <ControlFinaleSection />
 
       <MarketingFooter />
     </main>

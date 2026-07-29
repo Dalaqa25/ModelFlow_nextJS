@@ -1,3 +1,11 @@
+export function recoverAutomationContext(messages) {
+  for (const message of [...(Array.isArray(messages) ? messages : [])].reverse()) {
+    if (message?.catalogResolved) return null;
+    if (message?.automationContext) return message.automationContext;
+  }
+  return null;
+}
+
 // Stream response handler - processes SSE events from AI
 export function createStreamHandler({
   aiMessageId,
@@ -102,6 +110,7 @@ export function createStreamHandler({
     else if (parsed.type === 'automation_list' && parsed.automations) {
       setAutomationContext(null);
       flushQueue();
+      onUiMetadataUpdate?.({ automationList: parsed.automations });
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
@@ -182,6 +191,7 @@ export function createStreamHandler({
     // Handle automation context
     else if (parsed.type === 'automation_context' && parsed.context) {
       setAutomationContext(parsed.context);
+      onUiMetadataUpdate?.({ automationContext: parsed.context });
     }
     // Handle searching indicator
     else if (parsed.type === 'searching') {
@@ -218,6 +228,11 @@ export function createStreamHandler({
     }
     // Handle setup started
     else if (parsed.type === 'setup_started') {
+      // Selecting a published automation is a one-way catalog transition.
+      // Clear and tombstone the old choices immediately, even if a later runtime
+      // provisioning step fails, so "okay" cannot reopen an obsolete question.
+      setAutomationContext(null);
+      onUiMetadataUpdate?.({ catalogResolved: true });
       setSetupState(prev => ({
         automationId: parsed.automation_id,
         automationName: parsed.automation_name,
@@ -229,6 +244,20 @@ export function createStreamHandler({
         id: parsed.automation_id,
         name: parsed.automation_name,
         required_inputs: parsed.required_inputs
+      });
+    }
+    else if (parsed.type === 'setup_failed') {
+      // A runtime/provisioning failure means there is no actionable setup turn.
+      // Do not leave stale missing-field state for the model to diagnose.
+      setSetupState(null);
+      setSelectedAutomation(null);
+      setLastFileSearchResults(null);
+      onUiMetadataUpdate?.({
+        setupFailure: {
+          automation_id: parsed.automation_id || null,
+          automation_name: parsed.automation_name || null,
+          reason: parsed.reason || 'SETUP_FAILED',
+        },
       });
     }
     // Handle file search results

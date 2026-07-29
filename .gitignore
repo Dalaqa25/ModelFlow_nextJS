@@ -13,6 +13,9 @@
 # testing
 /coverage
 /.tmp/
+/data/n8n-template-library/*.json
+/data/n8n-template-library/workflows/
+/data/n8n-template-library/certification/
 
 # next.js
 /.next/
@@ -43,3 +46,8 @@ next-env.d.ts
 
 # Supabase
 .env.local
+
+# Local deployment scratch — production compose files and build output
+tmp/
+output/
+.next.stale-*/

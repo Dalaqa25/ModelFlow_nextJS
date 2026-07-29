@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 import {
-  creditAutomationCreator,
   recordSuccessfulTokenSpend,
   runActivepiecesAutomation,
 } from '@/lib/activepieces/provisioning';
@@ -149,13 +148,7 @@ async function runImportedN8nAutomation({ automation, user, automationId, lowerc
     automation,
     tokenCost,
     engine: 'n8n-native',
-  });
-  await creditAutomationCreator({
-    supabase,
-    runnerUser: user,
-    automation,
-    tokenCost,
-    engine: 'n8n-native',
+    executionId: result.executionId,
   });
 
   await logExecution({
@@ -229,8 +222,13 @@ async function runActivepiecesBackedAutomation({ automation, user, automationId,
     }, { status: 500 });
   }
 
-  const spend = await recordSuccessfulTokenSpend({ supabase, user, automation, tokenCost });
-  await creditAutomationCreator({ supabase, runnerUser: user, automation, tokenCost });
+  const spend = await recordSuccessfulTokenSpend({
+    supabase,
+    user,
+    automation,
+    tokenCost,
+    executionId: result.activepieces.runId,
+  });
 
   await logExecution({
     automationId,

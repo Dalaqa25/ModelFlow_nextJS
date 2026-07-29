@@ -41,12 +41,20 @@ function HomeContent() {
     const [chatReadyTick, setChatReadyTick] = useState(0);
     const chatRef = useRef(null);
     const autoSetupRef = useRef(null);
+    const previousChatIdRef = useRef(chatId);
 
-    // Auto-start chat mode if URL has a chat ID
+    // Keep the mounted chat in sync with navigation. Returning to /main must
+    // create a genuinely fresh chat instead of leaving the previous one visible.
     useEffect(() => {
         if (chatId) {
             setHasStartedChat(true);
+        } else if (previousChatIdRef.current) {
+            setHasStartedChat(false);
+            setPendingMessage(null);
+            setPendingContext('');
+            setPendingSetupIntro(null);
         }
+        previousChatIdRef.current = chatId;
     }, [chatId]);
 
     useEffect(() => {

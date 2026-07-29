@@ -1,5 +1,26 @@
 /* Light Mode Styles - Compatible with Dark Theme Design */
 
+/* Marketing pages own their contrast system. Keep intentional white-on-indigo
+   copy white instead of applying the app-wide light utility rewrite. */
+.light .marketing-page .text-white,
+.light .marketing-page .marketing-white-copy,
+.light .marketing-page .marketing-primary-button,
+.light .marketing-page .marketing-primary-button * {
+  color: #fff !important;
+}
+
+.light .marketing-nav--floating {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+.light .marketing-nav--floating.marketing-nav--light {
+  border-color: rgba(23, 32, 58, 0.09) !important;
+}
+
+.light .marketing-nav--floating .text-white {
+  color: #fff !important;
+}
+
 /* Root light mode variables */
 :root.light {
   /* Background colors */

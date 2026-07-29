@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import MarketingFooter from '@/app/components/marketing/MarketingFooter';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
-import { useSidebar } from '@/lib/contexts/sidebar-context';
 
 const journey = [
   {
@@ -145,16 +144,11 @@ function BuilderPreview() {
 }
 
 export default function DevelopersPage() {
-  const { isAuthenticated } = useAuth();
-  const { isMobile, isExpanded } = useSidebar();
-  const sidebarOffset = isAuthenticated && !isMobile ? (isExpanded ? 256 : 52) : 0;
-
+  // No sidebar offset and no auth-dependent padding: this page renders under the
+  // public navbar for everyone, so it must not reserve space for app chrome.
   return (
-    <main
-      className="marketing-page overflow-hidden text-[#151b2d] transition-[padding] duration-300"
-      style={{ paddingLeft: sidebarOffset }}
-    >
-      <section className={`developer-hero relative overflow-hidden bg-[#11184a] pb-24 text-white sm:pb-32 ${isAuthenticated ? 'pt-16' : 'pt-[76px]'}`}>
+    <main className="marketing-page overflow-hidden text-[#151b2d]">
+      <section className="developer-hero relative overflow-hidden bg-[#11184a] pb-24 pt-[76px] text-white sm:pb-32">
         <div className="absolute inset-0 developer-hero-grid" />
         <div className="absolute -left-32 top-16 h-[430px] w-[430px] rounded-full bg-[#43d9c2]/20 blur-[90px]" />
         <div className="absolute -right-28 top-24 h-[480px] w-[480px] rounded-full bg-[#d47de9]/24 blur-[100px]" />

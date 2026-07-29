@@ -49,7 +49,6 @@ export async function middleware(request) {
       pathname.startsWith('/profile') || 
       pathname.startsWith('/messages') ||
       pathname.startsWith('/auth/') || 
-      pathname === '/' ||
       pathname.startsWith('/main')) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
@@ -57,12 +56,6 @@ export async function middleware(request) {
 
   // If user is authenticated and trying to access auth routes, redirect to main
   if (user && pathname.startsWith('/auth/')) {
-    url.pathname = '/main';
-    return NextResponse.redirect(url);
-  }
-
-  // If user is authenticated and trying to access root, redirect to main
-  if (user && pathname === '/') {
     url.pathname = '/main';
     return NextResponse.redirect(url);
   }

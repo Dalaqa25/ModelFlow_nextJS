@@ -7,14 +7,17 @@ import { NextResponse } from "next/server";
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { AI_TOOLS, ORCHESTRATOR_PROMPT, TOOL_EXECUTOR_PROMPT } from '@/lib/ai/tools';
 import {
+  createClaudeOrchestratorDecision,
   createCodexOrchestratorDecision,
   getOrchestratorProvider,
+  shouldFallbackToClaude,
   shouldFallbackToGroq,
 } from '@/lib/ai/orchestrator-provider';
 import {
   extractAvailableAutomationDiscoveryRequest,
-  extractCatalogAutomationSelection,
+  extractVisibleUserContent,
   isReadyToExecuteConfirmation,
+  resolveCatalogTurn,
 } from '@/lib/ai/intent-routing';
 import { findLatestSetupMarker } from '@/lib/ai/setup-context';
 import {
@@ -86,10 +89,30 @@ const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
 
 export const runtime = 'nodejs';
 
+// buildChatMessages spreads `...msg` and attaches internal fields (visibleContent,
+// metadata, id) that intent routing and the Codex path rely on. Groq validates
+// message properties strictly and rejects unknown ones with a 400, so strip down
+// to the wire schema before sending. Keep this the only place that talks to Groq.
+const GROQ_MESSAGE_FIELDS = ['role', 'content', 'name', 'tool_call_id', 'tool_calls'];
+
+function toGroqWireMessages(messages) {
+  if (!Array.isArray(messages)) return messages;
+
+  return messages.map((message) => {
+    const wire = {};
+    for (const field of GROQ_MESSAGE_FIELDS) {
+      if (message?.[field] !== undefined) wire[field] = message[field];
+    }
+    return wire;
+  });
+}
+
 async function createGroqOrchestratorDecision(orchestratorMessages) {
   if (GROQ_API_KEYS.length === 0) {
     throw new Error('No Groq API keys configured');
   }
+
+  const wireMessages = toGroqWireMessages(orchestratorMessages);
 
   let retryCount = 0;
   const maxRetries = GROQ_API_KEYS.length;
@@ -98,7 +121,7 @@ async function createGroqOrchestratorDecision(orchestratorMessages) {
       const orchestratorClient = createGroqClient();
       console.log(`[AI] Using Groq fallback key ${currentKeyIndex}/${GROQ_API_KEYS.length}`);
       const response = await orchestratorClient.chat.completions.create({
-        messages: orchestratorMessages,
+        messages: wireMessages,
         model: ORCHESTRATOR_MODEL,
         temperature: 0.7,
         response_format: { type: "json_object" },
@@ -165,10 +188,22 @@ export async function POST(request) {
     }
     
     const encoder = new TextEncoder();
-    const lastUserMessage = chatMessages.filter(m => m.role === 'user').pop()?.content || '';
+    const lastUserTurn = chatMessages.filter(m => m.role === 'user').pop();
+    const lastUserMessage = lastUserTurn?.content || '';
+    const visibleLastUserMessage = lastUserTurn?.visibleContent ?? extractVisibleUserContent(lastUserMessage);
+    const visibleChatMessages = chatMessages.map(message => ({
+      ...message,
+      content: ['user', 'assistant'].includes(message.role)
+        ? (message.visibleContent ?? extractVisibleUserContent(message.content))
+        : message.content,
+    }));
     const connectionCompleted = extractActivepiecesConnectionCompleted(lastUserMessage);
+    const catalogTurn = resolveCatalogTurn(lastUserMessage, chatMessages);
     const directSetup = extractSelectedAutomationContext(lastUserMessage)
-      || extractCatalogAutomationSelection(lastUserMessage);
+      || (catalogTurn.type === 'selection' ? catalogTurn.selection : null);
+    const ambiguousCatalogConfirmation = catalogTurn.type === 'clarification'
+      ? catalogTurn.entries
+      : null;
     const configSubmission = mergeConfigSubmissions(
       extractConfigFormSubmission(lastUserMessage),
       extractFrontendConfigSubmission(lastUserMessage, frontendSetupState)
@@ -210,6 +245,31 @@ export async function POST(request) {
 
       return new Response(stream, {
         headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      });
+    }
+
+    if (ambiguousCatalogConfirmation && !configSubmission) {
+      const optionText = ambiguousCatalogConfirmation
+        .map((entry, index) => `${index + 1}. ${entry.automationName}`)
+        .join('\n');
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            content: `Which one should I set up?\n\n${optionText}\n\nReply with the number or name.`,
+          })}\n\n`));
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no',
+          'X-ModelGrow-Path': 'catalog-clarification',
+        },
       });
     }
 
@@ -299,7 +359,7 @@ export async function POST(request) {
     }
 
     const availableAutomationDiscoveryRequest = !frontendSetupState?.automationId && !initialSetupContext?.automationId
-      ? extractAvailableAutomationDiscoveryRequest(lastUserMessage, chatMessages)
+      ? extractAvailableAutomationDiscoveryRequest(visibleLastUserMessage, visibleChatMessages)
       : null;
 
     // Catalog discovery is deterministic. Do not ask the model to distinguish
@@ -311,7 +371,7 @@ export async function POST(request) {
             await executeToolAction(
               'search_automations',
               {
-                query: lastUserMessage,
+                query: visibleLastUserMessage,
                 browse_all: availableAutomationDiscoveryRequest.browseAll,
               },
               user,
@@ -341,7 +401,7 @@ export async function POST(request) {
       });
     }
 
-    const userAutomationStatusRequest = extractUserAutomationStatusRequest(lastUserMessage);
+    const userAutomationStatusRequest = extractUserAutomationStatusRequest(visibleLastUserMessage);
     if (userAutomationStatusRequest) {
       const stream = new ReadableStream({
         async start(controller) {
@@ -376,7 +436,7 @@ export async function POST(request) {
     }
 
     const instantResponse = !frontendSetupState?.automationId && !initialSetupContext?.automationId
-      ? getInstantConversationalResponse(lastUserMessage)
+      ? getInstantConversationalResponse(visibleLastUserMessage)
       : null;
 
     // Do not spend a full agent turn on greetings and tiny acknowledgements that
@@ -409,7 +469,7 @@ export async function POST(request) {
 
     const orchestratorMessages = [
       { role: "system", content: currentPrompt },
-      ...chatMessages.filter(m => m.role !== 'system')
+      ...visibleChatMessages.filter(m => m.role !== 'system')
     ];
 
     const provider = getOrchestratorProvider();
@@ -466,12 +526,27 @@ export async function POST(request) {
 
         try {
           let decision;
+
+          // Hoisted out of the Codex branch so every orchestrator sees the same
+          // state. When this only existed inside the Codex branch, a fallback
+          // run had no idea a catalog had just been offered and treated
+          // "tell me about the first one" as a fresh keyword search.
+          const modelStateContext = mergeOrchestratorSetupContext(initialSetupContext, frontendSetupState)
+            || (
+              catalogTurn.entries.length > 0
+                ? {
+                    catalogOptions: catalogTurn.entries,
+                    catalogFocus: catalogTurn.focus?.automationName || null,
+                  }
+                : null
+            );
+
           if (provider === 'codex') {
             try {
               decision = await createCodexOrchestratorDecision({
-                messages: chatMessages,
+                messages: visibleChatMessages,
                 isAuthenticated: Boolean(user),
-                setupContext: mergeOrchestratorSetupContext(initialSetupContext, frontendSetupState),
+                setupContext: modelStateContext,
                 sessionKey: (authUser?.id || user?.id)
                   && typeof (codexSessionId || conversationId) === 'string'
                   && (codexSessionId || conversationId).length > 0
@@ -486,12 +561,29 @@ export async function POST(request) {
               });
             } catch (error) {
               console.error('[AI] Codex orchestrator failed:', error.message);
+              if (!shouldFallbackToClaude() && !shouldFallbackToGroq()) throw error;
+            }
+          }
+
+          // Claude Code headless: the primary orchestrator when selected, and
+          // otherwise a tier between Codex and Groq. Groq's smaller model is a
+          // noticeably weaker router, so prefer Claude before dropping to it.
+          if (!decision && (provider === 'claude' || shouldFallbackToClaude())) {
+            if (provider !== 'claude') console.warn('[AI] Falling back to Claude for this request');
+            try {
+              decision = await createClaudeOrchestratorDecision({
+                messages: visibleChatMessages,
+                isAuthenticated: Boolean(user),
+                setupContext: modelStateContext,
+              });
+            } catch (error) {
+              console.error('[AI] Claude orchestrator failed:', error.message);
               if (!shouldFallbackToGroq()) throw error;
-              console.warn('[AI] Falling back to Groq for this request');
             }
           }
 
           if (!decision) {
+            console.warn('[AI] Falling back to Groq for this request');
             decision = await createGroqOrchestratorDecision(orchestratorMessages);
           }
 
@@ -543,7 +635,7 @@ export async function POST(request) {
             const missingFields = frontendSetupState?.missingFields || initialSetupContext?.missingFields || [];
 
             if (activeSetupId && missingFields.length > 0) {
-              const msg = lastUserMessage.trim();
+              const msg = visibleLastUserMessage;
               const isQuestion = msg.endsWith('?') || /^(what|how|why|when|where|who|which|can|do|does|is|are|will|should)\b/i.test(msg);
               const isFiller = /^(yes|no|ok|sure|hi|hello|hey|thanks|thank you|cool|great|perfect|nice|sounds good|go ahead)$/i.test(msg);
 
@@ -614,8 +706,8 @@ export async function POST(request) {
             const toolArgs = await generateToolArguments(
               actionNeeded.tool,
               actionNeeded.hint || '',
-              lastUserMessage,
-              chatMessages,
+              visibleLastUserMessage,
+              visibleChatMessages,
               setupContext
             );
 
@@ -963,20 +1055,24 @@ async function executeToolAction(toolName, args, user, controller, encoder, setu
 // Build chat messages with system context (but not ORCHESTRATOR_PROMPT - that's added separately)
 function buildChatMessages(messages, prompt) {
   if (messages && Array.isArray(messages)) {
-    // CRITICAL: Include hidden context from metadata in message content
-    // This ensures file uploads and other hidden markers are visible to the AI
+    // Keep a strict boundary between user-authored text and private application
+    // state. Deterministic setup parsers consume `content`; intent routing and
+    // conversational models consume `visibleContent`.
     return messages.map(msg => {
       if (msg.metadata && msg.metadata.hiddenContext) {
-        // Append hidden context to the message content
         return {
           ...msg,
+          visibleContent: msg.content,
           content: msg.content + '\n' + msg.metadata.hiddenContext
         };
       }
-      return msg;
+      return {
+        ...msg,
+        visibleContent: msg.content,
+      };
     });
   } else if (prompt) {
-    return [{ role: "user", content: prompt }];
+    return [{ role: "user", content: prompt, visibleContent: prompt }];
   }
   return null;
 }
@@ -1194,7 +1290,7 @@ function getInstantConversationalResponse(content) {
     return 'See you soon!';
   }
 
-  if (/^(ok|okay|got it|sounds good)$/.test(normalized)) {
+  if (/^(ok|okay|okey|got it|sounds good)$/.test(normalized)) {
     return 'Got it. What would you like to do next?';
   }
 

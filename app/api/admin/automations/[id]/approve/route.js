@@ -36,6 +36,13 @@ export async function POST(_request, { params }) {
       }, { status: 409 });
     }
 
+    if (!isBuilderWorkflow && existing.workflow?.review_sandbox?.status !== 'passed') {
+      return NextResponse.json({
+        error: 'Run the required Review Sandbox test successfully before approving this automation.',
+        reason: 'missing_passed_review_sandbox',
+      }, { status: 409 });
+    }
+
     let certification = null;
     if (!isBuilderWorkflow) {
       const result = await certifyNativeAutomation({ automationId: id });

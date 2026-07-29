@@ -9,6 +9,7 @@
     "lint": "next lint",
     "health": "node scripts/health-check.js",
     "smoke": "node scripts/smoke-test.js",
+    "import:n8n-library": "node scripts/download-n8n-template-library.mjs",
     "test": "node ../tests/run-all-tests.js",
     "test:quick": "node ../tests/quick-test.js",
     "test:api": "SKIP_AUTOMATION_TESTS=true SKIP_AI_TESTS=true SKIP_INTEGRATION_TESTS=true SKIP_E2E_TESTS=true SKIP_TIKTOK_TESTS=true node ../tests/run-all-tests.js",
