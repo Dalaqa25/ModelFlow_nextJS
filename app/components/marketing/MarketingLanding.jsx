@@ -36,9 +36,6 @@ import MarketingFooter from './MarketingFooter';
 import RolePicker from './RolePicker';
 import RotatingWord from './RotatingWord';
 import HeroCluster from './HeroCluster';
-import WithoutWith from './WithoutWith';
-import NoSetupSection from './NoSetupSection';
-import AutomationShowcase from './AutomationShowcase';
 import AutomationWall from './AutomationWall';
 import { automationsForRole } from '@/lib/marketing/role-automations';
 
@@ -1326,11 +1323,7 @@ export default function MarketingLanding({ automations = [] }) {
 
   return (
     <main className="marketing-page overflow-x-clip text-[#151b2d]">
-      <section data-ground="dark" className="marketing-hero-world relative bg-[#11184a]">
-        {/* Tall enough to give the cards room to travel; the stage inside is
-            pinned, so they gather in front of you instead of scrolling away. */}
-        <div className="relative h-[240vh]">
-        <div className="sticky top-0 h-screen overflow-hidden pt-[68px]">
+      <section data-ground="dark" className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[68px]">
         <HeroBackdrop />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,15,61,0.42)_0%,rgba(24,24,80,0.04)_52%,rgba(9,16,56,0.4)_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#101746]/65 to-transparent" />
@@ -1377,8 +1370,6 @@ export default function MarketingLanding({ automations = [] }) {
             <HeroProductStage />
           </div>
         </div>
-        </div>
-        </div>
       </section>
 
       <section data-ground="light" className="marketing-section-curve relative z-20 -mt-1 border-b border-[#17203a]/7 bg-[#fbfaf7]">
@@ -1401,13 +1392,14 @@ export default function MarketingLanding({ automations = [] }) {
 
       {/* Results land directly under the hero: the answer has to arrive in the
           same motion as the click, or the moment is lost to a page change. */}
-      <WithoutWith role={selectedRole} />
+      <HandoffStorySection />
+      <WhyVisualSection />
+      <SavingsPainSection />
+      <HowVisualSection />
 
       <AutomationWall automations={shownAutomations} roleSelected={Boolean(selectedRole)} />
 
 
-      <NoSetupSection />
-      <AutomationShowcase automations={automations} />
       <AutomationLibrarySection />
       <PayAsYouGoSection />
       <ControlFinaleSection />

@@ -5349,41 +5349,11 @@ button {
   50%      { translate: 0 -11px; }
 }
 
-/* Every card is the same width. Once one grows, evenly spaced positions stop
-   working and the row collides — which is exactly what went wrong before.
-   --gather runs 0 (scattered, as authored below) to 1 (aligned in a row);
-   each card interpolates its own offset toward --row-x. */
-.marketing-acard {
-  width: 272px;
-  left: 50%;
-  top: 50%;
-  --scatter-x: 0vw;
-  --scatter-y: 0px;
-  --scatter-z: 0px;
-  --scatter-rot: 0deg;
-  transform:
-    translate(-50%, -50%)
-    translate3d(
-      calc(
-        var(--scatter-x) +
-        ((var(--row-x) + var(--row-shift, 0px)) - var(--scatter-x)) * var(--gather, 0)
-      ),
-      calc(
-        var(--scatter-y) * (1 - var(--gather, 0)) +
-        var(--row-drop, 0px) * var(--gather, 0)
-      ),
-      calc(var(--scatter-z) * (1 - var(--gather, 0)))
-    )
-    rotate(calc(var(--scatter-rot) * (1 - var(--gather, 0))))
-    /* Shrink a little as they line up so five fit the container comfortably. */
-    scale(calc(1 - 0.16 * var(--gather, 0)));
-}
-
-.marketing-acard--a { --scatter-x: -16vw; --scatter-y: -180px; --scatter-z: -150px; --scatter-rot: -4deg; animation-delay: 0s; }
-.marketing-acard--b { --scatter-x:   6vw; --scatter-y:  -40px; --scatter-z:  -40px; --scatter-rot:  4deg; animation-delay: 0.9s; }
-.marketing-acard--c { --scatter-x: -12vw; --scatter-y:  130px; --scatter-z:   60px; --scatter-rot: -3deg; animation-delay: 1.8s; }
-.marketing-acard--d { --scatter-x:  14vw; --scatter-y:  180px; --scatter-z:  -90px; --scatter-rot:  5deg; animation-delay: 2.6s; }
-.marketing-acard--e { --scatter-x:  18vw; --scatter-y: -110px; --scatter-z:  160px; --scatter-rot: -3deg; animation-delay: 1.3s; }
+.marketing-acard--a { width: 268px; left: 4%;   top: 2%;  transform: translateZ(-150px); animation-delay: 0s; }
+.marketing-acard--b { width: 248px; left: 40%;  top: 24%; transform: translateZ(-40px);  animation-delay: 0.9s; }
+.marketing-acard--c { width: 292px; left: 6%;   top: 48%; transform: translateZ(60px);   animation-delay: 1.8s; }
+.marketing-acard--d { width: 258px; left: 48%;  top: 66%; transform: translateZ(-90px);  animation-delay: 2.6s; }
+.marketing-acard--e { width: 300px; right: -2%; top: 0;   transform: translateZ(160px);  animation-delay: 1.3s; }
 
 .marketing-acard__glyph {
   width: 30px; height: 30px; border-radius: 10px; flex: none;
@@ -5426,7 +5396,11 @@ button {
 @media (max-width: 1100px) {
   .marketing-cluster { height: 430px; transform: rotateX(9deg) rotateY(-13deg); }
   .marketing-acard { padding: 14px 16px; }
-  .marketing-acard { width: 224px; }
+  .marketing-acard--a { width: 224px; }
+  .marketing-acard--b { width: 210px; }
+  .marketing-acard--c { width: 244px; }
+  .marketing-acard--d { width: 216px; }
+  .marketing-acard--e { width: 250px; }
 }
 
 /* Flat stack on small screens: 3D at this width is unreadable, not impressive. */
