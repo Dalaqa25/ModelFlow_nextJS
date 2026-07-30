@@ -1325,7 +1325,11 @@ export default function MarketingLanding({ automations = [] }) {
 
   return (
     <main className="marketing-page overflow-x-clip text-[#151b2d]">
-      <section data-ground="dark" className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[68px]">
+      <section data-ground="dark" className="marketing-hero-world relative bg-[#11184a]">
+        {/* Tall enough to give the cards room to travel; the stage inside is
+            pinned, so they gather in front of you instead of scrolling away. */}
+        <div className="relative h-[240vh]">
+        <div className="sticky top-0 h-screen overflow-hidden pt-[68px]">
         <HeroBackdrop />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,15,61,0.42)_0%,rgba(24,24,80,0.04)_52%,rgba(9,16,56,0.4)_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#101746]/65 to-transparent" />
@@ -1371,6 +1375,8 @@ export default function MarketingLanding({ automations = [] }) {
           <div className="mt-16 w-full sm:mt-20">
             <HeroProductStage />
           </div>
+        </div>
+        </div>
         </div>
       </section>
 
