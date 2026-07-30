@@ -14,12 +14,15 @@ export default function MarketingFooter() {
               <span className="text-lg font-black tracking-[-0.035em] text-white marketing-white-copy">ModelGrow</span>
             </Link>
             <p className="mt-5 max-w-[280px] text-sm font-medium leading-6 text-white/55">Give the repetitive work to software. Keep the decisions, time, and control.</p>
-            <a href="mailto:hello@modelgrow.com" className="mt-6 inline-flex rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-white/[0.12]">hello@modelgrow.com</a>
+            <a href="mailto:giorgi@modelgrow.com" className="mt-6 inline-flex rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-white/[0.12]">giorgi@modelgrow.com</a>
           </div>
 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.15em] text-[#bba7ff]">Product</p>
-            <div className="mt-5 grid gap-3 text-sm font-bold text-white/65">
+            {/* 18px-tall links are a desktop-mouse assumption. On touch the row
+                itself becomes the target; the gap shrinks so the block keeps its
+                shape. */}
+            <div className="mt-5 grid gap-1 text-sm font-bold text-white/65 [&_a]:py-2.5 sm:gap-3 sm:[&_a]:py-0">
               <Link href="/#what-is-modelgrow" className="hover:text-white">What is ModelGrow?</Link>
               <Link href="/#why-modelgrow" className="hover:text-white">Why ModelGrow?</Link>
               <Link href="/#how-it-works" className="hover:text-white">How it works</Link>
@@ -30,7 +33,10 @@ export default function MarketingFooter() {
 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.15em] text-[#bba7ff]">Explore</p>
-            <div className="mt-5 grid gap-3 text-sm font-bold text-white/65">
+            {/* 18px-tall links are a desktop-mouse assumption. On touch the row
+                itself becomes the target; the gap shrinks so the block keeps its
+                shape. */}
+            <div className="mt-5 grid gap-1 text-sm font-bold text-white/65 [&_a]:py-2.5 sm:gap-3 sm:[&_a]:py-0">
               <Link href="/#use-cases" className="hover:text-white">Use cases</Link>
               <Link href="/#what-is-modelgrow" className="hover:text-white">See it in action</Link>
               <Link href="/developers" className="hover:text-white">For developers</Link>
@@ -41,8 +47,11 @@ export default function MarketingFooter() {
 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.15em] text-[#bba7ff]">Help & legal</p>
-            <div className="mt-5 grid gap-3 text-sm font-bold text-white/65">
-              <a href="mailto:hello@modelgrow.com" className="hover:text-white">Contact us</a>
+            {/* 18px-tall links are a desktop-mouse assumption. On touch the row
+                itself becomes the target; the gap shrinks so the block keeps its
+                shape. */}
+            <div className="mt-5 grid gap-1 text-sm font-bold text-white/65 [&_a]:py-2.5 sm:gap-3 sm:[&_a]:py-0">
+              <a href="mailto:giorgi@modelgrow.com" className="hover:text-white">Contact us</a>
               <Link href="/privacy" className="hover:text-white">Privacy</Link>
               <Link href="/terms" className="hover:text-white">Terms</Link>
               <Link href="/refund" className="hover:text-white">Refund policy</Link>

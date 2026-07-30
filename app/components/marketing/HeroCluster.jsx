@@ -44,7 +44,11 @@ export default function HeroCluster({ automations = [] }) {
             <Link
               key={automation.id || automation.name}
               href={`/explore?search=${encodeURIComponent(automation.name)}`}
-              className={`marketing-acard marketing-acard--${SLOTS[index]}${runs > 0 ? ' is-live' : ''}`}
+              // Stacked on a phone, five cards cost 822px of hero before the
+              // page has said anything. Two still prove the claim: these are
+              // real, and someone else wrote them. The `!` is required because
+              // .marketing-acard is unlayered CSS and beats Tailwind's layer.
+              className={`marketing-acard marketing-acard--${SLOTS[index]}${runs > 0 ? ' is-live' : ''}${index > 1 ? ' max-[720px]:!hidden' : ''}`}
             >
               <span className={`marketing-acard__glyph marketing-acard__glyph--${SLOTS[index]}`} aria-hidden="true">
                 {(() => { const Icon = ICONS[index]; return <Icon className="h-4 w-4 text-white" strokeWidth={2.2} />; })()}

@@ -37,6 +37,7 @@ import RolePicker from './RolePicker';
 import RotatingWord from './RotatingWord';
 import HeroCluster from './HeroCluster';
 import AutomationWall from './AutomationWall';
+import RoleShowcase from './RoleShowcase';
 import { automationsForRole } from '@/lib/marketing/role-automations';
 
 const examples = [
@@ -235,7 +236,9 @@ function HeroProductStage() {
               </button>
             ))}
           </div>
-          <button type="button" className="marketing-developer-toggle" data-active={developerView} onClick={() => setDeveloperView((value) => !value)} aria-pressed={developerView}>
+          {/* Label plus track needs room; on a phone it collides with the mode
+              tabs and the pause button sharing this row. */}
+          <button type="button" className="marketing-developer-toggle max-sm:!hidden" data-active={developerView} onClick={() => setDeveloperView((value) => !value)} aria-pressed={developerView}>
             <span>Developer view</span>
             <span className="marketing-toggle-track"><span /></span>
           </button>
@@ -246,7 +249,10 @@ function HeroProductStage() {
       </div>
 
       <div className="grid gap-8 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:p-10">
-        <div className="flex min-h-[410px] flex-col justify-between rounded-[24px] bg-[#f3f0fb] p-5 sm:p-7">
+        {/* The copy panel restates the headline. Beside the board that reads as
+            caption; stacked above it on a phone it reads as the same paragraph
+            twice, for 430px. The board alone still makes the point. */}
+        <div className="hidden min-h-[410px] flex-col justify-between rounded-[24px] bg-[#f3f0fb] p-5 sm:p-7 lg:flex">
           {developerView ? (
             <div className="marketing-stage-copy" key="developer">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#8a75ba]">The builder underneath</p>
@@ -1389,6 +1395,10 @@ export default function MarketingLanding({ automations = [] }) {
           </div>
         </div>
       </section>
+
+      {/* Who this is for comes before what it is. The deck failed the other way
+          around: people understood the mechanism and still asked who pays. */}
+      <RoleShowcase />
 
       {/* Results land directly under the hero: the answer has to arrive in the
           same motion as the click, or the moment is lost to a page change. */}

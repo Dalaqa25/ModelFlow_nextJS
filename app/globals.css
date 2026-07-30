@@ -1825,8 +1825,13 @@ button {
     padding-bottom: 56px;
   }
 
+  /* Every capped box below needs `margin-inline: auto`. The hero column is
+     `text-center` on phones, which centres the text inside the box but leaves
+     the box itself flush left — so a 300px button stack in a 456px column
+     reads as 78px off-centre even though nothing is misaligned. */
   .marketing-hero-world > .relative.z-10 > .inline-flex {
     max-width: min(100%, 360px);
+    margin-inline: auto;
     justify-content: center;
     padding: 9px 14px;
     font-size: 10px;
@@ -1835,6 +1840,7 @@ button {
 
   .marketing-hero-world h1 {
     max-width: 370px;
+    margin-inline: auto;
     margin-top: 20px;
     font-size: clamp(3.05rem, 13.4vw, 4.35rem) !important;
     line-height: 0.9 !important;
@@ -1843,6 +1849,7 @@ button {
 
   .marketing-hero-world h1 + p {
     max-width: 350px;
+    margin-inline: auto;
     margin-top: 20px;
     font-size: 1rem;
     line-height: 1.65;
@@ -1889,6 +1896,7 @@ button {
 
   .marketing-hero-actions {
     margin-top: 20px;
+    margin-inline: auto;
     width: 100%;
     max-width: 300px;
     flex-direction: column;
@@ -1904,6 +1912,7 @@ button {
   .marketing-hero-trust {
     max-width: 310px;
     justify-content: center;
+    margin-inline: auto;
     margin-top: 17px;
     text-align: center;
     line-height: 1.45;
@@ -2110,7 +2119,12 @@ button {
 @media (max-width: 639px) {
   .marketing-nav--floating {
     top: 10px;
-    width: calc(100% - 20px);
+    /* Inset from both edges. `width: calc(100% - 20px)` looked equivalent but
+       the base rule pins `left: 0`, so the full 20px was taken off the right
+       and the bar sat flush against the left edge. */
+    left: 10px;
+    right: 10px;
+    width: auto;
     border-radius: 18px;
   }
 
