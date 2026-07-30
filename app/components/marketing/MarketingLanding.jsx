@@ -36,6 +36,7 @@ import MarketingFooter from './MarketingFooter';
 import RolePicker from './RolePicker';
 import RotatingWord from './RotatingWord';
 import HeroCluster from './HeroCluster';
+import WithoutWith from './WithoutWith';
 import NoSetupSection from './NoSetupSection';
 import AutomationShowcase from './AutomationShowcase';
 import AutomationWall from './AutomationWall';
@@ -1400,6 +1401,8 @@ export default function MarketingLanding({ automations = [] }) {
 
       {/* Results land directly under the hero: the answer has to arrive in the
           same motion as the click, or the moment is lost to a page change. */}
+      <WithoutWith role={selectedRole} />
+
       <AutomationWall automations={shownAutomations} roleSelected={Boolean(selectedRole)} />
 
 
