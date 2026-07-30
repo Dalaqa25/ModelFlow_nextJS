@@ -47,7 +47,7 @@ export default function PublicNavbar() {
 
   return (
     <>
-      <header className={`marketing-nav marketing-nav--floating fixed inset-x-0 top-0 z-[100] border-b backdrop-blur-xl ${useDarkNav ? 'border-white/10 bg-[#10184a]/45' : 'marketing-nav--light border-[#17203a]/8 bg-[#fbfaf7]/92'}`}>
+      <header className={`marketing-nav marketing-nav--floating fixed inset-x-0 top-0 z-[100] border-b ${isScrolled ? 'marketing-nav--lifted backdrop-blur-2xl' : 'backdrop-blur-xl'} ${useDarkNav ? 'border-white/10 bg-[#10184a]/45' : 'marketing-nav--light border-[#17203a]/8 bg-[#fbfaf7]/92'}`}>
         <nav className="mx-auto flex h-[76px] max-w-[1240px] items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-2.5" aria-label="ModelGrow home">
             <Image src="/logo.png" alt="" width={34} height={34} className="object-contain" priority />

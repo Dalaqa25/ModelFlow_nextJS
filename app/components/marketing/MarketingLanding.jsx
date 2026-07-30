@@ -33,6 +33,13 @@ import {
   Zap,
 } from 'lucide-react';
 import MarketingFooter from './MarketingFooter';
+import RolePicker from './RolePicker';
+import RotatingWord from './RotatingWord';
+import HeroCluster from './HeroCluster';
+import NoSetupSection from './NoSetupSection';
+import AutomationShowcase from './AutomationShowcase';
+import AutomationWall from './AutomationWall';
+import { automationsForRole } from '@/lib/marketing/role-automations';
 
 const examples = [
   'Save invoices to a spreadsheet',
@@ -433,7 +440,7 @@ const manualInvoiceSteps = [
 
 function AboutModelGrowSection() {
   return (
-    <section id="what-is-modelgrow" className="marketing-anchor relative overflow-hidden border-b border-[#17203a]/7 bg-[#fbfaf7] py-16 sm:py-20">
+    <section data-ground="light" id="what-is-modelgrow" className="marketing-anchor relative overflow-hidden border-b border-[#17203a]/7 bg-[#fbfaf7] py-16 sm:py-20">
       <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#bba1ff]/18 blur-[100px]" aria-hidden="true" />
       <div className="relative mx-auto grid max-w-[1240px] items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
         <div>
@@ -490,7 +497,7 @@ function AboutModelGrowSection() {
 
 function WhyModelGrowSection() {
   return (
-    <section id="why-modelgrow" className="marketing-anchor border-b border-[#17203a]/7 bg-[#171c30] py-20 text-white sm:py-24">
+    <section data-ground="dark" id="why-modelgrow" className="marketing-anchor border-b border-[#17203a]/7 bg-[#11184a] py-20 text-white sm:py-24">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -520,7 +527,7 @@ function WhyModelGrowSection() {
 
 function SavingsExampleSection() {
   return (
-    <section id="savings-example" className="marketing-anchor relative overflow-hidden border-b border-[#25204f]/8 bg-[#f8f7fb] py-24 sm:py-32">
+    <section data-ground="light" id="savings-example" className="marketing-anchor relative overflow-hidden border-b border-[#25204f]/8 bg-[#fbfaf7] py-24 sm:py-32">
       <div className="absolute left-[12%] top-16 h-64 w-64 rounded-full bg-[#bb95ff]/14 blur-[90px]" aria-hidden="true" />
       <div className="absolute bottom-0 right-[8%] h-72 w-72 rounded-full bg-[#6f9cff]/10 blur-[100px]" aria-hidden="true" />
       <div className="relative mx-auto max-w-[1240px] px-5 sm:px-8">
@@ -601,7 +608,7 @@ function SavingsExampleSection() {
 
 function ControlStorySection() {
   return (
-    <section className="border-b border-[#17203a]/7 bg-white py-24 sm:py-32">
+    <section data-ground="light" className="border-b border-[#17203a]/7 bg-[#fbfaf7] py-24 sm:py-32">
       <div className="mx-auto grid max-w-[1240px] gap-14 px-5 sm:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
         <div>
           <p className="marketing-kicker">What ModelGrow does—and does not do</p>
@@ -700,7 +707,7 @@ function OutcomeEffectSection() {
   }, []);
 
   return (
-    <section id="use-cases" className="marketing-anchor marketing-outcome-grid bg-[#f7f6f1] py-24 sm:py-32">
+    <section data-ground="light" id="use-cases" className="marketing-anchor marketing-outcome-grid bg-[#fbfaf7] py-24 sm:py-32">
       <div className="mx-auto grid max-w-[1240px] gap-14 px-5 sm:px-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="marketing-kicker">The ModelGrow effect</p>
@@ -757,7 +764,7 @@ function OutcomeEffectSection() {
 
 function SimpleUseCasesSection() {
   return (
-    <section id="use-cases" className="marketing-anchor border-b border-[#17203a]/7 bg-[#f7f6f1] py-20 sm:py-24">
+    <section data-ground="light" id="use-cases" className="marketing-anchor border-b border-[#17203a]/7 bg-[#fbfaf7] py-20 sm:py-24">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -826,7 +833,7 @@ function FlowDemoSection() {
   };
 
   return (
-    <section ref={sectionRef} className="marketing-flow-story relative overflow-hidden bg-[#4b3baa] px-5 py-20 text-white sm:px-8 sm:py-24">
+    <section data-ground="dark" ref={sectionRef} className="marketing-flow-story relative overflow-hidden bg-[#11184a] px-5 py-20 text-white sm:px-8 sm:py-24">
       <div className="marketing-flow-orb marketing-flow-orb--one" />
       <div className="marketing-flow-orb marketing-flow-orb--two" />
       <div className="relative mx-auto max-w-[1240px]">
@@ -880,7 +887,7 @@ function FlowDemoSection() {
 
 function HandoffStorySection() {
   return (
-    <section id="what-is-modelgrow" className="marketing-anchor mg-chapter mg-handoff-section">
+    <section data-ground="light" id="what-is-modelgrow" className="marketing-anchor mg-chapter mg-handoff-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading mx-auto text-center">
           <p className="marketing-kicker">What is ModelGrow?</p>
@@ -941,7 +948,7 @@ function HandoffStorySection() {
 
 function WhyVisualSection() {
   return (
-    <section id="why-modelgrow" className="marketing-anchor mg-chapter mg-why-section">
+    <section data-ground="dark" id="why-modelgrow" className="marketing-anchor mg-chapter mg-why-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading mg-section-heading--light">
           <p>Why ModelGrow?</p>
@@ -1005,7 +1012,7 @@ function SavingsPainSection() {
   const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
   return (
-    <section id="savings" className="marketing-anchor mg-chapter mg-savings-section">
+    <section data-ground="light" id="savings" className="marketing-anchor mg-chapter mg-savings-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading">
           <p className="marketing-kicker">The hidden cost</p>
@@ -1074,7 +1081,7 @@ function SavingsPainSection() {
 
 function HowVisualSection() {
   return (
-    <section id="how-it-works" className="marketing-anchor mg-chapter mg-how-section">
+    <section data-ground="light" id="how-it-works" className="marketing-anchor mg-chapter mg-how-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading mx-auto text-center">
           <p className="marketing-kicker">How it works</p>
@@ -1126,7 +1133,7 @@ function AutomationLibrarySection() {
   };
 
   return (
-    <section id="use-cases" className="marketing-anchor mg-chapter mg-library-section">
+    <section data-ground="dark" id="use-cases" className="marketing-anchor mg-chapter mg-library-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading mg-section-heading--light mx-auto text-center">
           <p>What can it handle?</p>
@@ -1215,7 +1222,7 @@ function AutomationLibrarySection() {
 
 function PayAsYouGoSection() {
   return (
-    <section id="pricing-explained" className="marketing-anchor mg-chapter mg-pay-section">
+    <section data-ground="light" id="pricing-explained" className="marketing-anchor mg-chapter mg-pay-section">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <div className="mg-section-heading mx-auto text-center">
           <p className="marketing-kicker">Simple pay-as-you-go</p>
@@ -1260,7 +1267,7 @@ function PayAsYouGoSection() {
 
 function ControlFinaleSection() {
   return (
-    <section className="mg-control-finale">
+    <section data-ground="dark" className="mg-control-finale">
       <div className="mx-auto grid max-w-[1240px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
         <div>
           <p className="mg-dark-kicker">Still your work. Still your call.</p>
@@ -1284,10 +1291,41 @@ function ControlFinaleSection() {
   );
 }
 
-export default function MarketingLanding() {
+const HERO_CHORES = [
+  'invoices',
+  'thumbnails',
+  'captions',
+  'hashtags',
+  'brand deals',
+  'rate cards',
+];
+
+export default function MarketingLanding({ automations = [] }) {
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const cluster = document.querySelector('[data-cluster]');
+    if (!cluster) return undefined;
+
+    const onMove = (event) => {
+      const x = event.clientX / window.innerWidth - 0.5;
+      const y = event.clientY / window.innerHeight - 0.5;
+      cluster.style.setProperty('--mg-ry', `${(-19 + x * 17).toFixed(2)}deg`);
+      cluster.style.setProperty('--mg-rx', `${(12 - y * 13).toFixed(2)}deg`);
+    };
+
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
+  // No role chosen yet means "show what is doing best", not an empty page.
+  const shownAutomations = selectedRole
+    ? automationsForRole(selectedRole, automations)
+    : automations.slice(0, 6);
+
   return (
-    <main className="marketing-page overflow-hidden text-[#151b2d]">
-      <section className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[104px]">
+    <main className="marketing-page overflow-x-clip text-[#151b2d]">
+      <section data-ground="dark" className="marketing-hero-world relative min-h-[1120px] overflow-hidden bg-[#11184a] pt-[68px]">
         <HeroBackdrop />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,15,61,0.42)_0%,rgba(24,24,80,0.04)_52%,rgba(9,16,56,0.4)_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#101746]/65 to-transparent" />
@@ -1297,42 +1335,46 @@ export default function MarketingLanding() {
           <span className="marketing-signal-dot marketing-signal-dot--three" />
         </div>
 
-        <div className="relative z-10 mx-auto flex max-w-[1240px] flex-col items-center px-5 pt-20 text-center sm:px-8 sm:pt-24">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/90 backdrop-blur-md">
-            <Zap className="h-3.5 w-3.5 text-[#87f4e8]" fill="currentColor" />
-            Ready-made automations for everyday work
-          </div>
-          <h1 className="marketing-display mt-7 max-w-[1050px] text-[clamp(3.5rem,7vw,7.4rem)] font-black leading-[0.88] tracking-[-0.055em] text-white marketing-white-copy">
-            What did you do three times today?
-          </h1>
-          <p className="mt-7 max-w-[760px] text-lg font-medium leading-8 text-white/78 sm:text-[22px] sm:leading-9">
-            Make the work you repeat run itself—without learning a workflow builder.
-          </p>
-          <div className="marketing-hero-search mt-9 w-full max-w-[660px] text-left">
-            <SearchBox />
-          </div>
-          <div className="marketing-hero-actions mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-black text-[#171c30] shadow-[0_14px_36px_rgba(7,12,45,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#f5f1ff]">
-              Explore automations
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a href="#how-it-works" className="marketing-primary-button inline-flex items-center gap-2 rounded-full border border-white/25 bg-[#161b4d]/30 px-7 py-3.5 text-sm font-black text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-[#161b4d]/50">
-              <Play className="h-4 w-4" fill="currentColor" />
-              See it work
-            </a>
-          </div>
-          <p className="marketing-hero-trust mt-6 flex items-center gap-2 text-xs font-bold text-white/68">
-            <ShieldCheck className="h-4 w-4 text-[#75e6bd]" />
-            You stay in control. Pause or remove anything whenever you want.
-          </p>
+        <div className="relative z-10 mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-24 sm:px-8 sm:pt-28 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-10">
+          <div className="text-center lg:text-left">
+            <h1 className="marketing-display max-w-[620px] text-[clamp(2.9rem,5.4vw,5.4rem)] font-black leading-[0.92] tracking-[-0.055em] text-white marketing-white-copy">
+              Your<br />
+              <RotatingWord words={HERO_CHORES} className="text-[#b79cff]" /><br />
+              handled.
+            </h1>
 
+            <div className="marketing-hero-actions mt-9 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+              <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-black text-[#171c30] shadow-[0_14px_36px_rgba(7,12,45,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#f5f1ff]">
+                Start free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a href="#how-it-works" className="marketing-primary-button inline-flex items-center gap-2 rounded-full border border-white/25 bg-[#161b4d]/30 px-7 py-3.5 text-sm font-black text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-[#161b4d]/50">
+                <Play className="h-4 w-4" fill="currentColor" />
+                See it work
+              </a>
+            </div>
+
+            <p className="marketing-hero-trust mt-6 flex items-center justify-center gap-2 text-xs font-bold text-white/68 lg:justify-start">
+              <ShieldCheck className="h-4 w-4 text-[#75e6bd]" />
+              You stay in control. Pause or remove anything whenever you want.
+            </p>
+          </div>
+
+          <HeroCluster automations={automations} />
+        </div>
+
+        <div className="relative z-10 mx-auto mt-14 w-full max-w-[1240px] px-5 sm:px-8">
+          <RolePicker selected={selectedRole} onSelect={setSelectedRole} />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-[1240px] px-5 sm:px-8">
           <div className="mt-16 w-full sm:mt-20">
             <HeroProductStage />
           </div>
         </div>
       </section>
 
-      <section className="marketing-section-curve relative z-20 -mt-1 border-b border-[#17203a]/7 bg-white">
+      <section data-ground="light" className="marketing-section-curve relative z-20 -mt-1 border-b border-[#17203a]/7 bg-[#fbfaf7]">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-6 px-5 py-7 sm:px-8 lg:flex-row">
           <p className="text-center text-xs font-black uppercase tracking-[0.13em] text-[#9299aa] lg:text-left">Works with the apps already in your day</p>
           <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-4 text-sm font-black text-[#4e566a]">
@@ -1350,10 +1392,13 @@ export default function MarketingLanding() {
         </div>
       </section>
 
-      <HandoffStorySection />
-      <WhyVisualSection />
-      <SavingsPainSection />
-      <HowVisualSection />
+      {/* Results land directly under the hero: the answer has to arrive in the
+          same motion as the click, or the moment is lost to a page change. */}
+      <AutomationWall automations={shownAutomations} roleSelected={Boolean(selectedRole)} />
+
+
+      <NoSetupSection />
+      <AutomationShowcase automations={automations} />
       <AutomationLibrarySection />
       <PayAsYouGoSection />
       <ControlFinaleSection />

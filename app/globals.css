@@ -2033,24 +2033,78 @@ button {
   transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
+/* Anchored to the top edge rather than floating. The hero cluster pushes a card
+   toward the camera at translateZ(160px), and a detached pill left it colliding
+   with the nav; flush to the edge there is nothing to collide with.
+
+   Treated as a lit physical slab rather than a flat band: a gradient body, a
+   one-pixel highlight along the top where light would catch, a hairline shadow
+   under the bottom edge, and a large soft shadow cast down onto the hero. The
+   backdrop blur means the floating cards visibly soften as they pass beneath
+   it, which is what actually sells the depth. */
 .marketing-nav--floating {
-  top: 14px;
-  left: 50%;
-  right: auto;
-  width: min(calc(100% - 32px), 1240px);
-  transform: translateX(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 22px;
-  box-shadow: 0 16px 45px rgba(7, 12, 45, 0.16), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transform: none;
+  border: 0;
+  border-radius: 0;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.015) 45%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.07),
+    0 18px 40px -12px rgba(6, 10, 40, 0.55);
+  transition: box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
+              backdrop-filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* Scrolling lifts it: the shadow deepens and spreads, the way a raised surface
+   behaves when it moves away from what is behind it. */
+.marketing-nav--floating.marketing-nav--lifted {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 26px 60px -14px rgba(6, 10, 40, 0.7);
+}
+
+/* The logo is a cube; let it behave like one. */
+.marketing-nav--floating a[aria-label="ModelGrow home"] img {
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+.marketing-nav--floating a[aria-label="ModelGrow home"]:hover img {
+  transform: perspective(340px) rotateY(24deg) rotateX(-10deg) translateZ(6px);
+}
+
 
 .marketing-nav--floating nav {
   height: 68px;
 }
 
 .marketing-nav--floating.marketing-nav--light {
-  border-color: rgba(23, 32, 58, 0.09);
-  box-shadow: 0 16px 45px rgba(24, 26, 45, 0.1), 0 1px 0 rgba(255, 255, 255, 0.82) inset;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.4) 55%,
+    rgba(23, 32, 58, 0.035) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(23, 32, 58, 0.06),
+    0 16px 38px -14px rgba(24, 26, 45, 0.22);
+}
+
+.marketing-nav--floating.marketing-nav--light.marketing-nav--lifted {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(23, 32, 58, 0.07),
+    0 24px 54px -16px rgba(24, 26, 45, 0.3);
 }
 
 @media (max-width: 639px) {
@@ -2096,7 +2150,7 @@ button {
 }
 
 .mg-handoff-section {
-  background: #f6f3ec;
+  background: #fbfaf7;
 }
 
 .mg-handoff-scene {
@@ -2309,7 +2363,7 @@ button {
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 23px;
-  background: #171c30;
+  background: #11184a;
   box-shadow: 0 20px 45px rgba(40, 28, 82, 0.28);
 }
 
@@ -2430,7 +2484,7 @@ button {
 
 .mg-why-section {
   color: #fff;
-  background: #101629;
+  background: #11184a;
 }
 
 .mg-section-heading--light > p:first-child,
@@ -2505,7 +2559,7 @@ button {
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   color: #7f899f;
-  background: #0d1324;
+  background: #11184a;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -2791,7 +2845,7 @@ button {
 .mg-savings-section {
   background:
     radial-gradient(circle at 84% 18%, rgba(126, 91, 217, 0.15), transparent 30%),
-    #f0ecfb;
+    #fbfaf7;
 }
 
 .mg-savings-section .mg-section-heading h2 {
@@ -3831,7 +3885,7 @@ button {
   padding: 88px 0 100px;
   background:
     radial-gradient(circle at 50% 6%, rgba(111, 77, 205, 0.24), transparent 34%),
-    #11172a;
+    #11184a;
 }
 
 .mg-library-section::before {
@@ -4245,7 +4299,7 @@ button {
 .mg-pay-section {
   background:
     radial-gradient(circle at 20% 12%, rgba(173, 137, 242, 0.13), transparent 28%),
-    #f7f4ed;
+    #fbfaf7;
 }
 
 .mg-pay-section .mg-section-heading {
@@ -4561,7 +4615,7 @@ button {
   overflow: hidden;
   padding: 110px 0;
   color: #fff;
-  background: #0d1324;
+  background: #11184a;
 }
 
 .mg-control-finale::before {
@@ -5202,4 +5256,474 @@ button {
   .mg-tracking-wrap {
     margin-top: 20px;
   }
+}
+
+/* Rotating headline noun. Layout only — visibility is set inline by the
+   component so no cascade change can leave two words painted at once. */
+.marketing-rotating-word {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  text-align: left;
+  /* Clips the words travelling in and out. The padding keeps descenders
+     (the g in "hashtags", the j in "job hunting") from being shaved off,
+     and the negative margin gives the space back to the line box. */
+  overflow: hidden;
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
+}
+
+.marketing-rotating-word__sizer {
+  display: grid;
+  width: max-content;
+  pointer-events: none;
+}
+
+.marketing-rotating-word__sizer > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.marketing-rotating-word__track {
+  position: absolute;
+  inset: 0;
+}
+
+.marketing-rotating-word__item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+}
+
+.marketing-rotating-word__reader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ============ HERO CLUSTER ============
+   Real 3D: perspective on the scene, preserve-3d on the cluster, and each card
+   pushed to its own Z depth. The cluster turns toward the cursor, so the cards
+   move against each other instead of sliding as one flat sheet.
+   Nothing connects to anything — there is no wiring to look at. */
+
+.marketing-scene { perspective: 1500px; perspective-origin: 55% 45%; }
+
+.marketing-cluster {
+  position: relative;
+  height: 500px;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--mg-rx, 12deg)) rotateY(var(--mg-ry, -19deg));
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.marketing-acard {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 17px 19px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035));
+  backdrop-filter: blur(22px);
+  box-shadow: 0 42px 90px -30px rgba(8, 5, 32, 0.9);
+  transform-style: preserve-3d;
+  text-decoration: none;
+  animation: marketing-float 7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transition: border-color 300ms ease;
+}
+
+.marketing-acard:hover { border-color: rgba(142, 92, 255, 0.55); }
+.marketing-acard.is-live { border-color: rgba(143, 241, 207, 0.4); }
+
+@keyframes marketing-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -13px; }
+}
+
+.marketing-acard--a { width: 268px; left: 4%;   top: 2%;  transform: translateZ(-150px); animation-delay: 0s; }
+.marketing-acard--b { width: 248px; left: 40%;  top: 24%; transform: translateZ(-40px);  animation-delay: 0.9s; }
+.marketing-acard--c { width: 292px; left: 6%;   top: 48%; transform: translateZ(60px);   animation-delay: 1.8s; }
+.marketing-acard--d { width: 258px; left: 48%;  top: 66%; transform: translateZ(-90px);  animation-delay: 2.6s; }
+.marketing-acard--e { width: 300px; right: -2%; top: 0;   transform: translateZ(160px);  animation-delay: 1.3s; }
+
+.marketing-acard__glyph {
+  width: 30px; height: 30px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+}
+.marketing-acard__glyph--a { background: rgba(142, 92, 255, 0.30); }
+.marketing-acard__glyph--b { background: rgba(255, 143, 168, 0.26); }
+.marketing-acard__glyph--c { background: rgba(143, 241, 207, 0.26); }
+.marketing-acard__glyph--d { background: rgba(112, 65, 214, 0.34); }
+.marketing-acard__glyph--e { background: rgba(135, 244, 232, 0.26); }
+
+.marketing-acard__body { display: flex; flex-direction: column; gap: 4px; }
+.marketing-acard__name {
+  font-size: 14px; font-weight: 800; line-height: 1.25;
+  letter-spacing: -0.015em; color: #fff;
+}
+.marketing-acard__gist {
+  font-size: 12px; line-height: 1.45; color: rgba(255, 255, 255, 0.6);
+}
+
+.marketing-acard__foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding-top: 11px; border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.marketing-acard__who {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.6);
+}
+.marketing-acard__pip {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  background: rgba(255, 255, 255, 0.14); color: #fff;
+  display: grid; place-items: center; font-size: 8.5px; font-weight: 800;
+}
+.marketing-acard__runs {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px; letter-spacing: 0.08em; color: #8ff1cf;
+}
+.marketing-acard__runs--new { color: rgba(255, 255, 255, 0.45); }
+
+@media (max-width: 1100px) {
+  .marketing-cluster { height: 430px; transform: rotateX(9deg) rotateY(-13deg); }
+  .marketing-acard { padding: 14px 16px; }
+  .marketing-acard--a { width: 224px; }
+  .marketing-acard--b { width: 210px; }
+  .marketing-acard--c { width: 244px; }
+  .marketing-acard--d { width: 216px; }
+  .marketing-acard--e { width: 250px; }
+}
+
+/* Flat stack on small screens: 3D at this width is unreadable, not impressive. */
+@media (max-width: 720px) {
+  .marketing-scene { perspective: none; }
+  .marketing-cluster {
+    height: auto; transform: none; transform-style: flat;
+    display: grid; gap: 12px;
+  }
+  .marketing-acard {
+    position: static; width: auto !important; transform: none !important;
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-acard { animation: none; }
+  .marketing-cluster { transition: none; }
+}
+
+/* ============ NO-SETUP SECTION ============
+   Continues the hero rather than restarting the page: same deep indigo ground,
+   same glass cards, same perspective. The "before" panel is pushed back in Z and
+   tilted away so distance carries the comparison — no arrow, because an arrow
+   between two boxes is a pipeline, and a pipeline is what we are selling against. */
+
+.mg-nosetup {
+  position: relative;
+  background-color: #11184a;
+  background-image:
+    radial-gradient(90% 70% at 20% 10%, rgba(142, 92, 255, 0.16) 0%, transparent 60%),
+    linear-gradient(180deg, #11184a 0%, #0e1338 100%);
+  padding-block: 84px 92px;
+  perspective: 1400px;
+  overflow: hidden;
+}
+
+.mg-nosetup__title {
+  margin: 0 0 46px;
+  max-width: 16ch;
+  font-size: clamp(2.2rem, 3.6vw, 3.4rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: #fff;
+}
+
+.mg-nosetup__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.mg-nosetup__panel {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(20px);
+  padding: 26px 24px;
+  transform-style: preserve-3d;
+}
+
+/* Receding: further away, turned away, dimmed. It is the past. */
+.mg-nosetup__panel--before {
+  transform: perspective(1400px) translateZ(-120px) rotateY(11deg);
+  opacity: 0.44;
+  justify-self: end;
+  width: min(100%, 400px);
+}
+
+/* Present and forward. */
+.mg-nosetup__panel--after {
+  transform: perspective(1400px) translateZ(70px) rotateY(-7deg);
+  border-color: rgba(143, 241, 207, 0.34);
+  box-shadow: 0 44px 90px -34px rgba(6, 10, 40, 0.9);
+  justify-self: start;
+  width: min(100%, 420px);
+}
+
+.mg-nosetup__label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 16px;
+}
+.mg-nosetup__label--here { color: #8ff1cf; }
+
+.mg-nosetup__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+
+.mg-nosetup__cred {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Struck through: asked for, and no longer needed. */
+.mg-nosetup__cred::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  top: 50%;
+  height: 1.5px;
+  background: #ff8fa8;
+  opacity: 0.8;
+}
+
+.mg-nosetup__choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(143, 241, 207, 0.35);
+  background: rgba(143, 241, 207, 0.08);
+  border-radius: 12px;
+  padding: 15px 16px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.mg-nosetup__tick {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  background: #8ff1cf; color: #06251d;
+  display: grid; place-items: center;
+}
+
+@media (max-width: 860px) {
+  .mg-nosetup { padding-block: 72px; perspective: none; }
+  .mg-nosetup__grid { grid-template-columns: 1fr; gap: 26px; }
+  .mg-nosetup__panel--before,
+  .mg-nosetup__panel--after {
+    transform: none; justify-self: stretch; width: auto;
+  }
+  .mg-nosetup__panel--before { opacity: 0.55; }
+}
+
+/* ============ SECTION SEAMS ============
+   Only two grounds exist now, but the page still crosses between them six times.
+   A hard edge at each crossing is what reads as "jumpy", so every real boundary
+   gets a short gradient that carries one ground a little way into the next.
+   Adjacent-sibling selectors mean the fade only appears where the ground
+   actually changes — two dark sections in a row stay seamless. */
+
+/* isolation makes each section its own stacking context, so the seam can sit at
+   z-index -1: above the section's own background, below everything in flow.
+   Never touch the children — several sections position decorative layers
+   absolutely, and forcing them to relative drops them into flow. */
+[data-ground] { position: relative; isolation: isolate; }
+
+[data-ground]::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 130px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* light → dark: carry the cream down into the top of the dark section */
+[data-ground="light"] + [data-ground="dark"]::before {
+  background: linear-gradient(180deg, #fbfaf7 0%, rgba(251, 250, 247, 0) 100%);
+  opacity: 0.16;
+}
+
+/* dark → light: carry the indigo down into the top of the light section */
+[data-ground="dark"] + [data-ground="light"]::before {
+  background: linear-gradient(180deg, #11184a 0%, rgba(17, 24, 74, 0) 100%);
+  opacity: 0.10;
+}
+
+
+/* ============ AUTOMATION SHOWCASE ============
+   Tall section, sticky viewport inside it. Cards travel from scattered 3D into a
+   centred row as --mg-gather goes 0 -> 1, then take turns coming forward.
+   No connectors anywhere: the sequence is the narrative. */
+
+.mg-show {
+  position: relative;
+  height: 340vh;              /* ~3 screens of pinning, no more */
+  background-color: #11184a;
+  background-image:
+    radial-gradient(80% 60% at 70% 12%, rgba(142, 92, 255, 0.20) 0%, transparent 60%),
+    linear-gradient(180deg, #11184a 0%, #0e1338 100%);
+}
+
+.mg-show__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  perspective: 1500px;
+}
+
+.mg-show__inner {
+  width: min(100%, 1240px);
+  padding-inline: 24px;
+  display: grid;
+  gap: 44px;
+  justify-items: center;
+}
+
+.mg-show__title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  color: #fff;
+  text-align: center;
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mg-show__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+.mg-show__card {
+  flex: 0 0 320px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(20px);
+  padding: 20px;
+  color: #fff;
+  transform-style: preserve-3d;
+  /* At gather 0 the card sits where it was scattered; at 1 it is in the row. */
+  transform:
+    translate3d(
+      calc(var(--mg-x) * (1 - var(--mg-gather))),
+      calc(var(--mg-y) * (1 - var(--mg-gather))),
+      calc(var(--mg-z) * (1 - var(--mg-gather)))
+    )
+    scale(calc(0.92 + 0.08 * var(--mg-gather)));
+  opacity: calc(0.45 + 0.55 * var(--mg-gather));
+  transition: border-color 420ms ease, box-shadow 420ms ease;
+}
+
+/* The one currently telling its story. */
+.mg-show__card[data-active='true'] {
+  border-color: rgba(142, 92, 255, 0.55);
+  box-shadow: 0 40px 90px -34px rgba(6, 10, 40, 0.95);
+}
+
+.mg-show__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-bottom: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.mg-show__name { font-size: 14px; font-weight: 800; letter-spacing: -0.015em; }
+.mg-show__runs {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px; letter-spacing: 0.08em; color: #8ff1cf; white-space: nowrap;
+}
+.mg-show__runs--new { color: rgba(255, 255, 255, 0.45); }
+
+.mg-show__story { display: grid; gap: 9px; padding-block: 15px; min-height: 172px; }
+
+.mg-show__beat {
+  border-radius: 11px;
+  padding: 11px 13px;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mg-show__story[data-active='true'] .mg-show__beat { opacity: 1; transform: none; }
+
+.mg-show__beat--input {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.mg-show__beat--scan {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11.5px;
+  padding-block: 6px;
+}
+.mg-show__beat--result {
+  border: 1px solid rgba(143, 241, 207, 0.32);
+  background: rgba(143, 241, 207, 0.08);
+}
+
+.mg-show__rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mg-show__rows li { font-size: 12px; font-weight: 600; color: #fff; }
+
+.mg-show__foot {
+  padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px; color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 1000px) {
+  .mg-show__card { flex-basis: 260px; }
+  .mg-show__row { gap: 14px; }
+}
+
+/* Below the fold-width where three cards can sit side by side, the pinning stops
+   being cinematic and starts being a hostage situation. Plain stack instead. */
+@media (max-width: 780px) {
+  .mg-show { height: auto; }
+  .mg-show__pin { position: static; height: auto; padding-block: 64px; perspective: none; }
+  .mg-show__row { flex-direction: column; align-items: stretch; }
+  .mg-show__card { flex: 1 1 auto; transform: none; opacity: 1; }
+  .mg-show__story[data-active='false'] .mg-show__beat,
+  .mg-show__beat { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-show { height: auto; }
+  .mg-show__pin { position: static; height: auto; padding-block: 64px; }
+  .mg-show__card { transform: none; opacity: 1; }
+  .mg-show__beat { opacity: 1; transform: none; transition: none; }
 }

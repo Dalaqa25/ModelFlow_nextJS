@@ -134,7 +134,7 @@ function AutomationCard({ automation }) {
   );
 }
 
-export default function AutomationWall({ automations = [] }) {
+export default function AutomationWall({ automations = [], roleSelected = false }) {
   const [showAll, setShowAll] = useState(false);
 
   const totals = useMemo(() => {
@@ -152,17 +152,28 @@ export default function AutomationWall({ automations = [] }) {
   }, [automations]);
 
   const visible = showAll ? automations : automations.slice(0, 6);
-  if (automations.length === 0) return null;
+  if (automations.length === 0 && !roleSelected) return null;
 
   return (
     <section
+      data-ground="light"
       id="automation-wall"
       className="marketing-anchor relative overflow-hidden border-b border-[#17203a]/7 bg-[#fbfaf7] py-16 sm:py-20"
     >
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <h2 className="marketing-display max-w-[640px] text-[clamp(2.5rem,4.4vw,4.5rem)] font-black leading-[0.94] tracking-[-0.05em] text-[#151b2d]">
-          Someone already solved it.
+          {automations.length === 0
+            ? 'Nobody has built this yet.'
+            : roleSelected
+              ? 'People like you use these.'
+              : 'Someone already solved it.'}
         </h2>
+
+        {automations.length === 0 && (
+          <p className="mt-5 max-w-[440px] text-base font-medium leading-7 text-[#4e566a]">
+            Tell us what you repeat and we&apos;ll get it built.
+          </p>
+        )}
 
         {/* Real totals only — no rounding up to look busier than we are. */}
         {totals.runs > 0 && (

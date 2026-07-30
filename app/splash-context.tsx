@@ -1,11 +1,21 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
 import { useThemeAdaptive } from '@/lib/contexts/theme-adaptive-context';
 
 const SplashContext = createContext({ loading: false });
 
+// Marketing pages must never sit behind the splash. The splash exists to wait
+// for auth and theme before painting the signed-in shell; a visitor landing on
+// the homepage has nothing to wait for, and holding the page back means the
+// hero is not server-rendered at all — so search engines and first-time
+// visitors get a logo on a gradient instead of the product.
+const MARKETING_ROUTES = ['/', '/developers', '/pricing'];
+
 export function SplashProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isMarketingRoute = MARKETING_ROUTES.includes(pathname);
   const { loading: authLoading } = useAuth() as { loading: boolean };
   const { mounted: themeMounted } = useThemeAdaptive();
   const [hasMounted, setHasMounted] = useState(false);
@@ -36,7 +46,9 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const loading = !hasMounted || !themeMounted || authLoading || !minimumElapsed || !documentReady;
+  const loading =
+    !isMarketingRoute &&
+    (!hasMounted || !themeMounted || authLoading || !minimumElapsed || !documentReady);
 
   return (
     <SplashContext.Provider value={{ loading }}>
