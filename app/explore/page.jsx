@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '@/lib/contexts/sidebar-context';
 import { useAuth } from '@/lib/auth/supabase-auth-context';
+import { setPendingDestination } from '@/lib/auth/pending-destination';
 import MarketingFooter from '@/app/components/marketing/MarketingFooter';
 import { getAutomationCreator, getCreatorInitials } from '@/lib/automations/public-creator';
 
@@ -183,11 +184,15 @@ export default function ExplorePage() {
   );
 
   const handleUse = (automation) => {
+    const destination = `/main?preview=${encodeURIComponent(automation.id)}`;
     if (!isAuthenticated) {
+      // Signing in used to drop the choice on the floor, landing people back
+      // on this list with nothing selected.
+      setPendingDestination(destination);
       window.dispatchEvent(new Event('modelgrow:open-signup'));
       return;
     }
-    router.push(`/main?preview=${encodeURIComponent(automation.id)}`);
+    router.push(destination);
   };
 
   return (

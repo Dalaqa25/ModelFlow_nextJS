@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { ArrowRight } from 'lucide-react';
 import AuthDialogFrame from '../AuthDialogFrame';
+import { takePendingDestination } from '@/lib/auth/pending-destination';
 
 export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, customMessage }) {
   const [email, setEmail] = useState('');
@@ -99,7 +100,12 @@ export default function SignInDialog({ isOpen, onClose, onSwitchToSignUp, custom
       } else {
         toast.success('Logged in successfully!');
         onClose();
-        if (pathname === '/' || pathname === '/auth/login') {
+        // Someone with an account hits the same wall as a new visitor, and lost
+        // their chosen automation the same way.
+        const destination = takePendingDestination();
+        if (destination) {
+          router.push(destination);
+        } else if (pathname === '/' || pathname === '/auth/login') {
           router.push('/main');
         } else {
           router.refresh();

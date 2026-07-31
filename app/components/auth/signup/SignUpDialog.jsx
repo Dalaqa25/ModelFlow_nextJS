@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { ArrowRight } from 'lucide-react';
 import { validateEmail, validateUsername } from '@/lib/auth/validation-utils';
+import { takePendingDestination } from '@/lib/auth/pending-destination';
 import AuthDialogFrame from '../AuthDialogFrame';
 
 export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
@@ -173,7 +174,11 @@ export default function SignUpDialog({ isOpen, onClose, onSwitchToSignIn }) {
       } else {
         toast.success('Account created successfully!');
         onClose();
-        if (pathname === '/' || pathname === '/auth/login') {
+        // Carry on to whatever they were trying to reach before the wall.
+        const destination = takePendingDestination();
+        if (destination) {
+          router.push(destination);
+        } else if (pathname === '/' || pathname === '/auth/login') {
           router.push('/main');
         } else {
           router.refresh();

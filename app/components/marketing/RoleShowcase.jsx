@@ -484,8 +484,12 @@ export default function RoleShowcase() {
           <h2 className="marketing-display mt-4 text-[clamp(2.6rem,5vw,4.8rem)] font-black leading-[0.94] tracking-[-0.05em] text-[#151b2d]">
             Find yourself here.
           </h2>
+          {/* Not "already running for someone" — 52 of 57 automations in the
+              catalog have never run, including all four these cards link to.
+              Claim what is true: they are built, and the setup is the only
+              thing between you and a result. */}
           <p className="mx-auto mt-5 max-w-[520px] text-base font-medium leading-7 text-[#656e83]">
-            Every one of these is already running for someone.
+            Built and ready. Connect your apps and it runs.
           </p>
         </div>
 
