@@ -313,6 +313,11 @@ html.light body {
   color: white !important;
 }
 
+/* The workspace shell used to be pinned dark in light mode, so this rule painted
+   its buttons near-black on near-black and needed a light-grey counter-override
+   here. The shell now follows the theme, which makes the rule above correct on
+   its own — dark text on a light sidebar. */
+
 /* Explicit white-text utility — use this class on any button that has
    a colored background and needs white text in light mode */
 .light .btn-white-text {

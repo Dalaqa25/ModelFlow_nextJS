@@ -281,9 +281,10 @@ html.dark .app-topbar {
   color: #eef1ff;
 }
 
-/* The signed-in workspace is intentionally dark even when the public-site
-   preference is light. This keeps /main from inheriting the editorial shell. */
-.app-sidebar.app-shell-workspace,
+/* The signed-in workspace used to be pinned dark in both themes, which left the
+   theme toggle visibly doing nothing once you signed in — it reads as a bug, so
+   these are scoped to html.dark and light mode falls through to the light base
+   rule above each one. */
 html.dark .app-sidebar.app-shell-workspace {
   background: rgba(17, 22, 49, 0.94);
   border-color: rgba(199, 210, 255, 0.12);
@@ -291,12 +292,10 @@ html.dark .app-sidebar.app-shell-workspace {
   color: #eef1ff;
 }
 
-.app-sidebar.app-shell-workspace.app-sidebar-collapsed,
 html.dark .app-sidebar.app-shell-workspace.app-sidebar-collapsed {
   background: rgba(17, 22, 49, 0.94);
 }
 
-.app-topbar.app-shell-workspace,
 html.dark .app-topbar.app-shell-workspace {
   background: rgba(17, 22, 49, 0.9);
   border-bottom-color: rgba(199, 210, 255, 0.11);
@@ -329,7 +328,6 @@ html.dark .app-topbar.app-shell-editorial {
   color: #171b31;
 }
 
-.app-shell-workspace .workspace-brand-name,
 html.dark .app-shell-workspace .workspace-brand-name {
   color: #f5f6ff;
 }
@@ -338,7 +336,6 @@ html.dark .app-shell-workspace .workspace-brand-name {
   border-bottom: 1px solid rgba(25, 30, 51, 0.08);
 }
 
-.app-shell-workspace .workspace-sidebar-header,
 html.dark .app-shell-workspace .workspace-sidebar-header {
   border-bottom-color: rgba(199, 210, 255, 0.1);
 }
@@ -362,7 +359,6 @@ html.dark .app-shell-workspace .workspace-sidebar-header {
   transform: translateY(-1px);
 }
 
-.app-shell-workspace .workspace-token-pill,
 html.dark .app-shell-workspace .workspace-token-pill {
   color: #d8caff;
   background: rgba(31, 39, 78, 0.82);
@@ -370,7 +366,6 @@ html.dark .app-shell-workspace .workspace-token-pill {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
-.app-shell-workspace .workspace-token-pill:hover,
 html.dark .app-shell-workspace .workspace-token-pill:hover {
   background: rgba(43, 51, 94, 0.94);
   border-color: rgba(196, 181, 253, 0.44);
@@ -391,13 +386,10 @@ html.dark .app-shell-workspace .workspace-token-pill:hover {
   outline-offset: 2px;
 }
 
-.app-shell-workspace .workspace-icon-button,
 html.dark .app-shell-workspace .workspace-icon-button {
   color: #aeb6cf;
 }
 
-.app-shell-workspace .workspace-icon-button:hover,
-.app-shell-workspace .workspace-icon-button-active,
 html.dark .app-shell-workspace .workspace-icon-button:hover,
 html.dark .app-shell-workspace .workspace-icon-button-active {
   color: #ffffff;
@@ -471,16 +463,16 @@ html.dark .sidebar-nav-button-active {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
 }
 
-.app-shell-workspace .sidebar-nav-button {
+html.dark .app-shell-workspace .sidebar-nav-button {
   color: #aeb6cf;
 }
 
-.app-shell-workspace .sidebar-nav-button:hover {
+html.dark .app-shell-workspace .sidebar-nav-button:hover {
   background: rgba(255, 255, 255, 0.07);
   color: #ffffff;
 }
 
-.app-shell-workspace .sidebar-nav-button-active {
+html.dark .app-shell-workspace .sidebar-nav-button-active {
   background: linear-gradient(135deg, rgba(123, 114, 255, 0.28), rgba(208, 138, 255, 0.18));
   color: #ffffff;
   border-color: rgba(199, 210, 255, 0.18);
