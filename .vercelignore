@@ -1,0 +1,17 @@
+# Vercel does not read .gitignore, so without this every `vercel` deploy uploads
+# the local build output too — 478MB across tens of thousands of files, which is
+# what tripped the upload limit. Vercel builds the project itself; none of this
+# is an input to that build.
+.next
+.next.stale-*
+
+# 832MB of templates fetched by scripts/download-n8n-template-library.mjs. Git
+# tracks one README of it, so it only reaches production by riding along on a
+# CLI deploy from this laptop — and when it does, Next traces it into
+# api/admin/review-sandbox and the function blows past the 250mb function limit.
+data/n8n-template-library
+.tmp
+tmp
+output
+.git
+*.log
