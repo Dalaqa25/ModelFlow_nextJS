@@ -51,3 +51,6 @@ next-env.d.ts
 tmp/
 output/
 .next.stale-*/
+
+# Supabase CLI local state — link metadata, not project source
+supabase/.temp/
