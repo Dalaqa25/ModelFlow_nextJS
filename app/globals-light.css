@@ -9,6 +9,20 @@
   color: #fff !important;
 }
 
+/* The auth dialog's left panel is indigo in both themes, and it renders in a
+   portal rather than inside .marketing-page, so the blanket `.light .text-white`
+   rewrite below reached it and painted the whole story panel near-black on
+   near-black — headline, steps and all.
+
+   The `html` prefix matters: the panel itself carries `text-white`, so a plain
+   `.light .auth-story-panel` ties with `.light .text-white` on specificity and
+   loses on file order. One element selector settles it wherever this sits. */
+html.light .auth-story-panel,
+html.light .auth-story-panel .text-white,
+html.light .auth-story-panel .marketing-white-copy {
+  color: #fff !important;
+}
+
 .light .marketing-nav--floating {
   border-color: rgba(255, 255, 255, 0.14) !important;
 }
@@ -19,6 +33,49 @@
 
 .light .marketing-nav--floating .text-white {
   color: #fff !important;
+}
+
+/* Surfaces that are dark on purpose, whatever the theme.
+   ---------------------------------------------------------------------------
+   Light mode here means "rewrite dark-theme utilities to their light
+   equivalents", which is right for a page that flips — and wrong for one that
+   never does. Three have been caught this way now: the signed-in sidebar, the
+   auth dialog's story panel, and the admin review sandbox, each rendering
+   near-black text on its own near-black background at about 1.3:1.
+
+   Mark such a surface `mg-dark-surface` and the rewrites stop at its edge. The
+   `html` prefix is what makes that stick: the utilities below score the same as
+   any two-class selector, so ordering rather than intent would otherwise decide
+   which wins. */
+html.light .mg-dark-surface,
+html.light .mg-dark-surface :is(.text-white, .marketing-white-copy) {
+  color: #fff !important;
+}
+
+html.light .mg-dark-surface :is(.text-slate-300, .text-gray-300) { color: #cbd5e1 !important; }
+html.light .mg-dark-surface :is(.text-slate-400, .text-gray-400) { color: #94a3b8 !important; }
+html.light .mg-dark-surface :is(.text-slate-500, .text-gray-500) { color: #64748b !important; }
+/* The -300 accent tints read as labels on a dark ground and as invisible on a
+   light one, so light mode darkens them. Inside a dark surface they were never
+   wrong to begin with. */
+html.light .mg-dark-surface .text-violet-300  { color: #c4b5fd !important; }
+html.light .mg-dark-surface .text-purple-300  { color: #d8b4fe !important; }
+html.light .mg-dark-surface .text-sky-300     { color: #7dd3fc !important; }
+html.light .mg-dark-surface .text-blue-300    { color: #93c5fd !important; }
+html.light .mg-dark-surface .text-emerald-300 { color: #6ee7b7 !important; }
+html.light .mg-dark-surface .text-amber-300   { color: #fcd34d !important; }
+html.light .mg-dark-surface .text-red-300     { color: #fca5a5 !important; }
+
+html.light .mg-dark-surface .bg-slate-950 { background-color: #020617 !important; }
+html.light .mg-dark-surface .bg-slate-900 { background-color: #0f172a !important; }
+html.light .mg-dark-surface .bg-slate-800 { background-color: #1e293b !important; }
+html.light .mg-dark-surface .bg-slate-700 { background-color: #334155 !important; }
+html.light .mg-dark-surface .border-slate-700 { border-color: #334155 !important; }
+
+/* Ghost buttons inside a dark surface: the blanket `.light button:not(...)`
+   rule paints them near-black, same as it did the sidebar. */
+html.light .mg-dark-surface button:not([class*="bg-"]):not([class*="from-"]):not([class*="gradient"]) {
+  color: #e2e8f0 !important;
 }
 
 /* Root light mode variables */

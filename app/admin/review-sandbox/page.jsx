@@ -78,13 +78,13 @@ export default function ReviewSandboxPage() {
         workflow: { ...item.workflow, latestSandbox: data.sandbox },
       } : item));
       const result = data.sandbox?.status === 'passed' ? 'passed' : 'failed';
-      setMessages((items) => [...items, { role: 'assistant', text: result === 'passed' ? 'Safe test passed. This automation is ready for the admin approval step.' : `Safe test failed. I found ${data.sandbox?.certification?.summary?.failed || 1} check(s) that need attention.` }]);
+      setMessages((items) => [...items, { role: 'assistant', text: result === 'passed' ? 'Safe test passed — the workflow loads and its checks are clean.' : `Safe test found ${data.sandbox?.certification?.summary?.failed || 1} check(s) worth a look. This does not block approval — the sandbox cannot reach every service, so a workflow can be fine and still fail here.` }]);
     } catch (e) { setError(e.message); setMessages((items) => [...items, { role: 'assistant', text: `The sandbox could not complete: ${e.message}` }]); }
     finally { setRunning(false); }
   };
 
   return (
-    <main className="min-h-screen bg-[#0d1024] text-white">
+    <main className="mg-dark-surface min-h-screen bg-[#0d1024] text-white">
       <div className="mx-auto max-w-[1500px] px-6 py-8">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>

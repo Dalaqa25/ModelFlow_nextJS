@@ -35,7 +35,10 @@ export default function ClientProviders({ children }) {
                             </SplashProvider>
                         </AuthProvider>
                     </NavigationLoadingProvider>
-                    <Toaster position="top-right" />
+                    {/* Above every overlay. A toast that lands behind a modal is
+                        worse than no toast: the form looks frozen and the reason
+                        is sitting underneath it. */}
+                    <Toaster position="top-right" containerStyle={{ zIndex: 10010 }} />
                     <SpeedInsights />
                     <Analytics />
                 </ThemeAdaptiveProvider>

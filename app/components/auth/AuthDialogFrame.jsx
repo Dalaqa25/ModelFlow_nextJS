@@ -24,7 +24,12 @@ export default function AuthDialogFrame({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[2147483647] flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-6"
+          // 10000 rather than the old 2147483647: nothing can sit above the
+          // maximum int, which is how toasts ended up rendering behind this
+          // dialog — including the rate-limit message explaining why sign-in
+          // was doing nothing. Above NavigationLoader and VideoPreview (9999),
+          // below the Toaster (10010).
+          className="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto px-4 py-6 sm:px-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby={labelledBy}

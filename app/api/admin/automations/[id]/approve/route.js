@@ -36,23 +36,23 @@ export async function POST(_request, { params }) {
       }, { status: 409 });
     }
 
-    if (!isBuilderWorkflow && existing.workflow?.review_sandbox?.status !== 'passed') {
-      return NextResponse.json({
-        error: 'Run the required Review Sandbox test successfully before approving this automation.',
-        reason: 'missing_passed_review_sandbox',
-      }, { status: 409 });
-    }
-
+    // The Review Sandbox and the certifier both used to veto approval. They
+    // answer "did this run in our sandbox", which is not the same question as
+    // "should this be in the catalogue" — a workflow can be perfectly good and
+    // still fail here because the sandbox has no Telegram token, or because the
+    // trigger needs a human. Blocking on that made the admin unable to approve
+    // anything the sandbox could not reach.
+    //
+    // Both still run, and their results are still recorded on the automation
+    // for whoever is deciding. They inform the decision now instead of making
+    // it.
     let certification = null;
     if (!isBuilderWorkflow) {
-      const result = await certifyNativeAutomation({ automationId: id });
-      certification = result.certification;
-      if (certification?.status !== 'passed') {
-        return NextResponse.json({
-          error: `Certification failed: ${certification?.summary?.failed || 0} of 6 checks need attention.`,
-          reason: 'native_n8n_certification_failed',
-          certification,
-        }, { status: 409 });
+      try {
+        const result = await certifyNativeAutomation({ automationId: id });
+        certification = result.certification;
+      } catch (certificationError) {
+        certification = { status: 'errored', error: certificationError.message };
       }
     }
 
