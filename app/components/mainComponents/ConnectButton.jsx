@@ -24,6 +24,11 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState('');
   const [connectionSuccess, setConnectionSuccess] = useState('');
+  // Which account was actually connected. Worth stating even when it is the
+  // expected one: "Gmail" alone never told anybody which mailbox they just
+  // handed over, and there is no other point in the product where they find
+  // out.
+  const [accountNotice, setAccountNotice] = useState(null);
   const [manualRequest, setManualRequest] = useState(null);
   const [manualValues, setManualValues] = useState({});
   const [localActivepiecesConnections, setLocalActivepiecesConnections] = useState(activepiecesConnections);
@@ -113,6 +118,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
 
   const applyActivepiecesCompletion = (completedLabel, result) => {
     const nextRequirements = Array.isArray(result?.requirements) ? result.requirements : [];
+    setAccountNotice(result?.accountNotice || null);
 
     if (nextRequirements.length > 0) {
       setLocalActivepiecesConnections(nextRequirements);
@@ -203,6 +209,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     setIsConnecting(true);
     setConnectionError('');
     setConnectionSuccess('');
+    setAccountNotice(null);
     setManualRequest(null);
 
     try {
@@ -276,6 +283,7 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
     setIsConnecting(true);
     setConnectionError('');
     setConnectionSuccess('');
+    setAccountNotice(null);
 
     try {
       const result = await completeActivepiecesConnection({
@@ -413,6 +421,39 @@ export default function ConnectButton({ provider, automationId, userId, onConnec
       {connectionSuccess && (
         <div className="max-w-md rounded-xl border border-emerald-300/40 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">
           {connectionSuccess}
+        </div>
+      )}
+
+      {/* Naming the account is the whole point: a consent screen hands over
+          whichever Google account the browser happens to be signed into, and
+          "Gmail connected" reads identically whether it was the right mailbox
+          or someone else's. A mismatch is loud but not treated as an error —
+          automating a work account from a personal login is normal, so this
+          says what happened and leaves the judgement to the reader. */}
+      {accountNotice?.account && (
+        <div
+          className={`max-w-md rounded-xl border px-4 py-3 text-sm ${
+            accountNotice.matchesSignedInUser === false
+              ? 'border-amber-300/50 bg-amber-500/10 text-amber-100'
+              : 'border-slate-300/30 bg-slate-500/10 text-slate-200'
+          }`}
+        >
+          {accountNotice.matchesSignedInUser === false ? (
+            <>
+              <p className="font-semibold">
+                You connected {accountNotice.account}
+              </p>
+              <p className="mt-1 opacity-90">
+                That is not the account you signed in with. This automation will
+                work on {accountNotice.account} — if you meant a different one,
+                disconnect and connect again from that account.
+              </p>
+            </>
+          ) : (
+            <p>
+              Connected as <span className="font-semibold">{accountNotice.account}</span>
+            </p>
+          )}
         </div>
       )}
 

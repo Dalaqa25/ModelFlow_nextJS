@@ -92,6 +92,10 @@ export async function POST(request) {
         displayName: result.connection?.displayName,
         status: result.connection?.status,
       },
+      // Which account this actually connected, when it could be determined.
+      // Null whenever the provider is not one we can ask, or the lookup
+      // failed — the interface treats that as "no notice", never as a problem.
+      accountNotice: result.accountNotice || null,
       requirements: result.status.requirements,
     });
   } catch (error) {
