@@ -86,10 +86,14 @@ export function createStreamHandler({
     // Thinking is explicit per message so the indicator is not coupled to unrelated
     // page loading state. The server ends it immediately before real content/UI arrives.
     if (parsed.type === 'thinking') {
+      const isThinking = parsed.status === 'start';
       setMessages(prev =>
         prev.map(msg =>
           msg.id === aiMessageId
-            ? { ...msg, isThinking: parsed.status === 'start' }
+            // The label names the stage that is running. It only arrives when
+            // thinking resumes after some reply has already streamed, where a
+            // bare indicator would be ambiguous about what is still pending.
+            ? { ...msg, isThinking, thinkingLabel: isThinking ? parsed.label || null : null }
             : msg
         )
       );

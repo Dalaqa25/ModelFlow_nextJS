@@ -40,15 +40,16 @@ function renderContent(content) {
   return parts;
 }
 
-function ThinkingIndicator({ isDarkMode }) {
+function ThinkingIndicator({ isDarkMode, label }) {
   const mutedText = isDarkMode ? 'text-slate-400' : 'text-slate-500';
   const dotColor = isDarkMode ? 'bg-violet-300' : 'bg-violet-600';
+  const text = label || 'ModelGrow is thinking';
 
   return (
     <span
       role="status"
       aria-live="polite"
-      aria-label="ModelGrow is thinking"
+      aria-label={text}
       className="inline-flex min-h-10 items-center gap-3 py-1"
     >
       <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
@@ -66,7 +67,7 @@ function ThinkingIndicator({ isDarkMode }) {
         <span className="absolute -right-0.5 top-0 h-2 w-2 rounded-full bg-fuchsia-400 animate-ping" />
       </span>
 
-      <span className={`text-sm font-medium ${mutedText}`}>ModelGrow is thinking</span>
+      <span className={`text-sm font-medium ${mutedText}`}>{text}</span>
       <span className="inline-flex items-end gap-1" aria-hidden="true">
         {[0, 1, 2].map((dot) => (
           <span
@@ -194,6 +195,17 @@ export default function MessageRenderer({
     !message.content &&
     (message.isThinking || isCurrentStreamingAssistant);
 
+  // Work continues after the first words arrive: the reply is streamed, then a
+  // tool runs for several seconds before its own output appears. The indicator
+  // above is hidden once there is content, which left that stretch looking
+  // like a finished answer rather than one still being worked on. This one
+  // trails the content instead of replacing it, so the message reads as
+  // in-progress without hiding what has already been said.
+  const showWorking =
+    message.role === 'assistant' &&
+    Boolean(message.content) &&
+    Boolean(message.isThinking);
+
   // Don't render empty assistant messages except streaming one
   if (
     message.role === 'assistant' &&
@@ -248,8 +260,15 @@ export default function MessageRenderer({
           )}
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {renderContent(message.content)}
-            {showThinking && <ThinkingIndicator isDarkMode={isDarkMode} />}
+            {showThinking && (
+              <ThinkingIndicator isDarkMode={isDarkMode} label={message.thinkingLabel} />
+            )}
           </p>
+          {showWorking && (
+            <div className="mt-2">
+              <ThinkingIndicator isDarkMode={isDarkMode} label={message.thinkingLabel} />
+            </div>
+          )}
         </div>
       </div>
 
