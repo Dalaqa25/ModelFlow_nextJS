@@ -8,6 +8,7 @@ import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { AI_TOOLS, ORCHESTRATOR_PROMPT, TOOL_EXECUTOR_PROMPT } from '@/lib/ai/tools';
 import {
   createClaudeOrchestratorDecision,
+  createClaudeToolArguments,
   createCodexOrchestratorDecision,
   getOrchestratorProvider,
   shouldFallbackToClaude,
@@ -78,14 +79,61 @@ function createGroqClient() {
   });
 }
 
-// GPT-4o-mini client (GitHub Models) - tool executor
-const toolExecutorClient = new OpenAI({
-  baseURL: "https://models.github.ai/inference",
-  apiKey: process.env.GITHUB_TOKEN,
-});
+// The tool executor turns a chosen tool plus the conversation into arguments,
+// so setup stops dead when it fails. It ran on GitHub Models until that began
+// answering 410 github_models_retirement_brownout — a scheduled retirement, not
+// an outage, so it will not come back. Symptom was "Starting setup." and then
+// nothing, because the arguments could never be produced.
+//
+// Groq is the replacement: already keyed here, OpenAI-compatible, and it
+// returns tool_calls correctly on llama-3.3-70b-versatile. GITHUB_TOKEN stays
+// honoured so an environment that still has a working one is not forced to
+// change, but it is no longer the default.
+const toolExecutorClient = process.env.MODELGROW_TOOL_EXECUTOR_BASE_URL
+  ? new OpenAI({
+      baseURL: process.env.MODELGROW_TOOL_EXECUTOR_BASE_URL,
+      apiKey: process.env.MODELGROW_TOOL_EXECUTOR_API_KEY || getNextGroqKey(),
+    })
+  : createGroqClient();
 
 const ORCHESTRATOR_MODEL = "llama-3.3-70b-versatile";
-const TOOL_EXECUTOR_MODEL = "openai/gpt-4o-mini";
+// Must be a model that supports tool calling, not merely chat.
+const TOOL_EXECUTOR_MODEL = process.env.MODELGROW_TOOL_EXECUTOR_MODEL
+  || "llama-3.3-70b-versatile";
+
+// Which engine fills in tool arguments. Defaults to Claude Code, which the
+// account already pays for, and which reads the tool's JSON schema directly
+// rather than going through a tool-calling API. Set to "groq" to use the
+// hosted client above instead — worth doing anywhere `claude` is not on PATH,
+// since this runs as a local subprocess.
+//
+// Deliberately separate from AI_ORCHESTRATOR_PROVIDER: the conversation and
+// the argument extraction are different jobs and there is no reason a change
+// of one should silently move the other.
+const TOOL_EXECUTOR_PROVIDER = (process.env.MODELGROW_TOOL_EXECUTOR_PROVIDER || 'claude')
+  .trim().toLowerCase();
+
+// What the indicator says while a tool runs. Phrased as the thing being done
+// rather than the tool's name, since the name is an implementation detail the
+// person waiting has no reason to recognise. Anything unlisted falls back to a
+// generic label, so a new tool degrades to a vague indicator instead of none.
+const THINKING_LABELS = {
+  search_automations: 'Searching automations',
+  show_user_automations: 'Loading your automations',
+  start_setup: 'Setting things up',
+  auto_setup: 'Setting things up',
+  collect_text_input: 'Saving your details',
+  save_background_config: 'Saving your settings',
+  execute_automation: 'Starting your automation',
+  schedule_automation: 'Scheduling it',
+  request_file_upload: 'Preparing the upload',
+  confirm_file_selection: 'Confirming your file',
+  list_automation_files: 'Loading files',
+  list_user_files: 'Loading your files',
+  search_user_files: 'Searching your files',
+  preview_automation_file: 'Opening the preview',
+  delete_automation_file: 'Removing the file',
+};
 
 export const runtime = 'nodejs';
 
@@ -518,6 +566,17 @@ export async function POST(request) {
           thinking = false;
           enqueue(`data: ${JSON.stringify({ type: 'thinking', status: 'end' })}\n\n`);
         };
+        // Running a tool takes seconds — generating its arguments is a model
+        // call of its own, and the tool then talks to Supabase and the runtime.
+        // All of that happens after the orchestrator's reply has streamed,
+        // which had already switched the indicator off, leaving the answer
+        // sitting there looking finished while work continued. Thinking is
+        // therefore resumable, with a label saying which stage is running so
+        // the pause reads as progress rather than a hang.
+        const resumeThinking = label => {
+          thinking = true;
+          enqueue(`data: ${JSON.stringify({ type: 'thinking', status: 'start', label })}\n\n`);
+        };
         const emitContent = content => {
           if (!content) return;
           finishThinking();
@@ -670,6 +729,7 @@ export async function POST(request) {
           // STEP 3: If action needed, execute it
           if (actionNeeded && actionNeeded.tool) {
             finishThinking();
+            resumeThinking(THINKING_LABELS[actionNeeded.tool] || 'Working on it');
             let setupContext = initialSetupContext || {};
 
             // CRITICAL FIX: Merge explicit frontend state into the context
@@ -872,18 +932,34 @@ async function generateToolArguments(toolName, hint, userMessage, chatMessages, 
       { role: "user", content: contextParts.join('\n\n') }
     ];
 
-    const response = await toolExecutorClient.chat.completions.create({
-      messages: toolExecutorMessages,
-      model: TOOL_EXECUTOR_MODEL,
-      temperature: 0.1,
-      tools: AI_TOOLS,
-      tool_choice: { type: "function", function: { name: toolName } },
-    });
+    // Claude Code fills these in directly from the tool's schema, so the
+    // arguments come from the same subscription that already runs the
+    // orchestrator instead of a third-party chat model. Only one tool is ever
+    // being called here — the name is decided above — which is why the schema
+    // can be handed over on its own, with no tool-calling round trip.
+    let args = null;
+    const toolSchema = AI_TOOLS.find(t => t.function?.name === toolName)?.function?.parameters;
 
-    const toolCall = response.choices[0].message.tool_calls?.[0];
-    if (toolCall) {
-      const args = JSON.parse(toolCall.function.arguments);
-      
+    if (TOOL_EXECUTOR_PROVIDER === 'claude' && toolSchema) {
+      args = await createClaudeToolArguments({
+        prompt: contextParts.join('\n\n'),
+        schema: toolSchema,
+        systemPrompt: TOOL_EXECUTOR_PROMPT,
+      });
+    } else {
+      const response = await toolExecutorClient.chat.completions.create({
+        messages: toolExecutorMessages,
+        model: TOOL_EXECUTOR_MODEL,
+        temperature: 0.1,
+        tools: AI_TOOLS,
+        tool_choice: { type: "function", function: { name: toolName } },
+      });
+      const toolCall = response.choices[0].message.tool_calls?.[0];
+      args = toolCall ? JSON.parse(toolCall.function.arguments) : null;
+    }
+
+    if (args) {
+
       // CRITICAL OVERRIDE: GPT often forgets to include existing_config in the tool call
       // We must forcefully inject our known truth here so memory is never lost!
       if ((toolName === 'collect_text_input' || toolName === 'auto_setup') && setupContext?.collectedConfig && Object.keys(setupContext.collectedConfig).length > 0) {
