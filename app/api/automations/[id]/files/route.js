@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSystemConfig } from '@/lib/automations/system-config';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 
@@ -32,7 +33,7 @@ export async function GET(req, { params }) {
     }
 
     // Find bucket from system_config
-    const systemConfig = automation.system_config || [];
+    const systemConfig = parseSystemConfig(automation.system_config);
     let bucketName = null;
 
     for (const config of systemConfig) {

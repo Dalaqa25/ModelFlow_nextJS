@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSystemConfig } from '@/lib/automations/system-config';
 import { createAdminClient } from '@/lib/db/supabase-server';
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 
@@ -62,7 +63,7 @@ export async function POST(req) {
             // Find bucket from system_config
             let bucketName = null;
             let mimeType = 'video/mp4';
-            const systemConfig = automation.system_config || [];
+            const systemConfig = parseSystemConfig(automation.system_config);
 
             for (const config of systemConfig) {
                 const fieldName = (config.name || '').toUpperCase();
@@ -153,7 +154,7 @@ export async function POST(req) {
 
         let bucketName = null;
         let mimeType = 'video/mp4';
-        const systemConfig = automation.system_config || [];
+        const systemConfig = parseSystemConfig(automation.system_config);
 
         for (const config of systemConfig) {
             const fieldName = (config.name || '').toUpperCase();
