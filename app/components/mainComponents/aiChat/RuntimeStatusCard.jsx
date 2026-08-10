@@ -44,7 +44,7 @@ function getStatePresentation(status) {
 
   if (state === 'loading') {
     return {
-      label: 'Checking runtime',
+      label: 'Checking…',
       icon: Loader2,
       className: 'border-slate-300/30 bg-slate-500/10 text-slate-200',
       spin: true,
@@ -53,7 +53,7 @@ function getStatePresentation(status) {
 
   if (latest?.success) {
     return {
-      label: 'Last run succeeded',
+      label: 'Working normally',
       icon: CheckCircle2,
       className: 'border-emerald-300/40 bg-emerald-500/10 text-emerald-200',
     };
@@ -61,7 +61,7 @@ function getStatePresentation(status) {
 
   if (state === 'error' || state === 'unavailable') {
     return {
-      label: state === 'unavailable' ? 'Runtime unavailable' : 'Runtime check failed',
+      label: state === 'unavailable' ? 'Temporarily unreachable' : "Couldn't check right now",
       icon: AlertTriangle,
       className: 'border-amber-300/40 bg-amber-500/10 text-amber-200',
     };
@@ -70,12 +70,12 @@ function getStatePresentation(status) {
   if (latest?.status === 'FAILED' || latest?.errorMessage) {
     return status?.active
       ? {
-          label: 'Active · last run failed',
+          label: 'On, but last one failed',
           icon: AlertTriangle,
           className: 'border-amber-300/40 bg-amber-500/10 text-amber-200',
         }
       : {
-          label: 'Last run failed',
+          label: 'Last one had a problem',
           icon: XCircle,
           className: 'border-red-300/40 bg-red-500/10 text-red-200',
         };
@@ -83,7 +83,7 @@ function getStatePresentation(status) {
 
   if (state === 'running' || latest?.processing) {
     return {
-      label: 'Run in progress',
+      label: 'Working right now',
       icon: Loader2,
       className: 'border-blue-300/40 bg-blue-500/10 text-blue-200',
       spin: true,
@@ -92,7 +92,7 @@ function getStatePresentation(status) {
 
   if (state === 'needs_setup') {
     return {
-      label: 'Needs setup',
+      label: 'Needs a bit more setup',
       icon: AlertTriangle,
       className: 'border-amber-300/40 bg-amber-500/10 text-amber-200',
     };
@@ -100,7 +100,7 @@ function getStatePresentation(status) {
 
   if (state === 'ready') {
     return {
-      label: 'Ready to run',
+      label: 'Ready when you are',
       icon: CheckCircle2,
       className: 'border-violet-300/40 bg-violet-500/10 text-violet-200',
     };
@@ -108,24 +108,17 @@ function getStatePresentation(status) {
 
   if (status?.active) {
     return {
-      label: 'Active and waiting',
+      label: 'On and watching',
       icon: Clock3,
       className: 'border-emerald-300/40 bg-emerald-500/10 text-emerald-200',
     };
   }
 
   return {
-    label: 'Paused or inactive',
+    label: 'Paused',
     icon: Clock3,
     className: 'border-slate-300/30 bg-slate-500/10 text-slate-200',
   };
-}
-
-function compactStatus(status) {
-  if (!status) return null;
-  if (status.latestRun?.status) return status.latestRun.status;
-  if (status.runtimeFlow?.flowStatus) return status.runtimeFlow.flowStatus;
-  return status.state;
 }
 
 function getTriggerDelayHint(trigger) {
@@ -242,38 +235,50 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
   const latestDuration = formatDurationMs(latestRun?.durationMs);
   const triggerDelayHint = getTriggerDelayHint(status?.trigger);
   const isOnDemand = status?.runMode === 'on_demand';
+  // Written for the person whose email this is, not the person who built the
+  // runtime. "Runtime enabled · Prepared 5h ago" and "Trigger received ·
+  // SUCCEEDED run created 11m ago" describe machinery nobody outside this
+  // codebase has a reason to know about — and worse, they read as warnings when
+  // everything is fine. Each step answers a plain question instead: is it
+  // switched on, has it seen anything, did it work.
   const trackingSteps = [
     {
-      label: isOnDemand ? 'Setup ready' : 'Runtime enabled',
+      label: isOnDemand ? 'Ready to use' : 'Switched on',
       detail: status?.runtimeFlow?.activatedAt
-        ? `Prepared ${formatRelativeTime(status.runtimeFlow.activatedAt)}`
+        ? `Set up ${formatRelativeTime(status.runtimeFlow.activatedAt)}`
         : isOnDemand
-          ? 'Ready for an on-demand run'
-          : status?.active ? 'Runtime copy is enabled' : 'Runtime is not enabled yet',
+          ? 'Start it whenever you want'
+          : status?.active ? 'Running in the background' : 'Not switched on yet',
       done: isOnDemand ? Boolean(status?.runtimeFlow) : Boolean(status?.active),
       danger: false,
     },
     {
-      label: latestRun ? (isOnDemand ? 'Run started' : 'Trigger received') : (isOnDemand ? 'Waiting for a run' : 'Waiting for trigger'),
+      label: latestRun
+        ? (isOnDemand ? 'Started' : 'Found something to do')
+        : (isOnDemand ? 'Not started yet' : 'Nothing to do yet'),
       detail: latestRun
-        ? `${latestRun.status} run created ${formatRelativeTime(latestRun.createdAt)}`
+        ? `Last time was ${formatRelativeTime(latestRun.createdAt)}`
         : isOnDemand
-          ? 'Run this automation whenever you need it'
+          ? 'Start it whenever you need it'
         : triggerText
-          ? `Waiting for ${triggerText}`
-          : 'Waiting for the connected app event',
+          ? `Watching ${triggerText.toLowerCase()}`
+          : 'Watching your connected apps',
       done: Boolean(latestRun),
       danger: false,
     },
     {
-      label: latestRun?.success ? 'Workflow completed' : latestRun?.processing ? 'Workflow running' : latestRun ? 'Workflow failed' : 'No run result yet',
+      label: latestRun?.success
+        ? 'Finished the job'
+        : latestRun?.processing
+          ? 'Working on it now'
+          : latestRun ? 'Something went wrong' : 'Nothing has run yet',
       detail: latestRun?.failedStep?.displayName
-        ? `Failed at ${latestRun.failedStep.displayName}`
+        ? `It stopped at "${latestRun.failedStep.displayName}"`
         : latestRun?.success
-          ? `Completed${latestDuration ? ` in ${latestDuration}` : ''}`
+          ? `Took ${latestDuration || 'a moment'}`
           : latestRun?.processing
-            ? `${status?.engine === 'n8n-native' ? 'n8n' : 'ModelGrow Builder'} is processing this run`
-            : 'No completed run since setup',
+            ? 'This usually takes a few seconds'
+            : 'It will show up here once it runs',
       done: Boolean(latestRun?.success),
       danger: Boolean(latestRun?.errorMessage || latestRun?.status === 'FAILED'),
       loading: Boolean(latestRun?.processing),
@@ -292,7 +297,7 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
             isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}>
             <Zap className="h-4 w-4 text-violet-400" />
-            Automation tracking
+            How it's going
           </div>
           <div className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ${presentation.className}`}>
             <Icon className={`h-3.5 w-3.5 ${presentation.spin ? 'animate-spin' : ''}`} />
@@ -300,12 +305,12 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
           </div>
           <div className={`mt-2 space-y-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
             <p>
-              <span className="font-semibold">Trigger:</span> {triggerText || 'Unknown / not prepared yet'}
+              <span className="font-semibold">Watching:</span> {triggerText || 'Still getting ready'}
             </p>
             <p>
-              <span className="font-semibold">Latest:</span> {latestRun
-                ? `${latestRun.status} · ${formatRelativeTime(latestRun.createdAt)}`
-                : 'No runs since setup'}
+              <span className="font-semibold">Last time:</span> {latestRun
+                ? `${latestRun.success ? 'Worked' : latestRun.processing ? 'Still working' : 'Had a problem'} · ${formatRelativeTime(latestRun.createdAt)}`
+                : 'Has not run yet'}
             </p>
             {triggerDelayHint && (
               <p className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>
@@ -314,12 +319,12 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
             )}
             {latestDuration && (
               <p>
-                <span className="font-semibold">Duration:</span> {latestDuration}
+                <span className="font-semibold">Took:</span> {latestDuration}
               </p>
             )}
             {latestRun?.failedStep?.displayName && (
               <p>
-                <span className="font-semibold">Failed step:</span> {latestRun.failedStep.displayName}
+                <span className="font-semibold">Stopped at:</span> {latestRun.failedStep.displayName}
               </p>
             )}
           </div>
@@ -397,9 +402,9 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
       {!loading && !error && (
         <div className="mt-3 grid grid-cols-3 gap-2">
           {[
-            ['Runs checked', recentRuns.length],
-            ['Succeeded', successfulRecentRuns],
-            ['Failed', failedRecentRuns],
+            ['Times run', recentRuns.length],
+            ['Worked', successfulRecentRuns],
+            ['Problems', failedRecentRuns],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -463,7 +468,7 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
           <p className={`mb-2 text-xs font-bold uppercase tracking-[0.12em] ${
             isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}>
-            Recent runs shown
+            Recent activity
           </p>
           <div className="space-y-1.5">
             {recentRuns.slice(0, 5).map((run) => (
@@ -473,17 +478,17 @@ export default function RuntimeStatusCard({ automationId, isDarkMode }) {
                   isDarkMode ? 'bg-slate-950/45 text-slate-300' : 'bg-white text-slate-600'
                 }`}
               >
-                <span className="font-semibold">{run.status}</span>
+                {/* Raw statuses like SUCCEEDED and INTERNAL_ERROR are the
+                    runtime's vocabulary, not the reader's. */}
+                <span className="font-semibold">
+                  {run.success ? 'Worked' : run.processing ? 'Working…' : 'Had a problem'}
+                </span>
                 <span>{formatRelativeTime(run.createdAt)}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-
-      <p className={`mt-3 text-[11px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-        Engine: {status?.engine || 'activepieces'} · Status: {compactStatus(currentStatus) || 'checking'}
-      </p>
     </div>
   );
 }
