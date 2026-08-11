@@ -48,6 +48,16 @@ export async function GET(request) {
 
     const candidateUserIds = Array.from(new Set([authUser.id, dbUser?.id].filter(Boolean)));
 
+    // Only automations that run on their own belong here. This list feeds the
+    // monitor, which exists to answer "what is working while I am not
+    // watching" — it shows whether each is on, when it last ran, and offers to
+    // pause it.
+    //
+    // Automations that run when asked have none of that: they do their work
+    // during the conversation and stop. Listing them here put a Pause button
+    // next to something that was not running and reported "1 on" for a
+    // generator someone used once, which contradicts the one question the
+    // panel is meant to answer. An !inner join drops them at the source.
     let query = supabase
       .from('user_automations')
       .select(`
@@ -58,15 +68,17 @@ export async function GET(request) {
         last_run_at,
         created_at,
         updated_at,
-        automations (
+        automations!inner (
           id,
           name,
           description,
           workflow,
           token_cost,
+          requires_background,
           activepieces_source_flow_id
         )
       `)
+      .eq('automations.requires_background', true)
       .in('user_id', candidateUserIds)
       .order('updated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })

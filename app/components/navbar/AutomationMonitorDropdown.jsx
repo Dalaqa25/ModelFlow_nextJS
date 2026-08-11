@@ -372,7 +372,7 @@ export default function AutomationMonitorDropdown() {
           }`}>
             <div>
               <h2 className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Automations
+                Running by themselves
               </h2>
               <p className={`mt-0.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                 {activeCount} on · {automations.length} total
@@ -410,8 +410,11 @@ export default function AutomationMonitorDropdown() {
                 isDarkMode ? 'border-white/8 bg-white/[0.03] text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-500'
               }`}>
                 <Zap className="mx-auto mb-2 h-5 w-5 text-purple-400" />
-                <p className="text-sm font-bold">No automations yet.</p>
-                <p className="mt-1 text-xs">Set one up from Home and it will appear here.</p>
+                <p className="text-sm font-bold">Nothing running on its own yet.</p>
+                <p className="mt-1 text-xs">
+                  Automations that keep working while you are away — like watching your
+                  inbox — show up here. Ones you start yourself are not listed.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
