@@ -161,7 +161,13 @@ export async function DELETE(_request, { params }) {
     });
     const candidateUserIds = Array.from(new Set([authUser.id, dbUser?.id].filter(Boolean)));
 
-    const { data: directUserAutomation, error: directError } = await supabase
+    // Callers use either id: the automations id (what the monitor sends) or a
+    // user_automations row id. Only the row id was looked up here, so for the
+    // common call this found nothing — and the deactivation below, which is
+    // conditional on having found it, was skipped. The record was then deleted
+    // regardless, leaving the workflow running in n8n with the only pointer to
+    // it destroyed. Both forms are resolved now.
+    const { data: rowIdMatch, error: directError } = await supabase
       .from('user_automations')
       .select('id, automation_id, user_id')
       .eq('id', id)
@@ -169,6 +175,18 @@ export async function DELETE(_request, { params }) {
       .maybeSingle();
 
     if (directError) throw directError;
+
+    let directUserAutomation = rowIdMatch;
+    if (!directUserAutomation) {
+      const { data: automationIdMatch, error: automationIdError } = await supabase
+        .from('user_automations')
+        .select('id, automation_id, user_id')
+        .eq('automation_id', id)
+        .in('user_id', candidateUserIds)
+        .maybeSingle();
+      if (automationIdError) throw automationIdError;
+      directUserAutomation = automationIdMatch;
+    }
 
     const automationId = directUserAutomation?.automation_id || id;
     const now = new Date().toISOString();
@@ -222,10 +240,22 @@ export async function DELETE(_request, { params }) {
         if (markRuntimeDeletedError) throw markRuntimeDeletedError;
       }
     } else if (!usesActivepieces && directUserAutomation) {
-      await deactivateNativeAutomation({
-        automationId,
-        userId: directUserAutomation.user_id || dbUser.id,
-      });
+      // Stopping the workflow has to succeed before the record goes, because
+      // the record holds the only reference to it. Delete first and a failed
+      // shutdown leaves a workflow polling someone's mailbox that nothing can
+      // name, reach, or switch off — invisible to the product and to them.
+      // Refusing the delete keeps it removable, and they can try again.
+      try {
+        await deactivateNativeAutomation({
+          automationId,
+          userId: directUserAutomation.user_id || dbUser.id,
+        });
+      } catch (error) {
+        console.error('[Automation Remove] Could not stop the background workflow:', error);
+        return NextResponse.json({
+          error: 'Could not stop this automation, so it was not removed. Please try again.',
+        }, { status: 502 });
+      }
     }
 
     const { error: deleteUserAutomationError } = await supabase
@@ -235,6 +265,18 @@ export async function DELETE(_request, { params }) {
       .in('user_id', candidateUserIds);
 
     if (deleteUserAutomationError) throw deleteUserAutomationError;
+
+    // The connection bindings outlive the automation otherwise, and a stale
+    // one silently overrides whatever account is connected next time.
+    const { error: deleteBindingsError } = await supabase
+      .from('user_automation_connections')
+      .delete()
+      .eq('automation_id', automationId)
+      .in('user_id', candidateUserIds);
+
+    if (deleteBindingsError) {
+      console.error('[Automation Remove] Left connection bindings behind:', deleteBindingsError);
+    }
 
     if (!automation || (!directUserAutomation && (!runtimeFlows || runtimeFlows.length === 0))) {
       return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
