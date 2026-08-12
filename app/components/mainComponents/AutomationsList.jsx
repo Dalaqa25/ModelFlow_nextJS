@@ -8,17 +8,8 @@ import { FcGoogle } from 'react-icons/fc';
 import { FiTrendingUp, FiZap, FiEdit2, FiBriefcase } from 'react-icons/fi';
 import { getAutomationCreator, getCreatorInitials } from '@/lib/automations/public-creator';
 
-const FEATURED_NAMES = [
-    'Auto Job Matcher',
-    'LinkedIn Auto Blog Poster',
-    'TikTok Scheduled Auto-Post from Supabase',
-    'TikTok Video Uploader',
-    'TikTok Scheduled Auto-Post',
-    'Viral Pattern Detector',
-    'Video Pacing Analyzer',
-    'Vehicle Parts Finder',
-    'Auto Parts Search Engine',
-];
+// Anything added in this window is still worth calling out.
+const NEW_FOR_DAYS = 14;
 
 // Map automation name keywords to icon components
 function getIcons(name = '') {
@@ -71,15 +62,12 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                         seen.add(a.id);
                         return true;
                     });
-                    // Sort: featured names first (in order), rest after
-                    return unique.sort((a, b) => {
-                        const ai = FEATURED_NAMES.findIndex(n => n.toLowerCase() === a.name?.toLowerCase());
-                        const bi = FEATURED_NAMES.findIndex(n => n.toLowerCase() === b.name?.toLowerCase());
-                        if (ai === -1 && bi === -1) return 0;
-                        if (ai === -1) return 1;
-                        if (bi === -1) return -1;
-                        return ai - bi;
-                    });
+                    // The API already returns newest first. This used to be
+                    // re-sorted against a hardcoded list of names, which pinned
+                    // the same handful to the top no matter what was added
+                    // since — so everything built recently was buried and the
+                    // page aged badly on its own. Order comes from the data now.
+                    return unique;
                 });
                 setPage(prev => prev + 1);
             }
@@ -97,8 +85,13 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
         }
     };
 
-    const isFeatured = (automation) =>
-        FEATURED_NAMES.slice(0, 3).some(n => n.toLowerCase() === automation.name?.toLowerCase());
+    // "New" is a fact about when it was published, so it keeps itself honest
+    // and needs no editing when the next automation lands.
+    const isFeatured = (automation) => {
+        const created = new Date(automation.created_at || 0).getTime();
+        if (!created) return false;
+        return Date.now() - created <= NEW_FOR_DAYS * 86_400_000;
+    };
 
     return (
         <div
@@ -129,14 +122,14 @@ export default function AutomationsList({ isVisible = true, onSelect }) {
                                     ? 'ring-1 ring-orange-500/60 shadow-[0_0_16px_3px_rgba(249,115,22,0.2)]'
                                     : isFeatured(automation) ? (isDarkMode ? 'ring-1 ring-purple-500/30' : 'ring-1 ring-purple-300/50') : ''}`}
                             >
-                                {automation.name?.toLowerCase().includes('linkedin') && (
-                                    <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#0A66C2]/20 text-[#0A66C2]">
-                                        Featured
-                                    </span>
-                                )}
-                                {automation.name?.toLowerCase().includes('vehicle') && (
-                                    <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 animate-pulse shadow-[0_0_8px_2px_rgba(249,115,22,0.4)]">
-                                        New 🔥
+                                {/* Badged on publish date, not on the words in the
+                                    name — "Featured" went to anything containing
+                                    "linkedin" and "New" to anything containing
+                                    "vehicle", so the labels stopped meaning
+                                    anything the moment the catalogue moved on. */}
+                                {isFeatured(automation) && (
+                                    <span className="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                                        New
                                     </span>
                                 )}
                                 <div className="flex items-center gap-1.5 mb-2">

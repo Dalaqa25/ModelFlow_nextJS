@@ -17,6 +17,26 @@ const PLACEHOLDER_HINTS = [
 ];
 
 function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pauseDuration = 2000) {
+    // The shortcuts under the box were a fixed list of five names. Nothing
+    // added to the catalogue since could ever appear there, so the front door
+    // advertised an older product than the one behind it. Taken from the same
+    // newest-first endpoint the cards use.
+    const [suggestions, setSuggestions] = useState([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/automations?limit=5&offset=0')
+            .then((response) => (response.ok ? response.json() : []))
+            .then((data) => {
+                if (cancelled || !Array.isArray(data)) return;
+                setSuggestions(data.filter((item) => item?.name));
+            })
+            .catch(() => {
+                // The box still works without shortcuts; nothing to say here.
+            });
+        return () => { cancelled = true; };
+    }, []);
+
     const [displayText, setDisplayText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(true);
@@ -59,6 +79,20 @@ function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pa
     }, [displayText, currentIndex, isTyping, isPaused, texts, typingSpeed, deletingSpeed, pauseDuration, isActive]);
 
     return displayText;
+}
+
+
+// Picks an icon from what the automation is called. The shortcuts are built
+// from live data now, so there is no list to hand-maintain — an unrecognised
+// name simply gets the generic bolt rather than nothing.
+function getSuggestionIcon(name = '') {
+    const lower = String(name).toLowerCase();
+    const className = 'w-3.5 h-3.5 flex-shrink-0';
+    if (lower.includes('linkedin')) return <FaLinkedinIn className={className} />;
+    if (lower.includes('tiktok')) return <FaTiktok className={className} />;
+    if (lower.includes('job') || lower.includes('career')) return <FiBriefcase className={className} />;
+    if (lower.includes('car') || lower.includes('vehicle') || lower.includes('parts')) return <FaCar className={className} />;
+    return <FiZap className={className} />;
 }
 
 export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore, onAuthRequired }) {
@@ -331,14 +365,14 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                 </div>
             </form>
             {!chatStarted && !isAtBottomInternal && !scrolledDown && (
-                    <div className="flex gap-2 sm:gap-3 mt-4 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap max-w-4xl mx-auto px-4">
-                        {[
-                            { icon: <FiBriefcase className="w-3.5 h-3.5 flex-shrink-0" />, label: 'Auto Job Matcher', prompt: 'I want to use the Auto Job Matcher automation' },
-                            { icon: <FaLinkedinIn className="w-3.5 h-3.5 flex-shrink-0" />, label: 'LinkedIn Auto Blog Poster', prompt: 'I want to use the LinkedIn Auto Blog Poster automation' },
-                            { icon: <FaCar className="w-3.5 h-3.5 flex-shrink-0" />, label: 'Auto Parts Search', prompt: 'I want to use the Auto Parts Search Engine automation' },
-                            { icon: <FaTiktok className="w-3.5 h-3.5 flex-shrink-0" />, label: 'TikTok Scheduled Auto-Post', prompt: 'I want to use the TikTok Scheduled Auto-Post automation', mobileHide: true },
-                            { icon: <FiZap className="w-3.5 h-3.5 flex-shrink-0 hidden sm:block" />, label: 'Viral Pattern Detector', prompt: 'I want to use the Viral Pattern Detector automation', mobileHide: true },
-                    ].map(({ icon, label, prompt, mobileHide }) => (
+                    <div className="flex gap-2 sm:gap-3 mt-4 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap max-w-4xl mx-auto px-4 [@media(max-height:820px)]:hidden">
+                        {suggestions.map((automation, index) => {
+                        const label = automation.name;
+                        const prompt = `I want to use the ${automation.name} automation`;
+                        const icon = getSuggestionIcon(automation.name);
+                        // The last two are the first to go when space is tight.
+                        const mobileHide = index >= 3;
+                        return (
                         <button
                             key={label}
                             type="button"
@@ -357,7 +391,8 @@ export default function MainInput({ onMessageSent, onScopeChange, isLoading = fa
                             {icon}
                             {label}
                         </button>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
             </div>
