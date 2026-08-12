@@ -1020,6 +1020,17 @@ IMPORTANT: When calling collect_text_input, you MUST include:
       }
 
       sendMessage(`✅ Background execution enabled! Your automation will now run automatically.`);
+
+      // This is the moment an automation stops being something you asked for
+      // and becomes something that works while you are elsewhere — and it is
+      // the moment people stop watching it. A line of chat scrolls away and
+      // leaves nobody knowing where the thing now lives, so the monitor is
+      // told to point at itself instead.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('modelgrow:automation-backgrounded', {
+          detail: { automationId },
+        }));
+      }
     } catch (error) {
       sendMessage(`Failed to enable background mode: ${error.message}`);
     }

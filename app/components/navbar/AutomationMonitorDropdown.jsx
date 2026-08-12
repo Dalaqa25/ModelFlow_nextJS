@@ -36,23 +36,23 @@ function formatRelativeTime(value) {
 }
 
 function getRuntimeLabel(status) {
-  if (!status) return { label: 'Check status', tone: 'neutral', icon: Clock3 };
+  if (!status) return { label: 'Checking', tone: 'neutral', icon: Clock3 };
   if (status.duplicateListenerRisk?.detected) {
-    return { label: 'Duplicate listener risk', tone: 'warning', icon: AlertTriangle };
+    return { label: 'May be running twice', tone: 'warning', icon: AlertTriangle };
   }
-  if (status.latestRun?.success) return { label: 'Last run succeeded', tone: 'success', icon: CheckCircle2 };
+  if (status.latestRun?.success) return { label: 'Working normally', tone: 'success', icon: CheckCircle2 };
   if (['error', 'unavailable'].includes(status.state)) {
-    return { label: 'Runtime issue', tone: 'danger', icon: AlertTriangle };
+    return { label: 'Temporarily unreachable', tone: 'danger', icon: AlertTriangle };
   }
   if (status.latestRun?.errorMessage) {
     return status.active
-      ? { label: 'On · last run failed', tone: 'warning', icon: AlertTriangle }
-      : { label: 'Last run failed', tone: 'danger', icon: AlertTriangle };
+      ? { label: 'On, but last one failed', tone: 'warning', icon: AlertTriangle }
+      : { label: 'Last one had a problem', tone: 'danger', icon: AlertTriangle };
   }
   if (status.state === 'running' || status.latestRun?.processing) {
-    return { label: 'Running now', tone: 'info', icon: Loader2, spin: true };
+    return { label: 'Working right now', tone: 'info', icon: Loader2, spin: true };
   }
-  if (status.active) return { label: 'On · waiting', tone: 'success', icon: Activity };
+  if (status.active) return { label: 'On and watching', tone: 'success', icon: Activity };
   return { label: 'Paused', tone: 'neutral', icon: Clock3 };
 }
 
@@ -168,22 +168,24 @@ function RuntimeInlineStatus({ automationId, isDarkMode, refreshKey = 0 }) {
           isDarkMode ? 'text-slate-300' : 'text-slate-600'
         }`}>
           <div>
-            <p className="text-[10px] uppercase tracking-wider opacity-60">Checked</p>
+            <p className="text-[10px] uppercase tracking-wider opacity-60">Times run</p>
             <p className="font-black">{recentRuns.length}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider opacity-60">OK</p>
+            <p className="text-[10px] uppercase tracking-wider opacity-60">Worked</p>
             <p className="font-black">{successCount}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider opacity-60">Failed</p>
+            <p className="text-[10px] uppercase tracking-wider opacity-60">Problems</p>
             <p className="font-black">{failedCount}</p>
           </div>
         </div>
       )}
 
       <p className={`mt-2 truncate text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-        Latest: {currentStatus?.latestRun ? `${currentStatus.latestRun.status} · ${formatRelativeTime(currentStatus.latestRun.createdAt)}` : 'No runs since setup'}
+        Last time: {currentStatus?.latestRun
+          ? `${currentStatus.latestRun.success ? 'Worked' : currentStatus.latestRun.processing ? 'Still working' : 'Had a problem'} · ${formatRelativeTime(currentStatus.latestRun.createdAt)}`
+          : 'Has not run yet'}
       </p>
       {triggerDelayHint && (
         <p className={`mt-1 text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
@@ -210,6 +212,8 @@ export default function AutomationMonitorDropdown() {
   const [removingId, setRemovingId] = useState(null);
   const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const [error, setError] = useState('');
+  // Shown once, when an automation first starts running on its own.
+  const [showHandoff, setShowHandoff] = useState(false);
   const wrapperRef = useRef(null);
 
   const loadAutomations = useCallback(async () => {
@@ -230,6 +234,38 @@ export default function AutomationMonitorDropdown() {
       setLoading(false);
     }
   }, [isAuthenticated, user?.id]);
+
+  // The handoff moment: an automation has just been set loose and the person
+  // who set it up is still looking at the chat, not at this icon. A line of
+  // chat scrolls away, so the icon speaks up once and says where the thing
+  // now lives and how to stop it.
+  //
+  // Once per browser, deliberately. It answers "where did my automation go",
+  // and a prompt that keeps reappearing after that stops being an answer and
+  // becomes noise.
+  useEffect(() => {
+    const onBackgrounded = () => {
+      loadAutomations();
+      try {
+        if (window.localStorage.getItem('modelgrow.automationHandoffSeen') === '1') return;
+      } catch {
+        // Private browsing can refuse storage; showing it again beats not at all.
+      }
+      setShowHandoff(true);
+    };
+
+    window.addEventListener('modelgrow:automation-backgrounded', onBackgrounded);
+    return () => window.removeEventListener('modelgrow:automation-backgrounded', onBackgrounded);
+  }, [loadAutomations]);
+
+  const dismissHandoff = useCallback(() => {
+    setShowHandoff(false);
+    try {
+      window.localStorage.setItem('modelgrow.automationHandoffSeen', '1');
+    } catch {
+      // Nothing to do; it simply shows again next time.
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) loadAutomations();
@@ -356,6 +392,51 @@ export default function AutomationMonitorDropdown() {
           <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-400" />
         )}
       </button>
+
+      {showHandoff && !isOpen && (
+        <div
+          className={`absolute right-0 mt-3 w-[290px] max-w-[calc(100vw-2rem)] rounded-2xl border p-4 shadow-2xl z-50 ${
+            isDarkMode
+              ? 'bg-slate-900 border-violet-400/40 shadow-black/50'
+              : 'bg-white border-violet-300 shadow-violet-200/60'
+          }`}
+          role="status"
+        >
+          {/* Points at the icon it is describing; without it the panel could be
+              about anything on the bar. */}
+          <span
+            className={`absolute -top-[7px] right-3 h-3 w-3 rotate-45 border-l border-t ${
+              isDarkMode ? 'bg-slate-900 border-violet-400/40' : 'bg-white border-violet-300'
+            }`}
+            aria-hidden="true"
+          />
+          <p className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            It runs on its own now
+          </p>
+          <p className={`mt-1.5 text-xs leading-5 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+            You can close this page — it keeps working. Click this icon anytime to
+            see what it has done, or to pause it.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { setIsOpen(true); dismissHandoff(); }}
+              className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-violet-500"
+            >
+              Show me
+            </button>
+            <button
+              type="button"
+              onClick={dismissHandoff}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                isDarkMode ? 'text-slate-400 hover:bg-white/5' : 'text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {isOpen && (
         <div
