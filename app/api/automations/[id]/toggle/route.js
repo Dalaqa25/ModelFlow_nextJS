@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseUser } from '@/lib/auth/auth-utils';
 import { createAdminClient } from '@/lib/db/supabase-server';
 import { userDB } from '@/lib/db/supabase-db';
-import { adminSignIn, publishFlow } from '@/lib/activepieces/client';
+import { adminSignIn, deleteAppConnection, listAppConnections, publishFlow } from '@/lib/activepieces/client';
 import {
   activateNativeAutomation,
   deactivateNativeAutomation,
@@ -146,6 +146,68 @@ export async function PATCH(request, { params }) {
   }
 }
 
+
+// Deletes the account connections this automation was the last user of.
+//
+// Failures here are logged and swallowed on purpose: the automation is already
+// gone by this point, and an orphaned connection is untidy rather than harmful
+// — it costs a row, not a broken automation. Reporting the whole delete as
+// failed would be worse, since retrying cannot undo what already succeeded.
+// Deliberately not scoped to this account. External ids are per project and
+// deterministic, so two people in the same runtime project can share one, and
+// asking "does anyone still use this" rather than "do I" keeps a connection
+// somebody else depends on. Over-keeping costs a row; over-deleting breaks
+// their automation.
+async function removeUnusedConnections({ supabase, bindings }) {
+  const externalIds = [...new Set(
+    bindings.map((binding) => binding.activepieces_connection_external_id).filter(Boolean),
+  )];
+  if (externalIds.length === 0) return;
+
+  const { data: stillUsed, error } = await supabase
+    .from('user_automation_connections')
+    .select('activepieces_connection_external_id')
+    .in('activepieces_connection_external_id', externalIds);
+
+  if (error) {
+    console.error('[Automation Remove] Could not check connection use; keeping them:', error);
+    return;
+  }
+
+  const claimed = new Set((stillUsed || []).map((row) => row.activepieces_connection_external_id));
+  const unused = externalIds.filter((externalId) => !claimed.has(externalId));
+  if (unused.length === 0) return;
+
+  let admin;
+  try {
+    admin = await adminSignIn();
+  } catch (signInError) {
+    console.error('[Automation Remove] Could not reach Activepieces:', signInError.message);
+    return;
+  }
+
+  for (const binding of bindings) {
+    const externalId = binding.activepieces_connection_external_id;
+    if (!unused.includes(externalId)) continue;
+
+    try {
+      const response = await listAppConnections({
+        token: admin.token,
+        projectId: binding.activepieces_project_id,
+      });
+      const match = (response?.data || []).find((connection) => connection.externalId === externalId);
+      if (!match?.id) continue;
+
+      await deleteAppConnection({ token: admin.token, connectionId: match.id });
+      console.log(`[Automation Remove] Removed unused connection ${externalId}`);
+    } catch (deleteError) {
+      if (!isMissingActivepiecesEntity(deleteError)) {
+        console.error(`[Automation Remove] Could not remove ${externalId}:`, deleteError.message);
+      }
+    }
+  }
+}
+
 export async function DELETE(_request, { params }) {
   try {
     const authUser = await getSupabaseUser();
@@ -266,6 +328,13 @@ export async function DELETE(_request, { params }) {
 
     if (deleteUserAutomationError) throw deleteUserAutomationError;
 
+    // Which accounts this automation was using, read before the bindings go.
+    const { data: ownBindings } = await supabase
+      .from('user_automation_connections')
+      .select('activepieces_connection_external_id, activepieces_project_id')
+      .eq('automation_id', automationId)
+      .in('user_id', candidateUserIds);
+
     // The connection bindings outlive the automation otherwise, and a stale
     // one silently overrides whatever account is connected next time.
     const { error: deleteBindingsError } = await supabase
@@ -277,6 +346,17 @@ export async function DELETE(_request, { params }) {
     if (deleteBindingsError) {
       console.error('[Automation Remove] Left connection bindings behind:', deleteBindingsError);
     }
+
+    // An account connection is shared: several automations can point at the
+    // same Gmail. Removing it because one of them went away would stop the
+    // others dead, and they would fail with an authorisation error rather than
+    // anything explaining why.
+    //
+    // So it goes only when nothing else refers to it — checked after this
+    // automation's bindings are gone, so what remains is genuinely other
+    // automations. Leaving a connection behind is recoverable; taking one that
+    // is still in use is not.
+    await removeUnusedConnections({ supabase, bindings: ownBindings || [] });
 
     if (!automation || (!directUserAutomation && (!runtimeFlows || runtimeFlows.length === 0))) {
       return NextResponse.json({ error: 'Automation not found' }, { status: 404 });
