@@ -17,26 +17,6 @@ const PLACEHOLDER_HINTS = [
 ];
 
 function useTypewriter(texts, isActive, typingSpeed = 50, deletingSpeed = 30, pauseDuration = 2000) {
-    // The shortcuts under the box were a fixed list of five names. Nothing
-    // added to the catalogue since could ever appear there, so the front door
-    // advertised an older product than the one behind it. Taken from the same
-    // newest-first endpoint the cards use.
-    const [suggestions, setSuggestions] = useState([]);
-
-    useEffect(() => {
-        let cancelled = false;
-        fetch('/api/automations?limit=5&offset=0')
-            .then((response) => (response.ok ? response.json() : []))
-            .then((data) => {
-                if (cancelled || !Array.isArray(data)) return;
-                setSuggestions(data.filter((item) => item?.name));
-            })
-            .catch(() => {
-                // The box still works without shortcuts; nothing to say here.
-            });
-        return () => { cancelled = true; };
-    }, []);
-
     const [displayText, setDisplayText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(true);
@@ -96,6 +76,26 @@ function getSuggestionIcon(name = '') {
 }
 
 export default function MainInput({ onMessageSent, onScopeChange, isLoading = false, onStopGeneration, isUploadActive, onFileUpload, chatStarted = false, greetingSlot = null, isLanding = false, onScrollExplore, onAuthRequired }) {
+    // The shortcuts under the box were a fixed list of five names. Nothing
+    // added to the catalogue since could ever appear there, so the front door
+    // advertised an older product than the one behind it. Taken from the same
+    // newest-first endpoint the cards use.
+    const [suggestions, setSuggestions] = useState([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/automations?limit=5&offset=0')
+            .then((response) => (response.ok ? response.json() : []))
+            .then((data) => {
+                if (cancelled || !Array.isArray(data)) return;
+                setSuggestions(data.filter((item) => item?.name));
+            })
+            .catch(() => {
+                // The box still works without shortcuts; nothing to say here.
+            });
+        return () => { cancelled = true; };
+    }, []);
+
     const [inputValue, setInputValue] = useState('');
     const [isAtBottomInternal, setIsAtBottomInternal] = useState(false);
     const [scrolledDown, setScrolledDown] = useState(false);
