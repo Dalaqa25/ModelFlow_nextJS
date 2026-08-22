@@ -7,6 +7,13 @@ activepieces.modelgrow.com {
     reverse_proxy native-n8n-runtime:3001
   }
 
+  # Claude Code gateway. Runs on the host rather than in a container, because
+  # it shells out to the Claude CLI and needs that machine's stored
+  # credentials. Its own bearer secret guards it; this route only carries it.
+  handle_path /__modelgrow/claude/* {
+    reverse_proxy host.docker.internal:3100
+  }
+
   @blocked_pages path /sign-in /sign-up /forgot-password /explore* /impact* /leaderboard* /community* /templates* /platform*
   respond @blocked_pages 403
 
