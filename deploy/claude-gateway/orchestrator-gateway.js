@@ -311,16 +311,24 @@ const server = http.createServer(async (req, res) => {
     return pump();
   }
 
-  // Structured decision endpoint, for callers that hand over their own schema.
+  // Structured decision endpoint. The shape here is not ours to choose: the
+  // orchestrator posts {prompt, outputSchema} and reads the decision straight
+  // off the response body, so the schema field is accepted under either name
+  // and the object is returned unwrapped. Wrapping it in {ok, output} made
+  // every call fail — silently, because the Groq fallback caught it.
   const prompt = String(body.prompt || '');
   if (!prompt.trim()) return openAiError(res, 400, 'prompt is required');
+  const schema = body.outputSchema || body.schema || null;
 
   queue.push(async () => {
+    const startedAt = Date.now();
     try {
-      const output = await runClaude(prompt, body.schema || null, resolveModel(body.model));
-      send(res, 200, { ok: true, output });
+      const output = await runClaude(prompt, schema, resolveModel(body.model));
+      console.log(`[gateway] decision ${Date.now() - startedAt}ms`);
+      send(res, 200, schema ? output : { result: output });
     } catch (error) {
-      send(res, 502, { ok: false, error: error.message });
+      console.error(`[gateway] decision failed: ${error.message}`);
+      send(res, 502, { error: error.message });
     }
   });
   return pump();
